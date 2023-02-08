@@ -1,0 +1,11 @@
+## personal/resource files
+_dimateos/
+DATA/
+desktop.ini
+
+
+# python
+__pycache__/
+
+# IDE
+.vs/
