@@ -2,6 +2,8 @@
 # Script copyright (C) Blender Foundation 2012
 
 # TODO: could add time limit, or at least some loggin of the progress
+# NOTE: the "Show progress realtime" computes ALL cells and THEN slowly shows them before applying the boolean op
+
 
 def points_as_bmesh_cells(
         verts,
@@ -17,9 +19,14 @@ def points_as_bmesh_cells(
     from math import sqrt
     import mathutils
     from mathutils import Vector
+    INF_LARGE = 10000000000.0  # a big value!
 
     # OUTPUT: consists of a list of shards tuples (center point used, [convex hull vertices])
     cells = []
+
+    # BUG: check distance limit implementation
+    distance_max_listP = []
+
 
     # local iteration variables: the points will be sorted by distance each time!
     # NOTE: maybe could use some hierarchy accelerator suck as a k-d tree library
@@ -33,9 +40,11 @@ def points_as_bmesh_cells(
     if points_scale == (1.0, 1.0, 1.0):
         points_scale = None
 
+
     # BB of the mesh for the outer wall planes, could use convex hull for better precission
-    # BB is fastest but some shards may not en properly inside the boolean region
-    # NOTE: maybe there is better way using some blender function
+    # NOTE: afterwards a boolean operator is required to limit the wall planes to the actual geometry
+    # BB is fastest but some shards may not end properly inside the boolean region causing them to be left unclipped!
+    # NOTE: maybe there is better way to get BB using some blender function
     if 1:
         xa = [v[0] for v in verts]
         ya = [v[1] for v in verts]
@@ -57,20 +66,23 @@ def points_as_bmesh_cells(
     # NOTE: cells are built individually by adding planes between the closest points,
     #       then the algorithm stops when the influence is deemed not strong enough anymore
     for i, point_cell_current in enumerate(points):
+        planes = [None] * len(convexPlanes)
 
         # add the projection length on to each axis to the bounding box planes
-        # NOTE: this moves the BB to be centered around the point
-        planes = [None] * len(convexPlanes)
+        # WIP: this moves the BB to be centered around the point? why do so if later the boolean operator clips it?
         for j in range(len(convexPlanes)):
             planes[j] = convexPlanes[j].copy()
             planes[j][3] += planes[j].xyz.dot(point_cell_current)
 
+        # radius test over the outter wall
+        # NOTE: should never happen if the points come from the original mesh
+        distance_max = INF_LARGE
+        distance_max_listP.append([])
+
         # sort points by distance to the current point
+        # WIP: take into account the radius test already here?
         points_sorted_current.sort(key=lambda p: (p - point_cell_current).length_squared)
 
-        # avoid absurdly long cells when the initial closest point is already too far away
-        # NOTE: probably should never happen if t he points come from the original mesh
-        distance_max = 10000000000.0  # a big value!
 
         # add planes for each near point to limit the walls of the cell constructing a convex cell with the calculated planes
         for j in range(1, len(points)):
@@ -94,6 +106,7 @@ def points_as_bmesh_cells(
             if nlength > distance_max:
                 break
 
+
             # put an additional plane in the middle of the closest points
             plane = normal.normalized()
             plane.resize_4d()
@@ -112,16 +125,19 @@ def points_as_bmesh_cells(
             if len(plane_indices) != len(planes):
                 planes[:] = [planes[k] for k in plane_indices]
 
+
             # readjust the max distance
-            # WIP: but seems like never does with the big value reset?
-            distance_max = 10000000000.0  # a big value!
+            # WIP: but seems like never does with the big value reset!
+            distance_max = INF_LARGE
             for v in vertices:
                 # cmp length_squared and delay converting to a real length
                 distance = v.length_squared
                 if distance_max < distance:
                     distance_max = distance
+
             distance_max = sqrt(distance_max) # make real length
             distance_max *= 2.0               # from mid point to vertex
+            distance_max_listP[i].append(distance_max)
 
 
         # not even the closes point had vertices
@@ -132,4 +148,8 @@ def points_as_bmesh_cells(
         cells.append((point_cell_current, vertices[:]))
         del vertices[:]
 
+    # WIP check if the radius test is actually purging particles
+    mins = [min(l) for l in distance_max_listP]
+    maxs = [max(l) for l in distance_max_listP]
+    print("distance_max_list min max:", min(mins), max(maxs))
     return cells
