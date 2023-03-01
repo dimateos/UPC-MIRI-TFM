@@ -40,7 +40,6 @@ def points_as_bmesh_cells(
     if points_scale == (1.0, 1.0, 1.0):
         points_scale = None
 
-
     # BB of the mesh for the outer wall planes, could use convex hull for better precission
     # NOTE: afterwards a boolean operator is required to limit the wall planes to the actual geometry
     # BB is fastest but some shards may not end properly inside the boolean region causing them to be left unclipped!
@@ -61,6 +60,18 @@ def points_as_bmesh_cells(
             Vector((0.0, 0.0, +1.0, -zmax)),
             Vector((0.0, 0.0, -1.0, +zmin)),
         ]
+        convexVertices = [
+            Vector((xmin, ymin, zmin)), # all combinations to get 8 vertices (000 to 111)
+            Vector((xmin, ymin, zmax)),
+            Vector((xmin, ymax, zmin)),
+            Vector((xmin, ymax, zmax)),
+            Vector((xmax, ymin, ymin)),
+            Vector((xmax, ymin, zmax)),
+            Vector((xmax, ymax, ymin)),
+            Vector((xmax, ymax, zmax)),
+        ]
+        convexVertices_test, plane_indices_test = mathutils.geometry.points_in_planes(convexPlanes)
+
 
     # iterate all points and try to yield a cell per each of them (it could be discarded)
     # NOTE: cells are built individually by adding planes between the closest points,
@@ -76,6 +87,7 @@ def points_as_bmesh_cells(
 
         # radius test over the outter wall
         # NOTE: should never happen if the points come from the original mesh
+        # radius_max = max( [  ] )
         distance_max = INF_LARGE
         distance_max_listP.append([])
 
@@ -147,6 +159,9 @@ def points_as_bmesh_cells(
         # append the calculated cell to the output
         cells.append((point_cell_current, vertices[:]))
         del vertices[:]
+
+    import os
+    print("os", os.getcwd())
 
     # WIP check if the radius test is actually purging particles
     mins = [min(l) for l in distance_max_listP]

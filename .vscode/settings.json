@@ -1,15 +1,22 @@
 {
-    // use local python and packages
+    // only some changes are commited by using git update-index --assume-unchanged/--no-assume-unchanged .vscode/settings.json
+
+    // use local python and packages (multi-root worskpace would require a global path)
     "python.defaultInterpreterPath": "${workspaceFolder}/DATA/Blender/3.4.1/3.4/python/bin/python.exe",
     // "python.autoComplete.extraPaths": ["${workspaceFolder}/DATA/Blender/3.4.1/3.4/scripts/modules" ],
 
-    // BLENDER addon workflow settings (settings may have to be set at user level, not workspace)
-    // https://marketplace.visualstudio.com/items?itemName=JacquesLucke.blender-development
-    "blender.executables": [
-        {"path": "${workspaceFolder}/DATA/Blender/3.4.1/blender.exe", "name": "TFM", "isDebug": false}
-    ],
-    "blender.scripts.directories": [
-        {"path": "${workspaceFolder}", "name": "TFM"}
-    ],
-    // "blender.addon.sourceDirectory": "${workspaceFolder}",
+
+    // BLENDER addon workflow https://marketplace.visualstudio.com/items?itemName=JacquesLucke.blender-development
+    // my own fork fixes some debugpy mappings: https://github.com/dimateos/vscode-blender
+
+    // NOTE: atm global setting not pulled from workspace! (fixed in the fork too)
+    "blender.executables": [ {"path": "${workspaceFolder}/DATA/Blender/3.4.1/blender.exe", "name": "TFM", "isDebug": false} ],
+
+    // avoid using multi-root workspaces (break ${workspaceFolder} for all settings/tasks...)
+    "blender.addon.loadDirectory": "./src/addon",
+    "blender.addon.sourceDirectory": "./src/addon",
+    "blender.addon.moduleName": "_addon_${workspaceFolderBasename}",
+
+    // other user settings (personal preference)
+    "blender.addon.reloadOnSave": false,
 }
