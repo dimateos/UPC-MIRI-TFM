@@ -1,44 +1,85 @@
-# %% import the library
-print("\n-----------------------------------------------------------------------------------------")
-from tess import Container, Cell
 
-# %% check out the API
+# %% Checking out an API
 from pprint import pprint
 from inspect import getmembers, ismethod
 from types import FunctionType
 
-def attributes(obj):
+def get_attributes(obj, queryDoc = False, queryCall = False):
     disallowed_names = {
-      name for name, value in getmembers(type(obj))
-        if isinstance(value, FunctionType)}
-    return {
-      name: getattr(obj, name) for name in dir(obj)
-        if name[0] != '_' and name not in disallowed_names and hasattr(obj, name)}
+        name for name, value in getmembers(type(obj))
+        if isinstance(value, FunctionType)
+        }
 
-def print_attributes(obj):
-    pprint(attributes(obj), indent=2)
+    callables = dict()
+    properties = dict()
+    docs = dict()
 
-print("print_attributes(Container)")
-print_attributes(Container)
-print("print_attributes(Cell)")
-print_attributes(Cell)
+    for name in dir(obj):
+        # Ignore private methods
+        if name[0] == "_" or name in disallowed_names: continue
 
-# %% Calling all methods for testing
-cont = Container([[1,1,1]], limits=(2,2,2), periodic=False)
-cell = cont[0]
+        # Some names may not be retrievable
+        try:
+            attr = getattr(obj, name)
+            if queryDoc: docs[name] = attr.__doc__
 
-for a,m in attributes(Cell).items():
-    call = callable(m)
-    data = m(cell) if call else getattr(cell, a)
-    print('{0:20} {1} {2}'.format(a, data, "(attr)" if not call else ""))
+            # Distinguish callable and optionally store the result
+            if callable(attr):
+                data = attr() if queryCall else attr
+                callables[name] = data
+            else:
+                data = attr
+                properties[name] = data
 
+        except:
+            continue
+
+    return callables, properties, docs
+
+def print_attributes(obj,  queryDoc = False, queryCall = False):
+    calls, props, docs = get_attributes(obj, queryDoc, queryCall)
+    if queryDoc: print("> doc:", obj.__doc__)
+
+    def _print(d):
+        for name, val in d.items():
+            print('- {0:20} {1}'.format(name, val))
+            if docs and docs[name]: print("     ", docs[name])
+
+    if calls:
+        print("\n> calls:")
+        _print(calls)
+
+    if props:
+        print("\n> props:")
+        _print(props)
+
+# %% Library class API
+print("\n-----------------------------------------------------------------------------------------")
+from tess import Container, Cell
+
+print("\n? print_attributes(Container)")
+print_attributes(Container, True)
+print("\n? print_attributes(Cell)")
+print_attributes(Cell, True)
+
+# %% Calling all methods on an instance
+# cont = Container([[1,1,1]], limits=(2,2,2), periodic=False)
+
+l = 0.5
+c = [0,0,0]
+bb = [ [cc-l for cc in c], [cc+l for cc in c] ]
+cont = Container(points=[(0,0,0)], limits=bb)
+
+print("\n? print_attributes(cont[0])", cont)
+print_attributes(cont[0], False, True)
 
 # %% Using a container
-# cont = Container([[1,1,1], [2,2,2]], limits=(3,3,3), periodic=False)
-cont = Container([[1,1,1]], limits=(2,2,2), periodic=False)
+cont = Container([(1,1,1), (2,2,2)], limits=(3,3,3), periodic=False)
 
-print("pos", [v.pos for v in cont])
-print("centroid", [v.centroid() for v in cont])
-print("neighbors", [v.neighbors() for v in cont])
-# print("normals", [v.normals() for v in cont])
-print("face_areas", [v.face_areas() for v in cont])
+print("\n? aggregated cells data", cont)
+print('- {0:20} {1}'.format("pos", [c.pos for c in cont]))
+print('- {0:20} {1}'.format("centroid", [c.centroid() for c in cont]))
+print('- {0:20} {1}'.format("neighbors", [c.neighbors() for c in cont]))
+# print('- {0:20} {1}'.format("normals", [c.normals() for c in cont]))
+# print('- {0:20} {1}'.format("face_areas", [c.face_areas() for c in cont]))
+
