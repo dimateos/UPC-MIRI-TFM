@@ -108,6 +108,8 @@ cont = Container([(1,1,1), (2,2,2)], limits=(3,3,3), periodic=False)
 
 print("\n? aggregated cells data", cont)
 print_data(cont)
+# face_freq_table: number of edges that each face has (as freq table)
+# face_orders: number of edges per face (implemented in fork!)
 
 
 # %% Comparing separated cells
@@ -121,4 +123,3 @@ print("\n? print_data(cont[0])", cont[0])
 print_data(cont[0])
 print("\n? print_data(cont[1])", cont[1])
 print_data(cont[1])
-
