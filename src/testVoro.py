@@ -41,7 +41,10 @@ def get_data(obj):
     """
     calls, props, _ = get_attributes(obj)
     for k,v in calls.items():
-        calls[k]= v()
+        try:
+            calls[k]= v()
+        except:
+            calls[k] = "*needs input arguments*"
 
     return calls, props
 
@@ -95,12 +98,15 @@ print_attributes(Cell, True)
 # cont = Container([[1,1,1]], limits=(2,2,2), periodic=False)
 
 l = 0.5
-c = [0,0,0]
+c = [1,1,1]
 bb = [ [cc-l for cc in c], [cc+l for cc in c] ]
-cont = Container(points=[(0,0,0)], limits=bb)
+cont = Container(points=[c], limits=bb)
 
 print("\n? print_data(cont[0])", cont)
 print_data(cont[0])
+
+# %% transform methods
+cont[0].translate(10,10,10)
 
 
 # %% Aggregating results of the methods
