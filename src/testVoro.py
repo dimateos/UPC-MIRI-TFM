@@ -93,11 +93,6 @@ print_attributes(Container, True)
 print("\n? print_attributes(Cell)")
 print_attributes(Cell, True)
 
-# %% test intellisense
-contI = Container()
-cellI = Cell()
-# pycharm has total autocomplete while vscode lacks the .pyx file...
-
 # %% Calling all methods on an instance
 # cont = Container([[1,1,1]], limits=(2,2,2), periodic=False)
 
@@ -113,7 +108,7 @@ print_data(cont[0])
 print_attributes(Container, False)
 print_data(cont, False)
 # print(cont.order())
-print(cont.get_walls())
+print(cont.get_limits())
 
 # %% transform methods
 cont[0].translate(10,10,10)
@@ -138,3 +133,16 @@ print("\n? print_data(cont[0])", cont[0])
 print_data(cont[0])
 print("\n? print_data(cont[1])", cont[1])
 print_data(cont[1])
+
+# %% testing intellisense
+cell = cont[0]
+# cell.
+# Pycharm has total autocomplete while vscode lacks the info inside the .pyx file
+# NOTE the issue is Pylance https://github.com/microsoft/pylance-release/issues/674
+
+# the alternative Jedi python language server detects the docs, but is not as smart as Pycharms
+# it can scrape the documentation from .pyx and autocomplete cell = Cell(), but not infer it from cont[0]
+# as a workaround one can annotate the type in the declaration or by dynamically asserting it
+# NOTE managed to solve globally by annotating the Container class inheritance pattern, it still cannot go to definition etc
+assert isinstance(cell, Cell)
+cell: Cell = cont[0]
