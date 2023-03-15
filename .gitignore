@@ -2,10 +2,14 @@
 _dimateos/
 _scripts/
 _ext/
-log*/
-DATA/
 desktop.ini
 
+# additional assets etc
+DATA/
+log*/
+
+# blender
+*.blend?
 
 # python
 __pycache__/

@@ -93,6 +93,10 @@ print_attributes(Container, True)
 print("\n? print_attributes(Cell)")
 print_attributes(Cell, True)
 
+# %% test intellisense
+contI = Container()
+cellI = Cell()
+# pycharm has total autocomplete while vscode lacks the .pyx file...
 
 # %% Calling all methods on an instance
 # cont = Container([[1,1,1]], limits=(2,2,2), periodic=False)
@@ -105,9 +109,14 @@ cont = Container(points=[c], limits=bb)
 print("\n? print_data(cont[0])", cont)
 print_data(cont[0])
 
+# %% list container methods
+print_attributes(Container, False)
+print_data(cont, False)
+# print(cont.order())
+print(cont.get_walls())
+
 # %% transform methods
 cont[0].translate(10,10,10)
-
 
 # %% Aggregating results of the methods
 cont = Container([(1,1,1), (2,2,2)], limits=(3,3,3), periodic=False)
