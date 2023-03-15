@@ -9,7 +9,7 @@ DATA/
 log*/
 
 # blender
-*.blend?
+*.blend?*
 
 # python
 __pycache__/
