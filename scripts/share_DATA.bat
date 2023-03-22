@@ -1,19 +1,22 @@
 @echo off
 REM mirror some data files to shared drive folder (no purge of old files)
 
-set "local=..\DATA"
-set "target=C:\OneDrive\Drive Google\UPC\_TFM\DATA"
+set "src=..\DATA"
+:: set "dest=C:\OneDrive\Drive Google\UPC\_TFM\DATA"
+
+REM shared folder direclty (hased path tho)
+set "dest=C:\Users\Diego\Desktop\__stream-DRIVE\UPC\.shortcut-targets-by-id\1y_ROJTEoZxvMw6SsSFvZTUuMaTztJfSi\TFM Diego Mateos\DATA"
 
 :assets
-    set "folder=geogebra"
-    robocopy "%local%/%folder%" "%target%/%folder%" /XO /MT:32 /R:1 /W:1
-
     set "folder=models-TEST"
-    robocopy "%local%/%folder%" "%target%/%folder%" *.blend /XO /MT:32 /R:1 /W:1 &REM limit to non backup files
+    robocopy "%src%/%folder%" "%dest%/%folder%" *.blend /XO /FFT /MT:32 /R:1 /W:1 &REM limit to non backup files
 
-    set "folder=models-Terrenos"
-    robocopy "%local%/%folder%" "%target%/%folder%" /XO /MT:32 /R:1 /W:1
+    :: set "folder=models-Terrenos"
+    :: robocopy "%src%/%folder%" "%dest%/%folder%" /XO /MT:32 /R:1 /W:1
+
+    :: set "folder=geogebra"
+    :: robocopy "%src%/%folder%" "%dest%/%folder%" /XO /MT:32 /R:1 /W:1
 
 :src
     set "folder=py_object_fracture_cell"
-    robocopy "%local%/%folder%" "%target%/%folder%" /XO /MT:32 /R:1 /W:1
+    robocopy "%src%/%folder%" "%dest%/%folder%" /XO /FFT /MT:32 /R:1 /W:1
