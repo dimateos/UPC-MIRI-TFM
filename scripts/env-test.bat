@@ -1,9 +1,9 @@
 @echo off
 
 REM using ./env works for multiple commands otherwise exits at the first
-@REM call ./env
-@REM %bpy% --version
-@REM %bpy% --version
+:: CALL ./env
+:: %bpy% --version
+:: %bpy% --version
 
 REM check packages to it
 bpy --version
@@ -11,7 +11,7 @@ bpy -c "help(\"modules\")"
 bpip freeze
 
 REM backup env (using some common external .bat)
-call ./_scripts/getTS.bat
+CALL ./_scripts/getTS.bat
 set "back=./logFreeze/%ts%.log"
 bpip freeze > %back%
 code "%back%"

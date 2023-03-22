@@ -1,3 +1,3 @@
 @echo off
-call ./env
+CALL ./env
 %bpip% %*
