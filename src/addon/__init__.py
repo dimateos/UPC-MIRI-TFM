@@ -229,8 +229,8 @@ def main(context, **kw):
 
 
 class FractureCell(Operator):
-    bl_idname = "object.add_fracture_cell_objects"
-    bl_label = "Cell fracture selected mesh objects"
+    bl_idname = "object.add_fracture_cell_objects_dimateos"
+    bl_label = "Cell fracture selected mesh objects __dimateos"
     bl_options = {'PRESET', 'UNDO'}
 
     # -------------------------------------------------------------------------
@@ -527,7 +527,7 @@ class FractureCell(Operator):
 def menu_func(self, context):
     layout = self.layout
     layout.separator()
-    layout.operator("object.add_fracture_cell_objects", text="Cell Fracture")
+    layout.operator("object.add_fracture_cell_objects_dimateos", text="Cell Fracture _dimateos")
 
 
 def register():
