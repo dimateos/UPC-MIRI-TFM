@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-
 # Script copyright (C) Blender Foundation 2012
 
 import bpy
@@ -122,6 +121,7 @@ def cell_fracture_objects(
         cell_scale=(1.0, 1.0, 1.0),
 ):
     from . import fracture_cell_calc
+    from . import fracture_cell_calc_voro
     depsgraph = context.evaluated_depsgraph_get()
     scene = context.scene
     view_layer = context.view_layer
@@ -182,16 +182,23 @@ def cell_fracture_objects(
     matrix = obj.matrix_world.copy()
     verts = [matrix @ v.co for v in mesh.vertices]
 
-    cells = fracture_cell_calc.points_as_bmesh_cells(
-        verts,
+    # cells = fracture_cell_calc.points_as_bmesh_cells(
+    #     verts,
+    #     points,
+    #     cell_scale,
+    #     margin_cell=margin,
+    # )
+    cells = fracture_cell_calc_voro.points_as_bmesh_cells(
+        obj,
         points,
         cell_scale,
         margin_cell=margin,
     )
+    # WIP early exit
+    if not cells: return []
 
-    # some hacks here :S
+    # TODO custom sufix?
     cell_name = obj.name + "_cell"
-
     objects = []
 
     for center_point, cell_points in cells:

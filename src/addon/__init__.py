@@ -63,6 +63,9 @@ def main_object(context, collection, obj, level, **kw):
         obj.display_type = 'WIRE'
 
     objects = fracture_cell_setup.cell_fracture_objects(context, collection, obj, **kw_copy)
+    # WIP early exit
+    if not objects: return []
+
     objects = fracture_cell_setup.cell_fracture_boolean(
         context, collection, obj, objects,
         use_island_split=use_island_split,
@@ -169,6 +172,9 @@ def main(context, **kw):
     for obj in objects_context:
         if obj.type == 'MESH':
             objects += main_object(context, collection, obj, 0, **kw_copy)
+
+    # WIP early exit
+    if not objects: return
 
     bpy.ops.object.select_all(action='DESELECT')
     for obj_cell in objects:

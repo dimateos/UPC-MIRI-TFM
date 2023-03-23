@@ -1,7 +1,9 @@
+# MIRI-A3DM
+# Diego Mateos (UPC)
 
 class UnionFind:
     """ Simple union-find to count connected components w/ path compression
-        * also with dynamic enlarging of the container
+        * also added dynamic enlarging of the container
         * TODO document methods
     """
     _enabled_path_compression = True
