@@ -132,7 +132,7 @@ def cell_fracture_objects(
     points = _points_from_object(depsgraph, scene, obj, source)
 
     if not points:
-        # print using fallback
+        print("no points found... using fallback")
         points = _points_from_object(depsgraph, scene, obj, {'VERT_OWN'})
 
     if not points:

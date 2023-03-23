@@ -24,9 +24,21 @@ def desc_mesh(me: bpy.types.Mesh):
     print(' E= %d' % (len(me.edges)))
     print(' F= %d' % (len(me.polygons)))
 
+# WIP test stuff
+def desc_mesh_inspect(me: bpy.types.Mesh):
+    from . import info_inspect as ins
+
+    print("\n? mesh attributes", me)
+    ins.print_attributes(me)
+
+    poly = me.polygons[0]
+    print("\n? poly attributes", poly)
+    ins.print_attributes(poly)
+    #ins.print_data(poly)
+
 # Description of the mesh data, with samples per collection type
 def desc_mesh_data(me: bpy.types.Mesh, limit=8, skipLoops=True):
-    desc_malla(me)
+    desc_mesh(me)
 
     print('Vertex list:')
     for i in range(min(len(me.vertices), limit)):

@@ -21,7 +21,8 @@ def points_as_bmesh_cells(
     verts = [matrix @ v.co for v in mesh.vertices]
 
     from . import info_mesh
-    info_mesh.processa_malla(mesh)
+    info_mesh.desc_mesh_data(mesh)
+    info_mesh.desc_mesh_inspect(mesh)
 
     # WIP early exit
     return []
