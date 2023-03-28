@@ -445,8 +445,8 @@ class FractureCell(Operator):
     )
 
     use_debug_bool: BoolProperty(
-        name="Debug Boolean",
-        description="Skip applying the boolean modifier",
+        name="NO Boolean",
+        description="Skip applying the boolean modifier + also adding it to the objects",
         default=True,
     )
 

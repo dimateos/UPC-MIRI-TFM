@@ -119,7 +119,7 @@ def points_as_bmesh_cells(
                 break
 
 
-            # put an additional plane in the middle of the closest points
+            # put an additional plane in the middle of the closest point
             plane = normal.normalized()
             plane.resize_4d()
             plane[3] = (-nlength / 2.0) + margin_cell
@@ -127,6 +127,7 @@ def points_as_bmesh_cells(
 
             # try obtain vertices of the boundary of the convex defined by all planes
             # NOTE: probably always succeeds when the random fracture points come from the mesh vertices
+            # NOTE: the verts seem to be in local space?
             # WIP: breaking due to this is correct?
             vertices[:], plane_indices[:] = mathutils.geometry.points_in_planes(planes)
             if len(vertices) == 0:
