@@ -62,3 +62,6 @@ cell = cont[0]
 # NOTE managed to solve globally by annotating the Container class inheritance pattern, it still cannot go to definition etc
 assert isinstance(cell, Cell)
 cell: Cell = cont[0]
+
+#cells = [ (c, c.vertices()) for c in cont ]
+

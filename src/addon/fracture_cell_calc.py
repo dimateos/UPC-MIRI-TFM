@@ -165,4 +165,6 @@ def points_as_bmesh_cells(
     mins = [min(l) for l in distance_max_listP]
     maxs = [max(l) for l in distance_max_listP]
     print("distance_max_list min max:", min(mins), max(maxs))
+
+    #print(cells)
     return cells
