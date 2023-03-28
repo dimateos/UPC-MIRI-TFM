@@ -66,14 +66,16 @@ def main_object(context, collection, obj, level, **kw):
     # WIP early exit
     if not objects: return []
 
-    objects = fracture_cell_setup.cell_fracture_boolean(
-        context, collection, obj, objects,
-        use_island_split=use_island_split,
-        use_interior_hide=(use_interior_vgroup or use_sharp_edges),
-        use_debug_bool=use_debug_bool,
-        use_debug_redraw=kw_copy["use_debug_redraw"],
-        level=level,
-    )
+    # WIP: use_debug_bool just skips it
+    if not use_debug_bool:
+        objects = fracture_cell_setup.cell_fracture_boolean(
+            context, collection, obj, objects,
+            use_island_split=use_island_split,
+            use_interior_hide=(use_interior_vgroup or use_sharp_edges),
+            use_debug_bool=use_debug_bool,
+            use_debug_redraw=kw_copy["use_debug_redraw"],
+            level=level,
+        )
 
     # must apply after boolean.
     if use_recenter:
@@ -403,8 +405,8 @@ class FractureCell(Operator):
     )
 
     use_remove_original: BoolProperty(
-        name="Remove Original",
-        description="Removes the parents used to create the shatter",
+        name="Remove Original -> mid recursive parents",
+        description="Removes the parents used to create the shatter -> More like the intermidiate recursive parents",
         default=True,
     )
 
@@ -420,26 +422,32 @@ class FractureCell(Operator):
             "Create objects in a collection "
             "(use existing or create new)"
         ),
+        default="_fracture",
     )
 
     # -------------------------------------------------------------------------
     # Debug
+    use_old_fracture: BoolProperty(
+        name="Use original method",
+        default=False,
+    )
+
     use_debug_points: BoolProperty(
         name="Debug Points",
         description="Create mesh data showing the points used for fracture",
-        default=False,
+        default=True,
     )
 
     use_debug_redraw: BoolProperty(
         name="Show Progress Realtime",
         description="Redraw as fracture is done",
-        default=True,
+        default=False,
     )
 
     use_debug_bool: BoolProperty(
         name="Debug Boolean",
         description="Skip applying the boolean modifier",
-        default=False,
+        default=True,
     )
 
     def execute(self, context):
@@ -508,6 +516,8 @@ class FractureCell(Operator):
         col.label(text="Object")
         rowsub = col.row(align=True)
         rowsub.prop(self, "use_recenter")
+        rowsub = col.row(align=True)
+        rowsub.prop(self, "use_remove_original")
 
         box = layout.box()
         col = box.column()
@@ -519,7 +529,8 @@ class FractureCell(Operator):
         col = box.column()
         col.label(text="Debug")
         rowsub = col.row(align=True)
-        rowsub.prop(self, "use_debug_redraw")
+        rowsub.prop(self, "use_old_fracture")
+        #rowsub.prop(self, "use_debug_redraw")
         rowsub.prop(self, "use_debug_points")
         rowsub.prop(self, "use_debug_bool")
 

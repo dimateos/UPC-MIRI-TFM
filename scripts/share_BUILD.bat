@@ -21,6 +21,7 @@ pushd %cd%
     set "tmp_dest=%dest%\%folder%\%build%-%ts%.zip"
 
     REM maybe also ignore _vendor and _distools?
+    REM NOTE: I could also overwrite only the addon folder inside the zip instead of a whole version, or just update changed files
     echo Zipping (will take over a minute)... output may be redirected to avoid flooding!
     zip -r %tmp% ./%build% -x "*/__pycache__/*"
 

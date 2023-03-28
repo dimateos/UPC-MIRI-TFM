@@ -28,7 +28,8 @@ def desc_mesh(me: bpy.types.Mesh):
 def desc_mesh_inspect(me: bpy.types.Mesh):
     from . import info_inspect as ins
 
-    print("\n? mesh attributes", me)
+    import os
+    print("\n? mesh attributes", me, os.getcwd())
     ins.print_attributes(me)
 
     poly = me.polygons[0]

@@ -160,8 +160,6 @@ def points_as_bmesh_cells(
         cells.append((point_cell_current, vertices[:]))
         del vertices[:]
 
-    import os
-    print("os", os.getcwd())
 
     # WIP check if the radius test is actually purging particles
     mins = [min(l) for l in distance_max_listP]

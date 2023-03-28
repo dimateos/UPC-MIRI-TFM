@@ -49,7 +49,7 @@ def _points_from_object(depsgraph, scene, obj, source):
             matrix = obj.matrix_world.copy()
             points.extend([matrix @ v.co for v in mesh.vertices])
         else:
-            ob_eval = ob.evaluated_get(depsgraph)
+            ob_eval = obj.evaluated_get(depsgraph) # BUG: typo ob?
             try:
                 mesh = ob_eval.to_mesh()
             except:
@@ -119,6 +119,7 @@ def cell_fracture_objects(
         material_index=0,
         use_debug_redraw=False,
         cell_scale=(1.0, 1.0, 1.0),
+        use_old_fracture=False
 ):
     from . import fracture_cell_calc
     from . import fracture_cell_calc_voro
@@ -182,19 +183,22 @@ def cell_fracture_objects(
     matrix = obj.matrix_world.copy()
     verts = [matrix @ v.co for v in mesh.vertices]
 
-    # cells = fracture_cell_calc.points_as_bmesh_cells(
-    #     verts,
-    #     points,
-    #     cell_scale,
-    #     margin_cell=margin,
-    # )
-    cells = fracture_cell_calc_voro.points_as_bmesh_cells(
-        obj,
-        points,
-        cell_scale,
-        margin_cell=margin,
-    )
-    # WIP early exit
+    if use_old_fracture:
+        cells = fracture_cell_calc.points_as_bmesh_cells(
+            verts,
+            points,
+            cell_scale,
+            margin_cell=margin,
+        )
+    else:
+        cells = fracture_cell_calc_voro.points_as_bmesh_cells(
+            obj,
+            points,
+            cell_scale,
+            margin_cell=margin,
+        )
+
+    # WIP early exit -> still modifies some mesh tho
     if not cells: return []
 
     # TODO custom sufix?
