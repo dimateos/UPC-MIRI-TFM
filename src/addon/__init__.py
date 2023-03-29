@@ -43,10 +43,12 @@ def main_object(context, collection, obj, level, **kw):
     recursion_chance = kw_copy.pop("recursion_chance")
     recursion_chance_select = kw_copy.pop("recursion_chance_select")
     use_island_split = kw_copy.pop("use_island_split")
-    use_debug_bool = kw_copy.pop("use_debug_bool")
     use_interior_vgroup = kw_copy.pop("use_interior_vgroup")
     use_sharp_edges = kw_copy.pop("use_sharp_edges")
     use_sharp_edges_apply = kw_copy.pop("use_sharp_edges_apply")
+
+    apply_boolean = kw_copy.pop("apply_boolean")
+    new_voro = kw_copy.pop("new_voro")
 
     scene = context.scene
 
@@ -66,13 +68,13 @@ def main_object(context, collection, obj, level, **kw):
     # WIP early exit
     if not objects: return []
 
-    # WIP: use_debug_bool just skips it
-    if not use_debug_bool:
+    # WIP: apply_boolean just skips it
+    if apply_boolean and not new_voro:
         objects = fracture_cell_setup.cell_fracture_boolean(
             context, collection, obj, objects,
             use_island_split=use_island_split,
             use_interior_hide=(use_interior_vgroup or use_sharp_edges),
-            use_debug_bool=use_debug_bool,
+            apply_boolean=apply_boolean,
             use_debug_redraw=kw_copy["use_debug_redraw"],
             level=level,
         )
@@ -357,11 +359,17 @@ class FractureCell(Operator):
         default=True,
     )
 
-    margin: FloatProperty(
-        name="Margin",
-        description="Gaps for the fracture (gives more stable physics)",
+    margin_cell: FloatProperty(
+        name="Margin cell (unused?)",
+        description="Gaps for the fracture between cells (gives more stable physics)",
         min=0.0, max=1.0,
         default=0.001,
+    )
+    margin_bounds: FloatProperty(
+        name="Margin bounds",
+        description="Additional displacement of the face normal planes",
+        min=0.0, max=1.0,
+        default=0.05,
     )
 
     material_index: IntProperty(
@@ -427,9 +435,9 @@ class FractureCell(Operator):
 
     # -------------------------------------------------------------------------
     # Debug
-    use_old_fracture: BoolProperty(
-        name="Use original method",
-        default=False,
+    new_voro: BoolProperty(
+        name="Use new method with voro++",
+        default=True,
     )
 
     use_debug_points: BoolProperty(
@@ -444,10 +452,9 @@ class FractureCell(Operator):
         default=False,
     )
 
-    use_debug_bool: BoolProperty(
-        name="NO Boolean",
-        description="Skip applying the boolean modifier + also adding it to the objects",
-        default=True,
+    apply_boolean: BoolProperty(
+        name="Apply Boolean mod (old method)",
+        default=False,
     )
 
     def execute(self, context):
@@ -501,8 +508,14 @@ class FractureCell(Operator):
         rowsub.prop(self, "use_interior_vgroup")
 
         # could be own section, control how we subdiv
-        rowsub.prop(self, "margin")
         rowsub.prop(self, "use_island_split")
+
+        box = layout.box()
+        col = box.column()
+        col.label(text="Margins")
+        rowsub = col.row(align=True)
+        rowsub.prop(self, "margin_cell")
+        rowsub.prop(self, "margin_bounds")
 
         box = layout.box()
         col = box.column()
@@ -529,10 +542,10 @@ class FractureCell(Operator):
         col = box.column()
         col.label(text="Debug")
         rowsub = col.row(align=True)
-        rowsub.prop(self, "use_old_fracture")
+        rowsub.prop(self, "new_voro")
         #rowsub.prop(self, "use_debug_redraw")
+        rowsub.prop(self, "apply_boolean")
         rowsub.prop(self, "use_debug_points")
-        rowsub.prop(self, "use_debug_bool")
 
 
 def menu_func(self, context):

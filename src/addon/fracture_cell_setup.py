@@ -115,11 +115,12 @@ def cell_fracture_objects(
         use_smooth_faces=False,
         use_data_match=False,
         use_debug_points=False,
-        margin=0.0,
+        margin_cell=0.0,
+        margin_bounds=0.05,
         material_index=0,
         use_debug_redraw=False,
         cell_scale=(1.0, 1.0, 1.0),
-        use_old_fracture=False
+        new_voro=True
 ):
     from . import fracture_cell_calc
     from . import fracture_cell_calc_voro
@@ -183,19 +184,22 @@ def cell_fracture_objects(
     matrix = obj.matrix_world.copy()
     verts = [matrix @ v.co for v in mesh.vertices]
 
-    if use_old_fracture:
-        cells = fracture_cell_calc.points_as_bmesh_cells(
-            verts,
-            points,
-            cell_scale,
-            margin_cell=margin,
-        )
-    else:
+    # TODO: should also modify mesh generator to avoid the face triagulation
+    if new_voro:
         cells = fracture_cell_calc_voro.points_as_bmesh_cells(
             obj,
             points,
             cell_scale,
-            margin_cell=margin,
+            margin_cell=margin_cell,
+            margin_bounds=margin_bounds,
+        )
+    else:
+        cells = fracture_cell_calc.points_as_bmesh_cells(
+            verts,
+            points,
+            cell_scale,
+            margin_cell=margin_cell,
+            margin_bounds=margin_bounds,
         )
 
     # WIP early exit -> still modifies some mesh tho
@@ -305,7 +309,7 @@ def cell_fracture_objects(
 
 def cell_fracture_boolean(
         context, collection, obj, objects,
-        use_debug_bool=False,
+        apply_boolean=False,
         clean=True,
         use_island_split=False,
         use_interior_hide=False,
@@ -327,7 +331,7 @@ def cell_fracture_boolean(
         mod.object = obj
         mod.operation = 'INTERSECT'
 
-        if not use_debug_bool:
+        if apply_boolean:
 
             if use_interior_hide:
                 obj_cell.data.polygons.foreach_set("hide", [True] * len(obj_cell.data.polygons))
@@ -337,7 +341,7 @@ def cell_fracture_boolean(
 
     for obj_cell in objects:
 
-        if not use_debug_bool:
+        if apply_boolean:
 
             obj_cell_eval = obj_cell.evaluated_get(depsgraph)
             mesh_new = bpy.data.meshes.new_from_object(obj_cell_eval)
@@ -391,7 +395,7 @@ def cell_fracture_boolean(
             if use_debug_redraw:
                 _redraw_yasiamevil()
 
-    if (not use_debug_bool) and use_island_split:
+    if apply_boolean and use_island_split:
         # this is ugly and Im not proud of this - campbell
         for ob in view_layer.objects:
             ob.select_set(False)

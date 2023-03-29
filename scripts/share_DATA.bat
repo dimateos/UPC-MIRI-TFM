@@ -9,14 +9,14 @@ set "dest=C:\Users\Diego\Desktop\__stream-DRIVE\UPC\.shortcut-targets-by-id\1y_R
 
 :assets
     set "folder=models-TEST"
-    robocopy "%src%/%folder%" "%dest%/%folder%" *.blend /XO /FFT /MT:32 /R:1 /W:1 &REM limit to non backup files
+    robocopy "%src%/%folder%" "%dest%/%folder%" *.blend /MIR /FFT /MT:32 /R:1 /W:1 &REM limit to non backup files
 
     :: set "folder=models-Terrenos"
-    :: robocopy "%src%/%folder%" "%dest%/%folder%" /XO /MT:32 /R:1 /W:1
+    :: robocopy "%src%/%folder%" "%dest%/%folder%" /MIR /FFT /MT:32 /R:1 /W:1
 
     :: set "folder=geogebra"
-    :: robocopy "%src%/%folder%" "%dest%/%folder%" /XO /MT:32 /R:1 /W:1
+    :: robocopy "%src%/%folder%" "%dest%/%folder%" /MIR /FFT /MT:32 /R:1 /W:1
 
 :src
     set "folder=py_object_fracture_cell"
-    robocopy "%src%/%folder%" "%dest%/%folder%" /XO /FFT /MT:32 /R:1 /W:1
+    robocopy "%src%/%folder%" "%dest%/%folder%" /MIR /FFT /MT:32 /R:1 /W:1
