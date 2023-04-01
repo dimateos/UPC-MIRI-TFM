@@ -161,7 +161,10 @@ def main(context, **kw):
     # mass
     mass_mode = kw_copy.pop("mass_mode")
     mass = kw_copy.pop("mass")
+
+    # WIP collection name is more dinamic to avoid having to adjust it
     collection_name = kw_copy.pop("collection_name")
+    selected_object_name = context.selected_objects[0].name
 
     collection = context.collection
     if collection_name:
@@ -459,6 +462,9 @@ class FractureCell(Operator):
         name="Apply Boolean mod (old method)",
         default=False,
     )
+
+    # -------------------------------------------------------------------------
+    # blender ops
 
     def execute(self, context):
         keywords = self.as_keywords()  # ignore=("blah",)

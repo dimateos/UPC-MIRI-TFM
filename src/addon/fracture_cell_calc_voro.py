@@ -76,5 +76,5 @@ def points_as_bmesh_cells(
     ]
 
     #print(cells)
-    return cells
+    return cells, cont
 

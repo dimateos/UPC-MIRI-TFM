@@ -4,6 +4,9 @@
 import bpy
 import bmesh
 
+# Using tess voro++ adaptor
+from tess import Container, Cell
+
 if bpy.app.background:
     def _redraw_yasiamevil():
         pass
@@ -184,15 +187,16 @@ def cell_fracture_objects(
     matrix = obj.matrix_world.copy()
     verts = [matrix @ v.co for v in mesh.vertices]
 
-    # TODO: should also modify mesh generator to avoid the face triagulation
+    # TODO: should also modify mesh generator to avoid the face triagulation etc we got more information
     if new_voro:
-        cells = fracture_cell_calc_voro.points_as_bmesh_cells(
+        cells, cont = fracture_cell_calc_voro.points_as_bmesh_cells(
             obj,
             points,
             cell_scale,
             margin_cell=margin_cell,
             margin_bounds=margin_bounds,
         )
+
     else:
         cells = fracture_cell_calc.points_as_bmesh_cells(
             verts,
@@ -303,6 +307,45 @@ def cell_fracture_objects(
             _redraw_yasiamevil()
 
     view_layer.update()
+
+    # WIP: connection lines to show links -> ATM duplicated
+    if new_voro:
+        from mathutils import Vector
+        link_name = obj.name + "_link"
+
+        # iterate all cell faces
+        for cell in cont:
+            cell_centroid = Vector(cell.centroid())
+            cell_centroid_4d = cell_centroid.to_4d()
+
+            neigh = cell.neighbors()
+            for n_id in neigh:
+
+                # ATM: ignore neighbors to walls
+                if n_id < 0: continue
+                neigh_centroid_4d = Vector(cont[n_id].centroid()).to_4d()
+
+                # Create new curve per neighbour
+                curve_data = bpy.data.curves.new(link_name, 'CURVE')
+                curve_data.dimensions = '3D'
+
+                # Add the centroid points using a poly line
+                line = curve_data.splines.new('POLY')
+                line.points.add(1)
+                line.points[0].co = cell_centroid_4d
+                line.points[1].co = neigh_centroid_4d
+
+                # Set the width!
+                curve_data.bevel_depth = 0.1
+                curve_data.bevel_resolution = 0
+
+                # link it to the same collection
+                obj_link = bpy.data.objects.new(name=link_name, object_data=curve_data)
+                collection.objects.link(obj_link)
+
+                # no need to add it to the objects atm
+                #objects.append(obj_link)
+
 
     return objects
 
