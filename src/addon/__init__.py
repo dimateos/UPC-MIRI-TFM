@@ -1,5 +1,3 @@
-# SPDX-License-Identifier: GPL-2.0-or-later
-
 bl_info = {
     "name": "_dimateos Cell Fracture",
     "author": "ideasman42, phymec, Sergey Sharybin",

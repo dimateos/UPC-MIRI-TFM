@@ -13,10 +13,27 @@
     "blender.executables": [ {"path": "${workspaceFolder}/DATA/Blender/3.4.1/blender.exe", "name": "TFM", "isDebug": false} ],
 
     // avoid using multi-root workspaces (break ${workspaceFolder} for all settings/tasks...)
-    "blender.addon.loadDirectory": "./src/addon",
-    "blender.addon.sourceDirectory": "./src/addon",
-    "blender.addon.moduleName": "_addon_${workspaceFolderBasename}",
+    "blender.addon.loadDirectory": "./src/addonSim",
+    "blender.addon.sourceDirectory": "./src/addonSim",
+    "blender.addon.moduleName": "_addon_vscode",
 
     // other user settings (personal preference)
     "blender.addon.reloadOnSave": false,
+
+    // ignore folders
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/.vscode": true,
+        "**/desktop.ini": true,
+        "**/__pycache__": true,
+        "**/build": true,
+        "**/data*": true,
+        "**/.pytest_cache": true
+    },
+    "explorerExclude.backup": {},
 }
