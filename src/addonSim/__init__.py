@@ -22,7 +22,7 @@ from . import operators
 from . import panels
 
 submodules = (
-    #properties,
+    properties,
     #operators,
     panels,
 )
