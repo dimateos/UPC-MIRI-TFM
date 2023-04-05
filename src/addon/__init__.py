@@ -239,7 +239,7 @@ def main(context, **kw):
 class FractureCell(Operator):
     bl_idname = "object.add_fracture_cell_objects_dimateos"
     bl_label = "Cell fracture selected mesh objects __dimateos"
-    bl_options = {'PRESET', 'UNDO'}
+    bl_options = {'PRESET', 'REGISTER', 'UNDO'}
 
     # -------------------------------------------------------------------------
     # Source Options

@@ -17,48 +17,63 @@ class MW_gen_Panel(bpy.types.Panel):
     bl_context = "objectmode"
     bl_options = {'HEADER_LAYOUT_EXPAND'}
 
-    #@classmethod
-    #def poll(cls, context):
-    #    ob = context.active_object
-    #    return (ob and ob.type == 'MESH')
+    @classmethod
+    def poll(cls, context):
+        ob = context.active_object
+        return (ob and ob.type == 'MESH')
 
     def draw(self, context):
-        #layout = self.layout
-        #ob = context.active_object
-        #col = layout.column()
-        #col.label(text="label")
-
-        #col.operator('mesh.ant_displace', text="Mesh Displace", icon="RNDCURVE")
-        #col.operator('mesh.ant_slope_map', icon='GROUP_VERTEX')
-        #if ob.ant_landscape.keys() and not ob.ant_landscape['sphere_mesh']:
-        #    col.operator('mesh.eroder', text="Landscape Eroder", icon='SMOOTHCURVE')
-        #        col.operator('mesh.eroder', text="Landscape Eroder", icon='SMOOTHCURVE')
-        #            col.operator('mesh.eroder', text="Landscape Eroder", icon='SMOOTHCURVE')
-
-        scn = context.scene
-        settings: SnowSettings = scn.snow
         layout = self.layout
 
-        col = layout.column(align=True)
-        col.prop(settings, 'coverage', slider=True)
-        col.prop(settings, 'height')
+        # Fracture object
+        ob = context.active_object
+        if not ob.mw_gen:
+            col = layout.column()
+            col.label(text="no mw")
+            col.operator('mw.gen', text="GEN Fracture", icon="STICKY_UVS_DISABLE")
 
-        layout.use_property_split = True
-        layout.use_property_decorate = False
-        flow = layout.grid_flow(row_major=True, columns=0, even_columns=False, even_rows=False, align=True)
-        col = flow.column()
-        col.prop(settings, 'vertices')
+        # Edit/info of selected
+        else:
+            col = layout.column()
+            col.label(text="mw")
+            col.operator('mw.gen', text="EDIT Fracture", icon="STICKY_UVS_VERT")
 
-        row = layout.row(align=True)
-        row.scale_y = 1.5
-        row.operator("snow.create", text="Add Snow", icon="FREEZE")
+            box = layout.box()
+            col = box.column()
+            col.label(text="Summary")
 
-        row = layout.row(align=True)
-        row.label(text=str(settings.testRaw_int))
-        row.label(text=settings.testRaw_dict["yes"])
+def draw_gen_cfg(self, context):
+    layout: bpy.types.UILayout = self.layout
+    context: bpy.types.Context = context
 
-        row = layout.row(align=True)
-        row.label(text=str(settings.testRaw_class.id))
+    box = layout.box()
+    col = box.column()
+    col.label(text="Point Source")
+    rowsub = col.row()
+    rowsub.prop(self, "source")
+    rowsub = col.row()
+    rowsub.prop(self, "source_limit")
+    rowsub.prop(self, "source_noise")
+    #rowsub = col.row()
+    #rowsub.prop(self, "cell_scale")
+
+    box = layout.box()
+    col = box.column()
+    col.label(text="Margins")
+    rowsub = col.row(align=True)
+    rowsub.prop(self, "margin_box_bounds")
+    rowsub.prop(self, "margin_face_bounds")
+
+    box = layout.box()
+    col = box.column()
+    col.label(text="Summary")
+    # TODO toggleable sections? + summary in sidebar
+
+    box = layout.box()
+    col = box.column()
+    col.label(text="DEBUG")
+    # TODO convex hull options?
+    # TODO decimation too -> original faces / later
 
 
 # -------------------------------------------------------------------
