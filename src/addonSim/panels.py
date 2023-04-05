@@ -1,15 +1,23 @@
 import bpy
-from .properties import SnowSettings
-#from . import operators as ops
+import bpy.types as types
 
-panel_cat = "Dev"
+from .properties import (
+    MW_gen_cfg,
+    MW_sim_cfg,
+    MW_vis_cfg,
+)
+from .operators import (
+    MW_gen_OT_
+)
+
+PANEL_CATEGORY = "Dev"
 
 
 
 # -------------------------------------------------------------------
 
-class MW_gen_Panel(bpy.types.Panel):
-    bl_category = panel_cat
+class MW_gen_Panel(types.Panel):
+    bl_category = PANEL_CATEGORY
     bl_label = "MW_gen"
     bl_idname = "MW_PT_gen"
     bl_space_type = "VIEW_3D"
@@ -24,56 +32,25 @@ class MW_gen_Panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        ob = context.active_object
+        cfg : MW_gen_cfg = ob.mw_gen
 
         # Fracture object
-        ob = context.active_object
-        if not ob.mw_gen:
+        if not cfg.generated:
             col = layout.column()
             col.label(text="no mw")
-            col.operator('mw.gen', text="GEN Fracture", icon="STICKY_UVS_DISABLE")
+            col.operator(MW_gen_OT_.bl_idname, text="GEN Fracture", icon="STICKY_UVS_DISABLE")
 
         # Edit/info of selected
         else:
             col = layout.column()
             col.label(text="mw")
-            col.operator('mw.gen', text="EDIT Fracture", icon="STICKY_UVS_VERT")
+            col.operator(MW_gen_OT_.bl_idname, text="EDIT Fracture", icon="STICKY_UVS_VERT")
 
             box = layout.box()
             col = box.column()
             col.label(text="Summary")
-
-def draw_gen_cfg(self, context):
-    layout: bpy.types.UILayout = self.layout
-    context: bpy.types.Context = context
-
-    box = layout.box()
-    col = box.column()
-    col.label(text="Point Source")
-    rowsub = col.row()
-    rowsub.prop(self, "source")
-    rowsub = col.row()
-    rowsub.prop(self, "source_limit")
-    rowsub.prop(self, "source_noise")
-    #rowsub = col.row()
-    #rowsub.prop(self, "cell_scale")
-
-    box = layout.box()
-    col = box.column()
-    col.label(text="Margins")
-    rowsub = col.row(align=True)
-    rowsub.prop(self, "margin_box_bounds")
-    rowsub.prop(self, "margin_face_bounds")
-
-    box = layout.box()
-    col = box.column()
-    col.label(text="Summary")
-    # TODO toggleable sections? + summary in sidebar
-
-    box = layout.box()
-    col = box.column()
-    col.label(text="DEBUG")
-    # TODO convex hull options?
-    # TODO decimation too -> original faces / later
+            # TODO hide original
 
 
 # -------------------------------------------------------------------
