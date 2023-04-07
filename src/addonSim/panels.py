@@ -10,14 +10,8 @@ from .operators import (
     MW_gen_OT_
 )
 
-from .operators_functions import (
-    getRoot_cfg
-)
-from .panels_functions import (
-    DEV_drawVal,
-    DEV_drawDebug,
-    draw_summary
-)
+from . import utils
+from . import ui
 
 PANEL_CATEGORY = "Dev"
 
@@ -42,7 +36,7 @@ class MW_gen_Panel(types.Panel):
             col.label(text="No object selected...", icon="ERROR")
             return
 
-        ob, cfg = getRoot_cfg(context.active_object)
+        ob, cfg = utils.cfg_getRoot(context.active_object)
 
         # No fracture selected
         if not cfg:
@@ -67,9 +61,8 @@ class MW_gen_Panel(types.Panel):
             col = layout.column()
             col.operator(MW_gen_OT_.bl_idname, text="EDIT Fracture", icon="STICKY_UVS_VERT")
 
-            draw_summary(cfg, layout)
-
-        DEV_drawDebug(cfg, layout, context)
+            ui.draw_summary(cfg, layout)
+            ui.DEV_drawDebug(cfg, layout, context)
 
 
 # -------------------------------------------------------------------

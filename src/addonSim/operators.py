@@ -8,13 +8,8 @@ from .properties import (
     MW_vis_cfg,
 )
 
-from .operators_functions import (
-    getRoot_cfg,
-    copyProperties,
-)
-from .panels_functions import (
-    draw_gen_cfg,
-)
+from . import utils
+from . import ui
 
 
 # -------------------------------------------------------------------
@@ -23,16 +18,21 @@ class MW_gen_OT_(types.Operator):
     bl_idname = "mw.gen"
     bl_label = "Fracture generation"
     bl_options = {'PRESET', 'REGISTER', 'UNDO'}
+    bl_description = "Fracture generation using voro++"
 
     cfg: props.PointerProperty(type=MW_gen_cfg)
 
     def draw(self, context: types.Context):
-        draw_gen_cfg(self.cfg, self.layout, context)
+        ui.draw_gen_cfg(self.cfg, self.layout, context)
 
     def invoke(self, context, event):
         """ Runs only once on operator call """
         print("invoke")
         self.cfg.meta_refresh = True
+
+        # avoid last stored operation overide
+        self.cfg.meta_type = {"NONE"}
+
         return self.execute(context)
 
     def execute(self, context: types.Context):
@@ -44,7 +44,7 @@ class MW_gen_OT_(types.Operator):
             return {'PASS_THROUGH'}
 
         # Need to copy the properties from the object if its already a fracture
-        ob, cfg = getRoot_cfg(context.active_object)
+        ob, cfg = utils.cfg_getRoot(context.active_object)
 
         # Selected object not fractured
         if not cfg:
@@ -82,7 +82,7 @@ class MW_gen_OT_(types.Operator):
         # Copy the config to the operator once
         else:
             if "NONE" in self.cfg.meta_type:
-                copyProperties(cfg, self.cfg)
+                utils.cfg_copyProps(cfg, self.cfg)
                 print("copy propos")
                 return {'FINISHED'}
             else:
@@ -94,7 +94,7 @@ class MW_gen_OT_(types.Operator):
 
 
         # Add edited cfg to the object
-        copyProperties(self.cfg, ob.mw_gen)
+        utils.cfg_copyProps(self.cfg, ob.mw_gen)
         # Keep auto meta_refresh
         if self.cfg.meta_auto_refresh is False:
             self.cfg.meta_refresh = False

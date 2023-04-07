@@ -7,8 +7,10 @@ from .properties import (
     MW_vis_cfg,
 )
 
+from . import utils
 DEV_DEBUG = True
 DEV_VALS = True
+
 
 # -------------------------------------------------------------------
 
@@ -29,33 +31,35 @@ def draw_refresh(cfg : MW_gen_cfg, layout: types.UILayout):
     split.prop(cfg, "meta_refresh", toggle=True, icon_only=True, icon='FILE_REFRESH')
 
 def draw_summary(cfg : MW_gen_cfg, layout: types.UILayout):
+    # TODO maybe scene prop to togggle show instead of object
+
     box = layout.box()
     box.prop(cfg, "meta_show_summary", toggle=True)
     if cfg.meta_show_summary:
         col = box.column()
         col.enabled = False
 
+        # filter out some properties shown
         filtered_props = [ "meta", "name" ]
         for prop_name in cfg.keys():
-            filtered = False
-            for filter in filtered_props:
-                if filter in prop_name:
-                    filtered = True
-                    break
-            if filtered: continue
+            if utils.match_anySub(prop_name, filtered_props):
+                continue
 
-            col.row().prop(cfg, prop_name)
+            col.row().prop(cfg, prop_name, text=prop_name)
             #prop_value = cfg[prop_name]
             #col.row().label(text=prop_name + ": " + str(prop_value))
 
 
 def DEV_drawDebug(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Context):
     if not DEV_DEBUG: return
-    box = layout.box()
 
+    # Toggle debug
+    box = layout.box()
     box.prop(cfg, "meta_show_debug", toggle=True)
     if cfg.meta_show_debug:
         col = box.column()
+
+        # check region width
         DEV_drawVal(col, context.region.width, "w")
 
 def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Context):
