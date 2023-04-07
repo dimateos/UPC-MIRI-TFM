@@ -7,7 +7,13 @@ from .properties import (
     MW_vis_cfg,
 )
 
+DEV_VALS = True
+
 # -------------------------------------------------------------------
+
+def DEV_writeVal(layout: types.UILayout, value, name):
+    if DEV_VALS:
+        layout.label(text=f"{name}: {value}", icon="BLENDER")
 
 def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Context):
     box = layout.box()
@@ -20,6 +26,7 @@ def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Contex
     rowsub.prop(cfg, "source_noise")
     #rowsub = col.row()
     #rowsub.prop(cfg, "cell_scale")
+    col.prop(cfg, "copy_sufix")
 
     box = layout.box()
     col = box.column()
@@ -30,13 +37,14 @@ def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Contex
 
     box = layout.box()
     col = box.column()
-    col.label(text="Summary:")
-    col.prop(cfg, "copy_sufix")
+    col.label(text="Summary...")
     # TODO toggleable sections? + summary in sidebar too
     # TODO hide original
 
     box = layout.box()
     col = box.column()
     col.label(text="DEBUG:")
+    DEV_writeVal(col, context.region.width, "w")
+
     # TODO convex hull options?
     # TODO decimation too -> original faces / later

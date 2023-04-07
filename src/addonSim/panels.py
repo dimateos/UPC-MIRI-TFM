@@ -10,8 +10,14 @@ from .operators import (
     MW_gen_OT_
 )
 
-PANEL_CATEGORY = "Dev"
+from .operators_functions import (
+    getRoot_cfg
+)
+from .panels_functions import (
+    DEV_writeVal,
+)
 
+PANEL_CATEGORY = "Dev"
 
 
 # -------------------------------------------------------------------
@@ -34,34 +40,39 @@ class MW_gen_Panel(types.Panel):
             col.label(text="No object selected...", icon="ERROR")
             return
 
-        # Show its name
-        ob = context.active_object
-        col = layout.column()
-        col.label(text="Selected: " + ob.name_full, icon="INFO")
+        ob, cfg = getRoot_cfg(context.active_object)
 
-        # TODO first check fracture
-
-        # Check that it is a mesh
-        if not ob or ob.type != 'MESH':
+        # No fracture selected
+        if not cfg:
             col = layout.column()
-            col.label(text="Select a mesh...", icon="ERROR")
-            return
+            col.label(text="Selected: " + ob.name_full, icon="INFO")
 
-        cfg : MW_gen_cfg = ob.mw_gen
+            # Check that it is a mesh
+            if ob.type != 'MESH':
+                col = layout.column()
+                col.label(text="Select a mesh...", icon="ERROR")
+                return
 
-        # Fracture original object
-        if not cfg.generated:
+            # Fracture original object
             col = layout.column()
             col.operator(MW_gen_OT_.bl_idname, text="GEN Fracture", icon="STICKY_UVS_DISABLE")
 
         # Edit/info of selected
         else:
             col = layout.column()
+            col.label(text="Root: " + ob.name_full, icon="INFO")
+
+            col = layout.column()
             col.operator(MW_gen_OT_.bl_idname, text="EDIT Fracture", icon="STICKY_UVS_VERT")
 
             box = layout.box()
             col = box.column()
-            col.label(text="Summary")
+            col.label(text="Summary...")
+
+            box = layout.box()
+            col = box.column()
+            col.label(text="DEBUG:")
+            DEV_writeVal(col, context.region.width, "w")
 
 
 # -------------------------------------------------------------------

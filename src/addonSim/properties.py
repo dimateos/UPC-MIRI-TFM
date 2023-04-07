@@ -9,7 +9,17 @@ from tess import Container, Cell
 # WIP sample properties
 
 class MW_gen_cfg(types.PropertyGroup):
-    generated: props.BoolProperty()
+    type: props.EnumProperty(
+        name="Type",
+        items=(
+            ('NONE', "No fracture", "No fracture generated"),
+            ('NONE_OPERATOR', "No operator", "Initial operator state"),
+            ('ROOT', "Root object", "Root object holding the fracture"),
+            ('CHILD', "Child object", "Child object part of the fracture"),
+        ),
+        options={'ENUM_FLAG'},
+        default={'NONE'},
+    )
 
     source: props.EnumProperty(
         name="Source",
@@ -24,13 +34,13 @@ class MW_gen_cfg(types.PropertyGroup):
         default={'VERT_OWN'},
     )
     source_limit: props.IntProperty(
-        name="Source limit",
+        name="Limit points",
         description="Limit the number of input points, 0 for unlimited",
         min=0, max=5000,
         default=100,
     )
     source_noise: props.FloatProperty(
-        name="Source noise",
+        name="RND noise",
         description="Randomize point distribution",
         min=0.0, max=1.0,
         default=0.0,
@@ -44,20 +54,20 @@ class MW_gen_cfg(types.PropertyGroup):
     )
 
     margin_box_bounds: props.FloatProperty(
-        name="Margin box",
+        name="Bounding box",
         description="Additional displacement of the box normal planes",
         min=0.0, max=1.0,
         default=0.025,
     )
     margin_face_bounds: props.FloatProperty(
-        name="Margin faces",
+        name="Normal faces",
         description="Additional displacement of the face normal planes",
         min=0.0, max=1.0,
         default=0.025,
     )
 
     copy_sufix: props.StringProperty(
-        name="Copy name sufix",
+        name="Sufix",
         default="_fractured",
     )
 

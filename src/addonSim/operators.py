@@ -9,9 +9,9 @@ from .properties import (
 )
 
 from .operators_functions import (
+    getRoot_cfg,
     copyProperties,
 )
-
 from .panels_functions import (
     draw_gen_cfg,
 )
@@ -27,17 +27,14 @@ class MW_gen_OT_(types.Operator):
     cfg: props.PointerProperty(type=MW_gen_cfg)
 
     def draw(self, context: types.Context):
-        if self.cfg.generated:
-            draw_gen_cfg(self.cfg, self.layout, context)
+        draw_gen_cfg(self.cfg, self.layout, context)
 
     def execute(self, context: types.Context):
-        ob = context.active_object
-
-        # TODO try select father too?
+        ob, cfg = getRoot_cfg(context.active_object)
 
         # Selected object not fractured
-        if not ob.mw_gen.generated:
-            ob_original = context.active_object
+        if not cfg:
+            ob_original = ob
 
             # Empty object to hold all of them
             ob_empty = bpy.data.objects.new("EmptyObject", None)
@@ -49,22 +46,30 @@ class MW_gen_OT_(types.Operator):
             ob_copy.data = ob_original.data.copy()
             ob_copy.name = "Original"
             ob_copy.parent = ob_empty
+            ob_copy.mw_gen.type = {"CHILD"}
             context.scene.collection.objects.link(ob_copy)
 
             # Hide and select
             ob_original.hide_set(True)
-            ob_copy.hide_set(False)
+            ob_copy.hide_set(True)
             ob_empty.select_set(True)
             context.view_layer.objects.active = ob_empty
 
-            self.cfg.generated = True
-            ob = ob_copy
+            self.cfg.type = {"ROOT"}
+            ob = ob_empty
+            cfg = ob_empty.mw_gen
+            #return {'FINISHED'}
 
-        ob_empty.name = ob_original.name + self.cfg.copy_sufix
+        ## Copy the config to the operator once
+        #elif "NONE_OPERATOR" in self.cfg:
+        #    copyProperties(cfg, self.cfg)
+        #    return {'FINISHED'}
 
+
+        #ob.name = ob.name.replace(cfg.copy_sufix) + cfg.copy_sufix
 
         # Add edited cfg to the object
-        copyProperties(self.cfg, ob.mw_gen)
+        copyProperties(self.cfg, cfg)
         return {'FINISHED'}
 
 
