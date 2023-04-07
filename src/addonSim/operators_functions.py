@@ -12,11 +12,11 @@ from .properties import (
 
 def getRoot_cfg(ob: types.Object) -> tuple[types.Object, MW_gen_cfg]:
     """ Retrieve the root object holding the config """
-    if "NONE" in ob.mw_gen.type:
+    if "NONE" in ob.mw_gen.meta_type:
         return ob, None
 
     else:
-        while "CHILD" in ob.mw_gen.type:
+        while "CHILD" in ob.mw_gen.meta_type:
             # Maybe the user deleted the root only
             if not ob.parent:
                 return ob, None

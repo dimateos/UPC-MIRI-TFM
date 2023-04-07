@@ -9,26 +9,35 @@ from tess import Container, Cell
 # WIP sample properties
 
 class MW_gen_cfg(types.PropertyGroup):
-    refresh: props.BoolProperty(
+    meta_refresh: props.BoolProperty(
         name="Refresh",
         default=False,
         description="Refresh once on click"
     )
-    auto_refresh: props.BoolProperty(
+    meta_auto_refresh: props.BoolProperty(
         name="Auto-Refresh",
         default=True,
         description="Automatic refresh"
     )
-    type: props.EnumProperty(
+    meta_type: props.EnumProperty(
         name="Type",
         items=(
             ('NONE', "No fracture", "No fracture generated"),
-            ('NONE_OPERATOR', "No operator", "Initial operator state"),
             ('ROOT', "Root object", "Root object holding the fracture"),
             ('CHILD', "Child object", "Child object part of the fracture"),
         ),
         options={'ENUM_FLAG'},
         default={'NONE'},
+    )
+    meta_show_debug: props.BoolProperty(
+        name="Show DEBUG...",
+        default=True,
+        description="Show some debug properties"
+    )
+    meta_show_summary: props.BoolProperty(
+        name="Show summary...",
+        default=True,
+        description="Show fracture summary"
     )
 
     source: props.EnumProperty(
@@ -55,13 +64,14 @@ class MW_gen_cfg(types.PropertyGroup):
         min=0.0, max=1.0,
         default=0.0,
     )
-    cell_scale: props.FloatVectorProperty(
-        name="Cell scale",
-        description="Scale Cell Shape",
-        size=3,
-        min=0.0, max=1.0,
-        default=(1.0, 1.0, 1.0),
-    )
+
+    #cell_scale: props.FloatVectorProperty(
+    #    name="Cell scale",
+    #    description="Scale Cell Shape",
+    #    size=3,
+    #    min=0.0, max=1.0,
+    #    default=(1.0, 1.0, 1.0),
+    #)
 
     margin_box_bounds: props.FloatProperty(
         name="Bounding box",
@@ -76,11 +86,11 @@ class MW_gen_cfg(types.PropertyGroup):
         default=0.025,
     )
 
-    copy_sufix: props.StringProperty(
+    struct_sufix: props.StringProperty(
         name="Sufix",
         default="MW",
     )
-    original_name: props.StringProperty()
+    struct_original: props.StringProperty()
 
 
 class MW_sim_cfg(types.PropertyGroup):

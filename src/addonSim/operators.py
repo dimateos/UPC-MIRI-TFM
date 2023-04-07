@@ -32,15 +32,15 @@ class MW_gen_OT_(types.Operator):
     def invoke(self, context, event):
         """ Runs only once on operator call """
         print("invoke")
-        self.cfg.refresh = True
+        self.cfg.meta_refresh = True
         return self.execute(context)
 
     def execute(self, context: types.Context):
         """ Runs once and then after every property edit in the edit last action panel """
         print("execute")
 
-        if not self.cfg.refresh:
-            print("no refresh")
+        if not self.cfg.meta_refresh:
+            print("no meta_refresh")
             return {'PASS_THROUGH'}
 
         # Need to copy the properties from the object if its already a fracture
@@ -49,10 +49,10 @@ class MW_gen_OT_(types.Operator):
         # Selected object not fractured
         if not cfg:
             cfg: MW_gen_cfg = self.cfg
-            cfg.type = {"ROOT"}
+            cfg.meta_type = {"ROOT"}
 
             ob_original = ob
-            cfg.original_name = ob_original.name
+            cfg.struct_original = ob_original.name
 
             # Empty object to hold all of them
             ob_empty = bpy.data.objects.new("EmptyObject", None)
@@ -60,6 +60,7 @@ class MW_gen_OT_(types.Operator):
 
             # Empty for the fractures
             ob_emptyFrac = bpy.data.objects.new("Fractures", None)
+            ob_emptyFrac.mw_gen.meta_type = {"CHILD"}
             context.scene.collection.objects.link(ob_emptyFrac)
             ob_emptyFrac.parent = ob_empty
 
@@ -68,7 +69,7 @@ class MW_gen_OT_(types.Operator):
             ob_copy.data = ob_original.data.copy()
             ob_copy.name = "Original"
             ob_copy.parent = ob_empty
-            ob_copy.mw_gen.type = {"CHILD"}
+            ob_copy.mw_gen.meta_type = {"CHILD"}
             context.scene.collection.objects.link(ob_copy)
 
             # Hide and select
@@ -80,7 +81,7 @@ class MW_gen_OT_(types.Operator):
 
         # Copy the config to the operator once
         else:
-            if "NONE" in self.cfg.type:
+            if "NONE" in self.cfg.meta_type:
                 copyProperties(cfg, self.cfg)
                 print("copy propos")
                 return {'FINISHED'}
@@ -89,14 +90,14 @@ class MW_gen_OT_(types.Operator):
 
 
         # Apply
-        ob.name = cfg.original_name + "_" + cfg.copy_sufix
+        ob.name = cfg.struct_original + "_" + cfg.struct_sufix
 
 
         # Add edited cfg to the object
         copyProperties(self.cfg, ob.mw_gen)
-        # Keep auto refresh
-        if self.cfg.auto_refresh is False:
-            self.cfg.refresh = False
+        # Keep auto meta_refresh
+        if self.cfg.meta_auto_refresh is False:
+            self.cfg.meta_refresh = False
         return {'FINISHED'}
 
 

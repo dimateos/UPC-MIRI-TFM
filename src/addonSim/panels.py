@@ -14,7 +14,9 @@ from .operators_functions import (
     getRoot_cfg
 )
 from .panels_functions import (
-    DEV_writeVal,
+    DEV_drawVal,
+    DEV_drawDebug,
+    draw_summary
 )
 
 PANEL_CATEGORY = "Dev"
@@ -65,16 +67,9 @@ class MW_gen_Panel(types.Panel):
             col = layout.column()
             col.operator(MW_gen_OT_.bl_idname, text="EDIT Fracture", icon="STICKY_UVS_VERT")
 
-            box = layout.box()
-            col = box.column()
-            col.label(text="Summary...")
-            col = box.column()
-            col.label(text=cfg.copy_sufix)
+            draw_summary(cfg, layout)
 
-            box = layout.box()
-            col = box.column()
-            col.label(text="DEBUG:")
-            DEV_writeVal(col, context.region.width, "w")
+        DEV_drawDebug(cfg, layout, context)
 
 
 # -------------------------------------------------------------------
