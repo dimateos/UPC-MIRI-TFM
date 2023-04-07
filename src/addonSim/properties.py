@@ -4,6 +4,7 @@ import bpy.props as props
 
 from tess import Container, Cell
 
+
 # -------------------------------------------------------------------
 # WIP sample properties
 
@@ -59,6 +60,7 @@ class MW_gen_cfg(types.PropertyGroup):
         name="Copy name sufix",
         default="_fractured",
     )
+
 
 
 

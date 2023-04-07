@@ -25,32 +25,43 @@ class MW_gen_Panel(types.Panel):
     bl_context = "objectmode"
     bl_options = {'HEADER_LAYOUT_EXPAND'}
 
-    @classmethod
-    def poll(cls, context):
-        ob = context.active_object
-        return (ob and ob.type == 'MESH')
-
     def draw(self, context):
         layout = self.layout
+
+        # Something selected, not last active
+        if not context.selected_objects:
+            col = layout.column()
+            col.label(text="No object selected...", icon="ERROR")
+            return
+
+        # Show its name
         ob = context.active_object
+        col = layout.column()
+        col.label(text="Selected: " + ob.name_full, icon="INFO")
+
+        # TODO first check fracture
+
+        # Check that it is a mesh
+        if not ob or ob.type != 'MESH':
+            col = layout.column()
+            col.label(text="Select a mesh...", icon="ERROR")
+            return
+
         cfg : MW_gen_cfg = ob.mw_gen
 
-        # Fracture object
+        # Fracture original object
         if not cfg.generated:
             col = layout.column()
-            col.label(text="no mw")
             col.operator(MW_gen_OT_.bl_idname, text="GEN Fracture", icon="STICKY_UVS_DISABLE")
 
         # Edit/info of selected
         else:
             col = layout.column()
-            col.label(text="mw")
             col.operator(MW_gen_OT_.bl_idname, text="EDIT Fracture", icon="STICKY_UVS_VERT")
 
             box = layout.box()
             col = box.column()
             col.label(text="Summary")
-            # TODO hide original
 
 
 # -------------------------------------------------------------------

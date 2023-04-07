@@ -12,7 +12,7 @@ from .properties import (
 def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Context):
     box = layout.box()
     col = box.column()
-    col.label(text="Point Source")
+    col.label(text="Point Source:")
     rowsub = col.row()
     rowsub.prop(cfg, "source")
     rowsub = col.row()
@@ -23,18 +23,20 @@ def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Contex
 
     box = layout.box()
     col = box.column()
-    col.label(text="Margins")
+    col.label(text="Margins:")
     rowsub = col.row(align=True)
     rowsub.prop(cfg, "margin_box_bounds")
     rowsub.prop(cfg, "margin_face_bounds")
 
     box = layout.box()
     col = box.column()
-    col.label(text="Summary")
-    # TODO toggleable sections? + summary in sidebar
+    col.label(text="Summary:")
+    col.prop(cfg, "copy_sufix")
+    # TODO toggleable sections? + summary in sidebar too
+    # TODO hide original
 
     box = layout.box()
     col = box.column()
-    col.label(text="DEBUG")
+    col.label(text="DEBUG:")
     # TODO convex hull options?
     # TODO decimation too -> original faces / later
