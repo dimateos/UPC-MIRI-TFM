@@ -9,6 +9,16 @@ from tess import Container, Cell
 # WIP sample properties
 
 class MW_gen_cfg(types.PropertyGroup):
+    refresh: props.BoolProperty(
+        name="Refresh",
+        default=False,
+        description="Refresh once on click"
+    )
+    auto_refresh: props.BoolProperty(
+        name="Auto-Refresh",
+        default=True,
+        description="Automatic refresh"
+    )
     type: props.EnumProperty(
         name="Type",
         items=(
@@ -68,10 +78,9 @@ class MW_gen_cfg(types.PropertyGroup):
 
     copy_sufix: props.StringProperty(
         name="Sufix",
-        default="_fractured",
+        default="MW",
     )
-
-
+    original_name: props.StringProperty()
 
 
 class MW_sim_cfg(types.PropertyGroup):

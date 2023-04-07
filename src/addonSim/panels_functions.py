@@ -16,6 +16,16 @@ def DEV_writeVal(layout: types.UILayout, value, name):
         layout.label(text=f"{name}: {value}", icon="BLENDER")
 
 def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Context):
+    if cfg.auto_refresh is False:
+        cfg.refresh = False
+    elif cfg.auto_refresh is True:
+        cfg.refresh = True
+    row = layout.box().row()
+    split = row.split()
+    split.scale_y = 1.5
+    split.prop(cfg, "auto_refresh", toggle=True, icon_only=True, icon='AUTO')
+    split.prop(cfg, "refresh", toggle=True, icon_only=True, icon='FILE_REFRESH')
+
     box = layout.box()
     col = box.column()
     col.label(text="Point Source:")

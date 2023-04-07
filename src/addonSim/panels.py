@@ -68,6 +68,8 @@ class MW_gen_Panel(types.Panel):
             box = layout.box()
             col = box.column()
             col.label(text="Summary...")
+            col = box.column()
+            col.label(text=cfg.copy_sufix)
 
             box = layout.box()
             col = box.column()

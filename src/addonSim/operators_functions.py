@@ -10,7 +10,7 @@ from .properties import (
 
 # -------------------------------------------------------------------
 
-def getRoot_cfg(ob: types.Object):
+def getRoot_cfg(ob: types.Object) -> tuple[types.Object, MW_gen_cfg]:
     """ Retrieve the root object holding the config """
     if "NONE" in ob.mw_gen.type:
         return ob, None
@@ -24,8 +24,18 @@ def getRoot_cfg(ob: types.Object):
 
         return ob, ob.mw_gen
 
+def delete_object(ob):
+    """ Delete the object and children recursively """
+    for child in ob.children:
+        delete_object(child)
+    bpy.data.objects.remove(ob, do_unlink=True)
 
-def copyProperties(src, dest):
+def delete_children(ob_father):
+    """ Delete the children objects recursively """
+    for child in ob_father.children:
+        delete_object(child)
+
+def copyProperties(src, dest) -> None:
     """ Copy all properties of the property group to the object """
     # The whole property is read-only but its values can be modified, avoid writing it one by one...
     for prop_name in dir(src):
