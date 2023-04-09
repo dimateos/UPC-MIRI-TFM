@@ -27,9 +27,10 @@ class MW_gen_OT_(types.Operator):
 
     def invoke(self, context, event):
         """ Runs only once on operator call """
-        print("invoke")
-        self.cfg.meta_refresh = True
+        ui.DEV_log("invoke", {'OP_FLOW'})
 
+        # refresh at least once
+        self.cfg.meta_refresh = True
         # avoid last stored operation overide
         self.cfg.meta_type = {"NONE"}
 
@@ -37,11 +38,14 @@ class MW_gen_OT_(types.Operator):
 
     def execute(self, context: types.Context):
         """ Runs once and then after every property edit in the edit last action panel """
-        print("execute")
+        ui.DEV_log(f"execute auto{self.cfg.meta_auto_refresh} +r{self.cfg.meta_refresh}", {'OP_FLOW'})
 
-        if not self.cfg.meta_refresh:
-            print("no meta_refresh")
+        # Handle refreshing
+        if not self.cfg.meta_refresh and not self.cfg.meta_auto_refresh:
+            ui.DEV_log("PASS_THROUGH no refresh", {'OP_FLOW'})
             return {'PASS_THROUGH'}
+        self.cfg.meta_refresh = False
+
 
         # Need to copy the properties from the object if its already a fracture
         ob, cfg = utils.cfg_getRoot(context.active_object)
@@ -83,7 +87,7 @@ class MW_gen_OT_(types.Operator):
         else:
             if "NONE" in self.cfg.meta_type:
                 utils.cfg_copyProps(cfg, self.cfg)
-                print("copy propos")
+                ui.DEV_log("PASS_THROUGH? copy props", {'OP_FLOW'})
                 return {'FINISHED'}
             else:
                 cfg: MW_gen_cfg = self.cfg

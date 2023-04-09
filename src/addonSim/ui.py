@@ -10,9 +10,22 @@ from .properties import (
 from . import utils
 DEV_DEBUG = True
 DEV_VALS = True
+DEV_LOGS = True
+DEV_LOGS_SKIPS = [
+    #{'OP_FLOW'}
+]
 
 
 # -------------------------------------------------------------------
+
+def DEV_log(msg, type = {'DEV'}, ui = None):
+    if not DEV_LOGS: return
+    if type in DEV_LOGS_SKIPS: return
+
+    print(type, msg)
+    if ui: ui.report(type, msg)
+    #ui.report({'INFO'}, "Operation successful!")
+    #ui.report({'ERROR'}, "Operation failed!")
 
 def DEV_drawVal(layout: types.UILayout, value, name):
     if not DEV_VALS: return
@@ -20,14 +33,10 @@ def DEV_drawVal(layout: types.UILayout, value, name):
 
 
 def draw_refresh(cfg : MW_gen_cfg, layout: types.UILayout):
-    if cfg.meta_auto_refresh is False:
-        cfg.meta_refresh = False
-    elif cfg.meta_auto_refresh is True:
-        cfg.meta_refresh = True
     row = layout.box().row()
-    split = row.split()
-    split.scale_y = 1.5
-    split.prop(cfg, "meta_auto_refresh", toggle=True, icon_only=True, icon='AUTO')
+    row.scale_y = 1.5
+    split = row.split(factor=0.75)
+    split.prop(cfg, "meta_auto_refresh", toggle=True, icon_only=False, icon='FILE_REFRESH')
     split.prop(cfg, "meta_refresh", toggle=True, icon_only=True, icon='FILE_REFRESH')
 
 def draw_summary(cfg : MW_gen_cfg, layout: types.UILayout):
@@ -86,7 +95,4 @@ def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Contex
 
     # TODO convex hull options?
     # TODO decimation too -> original faces / later
-
-    DEV_drawDebug(cfg, layout, context)
-
 
