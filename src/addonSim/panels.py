@@ -1,35 +1,68 @@
 import bpy
-#from . import operators as ops
+import bpy.types as types
 
-panel_cat = "Dev"
+from .properties import (
+    MW_gen_cfg,
+    MW_sim_cfg,
+    MW_vis_cfg,
+)
+from .operators import (
+    MW_gen_OT_
+)
+
+from . import utils
+from . import ui
+
+PANEL_CATEGORY = "Dev"
 
 
 # -------------------------------------------------------------------
 
-class MW_gen_Panel(bpy.types.Panel):
-    bl_category = panel_cat
+class MW_gen_Panel(types.Panel):
+    bl_category = PANEL_CATEGORY
     bl_label = "MW_gen"
     bl_idname = "MW_PT_gen"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_context = "objectmode"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    #@classmethod
-    #def poll(cls, context):
-    #    ob = context.active_object
-    #    return (ob and ob.type == 'MESH')
+    bl_options = {'HEADER_LAYOUT_EXPAND'}
 
     def draw(self, context):
         layout = self.layout
-        ob = context.active_object
-        col = layout.column()
-        col.label(text="label")
 
-        #col.operator('mesh.ant_displace', text="Mesh Displace", icon="RNDCURVE")
-        #col.operator('mesh.ant_slope_map', icon='GROUP_VERTEX')
-        #if ob.ant_landscape.keys() and not ob.ant_landscape['sphere_mesh']:
-        #    col.operator('mesh.eroder', text="Landscape Eroder", icon='SMOOTHCURVE')
+        # Something selected, not last active
+        if not context.selected_objects:
+            col = layout.column()
+            col.label(text="No object selected...", icon="ERROR")
+            return
+
+        ob, cfg = utils.cfg_getRoot(context.active_object)
+
+        # No fracture selected
+        if not cfg:
+            col = layout.column()
+            col.label(text="Selected: " + ob.name_full, icon="INFO")
+
+            # Check that it is a mesh
+            if ob.type != 'MESH':
+                col = layout.column()
+                col.label(text="Select a mesh...", icon="ERROR")
+                return
+
+            # Fracture original object
+            col = layout.column()
+            col.operator(MW_gen_OT_.bl_idname, text="GEN Fracture", icon="STICKY_UVS_DISABLE")
+
+        # Edit/info of selected
+        else:
+            col = layout.column()
+            col.label(text="Root: " + ob.name_full, icon="INFO")
+
+            col = layout.column()
+            col.operator(MW_gen_OT_.bl_idname, text="EDIT Fracture", icon="STICKY_UVS_VERT")
+
+            ui.draw_summary(cfg, layout)
+            ui.DEV_drawDebug(cfg, layout, context)
 
 
 # -------------------------------------------------------------------
