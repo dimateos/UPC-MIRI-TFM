@@ -16,7 +16,8 @@ except ImportError:
 
 
 class Stats:
-    def __init__(self):
+    def __init__(self, name="Stats"):
+        self.name = name
         self.memstats_available = False
         if psutil_available:
             self.process = psutil.Process()
@@ -25,10 +26,11 @@ class Stats:
 
     def reset(self):
         self.lasttime = self._gettime()
-        self.lastmem = self._getmem()
-        self.basemem = self.lastmem
-        self.maxmem = 0
+        self.firsttime = self.lasttime
+        self.basemem = self._getmem()
+        self.maxmem = self.lastmem = self.diffmem = 0
         self.elapsedtime = 0
+
 
     def _gettime(self):
         """return the time in seconds used by the current process."""
@@ -52,37 +54,71 @@ class Stats:
             return m.rss
         return 0
 
-    def time(self):
-        """return the time since the last call in seconds used by the current process."""
+
+    def time_diff(self):
+        """return the time since the LAST call in seconds used by the current process."""
         old = self.lasttime
         self.lasttime = self._gettime()
         self.elapsedtime = self.lasttime - old
         return self.elapsedtime
 
-    def memory(self):
-        """return the maximum resident set size since the first call in bytes used by the current process."""
-        self.lastmem = self._getmem()
-        d = self.lastmem - self.basemem
+    def time(self):
+        """return the time since the FIRST call in seconds used by the current process."""
+        t = self._gettime()
+        return t - self.firsttime
+
+    def memory_max(self):
+        """return the maximum resident mem size since the FIRST call in bytes used by the current process."""
+        m = self._getmem()
+        d = m - self.basemem
         if d > self.maxmem:
             self.maxmem = d
         return self.maxmem
 
+    def memory_last(self):
+        """return the CURRENT mem size call in bytes used by the current process."""
+        m = self._getmem()
+        d = m - self.basemem
+        self.diffmem = d - self.lastmem
+        self.lastmem = d
+        return d
+
+
+    def log(self):
+        t = self.time()
+        dt = self.time_diff()
+        print(f"{self.name}//\t t:{t:>10.6f}   dt:{dt:>10.6f}")
+
+    def log_mem(self):
+        m = self.memory_max()
+        lm = self.memory_last()
+        dm = self.diffmem
+        print(f"\t m:{m:>10}   lm:{lm:>10}   dm:{dm:>10}")
+
+    def log_full(self):
+        self.log()
+        self.log_mem()
+
+
 def testStats():
-        import numpy as np
+    # sample operations
+    import numpy as np
 
-        stats = Stats()
-        print(stats.time())
-        print(stats.memory())
+    stats = Stats()
+    stats.log_full()
 
-        a = np.zeros(10000000)
-        print(stats.time())
-        print(stats.memory())
-        a = np.sin(a)
-        print(stats.time())
-        print(stats.memory())
-        a = np.cos(a)
-        print(stats.time())
-        print(stats.memory())
-        a = np.cos(a) ** 2 + np.sin(a) ** 2
-        print(stats.time())
-        print(stats.memory())
+    a = np.zeros(10000000)
+    print("\n>> a = np.zeros(10000000)")
+    stats.log_full()
+
+    a = np.sin(a)
+    print("\n>> a = np.sin(a)")
+    stats.log_full()
+
+    a = np.cos(a)
+    print("\n>> a = np.cos(a)")
+    stats.log_full()
+
+    a = np.cos(a) ** 2 + np.sin(a) ** 2
+    print("\n>> a = np.cos(a) ** 2 + np.sin(a) ** 2")
+    stats.log_full()
