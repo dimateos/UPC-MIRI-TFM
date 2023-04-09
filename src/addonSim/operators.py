@@ -8,6 +8,9 @@ from .properties import (
     MW_vis_cfg,
 )
 
+from . import mw_setup
+#from . import mw_calc
+
 from . import utils
 from . import ui
 
@@ -53,35 +56,7 @@ class MW_gen_OT_(types.Operator):
         # Selected object not fractured
         if not cfg:
             cfg: MW_gen_cfg = self.cfg
-            cfg.meta_type = {"ROOT"}
-
-            ob_original = ob
-            cfg.struct_original = ob_original.name
-
-            # Empty object to hold all of them
-            ob_empty = bpy.data.objects.new("EmptyObject", None)
-            context.scene.collection.objects.link(ob_empty)
-
-            # Empty for the fractures
-            ob_emptyFrac = bpy.data.objects.new("Fractures", None)
-            ob_emptyFrac.mw_gen.meta_type = {"CHILD"}
-            context.scene.collection.objects.link(ob_emptyFrac)
-            ob_emptyFrac.parent = ob_empty
-
-            # Duplicate the original object
-            ob_copy: types.Object = ob_original.copy()
-            ob_copy.data = ob_original.data.copy()
-            ob_copy.name = "Original"
-            ob_copy.parent = ob_empty
-            ob_copy.mw_gen.meta_type = {"CHILD"}
-            context.scene.collection.objects.link(ob_copy)
-
-            # Hide and select
-            ob_original.hide_set(True)
-            ob_copy.hide_set(True)
-            ob_empty.select_set(True)
-            context.view_layer.objects.active = ob_empty
-            ob = ob_empty
+            ob = mw_setup.gen_copyOriginal(cfg, ob, context)
 
         # Copy the config to the operator once
         else:
@@ -93,15 +68,13 @@ class MW_gen_OT_(types.Operator):
                 cfg: MW_gen_cfg = self.cfg
 
 
-        # Apply
-        ob.name = cfg.struct_original + "_" + cfg.struct_sufix
+        # Apply operator
+        mw_setup.gen_naming(cfg, ob, context)
+        mw_setup.gen_shardsEmpty(cfg, ob, context)
 
 
         # Add edited cfg to the object
         utils.cfg_copyProps(self.cfg, ob.mw_gen)
-        # Keep auto meta_refresh
-        if self.cfg.meta_auto_refresh is False:
-            self.cfg.meta_refresh = False
         return {'FINISHED'}
 
 

@@ -37,16 +37,23 @@ def cfg_copyProps(src, dest):
 
 # -------------------------------------------------------------------
 
-def delete_object(ob):
+def delete_object(ob: types.Object):
     """ Delete the object and children recursively """
     for child in ob.children:
         delete_object(child)
     bpy.data.objects.remove(ob, do_unlink=True)
 
-def delete_children(ob_father):
+def delete_children(ob_father: types.Object):
     """ Delete the children objects recursively """
     for child in ob_father.children:
         delete_object(child)
+
+def get_child(ob: types.Object, name: str):
+    """ Find child by name (starts with to avoid limited exact names) """
+    for child in ob.children:
+        if child.name.startswith(name):
+            return child
+    return None
 
 # -------------------------------------------------------------------
 
