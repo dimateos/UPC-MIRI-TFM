@@ -9,6 +9,8 @@ REM check packages to it
 bpy --version
 bpy -c "help(\"modules\")"
 bpip freeze
+REM NOTE: local pip will still try to access Python roaming packages, whereas blender python wont
+REM         so it wont install requirements already satisfied there, maybe with --force-reinstall?
 
 REM backup env (using some common external .bat)
 CALL ./_scripts/getTS.bat
