@@ -39,9 +39,15 @@ class MW_gen_OT_(types.Operator):
 
         return self.execute(context)
 
+    def ret_failed(self):
+        self.report({'ERROR'}, "Operation failed!")
+        return {"FINISHED"}
+
     def execute(self, context: types.Context):
         """ Runs once and then after every property edit in the edit last action panel """
         ui.DEV_log(f"execute auto{self.cfg.meta_auto_refresh} +r{self.cfg.meta_refresh}", {'OP_FLOW'})
+
+        # TODO: atm only a single selected object + spawning direclty on the scene collection
 
         # Handle refreshing
         if not self.cfg.meta_refresh and not self.cfg.meta_auto_refresh:
@@ -56,7 +62,7 @@ class MW_gen_OT_(types.Operator):
         # Selected object not fractured
         if not cfg:
             cfg: MW_gen_cfg = self.cfg
-            ob = mw_setup.gen_copyOriginal(cfg, ob, context)
+            ob, ob_copy = mw_setup.gen_copyOriginal(cfg, ob, context)
 
         # Copy the config to the operator once
         else:
@@ -68,10 +74,31 @@ class MW_gen_OT_(types.Operator):
                 cfg: MW_gen_cfg = self.cfg
 
 
-        # Apply operator
+        # Setup operator
         mw_setup.gen_naming(cfg, ob, context)
         mw_setup.gen_shardsEmpty(cfg, ob, context)
 
+
+        # Calc operator
+        from .stats import Stats
+        stats = Stats()
+
+        # Get the points
+        depsgraph = context.evaluated_depsgraph_get()
+        scene = context.scene
+        points = mw_setup.get_points_from_object_fallback(depsgraph, scene, ob_copy, cfg.source)
+        if not points:
+            return self.ret_failed()
+
+
+
+
+        # TODO: seeded random
+        # TODO: recenter shards origin
+        # TODO: add mass too
+        # TODO: add interior handle?
+        # TODO: recursiveness?
+        # TODO: improved stats, later for comparison tho
 
         # Add edited cfg to the object
         utils.cfg_copyProps(self.cfg, ob.mw_gen)

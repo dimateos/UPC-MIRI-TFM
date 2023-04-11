@@ -64,6 +64,12 @@ class MW_gen_cfg(types.PropertyGroup):
         min=0.0, max=1.0,
         default=0.0,
     )
+    source_seed: props.IntProperty(
+        name="RND seed",
+        description="Seed the random generator, -1 to unseed it",
+        min=-1,
+        default=-1,
+    )
 
     #cell_scale: props.FloatVectorProperty(
     #    name="Cell scale",
