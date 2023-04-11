@@ -57,8 +57,33 @@ def gen_shardsEmpty(cfg : MW_gen_cfg, ob: types.Object, context: types.Context):
 # -------------------------------------------------------------------
 # ref: original cell fracture modifier
 
-def get_points_from_object_fallback(depsgraph, scene, obj, source):
-    points = get_points_from_object(depsgraph, scene, obj, source)
+def points_limitNum(points, cfg, rnd):
+    source_limit = cfg.source_limit
+    if source_limit <= 0 and source_limit < len(points):
+        rnd.shuffle(points)
+        points[source_limit:] = []
+    return points
+
+def points_4D_noDoubles(points, cfg, rnd):
+    from mathutils import Vector
+    points_set = {Vector.to_tuple(p, 4) for p in points}
+    points = list(points_set.values())
+    return points
+
+def points_addNoise(points, cfg, rnd):
+    from random import random
+    # boundbox approx of overall scale
+    from mathutils import Vector
+    matrix = obj.matrix_world.copy()
+    bb_world = [matrix @ Vector(v) for v in obj.bound_box]
+    scalar = source_noise * ((bb_world[0] - bb_world[6]).length / 2.0)
+
+    from mathutils.noise import random_unit_vector
+
+    points[:] = [p + (random_unit_vector() * (scalar * random())) for p in points]
+
+def get_points_from_object_fallback(depsgraph, scene, obj, cfg):
+    points = get_points_from_object(depsgraph, scene, obj, cfg)
 
     if not points:
         print("No points found... using fallback (own vertices)")
@@ -68,7 +93,8 @@ def get_points_from_object_fallback(depsgraph, scene, obj, source):
         return []
     return points
 
-def get_points_from_object(depsgraph, scene, obj, source):
+def get_points_from_object(depsgraph, scene, obj, cfg):
+    source = cfg.source
 
     _source_all = {
         'PARTICLE_OWN', 'PARTICLE_CHILD',
