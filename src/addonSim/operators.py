@@ -57,12 +57,12 @@ class MW_gen_OT_(types.Operator):
 
 
         # Need to copy the properties from the object if its already a fracture
-        ob, cfg = utils.cfg_getRoot(context.active_object)
+        obj, cfg = utils.cfg_getRoot(context.active_object)
 
         # Selected object not fractured
         if not cfg:
             cfg: MW_gen_cfg = self.cfg
-            ob, ob_copy = mw_setup.gen_copyOriginal(cfg, ob, context)
+            obj, obj_copy = mw_setup.gen_copyOriginal(obj, cfg, context)
 
         # Copy the config to the operator once
         else:
@@ -75,8 +75,8 @@ class MW_gen_OT_(types.Operator):
 
 
         # Setup operator
-        mw_setup.gen_naming(cfg, ob, context)
-        mw_setup.gen_shardsEmpty(cfg, ob, context)
+        mw_setup.gen_naming(obj, cfg, context)
+        mw_setup.gen_shardsEmpty(obj, cfg, context)
 
 
         # Calc operator
@@ -86,7 +86,7 @@ class MW_gen_OT_(types.Operator):
         # Get the points
         depsgraph = context.evaluated_depsgraph_get()
         scene = context.scene
-        points = mw_setup.get_points_from_object_fallback(depsgraph, scene, ob_copy, cfg.source)
+        points = mw_setup.get_points_from_object_fallback(obj_copy, cfg, depsgraph, scene)
         if not points:
             return self.ret_failed()
 
@@ -101,7 +101,7 @@ class MW_gen_OT_(types.Operator):
         # TODO: improved stats, later for comparison tho
 
         # Add edited cfg to the object
-        utils.cfg_copyProps(self.cfg, ob.mw_gen)
+        utils.cfg_copyProps(self.cfg, obj.mw_gen)
         return {'FINISHED'}
 
 

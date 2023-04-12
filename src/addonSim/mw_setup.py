@@ -10,101 +10,77 @@ from . import utils
 
 # -------------------------------------------------------------------
 
-def gen_copyOriginal(cfg : MW_gen_cfg, ob: types.Object, context: types.Context):
+def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     cfg.meta_type = {"ROOT"}
-    cfg.struct_original = ob.name
+    cfg.struct_original = obj.name
 
     # Empty object to hold all of them
-    ob_empty = bpy.data.objects.new(cfg.struct_original, None)
-    context.scene.collection.objects.link(ob_empty)
+    obj_empty = bpy.data.objects.new(cfg.struct_original, None)
+    context.scene.collection.objects.link(obj_empty)
 
     # Duplicate the original object
-    ob_copy: types.Object = ob.copy()
-    ob_copy.data = ob.data.copy()
-    ob_copy.name = "Original"
-    ob_copy.parent = ob_empty
-    ob_copy.mw_gen.meta_type = {"CHILD"}
-    context.scene.collection.objects.link(ob_copy)
+    obj_copy: types.Object = obj.copy()
+    obj_copy.data = obj.data.copy()
+    obj_copy.name = "Original"
+    obj_copy.parent = obj_empty
+    obj_copy.mw_gen.meta_type = {"CHILD"}
+    context.scene.collection.objects.link(obj_copy)
 
     # Hide and select
-    ob.hide_set(True)
-    ob_copy.hide_set(True)
-    ob_empty.select_set(True)
-    context.view_layer.objects.active = ob_empty
+    obj.hide_set(True)
+    obj_copy.hide_set(True)
+    obj_empty.select_set(True)
+    context.view_layer.objects.active = obj_empty
     #bpy.ops.outliner.show_active(execution_context='INVOKE_DEFAULT') cannot expand hierarchy...
 
-    return ob_empty, ob_copy
+    return obj_empty, obj_copy
 
-def gen_naming(cfg : MW_gen_cfg, ob: types.Object, context: types.Context):
-    if ob.name.startswith(cfg.struct_original):
-        ob.name = cfg.struct_original + "_" + cfg.struct_sufix
+def gen_naming(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
+    if obj.name.startswith(cfg.struct_original):
+        obj.name = cfg.struct_original + "_" + cfg.struct_sufix
     else:
-        ob.name += "_" + cfg.struct_sufix
+        obj.name += "_" + cfg.struct_sufix
 
-def gen_shardsEmpty(cfg : MW_gen_cfg, ob: types.Object, context: types.Context):
+def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     # Delete if exists along its shard children
-    ob_emptyFrac = utils.get_child(ob, "Shards")
-    if ob_emptyFrac:
-        utils.delete_object(ob_emptyFrac)
+    obj_emptyFrac = utils.get_child(obj, "Shards")
+    if obj_emptyFrac:
+        utils.delete_object(obj_emptyFrac)
 
     # Generate empty for the fractures
-    ob_emptyFrac = bpy.data.objects.new("Shards", None)
-    ob_emptyFrac.mw_gen.meta_type = {"CHILD"}
-    ob_emptyFrac.parent = ob
-    context.scene.collection.objects.link(ob_emptyFrac)
+    obj_emptyFrac = bpy.data.objects.new("Shards", None)
+    obj_emptyFrac.mw_gen.meta_type = {"CHILD"}
+    obj_emptyFrac.parent = obj
+    context.scene.collection.objects.link(obj_emptyFrac)
 
 
 # -------------------------------------------------------------------
 # ref: original cell fracture modifier
 
-def points_limitNum(points, cfg, rnd):
-    source_limit = cfg.source_limit
-    if source_limit <= 0 and source_limit < len(points):
-        rnd.shuffle(points)
-        points[source_limit:] = []
-    return points
-
-def points_4D_noDoubles(points, cfg, rnd):
-    from mathutils import Vector
-    points_set = {Vector.to_tuple(p, 4) for p in points}
-    points = list(points_set.values())
-    return points
-
-def points_addNoise(points, cfg, rnd):
-    from random import random
-    # boundbox approx of overall scale
-    from mathutils import Vector
-    matrix = obj.matrix_world.copy()
-    bb_world = [matrix @ Vector(v) for v in obj.bound_box]
-    scalar = source_noise * ((bb_world[0] - bb_world[6]).length / 2.0)
-
-    from mathutils.noise import random_unit_vector
-
-    points[:] = [p + (random_unit_vector() * (scalar * random())) for p in points]
-
-def get_points_from_object_fallback(depsgraph, scene, obj, cfg):
-    points = get_points_from_object(depsgraph, scene, obj, cfg)
+def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, depsgraph, scene):
+    points = get_points_from_object(obj, cfg, depsgraph, scene)
 
     if not points:
-        print("No points found... using fallback (own vertices)")
-        points = get_points_from_object(depsgraph, scene, obj, {'VERT_OWN'})
+        print("No points found... changing to fallback (own vertices)")
+        cfg.source = {'VERT_OWN'}
+        points = get_points_from_object(obj, cfg, depsgraph, scene)
     if not points:
         print("No points found either...")
         return []
     return points
 
-def get_points_from_object(depsgraph, scene, obj, cfg):
-    source = cfg.source
+def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, depsgraph, scene):
+    cfg_source = cfg.cfg_source
 
     _source_all = {
         'PARTICLE_OWN', 'PARTICLE_CHILD',
         'PENCIL',
         'VERT_OWN', 'VERT_CHILD',
     }
-    # print(source - _source_all)
-    # print(source)
-    assert(len(source | _source_all) == len(_source_all))
-    assert(len(source))
+    # print(cfg_source - _source_all)
+    # print(cfg_source)
+    assert(len(cfg_source | _source_all) == len(_source_all))
+    assert(len(cfg_source))
 
     points = []
 
@@ -147,19 +123,19 @@ def get_points_from_object(depsgraph, scene, obj, cfg):
                        for p in psys.particles])
 
     # geom own
-    if 'VERT_OWN' in source:
+    if 'VERT_OWN' in cfg_source:
         points_from_verts(obj)
 
     # geom children
-    if 'VERT_CHILD' in source:
+    if 'VERT_CHILD' in cfg_source:
         for obj_child in obj.children:
             points_from_verts(obj_child)
 
     # geom particles
-    if 'PARTICLE_OWN' in source:
+    if 'PARTICLE_OWN' in cfg_source:
         points_from_particles(obj)
 
-    if 'PARTICLE_CHILD' in source:
+    if 'PARTICLE_CHILD' in cfg_source:
         for obj_child in obj.children:
             points_from_particles(obj_child)
 
@@ -174,7 +150,7 @@ def get_points_from_object(depsgraph, scene, obj, cfg):
         else:
             return []
 
-    if 'PENCIL' in source:
+    if 'PENCIL' in cfg_source:
         # Used to be from object in 2.7x, now from scene.
         gp = scene.grease_pencil
         if gp:
@@ -182,3 +158,29 @@ def get_points_from_object(depsgraph, scene, obj, cfg):
 
     print("Found %d points" % len(points))
     return points
+
+
+def points_limitNum(points: list, cfg: MW_gen_cfg):
+    source_limit = cfg.source_limit
+    if source_limit <= 0 and source_limit < len(points):
+        rnd.shuffle(points)
+        points[source_limit:] = []
+    return points
+
+def points_4D_noDoubles(points: list, cfg: MW_gen_cfg, rnd):
+    from mathutils import Vector
+    points_set = {Vector.to_tuple(p, 4) for p in points}
+    points = list(points_set.values())
+    return points
+
+def points_addNoise(points: list, cfg: MW_gen_cfg, rnd):
+    from random import random
+    # boundbox approx of overall scale
+    from mathutils import Vector
+    matrix = obj.matrix_world.copy()
+    bb_world = [matrix @ Vector(v) for v in obj.bound_box]
+    scalar = source_noise * ((bb_world[0] - bb_world[6]).length / 2.0)
+
+    from mathutils.noise import random_unit_vector
+
+    points[:] = [p + (random_unit_vector() * (scalar * random())) for p in points]
