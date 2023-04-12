@@ -3,9 +3,9 @@
 # Probably too much logic during the trace logging but ok
 
 from time import time
-
 import psutil
 
+DEV_LOGSTATS = True
 
 try:
     import psutil
@@ -84,41 +84,47 @@ class Stats:
         return d
 
 
-    def log(self):
+    def log(self, msg: str = " "):
+        if not DEV_LOGSTATS: return
         t = self.time()
         dt = self.time_diff()
-        print(f"{self.name}//\t t:{t:>10.6f}   dt:{dt:>10.6f}")
+        if msg: print(f"{self.name}//  {msg}")
+        print(f"\t t:{t:>10.6f}   dt:{dt:>10.6f}")
 
-    def log_mem(self):
+    def log_mem(self, msg: str = " "):
+        if not DEV_LOGSTATS: return
         m = self.memory_max()
         lm = self.memory_last()
         dm = self.diffmem
+        if msg: print(f"{self.name}//  {msg}")
         print(f"\t m:{m:>10}   lm:{lm:>10}   dm:{dm:>10}")
 
-    def log_full(self):
-        self.log()
-        self.log_mem()
+    def log_full(self, msg: str = " "):
+        self.log(msg)
+        self.log_mem("")
 
 
-def testStats():
-    # sample operations
-    import numpy as np
+    def testStats(self, log = False):
+        # sample operations
+        import numpy as np
+        self.log_full()
 
-    stats = Stats()
-    stats.log_full()
+        a = np.zeros(10000000)
+        if log:
+            print("\n>> a = np.zeros(10000000)")
+            self.log_full()
 
-    a = np.zeros(10000000)
-    print("\n>> a = np.zeros(10000000)")
-    stats.log_full()
+        a = np.sin(a)
+        if log:
+            print("\n>> a = np.sin(a)")
+            self.log_full()
 
-    a = np.sin(a)
-    print("\n>> a = np.sin(a)")
-    stats.log_full()
+        a = np.cos(a)
+        if log:
+            print("\n>> a = np.cos(a)")
+            self.log_full()
 
-    a = np.cos(a)
-    print("\n>> a = np.cos(a)")
-    stats.log_full()
-
-    a = np.cos(a) ** 2 + np.sin(a) ** 2
-    print("\n>> a = np.cos(a) ** 2 + np.sin(a) ** 2")
-    stats.log_full()
+        a = np.cos(a) ** 2 + np.sin(a) ** 2
+        if log:
+            print("\n>> a = np.cos(a) ** 2 + np.sin(a) ** 2")
+            self.log_full()

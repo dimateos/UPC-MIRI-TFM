@@ -14,6 +14,8 @@ from . import mw_setup
 from . import utils
 from . import ui
 
+from mathutils import Vector
+
 
 # -------------------------------------------------------------------
 
@@ -74,23 +76,36 @@ class MW_gen_OT_(types.Operator):
                 cfg: MW_gen_cfg = self.cfg
 
 
-        # Setup operator
+        # Seed simulation random
+        utils.rnd_seed(cfg.rnd_seed)
+
+        # Finish scene setup
         mw_setup.gen_naming(obj, cfg, context)
         mw_setup.gen_shardsEmpty(obj, cfg, context)
 
 
-        # Calc operator
+        # Setup calc
         from .stats import Stats
         stats = Stats()
+        #stats.testStats()
+        stats.log_full("start setup points")
 
-        # Get the points
+        # Get the points and bb
         depsgraph = context.evaluated_depsgraph_get()
         scene = context.scene
         points = mw_setup.get_points_from_object_fallback(obj_copy, cfg, depsgraph, scene)
         if not points:
             return self.ret_failed()
 
+        # Limit and rnd a bit the points
+        bb_world, bb_radius = utils.get_worldBB_radius(obj_copy)
+        mw_setup.points_limitNum(points, cfg)
+        mw_setup.points_noDoubles(points, cfg)
+        mw_setup.points_addNoise(points, cfg, bb_radius)
 
+
+        # Calc voronoi
+        stats.log_full("start calc voro")
 
 
         # TODO: seeded random

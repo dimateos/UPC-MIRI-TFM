@@ -82,6 +82,8 @@ def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Contex
     rowsub = col.row()
     rowsub.prop(cfg, "source_limit")
     rowsub.prop(cfg, "source_noise")
+    rowsub = col.row()
+    rowsub.prop(cfg, "rnd_seed")
     #rowsub = col.row()
     #rowsub.prop(cfg, "cell_scale")
     col.prop(cfg, "struct_sufix")

@@ -6,7 +6,10 @@ from .properties import (
 )
 
 from . import utils
+from mathutils import Vector
 
+import mathutils.noise as bl_rnd
+import random as rnd
 
 # -------------------------------------------------------------------
 
@@ -70,17 +73,17 @@ def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, depsgrap
     return points
 
 def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, depsgraph, scene):
-    cfg_source = cfg.cfg_source
+    source = cfg.source
 
     _source_all = {
         'PARTICLE_OWN', 'PARTICLE_CHILD',
         'PENCIL',
         'VERT_OWN', 'VERT_CHILD',
     }
-    # print(cfg_source - _source_all)
-    # print(cfg_source)
-    assert(len(cfg_source | _source_all) == len(_source_all))
-    assert(len(cfg_source))
+    # print(source - _source_all)
+    # print(source)
+    assert(len(source | _source_all) == len(_source_all))
+    assert(len(source))
 
     points = []
 
@@ -100,6 +103,7 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, depsgraph, scene)
     def points_from_verts(obj):
         """Takes points from _any_ object with geometry"""
         if obj.type == 'MESH':
+            # TODO atm limited to mesh anyway
             mesh = obj.data
             matrix = obj.matrix_world.copy()
             points.extend([matrix @ v.co for v in mesh.vertices])
@@ -123,19 +127,19 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, depsgraph, scene)
                        for p in psys.particles])
 
     # geom own
-    if 'VERT_OWN' in cfg_source:
+    if 'VERT_OWN' in source:
         points_from_verts(obj)
 
     # geom children
-    if 'VERT_CHILD' in cfg_source:
+    if 'VERT_CHILD' in source:
         for obj_child in obj.children:
             points_from_verts(obj_child)
 
     # geom particles
-    if 'PARTICLE_OWN' in cfg_source:
+    if 'PARTICLE_OWN' in source:
         points_from_particles(obj)
 
-    if 'PARTICLE_CHILD' in cfg_source:
+    if 'PARTICLE_CHILD' in source:
         for obj_child in obj.children:
             points_from_particles(obj_child)
 
@@ -150,7 +154,7 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, depsgraph, scene)
         else:
             return []
 
-    if 'PENCIL' in cfg_source:
+    if 'PENCIL' in source:
         # Used to be from object in 2.7x, now from scene.
         gp = scene.grease_pencil
         if gp:
@@ -162,25 +166,18 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, depsgraph, scene)
 
 def points_limitNum(points: list, cfg: MW_gen_cfg):
     source_limit = cfg.source_limit
-    if source_limit <= 0 and source_limit < len(points):
+
+    if source_limit > 0 and source_limit < len(points):
         rnd.shuffle(points)
         points[source_limit:] = []
-    return points
 
-def points_4D_noDoubles(points: list, cfg: MW_gen_cfg, rnd):
-    from mathutils import Vector
+def points_noDoubles(points: list, cfg: MW_gen_cfg):
     points_set = {Vector.to_tuple(p, 4) for p in points}
-    points = list(points_set.values())
-    return points
+    points = list(points_set)
 
-def points_addNoise(points: list, cfg: MW_gen_cfg, rnd):
-    from random import random
-    # boundbox approx of overall scale
-    from mathutils import Vector
-    matrix = obj.matrix_world.copy()
-    bb_world = [matrix @ Vector(v) for v in obj.bound_box]
-    scalar = source_noise * ((bb_world[0] - bb_world[6]).length / 2.0)
+def points_addNoise(points: list, cfg: MW_gen_cfg, bb_radius: float):
+    noise = cfg.source_noise
 
-    from mathutils.noise import random_unit_vector
-
-    points[:] = [p + (random_unit_vector() * (scalar * random())) for p in points]
+    if noise:
+        scalar = noise * bb_radius # boundbox radius to aprox scale
+        points[:] = [p + (bl_rnd.random_unit_vector() * scalar * rnd.random()) for p in points]

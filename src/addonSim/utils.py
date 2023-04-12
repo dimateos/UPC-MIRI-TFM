@@ -7,6 +7,7 @@ from .properties import (
     MW_vis_cfg,
 )
 
+from mathutils import Vector
 
 # -------------------------------------------------------------------
 
@@ -37,6 +38,16 @@ def cfg_copyProps(src, dest):
 
 # -------------------------------------------------------------------
 
+def get_worldBB_radius(obj):
+    matrix = obj.matrix_world
+    bb_world: list[Vector, 6] = [matrix @ Vector(v) for v in obj.bound_box]
+    bb_radius: float =          ((bb_world[0] - bb_world[6]).length / 2.0)
+
+    # TODO atm limited to mesh, otherwise check and use desgraph
+    return bb_world, bb_radius
+
+# -------------------------------------------------------------------
+
 def delete_object(ob: types.Object):
     """ Delete the object and children recursively """
     for child in ob.children:
@@ -62,3 +73,17 @@ def match_anySub(word: str, subs: list) -> bool:
         if sub in word:
             return True
     return False
+
+# -------------------------------------------------------------------
+
+def rnd_seed(s: int = None):
+    """ Persists across separate module imports """
+    import mathutils.noise as bl_rnd
+    import random as rnd
+
+    if s is None:
+        rnd.seed()
+        bl_rnd.seed_set(0)
+    else:
+        rnd.seed(s)
+        bl_rnd.seed_set(s)
