@@ -56,25 +56,41 @@ def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     obj_emptyFrac.parent = obj
     context.scene.collection.objects.link(obj_emptyFrac)
 
+def gen_pointsObject(obj: types.Object, points: list[Vector], context: types.Context):
+    # Create a new mesh data block and add only verts
+    mesh = bpy.data.meshes.new("Shards_source")
+    mesh.from_pydata(points, [], [])
+    #mesh.update()
+
+    # Delete points child if already there
+    obj_points = utils.get_child(obj, "Shards_source")
+    if obj_points:
+        utils.delete_object(obj_points)
+
+    # Generate empty for the points
+    obj_points = bpy.data.objects.new("Shards_source", mesh)
+    obj_points.mw_gen.meta_type = {"CHILD"}
+    obj_points.parent = obj
+    context.scene.collection.objects.link(obj_points)
+
 
 # -------------------------------------------------------------------
 # ref: original cell fracture modifier
 
-def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, depsgraph, scene):
-    points = get_points_from_object(obj, cfg, depsgraph, scene)
+def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, context):
+    points = get_points_from_object(obj, cfg, context)
 
     if not points:
         print("No points found... changing to fallback (own vertices)")
         cfg.source = {'VERT_OWN'}
-        points = get_points_from_object(obj, cfg, depsgraph, scene)
+        points = get_points_from_object(obj, cfg, context)
     if not points:
         print("No points found either...")
         return []
     return points
 
-def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, depsgraph, scene):
+def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
     source = cfg.source
-
     _source_all = {
         'PARTICLE_OWN', 'PARTICLE_CHILD',
         'PENCIL',
@@ -103,11 +119,10 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, depsgraph, scene)
     def points_from_verts(obj):
         """Takes points from _any_ object with geometry"""
         if obj.type == 'MESH':
-            # TODO atm limited to mesh anyway
-            mesh = obj.data
-            matrix = obj.matrix_world.copy()
-            points.extend([matrix @ v.co for v in mesh.vertices])
+            points.extend(utils.get_worldVerts(obj))
         else:
+            # TODO atm limited to mesh anyway
+            depsgraph = context.evaluated_depsgraph_get()
             obj_eval = obj.evaluated_get(depsgraph)
             try:
                 mesh = obj_eval.to_mesh()
@@ -115,11 +130,11 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, depsgraph, scene)
                 mesh = None
 
             if mesh is not None:
-                matrix = obj.matrix_world.copy()
-                points.extend([matrix @ v.co for v in mesh.vertices])
+                points.extend(utils.transform_verts(mesh.verticers, obj.matrix_world))
                 obj_eval.to_mesh_clear()
 
     def points_from_particles(obj):
+        depsgraph = context.evaluated_depsgraph_get()
         obj_eval = obj.evaluated_get(depsgraph)
         # NOTE: chained list comprehension
         points.extend([p.location.copy()
@@ -156,6 +171,7 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, depsgraph, scene)
 
     if 'PENCIL' in source:
         # Used to be from object in 2.7x, now from scene.
+        scene = context.scene
         gp = scene.grease_pencil
         if gp:
             points.extend([p for spline in get_splines(gp) for p in spline])
@@ -164,18 +180,18 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, depsgraph, scene)
     return points
 
 
-def points_limitNum(points: list, cfg: MW_gen_cfg):
+def points_limitNum(points: list[Vector], cfg: MW_gen_cfg):
     source_limit = cfg.source_limit
 
     if source_limit > 0 and source_limit < len(points):
         rnd.shuffle(points)
         points[source_limit:] = []
 
-def points_noDoubles(points: list, cfg: MW_gen_cfg):
+def points_noDoubles(points: list[Vector], cfg: MW_gen_cfg):
     points_set = {Vector.to_tuple(p, 4) for p in points}
     points = list(points_set)
 
-def points_addNoise(points: list, cfg: MW_gen_cfg, bb_radius: float):
+def points_addNoise(points: list[Vector], cfg: MW_gen_cfg, bb_radius: float):
     noise = cfg.source_noise
 
     if noise:

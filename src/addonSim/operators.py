@@ -74,6 +74,7 @@ class MW_gen_OT_(types.Operator):
                 return {'FINISHED'}
             else:
                 cfg: MW_gen_cfg = self.cfg
+                obj_copy = utils.get_child(obj, "Original")
 
 
         # Seed simulation random
@@ -91,18 +92,19 @@ class MW_gen_OT_(types.Operator):
         stats.log_full("start setup points")
 
         # Get the points and bb
-        depsgraph = context.evaluated_depsgraph_get()
-        scene = context.scene
-        points = mw_setup.get_points_from_object_fallback(obj_copy, cfg, depsgraph, scene)
+        points = mw_setup.get_points_from_object_fallback(obj_copy, cfg, context)
         if not points:
             return self.ret_failed()
 
-        # Limit and rnd a bit the points
+        verts_world = utils.get_worldVerts(obj_copy)
         bb_world, bb_radius = utils.get_worldBB_radius(obj_copy)
+
+        # Limit and rnd a bit the points and add them to the scene
         mw_setup.points_limitNum(points, cfg)
         mw_setup.points_noDoubles(points, cfg)
         mw_setup.points_addNoise(points, cfg, bb_radius)
 
+        mw_setup.gen_pointsObject(obj, points, context)
 
         # Calc voronoi
         stats.log_full("start calc voro")

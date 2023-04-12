@@ -46,6 +46,16 @@ def get_worldBB_radius(obj):
     # TODO atm limited to mesh, otherwise check and use desgraph
     return bb_world, bb_radius
 
+def get_worldVerts(obj):
+    mesh = obj.data
+    matrix = obj.matrix_world
+    verts_world = [matrix @ v.co for v in mesh.vertices]
+    return verts_world
+
+def transform_verts(verts, matrix):
+    verts_world = [matrix @ v.co for v in verts]
+    return verts_world
+
 # -------------------------------------------------------------------
 
 def delete_object(ob: types.Object):
@@ -61,6 +71,7 @@ def delete_children(ob_father: types.Object):
 
 def get_child(ob: types.Object, name: str):
     """ Find child by name (starts with to avoid limited exact names) """
+    # TODO tried to add a property pointer to types.Object but the addon cannot have it? for now use name
     for child in ob.children:
         if child.name.startswith(name):
             return child
