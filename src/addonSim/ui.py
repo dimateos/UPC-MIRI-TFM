@@ -31,20 +31,6 @@ def DEV_drawVal(layout: types.UILayout, msg, value):
     if not DEV_VALS: return
     layout.label(text=f"{msg}: {value}", icon="BLENDER")
 
-def DEV_drawDebug(cfg : MW_gen_cfg, layout: types.UILayout):
-    if not DEV_DEBUG: return
-
-    # Toggle debug
-    box = layout.box()
-    box.prop(cfg, "meta_show_debug", toggle=True)
-    if cfg.meta_show_debug:
-        col = box.column()
-        col.label(text="Show:")
-        rowsub = col.row(align=True)
-        rowsub.prop(cfg, "struct_showOrignal")
-        rowsub.prop(cfg, "struct_showShards")
-        rowsub.prop(cfg, "struct_showPoints")
-
 # -------------------------------------------------------------------
 
 def draw_refresh(cfg : MW_gen_cfg, layout: types.UILayout):
@@ -83,8 +69,7 @@ def draw_inspect(obj: types.Object, layout: types.UILayout):
         mesh: types.Mesh = obj.data
         col.label(text=f"V: {len(mesh.vertices)}   E: {len(mesh.edges)}   F: {len(mesh.polygons)}   T: {len(mesh.loop_triangles)}")
 
-
-    pass
+# -------------------------------------------------------------------
 
 def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Context):
     draw_refresh(cfg, layout)
@@ -109,3 +94,18 @@ def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Contex
     rowsub.prop(cfg, "margin_face_bounds")
 
     DEV_drawDebug(cfg, layout)
+
+def DEV_drawDebug(cfg : MW_gen_cfg, layout: types.UILayout):
+    if not DEV_DEBUG: return
+
+    # Toggle debug
+    box = layout.box()
+    box.prop(cfg, "meta_show_debug", toggle=True)
+    if cfg.meta_show_debug:
+        col = box.column()
+        col.label(text="Show:")
+        rowsub = col.row(align=True)
+        rowsub.prop(cfg, "struct_showOrignal")
+        rowsub.prop(cfg, "struct_showShards")
+        rowsub.prop(cfg, "struct_showPoints")
+        rowsub.prop(cfg, "struct_showBB")

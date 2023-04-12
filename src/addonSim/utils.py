@@ -7,6 +7,8 @@ from .properties import (
     MW_vis_cfg,
 )
 
+from .ui import DEV_log
+
 from mathutils import Vector
 
 
@@ -45,12 +47,17 @@ def get_worldMatrix_normalMatrix(obj: types.Object) -> tuple[types.Object, MW_ge
     matrix_normal = matrix.inverted_safe().transposed().to_3x3()
     return matrix, matrix_normal
 
-def get_worldBB_radius(obj: types.Object) -> tuple[list[Vector, 6], float]:
+def get_worldBB_radius(obj: types.Object, margin = 0.0) -> tuple[list[Vector, 6], float]:
     matrix = obj.matrix_world
-    bb_world: list[Vector, 6] = [matrix @ Vector(v) for v in obj.bound_box]
-    bb_radius: float =          ((bb_world[0] - bb_world[6]).length / 2.0)
+    bb_world_full = [matrix @ Vector(v) for v in obj.bound_box]
 
-    # TODO atm limited to mesh, otherwise check and use desgraph
+    margin_vector = Vector()
+    margin_vector.xyz = margin
+    bb_world = (bb_world_full[0]- margin_vector, bb_world_full[6] + margin_vector)
+    bb_radius = ((bb_world[0] - bb_world[1]).length / 2.0)
+
+    # TODO atm limited to mesh, otherwise check and use depsgraph
+    #DEV_log("Found %d bound verts" % len(bb_world_full))
     return bb_world, bb_radius
 
 def get_worldVerts(obj: types.Object) -> list[Vector, 6]:
@@ -61,7 +68,6 @@ def get_worldVerts(obj: types.Object) -> list[Vector, 6]:
 
 def transform_verts(verts: list[Vector], matrix) -> list[Vector, 6]:
     verts_world = [matrix @ v.co for v in verts]
-    return verts_world
 
 # -------------------------------------------------------------------
 
@@ -83,6 +89,23 @@ def get_child(obj: types.Object, name: str):
         if child.name.startswith(name):
             return child
     return None
+
+# -------------------------------------------------------------------
+
+def gen_childClean(obj: types.Object, name: str, mesh: types.Mesh, hide: bool, context: types.Context):
+    """ Generate a new child, delete the previous one if found """
+    # Delete points child if already there
+    obj_child = get_child(obj, name)
+    if obj_child:
+        delete_object(obj_child)
+
+    # Generate empty for the points
+    obj_child = bpy.data.objects.new(name, mesh)
+    obj_child.mw_gen.meta_type = {"CHILD"}
+    obj_child.parent = obj
+    context.scene.collection.objects.link(obj_child)
+    obj_child.hide_set(hide)
+    return obj_child
 
 # -------------------------------------------------------------------
 

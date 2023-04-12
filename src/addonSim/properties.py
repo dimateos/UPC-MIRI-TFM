@@ -94,6 +94,11 @@ class MW_gen_cfg(types.PropertyGroup):
         description="The ones used for the cells generation",
         default=True,
     )
+    struct_showBB: props.BoolProperty(
+        name="BB",
+        description="The extended BB min max points, tobble show bounding box in viewport",
+        default=True,
+    )
 
 
     margin_box_bounds: props.FloatProperty(

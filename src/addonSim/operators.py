@@ -9,12 +9,13 @@ from .properties import (
 )
 
 from . import mw_setup
-#from . import mw_calc
+from . import mw_calc
 
 from . import utils
 from . import ui
 
 from mathutils import Vector
+from tess import Container, Cell
 
 
 # -------------------------------------------------------------------
@@ -75,7 +76,7 @@ class MW_gen_OT_(types.Operator):
                 return {'FINISHED'}
             else:
                 cfg: MW_gen_cfg = self.cfg
-                obj_copy = utils.get_child(obj, "Original")
+                obj_copy = utils.get_child(obj, mw_setup.NAME_ORIGINAL)
 
 
         # Seed simulation randomness + store it
@@ -99,7 +100,8 @@ class MW_gen_OT_(types.Operator):
             return self.ret_failed()
 
         verts_world = utils.get_worldVerts(obj_copy)
-        bb_world, bb_radius = utils.get_worldBB_radius(obj_copy)
+        bb_world, bb_radius = utils.get_worldBB_radius(obj_copy, cfg.margin_box_bounds)
+        m_world, mNormal_world = utils.get_worldMatrix_normalMatrix(obj_copy)
 
         # Limit and rnd a bit the points and add them to the scene
         mw_setup.points_limitNum(points, cfg)
@@ -107,18 +109,27 @@ class MW_gen_OT_(types.Operator):
         mw_setup.points_addNoise(points, cfg, bb_radius)
 
         mw_setup.gen_pointsObject(obj, points, cfg, context)
+        mw_setup.gen_boundsObject(obj, bb_world, cfg, context)
 
 
         # Calc voronoi
         stats.log("start calc voro")
+        #cont = mw_calc.cont_fromPoints()
+        #stats.log("start calc voro")
 
 
-        # TODO convex hull options?
-        # TODO decimation too -> original faces / later
-        # TODO: recenter shards origin
-        # TODO: add mass too
-        # TODO: add interior handle?
-        # TODO: recursiveness?
+        ## TEST: check out some cell properties and API
+        #if 1:
+        #    from . import info_inspect as ins
+        #    ins.print_data(cont[0], False)
+
+        # TODO: GEN:: recenter shards origin
+        # TODO: GEN:: decimation applied -> create another object
+        # TODO: GEN:: convex hull applied -> create another object
+        # TODO: PHYS:: add mass + nter cell space (or shrink)
+        # TODO: RENDER:: add interior handle for materials
+        # TODO: GEN:: recursiveness?
+        # TODO: GEN:: avoid convex hull?
 
         # Add edited cfg to the object
         utils.cfg_copyProps(self.cfg, obj.mw_gen)

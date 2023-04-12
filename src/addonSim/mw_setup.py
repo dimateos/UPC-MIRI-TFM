@@ -5,12 +5,17 @@ from .properties import (
     MW_gen_cfg,
 )
 
-from .ui import DEV_log
 from . import utils
+from .ui import DEV_log
 
 from mathutils import Vector
 import mathutils.noise as bl_rnd
 import random as rnd
+
+NAME_ORIGINAL = "Original"
+NAME_ORIGINAL_BB = "Original_bb"
+NAME_SHARDS = "Shards"
+NAME_SHARDS_POINTS = "Shards_source"
 
 
 # -------------------------------------------------------------------
@@ -26,7 +31,7 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
     # Duplicate the original object
     obj_copy: types.Object = obj.copy()
     obj_copy.data = obj.data.copy()
-    obj_copy.name = "Original"
+    obj_copy.name = NAME_ORIGINAL
     obj_copy.parent = obj_empty
     obj_copy.mw_gen.meta_type = {"CHILD"}
     context.scene.collection.objects.link(obj_copy)
@@ -47,36 +52,26 @@ def gen_naming(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
         obj.name += "_" + cfg.struct_nameSufix
 
 def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    # Delete if exists along its shard children
-    obj_emptyFrac = utils.get_child(obj, "Shards")
-    if obj_emptyFrac:
-        utils.delete_object(obj_emptyFrac)
-
-    # Generate empty for the fractures
-    obj_emptyFrac = bpy.data.objects.new("Shards", None)
-    obj_emptyFrac.mw_gen.meta_type = {"CHILD"}
-    context.scene.collection.objects.link(obj_emptyFrac)
-    obj_emptyFrac.hide_set(not cfg.struct_showShards)
-    obj_emptyFrac.parent = obj
+    obj_emptyFrac = utils.gen_childClean(obj, NAME_SHARDS, None, not cfg.struct_showShards, context)
+    return obj_emptyFrac
 
 def gen_pointsObject(obj: types.Object, points: list[Vector], cfg: MW_gen_cfg, context: types.Context):
     # Create a new mesh data block and add only verts
-    mesh = bpy.data.meshes.new("Shards_source")
+    mesh = bpy.data.meshes.new(NAME_SHARDS_POINTS)
     mesh.from_pydata(points, [], [])
     #mesh.update()
 
-    # Delete points child if already there
-    obj_points = utils.get_child(obj, "Shards_source")
-    if obj_points:
-        utils.delete_object(obj_points)
+    obj_points = utils.gen_childClean(obj, NAME_SHARDS_POINTS, mesh, not cfg.struct_showPoints, context)
+    return obj_points
 
-    # Generate empty for the points
-    obj_points = bpy.data.objects.new("Shards_source", mesh)
-    obj_points.mw_gen.meta_type = {"CHILD"}
-    obj_points.parent = obj
-    context.scene.collection.objects.link(obj_points)
-    obj_points.hide_set(not cfg.struct_showPoints)
+def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, context: types.Context):
+    # Create a new mesh data block and add only verts
+    mesh = bpy.data.meshes.new(NAME_ORIGINAL_BB)
+    mesh.from_pydata(bb, [], [])
 
+    obj_bb = utils.gen_childClean(obj, NAME_ORIGINAL_BB, mesh, not cfg.struct_showBB, context)
+    obj_bb.show_bounds = True
+    return obj_bb
 
 # -------------------------------------------------------------------
 # ref: original cell fracture modifier
@@ -134,7 +129,9 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
                 mesh = None
 
             if mesh is not None:
-                points.extend(utils.transform_verts(mesh.verticers, obj.matrix_world))
+                verts = mesh.vertices
+                utils.transform_verts(verts, obj_eval.matrix_world)
+                points.extend(verts)
                 obj_eval.to_mesh_clear()
 
     def points_from_particles(obj):
