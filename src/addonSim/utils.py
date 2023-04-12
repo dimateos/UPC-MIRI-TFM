@@ -11,19 +11,19 @@ from mathutils import Vector
 
 # -------------------------------------------------------------------
 
-def cfg_getRoot(ob: types.Object) -> tuple[types.Object, MW_gen_cfg]:
+def cfg_getRoot(obj: types.Object) -> tuple[types.Object, MW_gen_cfg]:
     """ Retrieve the root object holding the config """
-    if "NONE" in ob.mw_gen.meta_type:
-        return ob, None
+    if "NONE" in obj.mw_gen.meta_type:
+        return obj, None
 
     else:
-        while "CHILD" in ob.mw_gen.meta_type:
+        while "CHILD" in obj.mw_gen.meta_type:
             # Maybe the user deleted the root only
-            if not ob.parent:
-                return ob, None
-            ob = ob.parent
+            if not obj.parent:
+                return obj, None
+            obj = obj.parent
 
-        return ob, ob.mw_gen
+        return obj, obj.mw_gen
 
 def cfg_copyProps(src, dest):
     """ Copy all properties of the property group to the object """
@@ -58,21 +58,21 @@ def transform_verts(verts, matrix):
 
 # -------------------------------------------------------------------
 
-def delete_object(ob: types.Object):
+def delete_object(obj: types.Object):
     """ Delete the object and children recursively """
-    for child in ob.children:
+    for child in obj.children:
         delete_object(child)
-    bpy.data.objects.remove(ob, do_unlink=True)
+    bpy.data.objects.remove(obj, do_unlink=True)
 
 def delete_children(ob_father: types.Object):
     """ Delete the children objects recursively """
     for child in ob_father.children:
         delete_object(child)
 
-def get_child(ob: types.Object, name: str):
+def get_child(obj: types.Object, name: str):
     """ Find child by name (starts with to avoid limited exact names) """
     # TODO tried to add a property pointer to types.Object but the addon cannot have it? for now use name
-    for child in ob.children:
+    for child in obj.children:
         if child.name.startswith(name):
             return child
     return None

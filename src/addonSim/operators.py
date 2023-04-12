@@ -81,12 +81,6 @@ class MW_gen_OT_(types.Operator):
         # Seed simulation random
         utils.rnd_seed(cfg.rnd_seed)
 
-        # TEST: check out some mesh properties and API
-        if cfg.debug_inspectMesh:
-            from . import info_mesh
-            info_mesh.desc_mesh_data(obj.data)
-            info_mesh.desc_mesh_inspect(obj.data)
-
 
         # Finish scene setup
         mw_setup.gen_naming(obj, cfg, context)
@@ -119,6 +113,8 @@ class MW_gen_OT_(types.Operator):
         stats.log("start calc voro")
 
 
+        # TODO convex hull options?
+        # TODO decimation too -> original faces / later
         # TODO: recenter shards origin
         # TODO: add mass too
         # TODO: add interior handle?
@@ -129,11 +125,47 @@ class MW_gen_OT_(types.Operator):
         return {'FINISHED'}
 
 
+class MW_infoData_OT_(types.Operator):
+    bl_idname = "mw.info_data"
+    bl_label = "Inspect mesh data"
+    bl_options = {'INTERNAL'}
+    bl_description = "DEBUG print in the console some mesh data etc"
+
+    @classmethod
+    def poll(cls, context):
+        obj = bpy.context.active_object
+        return (obj and obj.type == 'MESH')
+
+    def execute(self, context: types.Context):
+        obj = bpy.context.active_object
+        from . import info_mesh
+        info_mesh.desc_mesh_data(obj.data)
+        return {'FINISHED'}
+
+class MW_infoAPI_OT_(types.Operator):
+    bl_idname = "mw.info_api"
+    bl_label = "Inspect mesh API"
+    bl_options = {'INTERNAL'}
+    bl_description = "DEBUG print in the console some mesh API etc"
+
+    @classmethod
+    def poll(cls, context):
+        obj = bpy.context.active_object
+        return (obj and obj.type == 'MESH')
+
+    def execute(self, context: types.Context):
+        obj = bpy.context.active_object
+        from . import info_mesh
+        info_mesh.desc_mesh_inspect(obj.data)
+        return {'FINISHED'}
+
 # -------------------------------------------------------------------
 # Blender events
 
 classes = (
     MW_gen_OT_,
+    MW_infoData_OT_,
+    MW_infoAPI_OT_
 )
 
 register, unregister = bpy.utils.register_classes_factory(classes)

@@ -7,7 +7,9 @@ from .properties import (
     MW_vis_cfg,
 )
 from .operators import (
-    MW_gen_OT_
+    MW_gen_OT_,
+    MW_infoData_OT_,
+    MW_infoAPI_OT_
 )
 
 from . import utils
@@ -36,15 +38,15 @@ class MW_gen_Panel(types.Panel):
             col.label(text="No object selected...", icon="ERROR")
             return
 
-        ob, cfg = utils.cfg_getRoot(context.active_object)
+        obj, cfg = utils.cfg_getRoot(context.active_object)
 
         # No fracture selected
         if not cfg:
             col = layout.column()
-            col.label(text="Selected: " + ob.name_full, icon="INFO")
+            col.label(text="Selected: " + obj.name_full, icon="INFO")
 
             # Check that it is a mesh
-            if ob.type != 'MESH':
+            if obj.type != 'MESH':
                 col = layout.column()
                 col.label(text="Select a mesh...", icon="ERROR")
                 return
@@ -56,20 +58,56 @@ class MW_gen_Panel(types.Panel):
         # Edit/info of selected
         else:
             col = layout.column()
-            col.label(text="Root: " + ob.name_full, icon="INFO")
+            col.label(text="Root: " + obj.name_full, icon="INFO")
 
             col = layout.column()
             col.operator(MW_gen_OT_.bl_idname, text="EDIT Fracture", icon="STICKY_UVS_VERT")
 
             ui.draw_summary(cfg, layout)
-            ui.DEV_drawDebug(cfg, layout, context)
+            #ui.DEV_drawDebug(cfg, layout, context)
 
+
+class MW_info_Panel(types.Panel):
+    bl_category = PANEL_CATEGORY
+    bl_label = "MW_info"
+    bl_idname = "MW_PT_info"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_context = "objectmode"
+    bl_options = {'HEADER_LAYOUT_EXPAND'}
+
+    def draw(self, context):
+        layout = self.layout
+
+        # Something selected, not last active
+        if not context.selected_objects:
+            pass
+            #col = layout.column()
+            #col.label(text="No object selected...", icon="ERROR")
+
+        else:
+            obj = context.active_object
+            col = layout.column()
+
+            ui.draw_inspect(obj, layout)
+
+            if obj.type == 'MESH':
+                col = layout.column()
+                col.operator(MW_infoData_OT_.bl_idname, text="Inspect Data", icon="HELP")
+                col.operator(MW_infoAPI_OT_.bl_idname, text="Inspect API", icon="HELP")
+
+        # check region width
+        box = layout.box()
+        col = box.column()
+        col.label(text="Debug...")
+        ui.DEV_drawVal(col, "context.region.width", context.region.width)
 
 # -------------------------------------------------------------------
 # Blender events
 
 classes = (
     MW_gen_Panel,
+    MW_info_Panel,
 )
 
 def register():

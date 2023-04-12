@@ -27,10 +27,20 @@ def DEV_log(msg, type = {'DEV'}, ui = None):
     #ui.report({'INFO'}, "Operation successful!")
     #ui.report({'ERROR'}, "Operation failed!")
 
-def DEV_drawVal(layout: types.UILayout, value, name):
+def DEV_drawVal(layout: types.UILayout, msg, value):
     if not DEV_VALS: return
-    layout.label(text=f"{name}: {value}", icon="BLENDER")
+    layout.label(text=f"{msg}: {value}", icon="BLENDER")
 
+def DEV_drawDebug(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Context):
+    if not DEV_DEBUG: return
+
+    # Toggle debug
+    box = layout.box()
+    box.prop(cfg, "meta_show_debug", toggle=True)
+    if cfg.meta_show_debug:
+        col = box.column()
+
+# -------------------------------------------------------------------
 
 def draw_refresh(cfg : MW_gen_cfg, layout: types.UILayout):
     row = layout.box().row()
@@ -58,18 +68,18 @@ def draw_summary(cfg : MW_gen_cfg, layout: types.UILayout):
             #prop_value = cfg[prop_name]
             #col.row().label(text=prop_name + ": " + str(prop_value))
 
-
-def DEV_drawDebug(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Context):
-    if not DEV_DEBUG: return
-
-    # Toggle debug
+def draw_inspect(obj: types.Object, layout: types.UILayout):
     box = layout.box()
-    box.prop(cfg, "meta_show_debug", toggle=True)
-    if cfg.meta_show_debug:
-        col = box.column()
+    col = box.column()
+    col.label(text="Inspect: " + obj.name_full)
+    col.label(text="Type: " + obj.type, icon="MESH_DATA")
 
-        # check region width
-        DEV_drawVal(col, context.region.width, "w")
+    if obj.type == "MESH":
+        mesh: types.Mesh = obj.data
+        col.label(text=f"V: {len(mesh.vertices)}   E: {len(mesh.edges)}   F: {len(mesh.polygons)}   T: {len(mesh.loop_triangles)}")
+
+
+    pass
 
 def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Context):
     draw_refresh(cfg, layout)
@@ -92,7 +102,3 @@ def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Contex
     rowsub = col.row(align=True)
     rowsub.prop(cfg, "margin_box_bounds")
     rowsub.prop(cfg, "margin_face_bounds")
-
-    # TODO convex hull options?
-    # TODO decimation too -> original faces / later
-

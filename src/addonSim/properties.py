@@ -40,12 +40,6 @@ class MW_gen_cfg(types.PropertyGroup):
         description="Show fracture summary"
     )
 
-    debug_inspectMesh: props.BoolProperty(
-        name="Print mesh summary",
-        default=False,
-        description="Show a summary of the mesh properties"
-    )
-
 
     source: props.EnumProperty(
         name="Source",
