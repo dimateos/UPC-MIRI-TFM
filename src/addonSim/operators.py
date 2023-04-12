@@ -45,6 +45,7 @@ class MW_gen_OT_(types.Operator):
         self.report({'ERROR'}, "Operation failed!")
         return {"FINISHED"}
 
+
     def execute(self, context: types.Context):
         """ Runs once and then after every property edit in the edit last action panel """
         ui.DEV_log(f"execute auto{self.cfg.meta_auto_refresh} +r{self.cfg.meta_refresh}", {'OP_FLOW'})
@@ -80,6 +81,13 @@ class MW_gen_OT_(types.Operator):
         # Seed simulation random
         utils.rnd_seed(cfg.rnd_seed)
 
+        # TEST: check out some mesh properties and API
+        if cfg.debug_inspectMesh:
+            from . import info_mesh
+            info_mesh.desc_mesh_data(obj.data)
+            info_mesh.desc_mesh_inspect(obj.data)
+
+
         # Finish scene setup
         mw_setup.gen_naming(obj, cfg, context)
         mw_setup.gen_shardsEmpty(obj, cfg, context)
@@ -89,7 +97,7 @@ class MW_gen_OT_(types.Operator):
         from .stats import Stats
         stats = Stats()
         #stats.testStats()
-        stats.log_full("start setup points")
+        stats.log("start setup points")
 
         # Get the points and bb
         points = mw_setup.get_points_from_object_fallback(obj_copy, cfg, context)
@@ -104,18 +112,17 @@ class MW_gen_OT_(types.Operator):
         mw_setup.points_noDoubles(points, cfg)
         mw_setup.points_addNoise(points, cfg, bb_radius)
 
-        mw_setup.gen_pointsObject(obj, points, context)
+        mw_setup.gen_pointsObject(obj, points, cfg, context)
+
 
         # Calc voronoi
-        stats.log_full("start calc voro")
+        stats.log("start calc voro")
 
 
-        # TODO: seeded random
         # TODO: recenter shards origin
         # TODO: add mass too
         # TODO: add interior handle?
         # TODO: recursiveness?
-        # TODO: improved stats, later for comparison tho
 
         # Add edited cfg to the object
         utils.cfg_copyProps(self.cfg, obj.mw_gen)

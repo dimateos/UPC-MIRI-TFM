@@ -15,10 +15,10 @@ import random as rnd
 
 def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     cfg.meta_type = {"ROOT"}
-    cfg.struct_original = obj.name
+    cfg.struct_nameOriginal = obj.name
 
     # Empty object to hold all of them
-    obj_empty = bpy.data.objects.new(cfg.struct_original, None)
+    obj_empty = bpy.data.objects.new(cfg.struct_nameOriginal, None)
     context.scene.collection.objects.link(obj_empty)
 
     # Duplicate the original object
@@ -30,7 +30,7 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
     context.scene.collection.objects.link(obj_copy)
 
     # Hide and select
-    obj.hide_set(True)
+    obj.hide_set(cfg.struct_hideOrignal)
     obj_copy.hide_set(True)
     obj_empty.select_set(True)
     context.view_layer.objects.active = obj_empty
@@ -39,10 +39,10 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
     return obj_empty, obj_copy
 
 def gen_naming(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    if obj.name.startswith(cfg.struct_original):
-        obj.name = cfg.struct_original + "_" + cfg.struct_sufix
+    if obj.name.startswith(cfg.struct_nameOriginal):
+        obj.name = cfg.struct_nameOriginal + "_" + cfg.struct_nameSufix
     else:
-        obj.name += "_" + cfg.struct_sufix
+        obj.name += "_" + cfg.struct_nameSufix
 
 def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     # Delete if exists along its shard children
@@ -56,7 +56,7 @@ def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     obj_emptyFrac.parent = obj
     context.scene.collection.objects.link(obj_emptyFrac)
 
-def gen_pointsObject(obj: types.Object, points: list[Vector], context: types.Context):
+def gen_pointsObject(obj: types.Object, points: list[Vector], cfg: MW_gen_cfg, context: types.Context):
     # Create a new mesh data block and add only verts
     mesh = bpy.data.meshes.new("Shards_source")
     mesh.from_pydata(points, [], [])
@@ -71,6 +71,7 @@ def gen_pointsObject(obj: types.Object, points: list[Vector], context: types.Con
     obj_points = bpy.data.objects.new("Shards_source", mesh)
     obj_points.mw_gen.meta_type = {"CHILD"}
     obj_points.parent = obj
+    obj_points.hide_set(cfg.struct_hidePoints)
     context.scene.collection.objects.link(obj_points)
 
 

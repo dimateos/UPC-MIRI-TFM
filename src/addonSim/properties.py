@@ -6,7 +6,6 @@ from tess import Container, Cell
 
 
 # -------------------------------------------------------------------
-# WIP sample properties
 
 class MW_gen_cfg(types.PropertyGroup):
     meta_refresh: props.BoolProperty(
@@ -29,6 +28,7 @@ class MW_gen_cfg(types.PropertyGroup):
         options={'ENUM_FLAG'},
         default={'NONE'},
     )
+
     meta_show_debug: props.BoolProperty(
         name="Show DEBUG...",
         default=True,
@@ -39,6 +39,13 @@ class MW_gen_cfg(types.PropertyGroup):
         default=True,
         description="Show fracture summary"
     )
+
+    debug_inspectMesh: props.BoolProperty(
+        name="Print mesh summary",
+        default=False,
+        description="Show a summary of the mesh properties"
+    )
+
 
     source: props.EnumProperty(
         name="Source",
@@ -71,32 +78,38 @@ class MW_gen_cfg(types.PropertyGroup):
         default=-1,
     )
 
-    #cell_scale: props.FloatVectorProperty(
-    #    name="Cell scale",
-    #    description="Scale Cell Shape",
-    #    size=3,
-    #    min=0.0, max=1.0,
-    #    default=(1.0, 1.0, 1.0),
-    #)
+
+    struct_nameSufix: props.StringProperty(
+        name="Name sufix",
+        default="MW",
+    )
+    struct_nameOriginal: props.StringProperty()
+
+    struct_hideOrignal: props.BoolProperty(
+        name="Hide original",
+        description="The original object, the child backup is always hidden",
+        default=False,
+    )
+    struct_hidePoints: props.BoolProperty(
+        name="Hide points",
+        description="The ones used for the cells generation",
+        default=False,
+    )
+
 
     margin_box_bounds: props.FloatProperty(
-        name="Bounding box",
+        name="Margin BB",
         description="Additional displacement of the box normal planes",
         min=0.0, max=1.0,
         default=0.025,
     )
     margin_face_bounds: props.FloatProperty(
-        name="Normal faces",
+        name="Margin faces",
         description="Additional displacement of the face normal planes",
         min=0.0, max=1.0,
         default=0.025,
     )
 
-    struct_sufix: props.StringProperty(
-        name="Sufix",
-        default="MW",
-    )
-    struct_original: props.StringProperty()
 
 
 class MW_sim_cfg(types.PropertyGroup):
@@ -104,6 +117,7 @@ class MW_sim_cfg(types.PropertyGroup):
 
 class MW_vis_cfg(types.PropertyGroup):
     pass
+
 
 # -------------------------------------------------------------------
 # Blender events

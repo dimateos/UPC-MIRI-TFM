@@ -2,10 +2,7 @@
 # Using tess voro++ adaptor
 from tess import Container, Cell
 
-import bpy
-#import bmesh
-
-def points_as_bmesh_cells(
+def points_as_voroCont(
         obj,
         points,
         points_scale=None,
