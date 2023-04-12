@@ -5,9 +5,10 @@ from .properties import (
     MW_gen_cfg,
 )
 
+from .ui import DEV_log
 from . import utils
-from mathutils import Vector
 
+from mathutils import Vector
 import mathutils.noise as bl_rnd
 import random as rnd
 
@@ -30,8 +31,8 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
     obj_copy.mw_gen.meta_type = {"CHILD"}
     context.scene.collection.objects.link(obj_copy)
 
-    # Hide and select
-    obj.hide_set(cfg.struct_hideOrignal)
+    # Hide and select after link
+    obj.hide_set(not cfg.struct_showOrignal)
     obj_copy.hide_set(True)
     obj_empty.select_set(True)
     context.view_layer.objects.active = obj_empty
@@ -54,8 +55,9 @@ def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     # Generate empty for the fractures
     obj_emptyFrac = bpy.data.objects.new("Shards", None)
     obj_emptyFrac.mw_gen.meta_type = {"CHILD"}
-    obj_emptyFrac.parent = obj
     context.scene.collection.objects.link(obj_emptyFrac)
+    obj_emptyFrac.hide_set(not cfg.struct_showShards)
+    obj_emptyFrac.parent = obj
 
 def gen_pointsObject(obj: types.Object, points: list[Vector], cfg: MW_gen_cfg, context: types.Context):
     # Create a new mesh data block and add only verts
@@ -72,8 +74,8 @@ def gen_pointsObject(obj: types.Object, points: list[Vector], cfg: MW_gen_cfg, c
     obj_points = bpy.data.objects.new("Shards_source", mesh)
     obj_points.mw_gen.meta_type = {"CHILD"}
     obj_points.parent = obj
-    obj_points.hide_set(cfg.struct_hidePoints)
     context.scene.collection.objects.link(obj_points)
+    obj_points.hide_set(not cfg.struct_showPoints)
 
 
 # -------------------------------------------------------------------
@@ -83,11 +85,11 @@ def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, context)
     points = get_points_from_object(obj, cfg, context)
 
     if not points:
-        print("No points found... changing to fallback (own vertices)")
+        DEV_log("No points found... changing to fallback (own vertices)", {"SETUP"})
         cfg.source = {'VERT_OWN'}
         points = get_points_from_object(obj, cfg, context)
     if not points:
-        print("No points found either...")
+        DEV_log("No points found either...", {"SETUP"})
         return []
     return points
 
@@ -98,8 +100,8 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
         'PENCIL',
         'VERT_OWN', 'VERT_CHILD',
     }
-    # print(source - _source_all)
-    # print(source)
+    # DEV_log(source - _source_all)
+    # DEV_log(source)
     assert(len(source | _source_all) == len(_source_all))
     assert(len(source))
 
@@ -178,7 +180,7 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
         if gp:
             points.extend([p for spline in get_splines(gp) for p in spline])
 
-    print("Found %d points" % len(points))
+    DEV_log("Found %d points" % len(points), {"SETUP"})
     return points
 
 

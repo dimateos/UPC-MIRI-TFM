@@ -31,7 +31,7 @@ def DEV_drawVal(layout: types.UILayout, msg, value):
     if not DEV_VALS: return
     layout.label(text=f"{msg}: {value}", icon="BLENDER")
 
-def DEV_drawDebug(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Context):
+def DEV_drawDebug(cfg : MW_gen_cfg, layout: types.UILayout):
     if not DEV_DEBUG: return
 
     # Toggle debug
@@ -39,6 +39,11 @@ def DEV_drawDebug(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Conte
     box.prop(cfg, "meta_show_debug", toggle=True)
     if cfg.meta_show_debug:
         col = box.column()
+        col.label(text="Show:")
+        rowsub = col.row(align=True)
+        rowsub.prop(cfg, "struct_showOrignal")
+        rowsub.prop(cfg, "struct_showShards")
+        rowsub.prop(cfg, "struct_showPoints")
 
 # -------------------------------------------------------------------
 
@@ -102,3 +107,5 @@ def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Contex
     rowsub = col.row(align=True)
     rowsub.prop(cfg, "margin_box_bounds")
     rowsub.prop(cfg, "margin_face_bounds")
+
+    DEV_drawDebug(cfg, layout)
