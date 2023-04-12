@@ -9,6 +9,8 @@ set bpy=%RETVAL%
 REM pass arguments directly to local pip
 set bpip=%bpy% -m pip
 
+CALL :getAbsPath "..\DATA\Blender\3.4.1\blender.exe"
+set bexe=%RETVAL%
 
 :: ========== FUNCTIONS ==========
 EXIT /b

@@ -1,4 +1,6 @@
 @echo off
+echo Just exit from test .bat
+EXIT /b
 
 REM using ./env works for multiple commands otherwise exits at the first
 :: CALL ./env
