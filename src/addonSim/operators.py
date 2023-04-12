@@ -78,8 +78,8 @@ class MW_gen_OT_(types.Operator):
                 obj_copy = utils.get_child(obj, "Original")
 
 
-        # Seed simulation random
-        utils.rnd_seed(cfg.rnd_seed)
+        # Seed simulation randomness + store it
+        cfg.rnd_seed = utils.rnd_seed(cfg.rnd_seed)
 
 
         # Finish scene setup
@@ -124,6 +124,8 @@ class MW_gen_OT_(types.Operator):
         utils.cfg_copyProps(self.cfg, obj.mw_gen)
         return {'FINISHED'}
 
+
+# -------------------------------------------------------------------
 
 class MW_infoData_OT_(types.Operator):
     bl_idname = "mw.info_data"

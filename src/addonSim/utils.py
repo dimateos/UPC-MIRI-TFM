@@ -9,6 +9,7 @@ from .properties import (
 
 from mathutils import Vector
 
+
 # -------------------------------------------------------------------
 
 def cfg_getRoot(obj: types.Object) -> tuple[types.Object, MW_gen_cfg]:
@@ -38,7 +39,13 @@ def cfg_copyProps(src, dest):
 
 # -------------------------------------------------------------------
 
-def get_worldBB_radius(obj):
+def get_worldMatrix_normalMatrix(obj: types.Object) -> tuple[types.Object, MW_gen_cfg]:
+    matrix = obj.matrix_world.copy()
+    # Normals will need a normal matrix to transform properly
+    matrix_normal = matrix.inverted_safe().transposed().to_3x3()
+    return matrix, matrix_normal
+
+def get_worldBB_radius(obj: types.Object) -> tuple[list[Vector, 6], float]:
     matrix = obj.matrix_world
     bb_world: list[Vector, 6] = [matrix @ Vector(v) for v in obj.bound_box]
     bb_radius: float =          ((bb_world[0] - bb_world[6]).length / 2.0)
@@ -46,13 +53,13 @@ def get_worldBB_radius(obj):
     # TODO atm limited to mesh, otherwise check and use desgraph
     return bb_world, bb_radius
 
-def get_worldVerts(obj):
+def get_worldVerts(obj: types.Object) -> list[Vector, 6]:
     mesh = obj.data
     matrix = obj.matrix_world
     verts_world = [matrix @ v.co for v in mesh.vertices]
     return verts_world
 
-def transform_verts(verts, matrix):
+def transform_verts(verts: list[Vector], matrix) -> list[Vector, 6]:
     verts_world = [matrix @ v.co for v in verts]
     return verts_world
 
@@ -87,14 +94,16 @@ def match_anySub(word: str, subs: list) -> bool:
 
 # -------------------------------------------------------------------
 
-def rnd_seed(s: int = None):
-    """ Persists across separate module imports """
+def rnd_seed(s: int = None) -> int:
+    """ Persists across separate module imports, return the seed to store in the config """
     import mathutils.noise as bl_rnd
     import random as rnd
 
-    if s is None:
-        rnd.seed()
-        bl_rnd.seed_set(0)
-    else:
-        rnd.seed(s)
-        bl_rnd.seed_set(s)
+    if s is None or s < 0:
+        from datetime import datetime
+        tim = datetime.now()
+        s = tim.hour*10000+tim.minute*100+tim.second
+
+    rnd.seed(s)
+    bl_rnd.seed_set(s)
+    return s
