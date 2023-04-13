@@ -95,7 +95,7 @@ class MW_gen_OT_(types.Operator):
         stats.log("start setup points")
 
         # Get the points and bb
-        points = mw_setup.get_points_from_object_fallback(obj_copy, cfg, context)
+        points = mw_calc.get_points_from_object_fallback(obj_copy, cfg, context)
         if not points:
             return self.ret_failed()
 
@@ -104,9 +104,9 @@ class MW_gen_OT_(types.Operator):
         m_world, mNormal_world = utils.get_worldMatrix_normalMatrix(obj_copy)
 
         # Limit and rnd a bit the points and add them to the scene
-        mw_setup.points_limitNum(points, cfg)
-        mw_setup.points_noDoubles(points, cfg)
-        mw_setup.points_addNoise(points, cfg, bb_radius)
+        mw_calc.points_limitNum(points, cfg)
+        mw_calc.points_noDoubles(points, cfg)
+        mw_calc.points_addNoise(points, cfg, bb_radius)
 
         mw_setup.gen_pointsObject(obj, points, cfg, context)
         mw_setup.gen_boundsObject(obj, bb_world, cfg, context)
