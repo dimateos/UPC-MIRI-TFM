@@ -79,15 +79,21 @@ class MW_gen_cfg(types.PropertyGroup):
     )
     struct_nameOriginal: props.StringProperty()
 
-    struct_showOrignal: props.BoolProperty(
-        name="Original",
-        description="The original object, the child backup is always hidden",
-        default=False,
-    )
     struct_showShards: props.BoolProperty(
         name="Shards",
         description="Voronoi cells",
         default=True,
+    )
+    struct_showLinks: props.BoolProperty(
+        name="Links",
+        description="Voronoi cells links",
+        default=True,
+    )
+
+    struct_showOrignal: props.BoolProperty(
+        name="Original",
+        description="The original object, the child backup is always hidden",
+        default=False,
     )
     struct_showPoints: props.BoolProperty(
         name="Points",

@@ -93,16 +93,16 @@ def get_worldMatrix_normalMatrix(obj: types.Object) -> tuple[types.Object, MW_ge
 
 # -------------------------------------------------------------------
 
-def delete_object(obj: types.Object):
+def delete_objectRec(obj: types.Object):
     """ Delete the object and children recursively """
     for child in obj.children:
-        delete_object(child)
+        delete_objectRec(child)
     bpy.data.objects.remove(obj, do_unlink=True)
 
-def delete_children(ob_father: types.Object):
+def delete_childrenRec(ob_father: types.Object):
     """ Delete the children objects recursively """
     for child in ob_father.children:
-        delete_object(child)
+        delete_objectRec(child)
 
 def get_child(obj: types.Object, name: str):
     """ Find child by name (starts with to avoid limited exact names) """
@@ -111,6 +111,13 @@ def get_child(obj: types.Object, name: str):
         if child.name.startswith(name):
             return child
     return None
+
+def hide_objectRec(obj: types.Object, hide=True):
+    """ Hide the object and children recursively """
+    for child in obj.children:
+        hide_objectRec(child)
+
+    obj.hide_set(hide)
 
 # -------------------------------------------------------------------
 
@@ -127,7 +134,7 @@ def gen_childClean(obj: types.Object, name: str, mesh: types.Mesh, hide: bool, c
     """ Generate a new child, delete the previous one if found """
     obj_child = get_child(obj, name)
     if obj_child:
-        delete_object(obj_child)
+        delete_objectRec(obj_child)
     return gen_child(obj, name, mesh, hide, context)
 
 # -------------------------------------------------------------------

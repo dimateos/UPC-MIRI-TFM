@@ -85,7 +85,9 @@ class MW_gen_OT_(types.Operator):
 
         # Finish scene setup
         mw_setup.gen_naming(obj, cfg, context)
-        obj_shards = mw_setup.gen_shardsEmpty(obj, cfg, context)
+        obj.select_set(True)
+        #context.active_object = obj
+        # TODO: renaming in a edit fracture unselects from active_object
 
 
         # Setup calc
@@ -118,7 +120,13 @@ class MW_gen_OT_(types.Operator):
         cont = mw_calc.cont_fromPoints(points, bb_world, faces4D_world)
 
         stats.log("start build bl cells")
+        obj_shards = mw_setup.gen_shardsEmpty(obj, cfg, context)
         mw_setup.gen_shardsObjects(obj_shards, cont, cfg, context)
+
+        obj_links = mw_setup.gen_linksEmpty(obj, cfg, context)
+        #mw_setup.gen_linksObjects(obj_links, cont, cfg, context)
+
+
 
 
         # TODO: store the cont inside the property pointer
@@ -134,6 +142,7 @@ class MW_gen_OT_(types.Operator):
         # TODO: RENDER:: add interior handle for materials
         # TODO: GEN:: recursiveness?
         # TODO: GEN:: avoid convex hull?
+        # TODO: BL:: detect property changes and avoid regen -> maybe some vis can go to panel etc
 
         # Add edited cfg to the object
         utils.cfg_copyProps(self.cfg, obj.mw_gen)
