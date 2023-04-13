@@ -10,6 +10,9 @@ from .ui import DEV_log
 
 from mathutils import Vector
 
+# Using tess voro++ adaptor
+from tess import Container, Cell
+
 NAME_ORIGINAL = "Original"
 NAME_ORIGINAL_BB = "Original_bb"
 NAME_SHARDS = "Shards"
@@ -37,6 +40,7 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
     # Hide and select after link
     obj.hide_set(not cfg.struct_showOrignal)
     obj_copy.hide_set(True)
+    obj_copy.show_bounds = True
     obj_empty.select_set(True)
     context.view_layer.objects.active = obj_empty
     #bpy.ops.outliner.show_active(execution_context='INVOKE_DEFAULT') cannot expand hierarchy...
@@ -70,3 +74,17 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, co
     obj_bb = utils.gen_childClean(obj, NAME_ORIGINAL_BB, mesh, not cfg.struct_showBB, context)
     obj_bb.show_bounds = True
     return obj_bb
+
+# -------------------------------------------------------------------
+
+def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
+    for cell in cont:
+        # TODO maybe make id match the point id instead of the container id
+        name= f"{NAME_SHARDS}_{cell.id}"
+
+        # create a static mesh for each one
+        # TODO global-local space vertices?
+        mesh = bpy.data.meshes.new(name)
+        mesh.from_pydata(vertices=cell.vertices(), edges=[], faces=cell.face_vertices())
+
+        obj_shard = utils.gen_childClean(obj, name, mesh, False, context)

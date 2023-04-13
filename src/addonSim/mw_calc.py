@@ -145,37 +145,12 @@ def points_addNoise(points: list[Vector], cfg: MW_gen_cfg, bb_radius: float):
 
 # -------------------------------------------------------------------
 
-def cont_fromPoints(
-        points: list[Vector],
-        bb_world: list[Vector, 6],
-        cfg: MW_gen_cfg
-) -> Container:
-
-    # Calculate the 4D vectors representing the face planes
-    face_normals = [mw_normal @ f.normal for f in mesh.polygons]
-    # displace the center a bit by margin bounds
-    face_centers = [mw @ (f.center + f.normal * cfg.margin_bounds) for f in mesh.polygons]
-    walls = [
-            Vector( list(n) + [fc.dot(n)] )
-        for (fc,n) in zip(face_centers, face_normals)
-    ]
-
+def cont_fromPoints(points: list[Vector], bb_world: list[Vector, 6], faces4D_world: list[Vector]) -> Container:
+    # Container bounds expected as tuples
     bb_tuples = [ p.to_tuple() for p in bb_world ]
 
     # Build the container and cells
-    cont = Container(points=points, limits=bb_tuples, walls=walls)
+    cont = Container(points=points, limits=bb_tuples, walls=faces4D_world)
 
-
-    # OUTPUT: consists of a list of shards tuples (center point used, [convex hull vertices])
-    # NOTE the vertices must use mathutils.Vectors and in LOCAL coordinates around the original position
-    cells = [
-        (
-            Vector(cell.pos),
-            [ Vector(v) for v in cell.vertices_local() ]
-        )
-        for cell in cont
-    ]
-
-    DEV_log("Found %d cells" % len(cont), {"CALC"})
+    DEV_log(f"Found {len(cont)} cells ({len(faces4D_world)} faces)", {"CALC"})
     return cont
-

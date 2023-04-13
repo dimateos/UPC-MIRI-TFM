@@ -85,7 +85,7 @@ class MW_gen_OT_(types.Operator):
 
         # Finish scene setup
         mw_setup.gen_naming(obj, cfg, context)
-        mw_setup.gen_shardsEmpty(obj, cfg, context)
+        obj_shards = mw_setup.gen_shardsEmpty(obj, cfg, context)
 
 
         # Setup calc
@@ -102,6 +102,7 @@ class MW_gen_OT_(types.Operator):
         verts_world = utils.get_worldVerts(obj_copy)
         bb_world, bb_radius = utils.get_worldBB_radius(obj_copy, cfg.margin_box_bounds)
         m_world, mNormal_world = utils.get_worldMatrix_normalMatrix(obj_copy)
+        faces4D_world = utils.get_worldFaces_4D(obj_copy, cfg.margin_face_bounds)
 
         # Limit and rnd a bit the points and add them to the scene
         mw_calc.points_limitNum(points, cfg)
@@ -113,9 +114,11 @@ class MW_gen_OT_(types.Operator):
 
 
         # Calc voronoi
-        stats.log("start calc voro")
-        #cont = mw_calc.cont_fromPoints()
-        #stats.log("start calc voro")
+        stats.log("start calc voro cells")
+        cont = mw_calc.cont_fromPoints(points, bb_world, faces4D_world)
+
+        stats.log("start build bl cells")
+        mw_setup.gen_shardsObjects(obj_shards, cont, cfg, context)
 
 
         ## TEST: check out some cell properties and API

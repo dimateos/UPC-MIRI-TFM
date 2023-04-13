@@ -41,33 +41,55 @@ def cfg_copyProps(src, dest):
 
 # -------------------------------------------------------------------
 
-def get_worldMatrix_normalMatrix(obj: types.Object) -> tuple[types.Object, MW_gen_cfg]:
-    matrix = obj.matrix_world.copy()
-    # Normals will need a normal matrix to transform properly
-    matrix_normal = matrix.inverted_safe().transposed().to_3x3()
-    return matrix, matrix_normal
+def transform_verts(verts: list[Vector], matrix) -> list[Vector, 6]:
+    """ INPLACE: Transform given vertices by the matrix """
+    verts_world = [matrix @ v.co for v in verts]
 
-def get_worldBB_radius(obj: types.Object, margin = 0.0) -> tuple[list[Vector, 6], float]:
+def get_worldVerts(obj: types.Object) -> list[Vector, 6]:
+    """ Get the object vertices in world space """
+    mesh = obj.data
+    matrix = obj.matrix_world
+
+    verts_world = [matrix @ v.co for v in mesh.vertices]
+    return verts_world
+
+def get_worldBB_radius(obj: types.Object, margin_disp = 0.0) -> tuple[list[Vector, 6], float]:
+    """ Get the object bounding box MIN/MAX Vector pair in world space """
     matrix = obj.matrix_world
     bb_world_full = [matrix @ Vector(v) for v in obj.bound_box]
 
-    margin_vector = Vector()
-    margin_vector.xyz = margin
-    bb_world = (bb_world_full[0]- margin_vector, bb_world_full[6] + margin_vector)
+    disp = Vector()
+    disp.xyz = margin_disp
+    bb_world = (bb_world_full[0]- disp, bb_world_full[6] + disp)
     bb_radius = ((bb_world[0] - bb_world[1]).length / 2.0)
 
     # TODO atm limited to mesh, otherwise check and use depsgraph
     #DEV_log("Found %d bound verts" % len(bb_world_full))
     return bb_world, bb_radius
 
-def get_worldVerts(obj: types.Object) -> list[Vector, 6]:
+def get_worldFaces_4D(obj: types.Object, n_disp = 0.0) -> list[Vector, Vector]:
+    """ Get the object faces as 4D vectors in world space """
     mesh = obj.data
     matrix = obj.matrix_world
-    verts_world = [matrix @ v.co for v in mesh.vertices]
-    return verts_world
+    matrix_normal = matrix.inverted_safe().transposed().to_3x3()
 
-def transform_verts(verts: list[Vector], matrix) -> list[Vector, 6]:
-    verts_world = [matrix @ v.co for v in verts]
+    # displace the center a bit by n_disp
+    face_centers = [matrix @ (f.center + f.normal * n_disp) for f in mesh.polygons]
+    face_normals = [matrix_normal @ f.normal for f in mesh.polygons]
+
+    faces_4D = [
+            Vector( [fn.x, fn.y, fn.z, fn.dot(fc)] )
+        for (fc,fn) in zip(face_centers, face_normals)
+    ]
+    return faces_4D
+
+def get_worldMatrix_normalMatrix(obj: types.Object) -> tuple[types.Object, MW_gen_cfg]:
+    """ Get the object world matrix and normal world matrix """
+    matrix = obj.matrix_world.copy()
+
+    # Normals will need a normal matrix to transform properly
+    matrix_normal = matrix.inverted_safe().transposed().to_3x3()
+    return matrix, matrix_normal
 
 # -------------------------------------------------------------------
 
@@ -92,20 +114,21 @@ def get_child(obj: types.Object, name: str):
 
 # -------------------------------------------------------------------
 
-def gen_childClean(obj: types.Object, name: str, mesh: types.Mesh, hide: bool, context: types.Context):
-    """ Generate a new child, delete the previous one if found """
-    # Delete points child if already there
-    obj_child = get_child(obj, name)
-    if obj_child:
-        delete_object(obj_child)
-
-    # Generate empty for the points
+def gen_child(obj: types.Object, name: str, mesh: types.Mesh, hide: bool, context: types.Context):
+    """ Generate a new child with the CHILD meta_type"""
     obj_child = bpy.data.objects.new(name, mesh)
     obj_child.mw_gen.meta_type = {"CHILD"}
     obj_child.parent = obj
     context.scene.collection.objects.link(obj_child)
     obj_child.hide_set(hide)
     return obj_child
+
+def gen_childClean(obj: types.Object, name: str, mesh: types.Mesh, hide: bool, context: types.Context):
+    """ Generate a new child, delete the previous one if found """
+    obj_child = get_child(obj, name)
+    if obj_child:
+        delete_object(obj_child)
+    return gen_child(obj, name, mesh, hide, context)
 
 # -------------------------------------------------------------------
 
