@@ -26,5 +26,5 @@ EXIT /b
 
 REM Return: Resolved absolute path in RETVAL.
 :getAbsPath
-    set RETVAL=%~f1
+    set RETVAL="%~f1" &REM add quotes for paths with spaces
     EXIT /b
