@@ -121,6 +121,7 @@ class MW_gen_OT_(types.Operator):
         mw_setup.gen_shardsObjects(obj_shards, cont, cfg, context)
 
 
+        # TODO: store the cont inside the property pointer
         ## TEST: check out some cell properties and API
         #if 1:
         #    from . import info_inspect as ins
@@ -129,7 +130,7 @@ class MW_gen_OT_(types.Operator):
         # TODO: GEN:: recenter shards origin
         # TODO: GEN:: decimation applied -> create another object
         # TODO: GEN:: convex hull applied -> create another object
-        # TODO: PHYS:: add mass + nter cell space (or shrink)
+        # TODO: PHYS:: add mass + cell inter-space (or shrink) + add rigid body?
         # TODO: RENDER:: add interior handle for materials
         # TODO: GEN:: recursiveness?
         # TODO: GEN:: avoid convex hull?

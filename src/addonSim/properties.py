@@ -36,7 +36,7 @@ class MW_gen_cfg(types.PropertyGroup):
     )
     meta_show_summary: props.BoolProperty(
         name="Show summary...",
-        default=True,
+        default=False,
         description="Show fracture summary"
     )
 
@@ -104,13 +104,15 @@ class MW_gen_cfg(types.PropertyGroup):
     margin_box_bounds: props.FloatProperty(
         name="Margin BB",
         description="Additional displacement of the box normal planes",
-        min=0.0, max=1.0,
+        # TODO: might wanna limit in the container instead
+        min=0.001, max=1.0,
         default=0.025,
     )
     margin_face_bounds: props.FloatProperty(
         name="Margin faces",
         description="Additional displacement of the face normal planes",
-        min=0.0, max=1.0,
+        # TODO: not sure why 0 goes to max? related to cont trying to pass convex cells by ignoring planes
+        min=0.001, max=1.0,
         default=0.025,
     )
 

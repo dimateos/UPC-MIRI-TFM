@@ -85,6 +85,8 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
         # create a static mesh for each one
         # TODO global-local space vertices?
         mesh = bpy.data.meshes.new(name)
-        mesh.from_pydata(vertices=cell.vertices(), edges=[], faces=cell.face_vertices())
+        mesh.from_pydata(vertices=cell.vertices_local_centroid(), edges=[], faces=cell.face_vertices())
 
         obj_shard = utils.gen_childClean(obj, name, mesh, False, context)
+        obj_shard.location = cell.centroid()
+        #print("cell.pos", cell.pos)

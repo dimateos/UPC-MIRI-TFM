@@ -153,4 +153,5 @@ def cont_fromPoints(points: list[Vector], bb_world: list[Vector, 6], faces4D_wor
     cont = Container(points=points, limits=bb_tuples, walls=faces4D_world)
 
     DEV_log(f"Found {len(cont)} cells ({len(faces4D_world)} faces)", {"CALC"})
+    # TODO: get n faces too etc cont info
     return cont
