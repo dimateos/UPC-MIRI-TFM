@@ -3,9 +3,9 @@ echo Just exit from test .bat
 EXIT /b
 
 REM using ./env works for multiple commands otherwise exits at the first
-:: CALL ./env
-:: %bpy% --version
-:: %bpy% --version
+::CALL ./env
+::%bpy% --version
+::%bpy% --version
 
 REM check packages to it
 bpy --version
@@ -46,4 +46,4 @@ REM BUT: it seems that I still need to recompile cython manually tho... I levera
 bpip install --editable ../DATA/UPC-MIRI-TFM-tess
 REM NOTE: it seems I can have both installs, local and editable at the sametime?
 REM maybe because the setup actually uses setup.py direclty not pip
-bpy setup.py develop &:: needs to be executed at the root of the library repository
+bpy setup.py develop &REM needs to be executed at the root of the library repository
