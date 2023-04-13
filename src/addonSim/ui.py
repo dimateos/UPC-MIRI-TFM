@@ -69,6 +69,18 @@ def draw_inspect(obj: types.Object, layout: types.UILayout):
         mesh: types.Mesh = obj.data
         col.label(text=f"V: {len(mesh.vertices)}   E: {len(mesh.edges)}   F: {len(mesh.polygons)}   T: {len(mesh.loop_triangles)}")
 
+    # shared decimal format
+    fmt = ">6.3f"
+    fmt_vec = f"({{:{fmt}}}, {{:{fmt}}}, {{:{fmt}}})"
+
+    pos = obj.location
+    col.label(text=f"pos: {fmt_vec}".format(*pos))
+    from math import degrees
+    rot = tuple(degrees(r) for r in obj.rotation_euler)
+    col.label(text=f"rot:  {fmt_vec}".format(*rot))
+    sca = obj.scale
+    col.label(text=f"sca: {fmt_vec}".format(*sca))
+
 # -------------------------------------------------------------------
 
 def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Context):
