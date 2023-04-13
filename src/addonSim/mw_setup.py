@@ -8,7 +8,7 @@ from .properties import (
 from . import utils
 from .ui import DEV_log
 
-from mathutils import Vector
+from mathutils import Vector, Matrix
 
 # Using tess voro++ adaptor
 from tess import Container, Cell
@@ -27,17 +27,20 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
     cfg.meta_type = {"ROOT"}
     cfg.struct_nameOriginal = obj.name
 
-    # Empty object to hold all of them
+    # Empty object to hold all of them set at the original obj trans
     obj_empty = bpy.data.objects.new(cfg.struct_nameOriginal, None)
     context.scene.collection.objects.link(obj_empty)
 
     # Duplicate the original object
     obj_copy: types.Object = obj.copy()
-    obj_copy.data = obj.data.copy()
     obj_copy.name = NAME_ORIGINAL
     obj_copy.parent = obj_empty
     obj_copy.mw_gen.meta_type = {"CHILD"}
     context.scene.collection.objects.link(obj_copy)
+
+    # Set the transform to the empty and relative to the copy (after parenting!)
+    obj_empty.matrix_world = obj.matrix_world.copy()
+    obj_copy.matrix_world = obj.matrix_world.copy()
 
     # Hide and select after link
     obj.hide_set(not cfg.struct_showOrignal)
@@ -46,6 +49,7 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
     context.view_layer.objects.active = obj_empty
     #bpy.ops.outliner.show_active(execution_context='INVOKE_DEFAULT') cannot expand hierarchy...
 
+    # TODO: position of the empties at the original obj?
     return obj_empty, obj_copy
 
 def gen_naming(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
@@ -56,10 +60,12 @@ def gen_naming(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
 
 def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     obj_shardsEmpty = utils.gen_childClean(obj, NAME_SHARDS, None, not cfg.struct_showShards, context)
+    obj_shardsEmpty.matrix_world = Matrix.Identity(4)
     return obj_shardsEmpty
 
 def gen_linksEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     obj_linksEmpty = utils.gen_childClean(obj, NAME_LINKS, None, not cfg.struct_showLinks, context)
+    obj_linksEmpty.matrix_world = Matrix.Identity(4)
     return obj_linksEmpty
 
 def gen_pointsObject(obj: types.Object, points: list[Vector], cfg: MW_gen_cfg, context: types.Context):
@@ -69,6 +75,9 @@ def gen_pointsObject(obj: types.Object, points: list[Vector], cfg: MW_gen_cfg, c
     #mesh.update()
 
     obj_points = utils.gen_childClean(obj, NAME_SHARDS_POINTS, mesh, not cfg.struct_showPoints, context)
+    # TODO: points relative to parent or world... in multiple paces: the dot when selected will be at origin atm
+    # TODO: also set the matrix or only pos? test rotations etc
+    obj_points.matrix_world = Matrix.Identity(4)
     return obj_points
 
 def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, context: types.Context):
@@ -78,6 +87,7 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, co
 
     obj_bb = utils.gen_childClean(obj, NAME_ORIGINAL_BB, mesh, not cfg.struct_showBB, context)
     obj_bb.show_bounds = True
+    obj_bb.matrix_world = Matrix.Identity(4)
     return obj_bb
 
 # -------------------------------------------------------------------
@@ -89,9 +99,11 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
 
         # create a static mesh for each one
         mesh = bpy.data.meshes.new(name)
+        # TODO: local around centroid did not work properly
         mesh.from_pydata(vertices=cell.vertices_local_centroid(), edges=[], faces=cell.face_vertices())
 
         obj_shard = utils.gen_child(obj, name, mesh, not cfg.struct_showShards, context)
+        obj_shard.matrix_world = Matrix.Identity(4)
         obj_shard.location = cell.centroid()
         #print("cell.pos", cell.pos)
 
@@ -105,6 +117,7 @@ def gen_linksObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, contex
         # group the links by cell using a parent
         nameGroup= f"{NAME_LINKS_GROUP}_{cell.id}"
         obj_group = utils.gen_child(obj, nameGroup, None, False, context)
+        #obj_group.matrix_world = Matrix.Identity(4)
         #obj_group.location = cell.centroid()
 
         # TODO: position world/local?

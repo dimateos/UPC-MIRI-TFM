@@ -33,6 +33,8 @@ def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, context)
     return points
 
 def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
+    # TODO: seems like not letting pick others?
+
     source = cfg.source
     _source_all = {
         'PARTICLE_OWN', 'PARTICLE_CHILD',

@@ -136,6 +136,8 @@ class MW_gen_OT_(types.Operator):
         #    from . import info_inspect as ins
         #    ins.print_data(cont[0], False)
 
+        # TODO: button to delete rec -> blender delete hierarchy ignores hidden? there seem to be a BUG
+
         # TODO: GEN:: recenter shards origin
         # TODO: GEN:: decimation applied -> create another object
         # TODO: GEN:: convex hull applied -> create another object
