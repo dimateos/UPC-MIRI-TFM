@@ -18,6 +18,7 @@ NAME_ORIGINAL_BB = NAME_ORIGINAL+"_bb"
 NAME_SHARDS = "Shards"
 NAME_SHARDS_POINTS = "Shards_source"
 NAME_LINKS = NAME_SHARDS+"_links"
+NAME_LINKS_GROUP = "Links"
 
 
 # -------------------------------------------------------------------
@@ -83,28 +84,68 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, co
 
 def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
     for cell in cont:
-        # TODO maybe make id match the point id instead of the container id
+        # TODO: maybe make id match the point id instead of the container id
         name= f"{NAME_SHARDS}_{cell.id}"
 
         # create a static mesh for each one
         mesh = bpy.data.meshes.new(name)
         mesh.from_pydata(vertices=cell.vertices_local_centroid(), edges=[], faces=cell.face_vertices())
 
-        obj_shard = utils.gen_childClean(obj, name, mesh, not cfg.struct_showShards, context)
+        obj_shard = utils.gen_child(obj, name, mesh, not cfg.struct_showShards, context)
         obj_shard.location = cell.centroid()
         #print("cell.pos", cell.pos)
 
-#def gen_linksObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
-#    return
-#    for cell in cont:
-#        # TODO maybe make id match the point id instead of the container id
-#        name= f"{NAME_SHARDS}_{cell.id}"
+def gen_linksObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
+    # TODO: atm just hiding reps -> maybe generate using a different map instead of iterating the raw cont
+    neigh_set = set()
 
-#        # create a static mesh for each one
-#        # TODO global-local space vertices?
-#        mesh = bpy.data.meshes.new(name)
-#        mesh.from_pydata(vertices=cell.vertices_local_centroid(), edges=[], faces=cell.face_vertices())
+    for cell in cont:
+        # TODO: maybe merge shard/link loop
 
-#        obj_shard = utils.gen_childClean(obj, name, mesh, not cfg.struct_showShards, context)
-#        obj_shard.location = cell.centroid()
-#        #print("cell.pos", cell.pos)
+        # group the links by cell using a parent
+        nameGroup= f"{NAME_LINKS_GROUP}_{cell.id}"
+        obj_group = utils.gen_child(obj, nameGroup, None, False, context)
+        #obj_group.location = cell.centroid()
+
+        # TODO: position world/local?
+        cell_centroid_4d = Vector(cell.centroid()).to_4d()
+
+        # iterate the cell neighbours
+        neigh = cell.neighbors()
+        for n_id in neigh:
+            # wall link
+            if n_id < 0:
+                name= f"s{cell.id}_w{-n_id}"
+                obj_link = utils.gen_child(obj_group, name, None, not cfg.struct_showLinks_walls, context)
+                continue
+
+            # neighbour link
+            else:
+                # check repetition
+                key = tuple( sorted([cell.id, n_id]) )
+                key_rep = key in neigh_set
+                if not key_rep: neigh_set.add(key)
+
+                # custom ordered name
+                name= f"s{cell.id}_n{n_id}"
+
+
+                # Create new curve per neighbour
+                curve_data = bpy.data.curves.new(name, 'CURVE')
+                curve_data.dimensions = '3D'
+
+                # Add the centroid points using a poly line
+                neigh_centroid_4d = Vector(cont[n_id].centroid()).to_4d()
+                line = curve_data.splines.new('POLY')
+                line.points.add(1)
+                line.points[0].co = cell_centroid_4d
+                line.points[1].co = neigh_centroid_4d
+
+                # Set the width
+                curve_data.bevel_depth = cfg.links_width
+                curve_data.bevel_resolution = cfg.links_res
+
+                obj_link = utils.gen_child(obj_group, name, curve_data, not cfg.struct_showLinks, context)
+
+                obj_link.hide_set(key_rep)
+                #obj_link.location = cell.centroid()

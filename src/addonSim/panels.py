@@ -64,7 +64,6 @@ class MW_gen_Panel(types.Panel):
             col.operator(MW_gen_OT_.bl_idname, text="EDIT Fracture", icon="STICKY_UVS_VERT")
 
             ui.draw_summary(cfg, layout)
-            #ui.DEV_drawDebug(cfg, layout, context)
 
 
 class MW_info_Panel(types.Panel):

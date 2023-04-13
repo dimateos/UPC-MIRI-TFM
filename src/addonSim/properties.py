@@ -89,6 +89,11 @@ class MW_gen_cfg(types.PropertyGroup):
         description="Voronoi cells links",
         default=True,
     )
+    struct_showLinks_walls: props.BoolProperty(
+        name="Links_walls",
+        description="Voronoi cells links to walls",
+        default=True,
+    )
 
     struct_showOrignal: props.BoolProperty(
         name="Original",
@@ -122,6 +127,19 @@ class MW_gen_cfg(types.PropertyGroup):
         default=0.025,
     )
 
+    links_width: props.FloatProperty(
+        name="Link width",
+        description="WIP: how wide the base link is",
+        min=0.01, max=2.0,
+        default=0.1,
+    )
+    links_res: props.IntProperty(
+        # TODO: maybe set smooth shading too
+        name="Link res",
+        description="WIP: ",
+        min=0, max=8,
+        default=0,
+    )
 
 
 class MW_sim_cfg(types.PropertyGroup):

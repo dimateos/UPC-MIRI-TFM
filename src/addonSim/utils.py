@@ -106,9 +106,12 @@ def delete_childrenRec(ob_father: types.Object):
 
 def get_child(obj: types.Object, name: str):
     """ Find child by name (starts with to avoid limited exact names) """
+    # All names are unique, even under children hierarchies. Blender adds .001 etc
+    nameSub = name+"."
+
     # TODO tried to add a property pointer to types.Object but the addon cannot have it? for now use name
     for child in obj.children:
-        if child.name.startswith(name):
+        if child.name == name or child.name.startswith(nameSub):
             return child
     return None
 

@@ -104,6 +104,9 @@ def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Contex
     rowsub = col.row(align=True)
     rowsub.prop(cfg, "margin_box_bounds")
     rowsub.prop(cfg, "margin_face_bounds")
+    rowsub = col.row(align=True)
+    rowsub.prop(cfg, "links_width")
+    rowsub.prop(cfg, "links_res")
 
     DEV_drawDebug(cfg, layout)
 
@@ -119,6 +122,7 @@ def DEV_drawDebug(cfg : MW_gen_cfg, layout: types.UILayout):
         rowsub = col.row(align=True)
         rowsub.prop(cfg, "struct_showShards")
         rowsub.prop(cfg, "struct_showLinks")
+        rowsub.prop(cfg, "struct_showLinks_walls")
         rowsub = col.row(align=True)
         rowsub.prop(cfg, "struct_showOrignal")
         rowsub.prop(cfg, "struct_showPoints")
