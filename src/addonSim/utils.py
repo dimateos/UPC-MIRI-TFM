@@ -91,6 +91,36 @@ def get_worldMatrix_normalMatrix(obj: types.Object) -> tuple[types.Object, MW_ge
     matrix_normal = matrix.inverted_safe().transposed().to_3x3()
     return matrix, matrix_normal
 
+# -------------------------------------------------------------------
+
+def trans_update(obj: types.Object):
+    """ Updates the world matrix of the object, better than updating the whole scene with context.view_layer.update()
+        * But this does not take into account constraints, only parenting.
+    """
+    #trans_printMatrices(obj)
+    #print("^BEFORE update")
+
+    if obj.parent is None:
+        obj.matrix_world = obj.matrix_basis
+    else:
+        obj.matrix_world = obj.parent.matrix_world @ obj.matrix_parent_inverse @ obj.matrix_basis
+
+    #trans_printMatrices(obj)
+    #print("^AFTER update")
+
+def trans_reset(obj: types.Object, locally = True, updateTrans = True):
+    """ Reset all transformations of the object (does reset all matrices too) """
+    #trans_printMatrices(obj)
+    #print("^ BEFORE reset")
+
+    if locally:
+        obj.matrix_basis = Matrix.Identity(4)
+    else:
+        obj.matrix_world = Matrix.Identity(4)
+
+    #trans_printMatrices(obj)
+    #print("^ AFTER reset")
+
 def trans_printMatrices(obj: types.Object, printName=True):
     """ Print all transform matrices, read the code for behavior description! """
     print()
@@ -98,13 +128,15 @@ def trans_printMatrices(obj: types.Object, printName=True):
         print(f"> (matrices) {obj.name}")
         print(f"> (parent)   {obj.parent}")
 
-    # calculated on scene update: takes into account parenting (see trans_update) and other constraints etc
+    # calculated on scene update and takes into account parenting (see trans_update) plus other constraints etc
     print(obj.matrix_world, "matrix_world\n")
     # calculate on scene update and also when parenting, but relative to the matrix world at that time
     print(obj.matrix_local, "matrix_local\n")
+
     # calculated at the time of parenting, is the inverted world matrix of the parent
     print(obj.matrix_parent_inverse, "matrix_parent_inverse\n")
-    # calculated on pos/rot/scale update
+
+    # calculated on pos/rot/scale update and also when world/local is modified
     print(obj.matrix_basis, "matrix_basis\n")
 
 # -------------------------------------------------------------------
@@ -139,6 +171,24 @@ def hide_objectRec(obj: types.Object, hide=True):
     obj.hide_set(hide)
 
 # -------------------------------------------------------------------
+
+def set_child(child: types.Object, parent: types.Object, keepTrans = True, noInv = False):
+    """ Child object with the same options as the viewport, also updates the child world and local matrix """
+    if keepTrans:
+        if noInv:
+            # Set the child basis matrix relative to the parent direclty
+            child_matrix_local = parent.matrix_world.inverted() @ child.matrix_world
+            child.parent = parent
+            child.matrix_basis = child_matrix_local
+        else:
+            # Just set the matrix parent inverse
+            child.parent = parent
+            child.matrix_parent_inverse = parent.matrix_world.inverted()
+    else:
+        # Parenting directly so the world matrix will be applied as local
+        child.parent = parent
+        # Update world matrix manually instead of waiting for scene update, no need with keepTrans
+        trans_update(child)
 
 def gen_child(obj: types.Object, name: str, mesh: types.Mesh, hide: bool, context: types.Context):
     """ Generate a new child with the CHILD meta_type"""

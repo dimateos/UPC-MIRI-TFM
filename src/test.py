@@ -31,10 +31,13 @@ def desc(me: types.Mesh, i=0):
     l = me.loops[i] if me.loops else None
     return v,e,f,l
 
+fixLocalEnv()
+import importlib
 # -------------------------------------------------------------------
 
 
 from addonSim import utils
+importlib.reload(utils)
 
 def main():
     ob = bpy.context.active_object
@@ -49,11 +52,9 @@ def main():
 
 
 # -------------------------------------------------------------------
-
 # When executed from vscode extension __name__ gets overwritten
 # if __name__ == "__main__": runner(main)
 #printEnv()
-#fixLocalEnv()
 if __name__ in ["__main__", "<run_path>"]:
     print("\n-----------------------------------------------------------------------------------------")
     main()
