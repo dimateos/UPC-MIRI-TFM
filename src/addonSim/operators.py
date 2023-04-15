@@ -187,13 +187,30 @@ class MW_infoAPI_OT_(types.Operator):
         info_mesh.desc_mesh_inspect(obj.data)
         return {'FINISHED'}
 
+class MW_infoMatrices_OT_(types.Operator):
+    bl_idname = "mw.info_matrices"
+    bl_label = "Inspect obj matrices"
+    bl_options = {'INTERNAL'}
+    bl_description = "DEBUG print in the console the matrices etc"
+
+    @classmethod
+    def poll(cls, context):
+        obj = bpy.context.active_object
+        return (obj and obj.type == 'MESH')
+
+    def execute(self, context: types.Context):
+        obj = bpy.context.active_object
+        utils.print_matrices(obj)
+        return {'FINISHED'}
+
 # -------------------------------------------------------------------
 # Blender events
 
 classes = (
     MW_gen_OT_,
     MW_infoData_OT_,
-    MW_infoAPI_OT_
+    MW_infoAPI_OT_,
+    MW_infoMatrices_OT_
 )
 
 register, unregister = bpy.utils.register_classes_factory(classes)

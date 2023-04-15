@@ -91,6 +91,12 @@ def get_worldMatrix_normalMatrix(obj: types.Object) -> tuple[types.Object, MW_ge
     matrix_normal = matrix.inverted_safe().transposed().to_3x3()
     return matrix, matrix_normal
 
+def print_matrices(obj: types.Object):
+    print("matrix_world", obj.matrix_world)
+    print("matrix_local", obj.matrix_local)
+    print("matrix_parent_inverse", obj.matrix_parent_inverse)
+    print("matrix_basis", obj.matrix_basis)
+
 # -------------------------------------------------------------------
 
 def delete_objectRec(obj: types.Object):

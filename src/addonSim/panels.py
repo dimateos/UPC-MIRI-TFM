@@ -6,11 +6,7 @@ from .properties import (
     MW_sim_cfg,
     MW_vis_cfg,
 )
-from .operators import (
-    MW_gen_OT_,
-    MW_infoData_OT_,
-    MW_infoAPI_OT_
-)
+from . import operators as ops
 
 from . import utils
 from . import ui
@@ -53,7 +49,7 @@ class MW_gen_Panel(types.Panel):
 
             # Fracture original object
             col = layout.column()
-            col.operator(MW_gen_OT_.bl_idname, text="GEN Fracture", icon="STICKY_UVS_DISABLE")
+            col.operator(ops.MW_gen_OT_.bl_idname, text="GEN Fracture", icon="STICKY_UVS_DISABLE")
 
         # Edit/info of selected
         else:
@@ -61,7 +57,7 @@ class MW_gen_Panel(types.Panel):
             col.label(text="Root: " + obj.name_full, icon="INFO")
 
             col = layout.column()
-            col.operator(MW_gen_OT_.bl_idname, text="EDIT Fracture", icon="STICKY_UVS_VERT")
+            col.operator(ops.MW_gen_OT_.bl_idname, text="EDIT Fracture", icon="STICKY_UVS_VERT")
 
             ui.draw_summary(cfg, layout)
 
@@ -92,8 +88,9 @@ class MW_info_Panel(types.Panel):
 
             if obj.type == 'MESH':
                 col = layout.column()
-                col.operator(MW_infoData_OT_.bl_idname, text="Inspect Data", icon="HELP")
-                col.operator(MW_infoAPI_OT_.bl_idname, text="Inspect API", icon="HELP")
+                col.operator(ops.MW_infoMatrices_OT_.bl_idname, text="Print Matrices", icon="LATTICE_DATA")
+                col.operator(ops.MW_infoData_OT_.bl_idname, text="Print Data", icon="HELP")
+                col.operator(ops.MW_infoAPI_OT_.bl_idname, text="Print API", icon="HELP")
 
         # check region width
         box = layout.box()
