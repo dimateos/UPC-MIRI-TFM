@@ -34,22 +34,22 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
     # Duplicate the original object
     obj_copy: types.Object = obj.copy()
     obj_copy.name = NAME_ORIGINAL
-    obj_copy.parent = obj_empty
     obj_copy.mw_gen.meta_type = {"CHILD"}
     context.scene.collection.objects.link(obj_copy)
 
-    # Set the transform to the empty and relative to the copy (after parenting!)
+    # Set the transform to the empty and parent keeping the transform of the copy
     obj_empty.matrix_world = obj.matrix_world.copy()
-    obj_copy.matrix_world = obj.matrix_world.copy()
+    utils.set_child(obj_copy, obj_empty)
 
     # Hide and select after link
     obj.hide_set(not cfg.struct_showOrignal)
-    obj_copy.hide_set(True)
+    obj_copy.hide_set(False)
     obj_copy.show_bounds = True
     context.view_layer.objects.active = obj_empty
-    #bpy.ops.outliner.show_active(execution_context='INVOKE_DEFAULT') cannot expand hierarchy...
 
-    # TODO: position of the empties at the original obj?
+    #bpy.ops.outliner.show_active(execution_context='INVOKE_DEFAULT') cannot expand hierarchy from this context
+    #tried context_override but no luck either...
+
     return obj_empty, obj_copy
 
 def gen_naming(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
@@ -85,9 +85,9 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, co
     mesh = bpy.data.meshes.new(NAME_ORIGINAL_BB)
     mesh.from_pydata(bb, [], [])
 
-    obj_bb = utils.gen_childClean(obj, NAME_ORIGINAL_BB, mesh, not cfg.struct_showBB, context)
+    # Generate it taking the transform as it is (points already in local space)
+    obj_bb = utils.gen_childClean(obj, NAME_ORIGINAL_BB, context, mesh, keepTrans=False, hide=not cfg.struct_showBB)
     obj_bb.show_bounds = True
-    obj_bb.matrix_world = Matrix.Identity(4)
     return obj_bb
 
 # -------------------------------------------------------------------

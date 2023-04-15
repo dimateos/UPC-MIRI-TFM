@@ -112,7 +112,7 @@ class MW_gen_OT_(types.Operator):
         mw_calc.points_addNoise(points, cfg, bb_radius)
 
         mw_setup.gen_pointsObject(obj, points, cfg, context)
-        mw_setup.gen_boundsObject(obj, bb_world, cfg, context)
+        mw_setup.gen_boundsObject(obj, bb, cfg, context)
 
 
         # Calc voronoi

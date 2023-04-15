@@ -64,7 +64,7 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
     def points_from_verts(obj):
         """Takes points from _any_ object with geometry"""
         if obj.type == 'MESH':
-            points.extend(utils.get_worldVerts(obj))
+            points.extend(utils.get_verts(obj, worldSpace=True))
         else:
             # TODO atm limited to mesh anyway
             depsgraph = context.evaluated_depsgraph_get()
