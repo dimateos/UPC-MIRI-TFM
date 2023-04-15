@@ -85,12 +85,12 @@ class MW_info_Panel(types.Panel):
             col = layout.column()
 
             ui.draw_inspect(obj, layout)
+            col.operator(ops.MW_infoMatrices_OT_.bl_idname, text="Print Matrices", icon="LATTICE_DATA")
 
             if obj.type == 'MESH':
                 col = layout.column()
-                col.operator(ops.MW_infoMatrices_OT_.bl_idname, text="Print Matrices", icon="LATTICE_DATA")
-                col.operator(ops.MW_infoData_OT_.bl_idname, text="Print Data", icon="HELP")
-                col.operator(ops.MW_infoAPI_OT_.bl_idname, text="Print API", icon="HELP")
+                col.operator(ops.MW_infoData_OT_.bl_idname, text="Print mesh Data", icon="HELP")
+                col.operator(ops.MW_infoAPI_OT_.bl_idname, text="Print mesh API", icon="HELP")
 
         # check region width
         box = layout.box()

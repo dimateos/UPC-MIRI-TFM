@@ -9,7 +9,7 @@ from .properties import (
 
 from .ui import DEV_log
 
-from mathutils import Vector
+from mathutils import Vector, Matrix
 
 
 # -------------------------------------------------------------------
@@ -91,11 +91,21 @@ def get_worldMatrix_normalMatrix(obj: types.Object) -> tuple[types.Object, MW_ge
     matrix_normal = matrix.inverted_safe().transposed().to_3x3()
     return matrix, matrix_normal
 
-def print_matrices(obj: types.Object):
-    print("matrix_world", obj.matrix_world)
-    print("matrix_local", obj.matrix_local)
-    print("matrix_parent_inverse", obj.matrix_parent_inverse)
-    print("matrix_basis", obj.matrix_basis)
+def trans_printMatrices(obj: types.Object, printName=True):
+    """ Print all transform matrices, read the code for behavior description! """
+    print()
+    if printName:
+        print(f"> (matrices) {obj.name}")
+        print(f"> (parent)   {obj.parent}")
+
+    # calculated on scene update: takes into account parenting (see trans_update) and other constraints etc
+    print(obj.matrix_world, "matrix_world\n")
+    # calculate on scene update and also when parenting, but relative to the matrix world at that time
+    print(obj.matrix_local, "matrix_local\n")
+    # calculated at the time of parenting, is the inverted world matrix of the parent
+    print(obj.matrix_parent_inverse, "matrix_parent_inverse\n")
+    # calculated on pos/rot/scale update
+    print(obj.matrix_basis, "matrix_basis\n")
 
 # -------------------------------------------------------------------
 
@@ -153,8 +163,6 @@ def match_anySub(word: str, subs: list) -> bool:
         if sub in word:
             return True
     return False
-
-# -------------------------------------------------------------------
 
 def rnd_seed(s: int = None) -> int:
     """ Persists across separate module imports, return the seed to store in the config """

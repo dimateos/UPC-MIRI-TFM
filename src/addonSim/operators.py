@@ -196,11 +196,18 @@ class MW_infoMatrices_OT_(types.Operator):
     @classmethod
     def poll(cls, context):
         obj = bpy.context.active_object
-        return (obj and obj.type == 'MESH')
+        return obj
 
     def execute(self, context: types.Context):
         obj = bpy.context.active_object
-        utils.print_matrices(obj)
+        utils.trans_printMatrices(obj)
+
+        ## TEST: test some transforms and updates
+        #print("^BEFORE update")
+        #utils.trans_update(obj)            # update just the object world matrix
+        ##context.view_layer.update()       # update the whole scene, includes constraints too
+        #utils.trans_printMatrices(obj)
+        #print("^AFTER update")
         return {'FINISHED'}
 
 # -------------------------------------------------------------------
