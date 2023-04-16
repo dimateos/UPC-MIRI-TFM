@@ -41,9 +41,9 @@ def cfg_copyProps(src, dest):
 
 # -------------------------------------------------------------------
 
-def transform_verts(verts: list[Vector], matrix) -> list[Vector, 6]:
-    """ INPLACE: Transform given vertices by the matrix """
-    verts_world = [matrix @ v.co for v in verts]
+def transform_points(points: list[Vector], matrix) -> list[Vector]:
+    """ INPLACE: Transform given points by the trans matrix """
+    points = [matrix @ v.co for v in points]
 
 def get_verts(obj: types.Object, worldSpace=False) -> list[Vector, 6]:
     """ Get the object vertices in world space """

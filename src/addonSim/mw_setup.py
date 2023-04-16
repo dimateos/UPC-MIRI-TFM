@@ -59,13 +59,11 @@ def gen_naming(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
         obj.name += "_" + cfg.struct_nameSufix
 
 def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_shardsEmpty = utils.gen_childClean(obj, NAME_SHARDS, None, not cfg.struct_showShards, context)
-    obj_shardsEmpty.matrix_world = Matrix.Identity(4)
+    obj_shardsEmpty = utils.gen_childClean(obj, NAME_SHARDS, context, None, hide=not cfg.struct_showShards)
     return obj_shardsEmpty
 
 def gen_linksEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_linksEmpty = utils.gen_childClean(obj, NAME_LINKS, None, not cfg.struct_showLinks, context)
-    obj_linksEmpty.matrix_world = Matrix.Identity(4)
+    obj_linksEmpty = utils.gen_childClean(obj, NAME_LINKS, context, None, hide=not cfg.struct_showLinks)
     return obj_linksEmpty
 
 def gen_pointsObject(obj: types.Object, points: list[Vector], cfg: MW_gen_cfg, context: types.Context):
@@ -74,7 +72,7 @@ def gen_pointsObject(obj: types.Object, points: list[Vector], cfg: MW_gen_cfg, c
     mesh.from_pydata(points, [], [])
     #mesh.update()
 
-    obj_points = utils.gen_childClean(obj, NAME_SHARDS_POINTS, mesh, not cfg.struct_showPoints, context)
+    obj_points = utils.gen_childClean(obj, NAME_SHARDS_POINTS, context, mesh, hide=not cfg.struct_showPoints)
     # TODO: points relative to parent or world... in multiple paces: the dot when selected will be at origin atm
     # TODO: also set the matrix or only pos? test rotations etc
     obj_points.matrix_world = Matrix.Identity(4)
@@ -102,7 +100,7 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
         # TODO: local around centroid did not work properly
         mesh.from_pydata(vertices=cell.vertices_local_centroid(), edges=[], faces=cell.face_vertices())
 
-        obj_shard = utils.gen_child(obj, name, mesh, not cfg.struct_showShards, context)
+        obj_shard = utils.gen_child(obj, name, context, mesh, hide=not cfg.struct_showShards)
         obj_shard.matrix_world = Matrix.Identity(4)
         obj_shard.location = cell.centroid()
         #print("cell.pos", cell.pos)
@@ -116,7 +114,7 @@ def gen_linksObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, contex
 
         # group the links by cell using a parent
         nameGroup= f"{NAME_LINKS_GROUP}_{cell.id}"
-        obj_group = utils.gen_child(obj, nameGroup, None, False, context)
+        obj_group = utils.gen_child(obj, nameGroup, context, None, hide=False)
         #obj_group.matrix_world = Matrix.Identity(4)
         #obj_group.location = cell.centroid()
 
@@ -129,7 +127,7 @@ def gen_linksObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, contex
             # wall link
             if n_id < 0:
                 name= f"s{cell.id}_w{-n_id}"
-                obj_link = utils.gen_child(obj_group, name, None, not cfg.struct_showLinks_walls, context)
+                obj_link = utils.gen_child(obj_group, name, context, None, hide=not cfg.struct_showLinks_walls)
                 continue
 
             # neighbour link
@@ -158,7 +156,7 @@ def gen_linksObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, contex
                 curve_data.bevel_depth = cfg.links_width
                 curve_data.bevel_resolution = cfg.links_res
 
-                obj_link = utils.gen_child(obj_group, name, curve_data, not cfg.struct_showLinks, context)
+                obj_link = utils.gen_child(obj_group, name, curve_data, context, hide=not cfg.struct_showLinks)
 
                 obj_link.hide_set(key_rep)
                 #obj_link.location = cell.centroid()

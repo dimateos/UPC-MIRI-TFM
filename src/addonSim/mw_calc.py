@@ -21,20 +21,19 @@ from tess import Container, Cell
 # ref: original cell fracture modifier
 
 def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, context):
-    points = get_points_from_object(obj, cfg, context)
+    points, inWorld = get_points_from_object(obj, cfg, context)
 
     if not points:
         DEV_log("No points found... changing to fallback (own vertices)", {"SETUP"})
         cfg.source = {'VERT_OWN'}
-        points = get_points_from_object(obj, cfg, context)
+        points, inWorld = get_points_from_object(obj, cfg, context)
     if not points:
         DEV_log("No points found either...", {"SETUP"})
-        return []
-    return points
+        return [], False
+
+    return points, inWorld
 
 def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
-    # TODO: seems like not letting pick others?
-
     source = cfg.source
     _source_all = {
         'PARTICLE_OWN', 'PARTICLE_CHILD',
@@ -47,6 +46,7 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
     assert(len(source))
 
     points = []
+    inWorld = False
 
     def edge_center(mesh, edge):
         v1, v2 = edge.vertices
@@ -66,7 +66,7 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
         if obj.type == 'MESH':
             points.extend(utils.get_verts(obj, worldSpace=True))
         else:
-            # TODO atm limited to mesh anyway
+            # TODO: atm limited to mesh anyway
             depsgraph = context.evaluated_depsgraph_get()
             obj_eval = obj.evaluated_get(depsgraph)
             try:
@@ -76,7 +76,7 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
 
             if mesh is not None:
                 verts = mesh.vertices
-                utils.transform_verts(verts, obj_eval.matrix_world)
+                utils.transform_points(verts, obj_eval.matrix_world)
                 points.extend(verts)
                 obj_eval.to_mesh_clear()
 
@@ -123,8 +123,8 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
         if gp:
             points.extend([p for spline in get_splines(gp) for p in spline])
 
-    DEV_log("Found %d points" % len(points), {"SETUP"})
-    return points
+    DEV_log(f"Found {len(points)} points (inWorld:{inWorld})", {"SETUP"})
+    return points, inWorld
 
 
 def points_limitNum(points: list[Vector], cfg: MW_gen_cfg):
