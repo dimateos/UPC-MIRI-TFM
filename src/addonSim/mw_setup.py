@@ -13,12 +13,13 @@ from mathutils import Vector, Matrix
 # Using tess voro++ adaptor
 from tess import Container, Cell
 
-NAME_ORIGINAL = "Original"
-NAME_ORIGINAL_BB = NAME_ORIGINAL+"_bb"
-NAME_SHARDS = "Shards"
-NAME_SHARDS_POINTS = "Shards_source"
-NAME_LINKS = NAME_SHARDS+"_links"
-NAME_LINKS_GROUP = "Links"
+class CONST_NAMES:
+    original = "Original"
+    original_bb = original+"_bb"
+    shards = "Shards"
+    shards_points = "Shards_source"
+    links = shards+"_links"
+    links_group = "Links"
 
 
 # -------------------------------------------------------------------
@@ -33,7 +34,7 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
 
     # Duplicate the original object
     obj_copy: types.Object = obj.copy()
-    obj_copy.name = NAME_ORIGINAL
+    obj_copy.name = CONST_NAMES.original
     obj_copy.mw_gen.meta_type = {"CHILD"}
     context.scene.collection.objects.link(obj_copy)
 
@@ -43,7 +44,7 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
 
     # Hide and select after link
     obj.hide_set(not cfg.struct_showOrignal)
-    obj_copy.hide_set(False)
+    obj_copy.hide_set(True)
     obj_copy.show_bounds = True
     context.view_layer.objects.active = obj_empty
 
@@ -59,29 +60,29 @@ def gen_naming(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
         obj.name += "_" + cfg.struct_nameSufix
 
 def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_shardsEmpty = utils.gen_childClean(obj, NAME_SHARDS, context, None, keepTrans=False, hide=not cfg.struct_showShards)
+    obj_shardsEmpty = utils.gen_childClean(obj, CONST_NAMES.shards, context, None, keepTrans=False, hide=not cfg.struct_showShards)
     return obj_shardsEmpty
 
 def gen_linksEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_linksEmpty = utils.gen_childClean(obj, NAME_LINKS, context, None, keepTrans=False, hide=not cfg.struct_showLinks)
+    obj_linksEmpty = utils.gen_childClean(obj, CONST_NAMES.links, context, None, keepTrans=False, hide=not cfg.struct_showLinks)
     return obj_linksEmpty
 
 def gen_pointsObject(obj: types.Object, points: list[Vector], cfg: MW_gen_cfg, context: types.Context):
     # Create a new mesh data block and add only verts
-    mesh = bpy.data.meshes.new(NAME_SHARDS_POINTS)
+    mesh = bpy.data.meshes.new(CONST_NAMES.shards_points)
     mesh.from_pydata(points, [], [])
     #mesh.update()
 
-    obj_points = utils.gen_childClean(obj, NAME_SHARDS_POINTS, context, mesh, keepTrans=False, hide=not cfg.struct_showPoints)
+    obj_points = utils.gen_childClean(obj, CONST_NAMES.shards_points, context, mesh, keepTrans=False, hide=not cfg.struct_showPoints)
     return obj_points
 
 def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, context: types.Context):
     # Create a new mesh data block and add only verts
-    mesh = bpy.data.meshes.new(NAME_ORIGINAL_BB)
+    mesh = bpy.data.meshes.new(CONST_NAMES.original_bb)
     mesh.from_pydata(bb, [], [])
 
     # Generate it taking the transform as it is (points already in local space)
-    obj_bb = utils.gen_childClean(obj, NAME_ORIGINAL_BB, context, mesh, keepTrans=False, hide=not cfg.struct_showBB)
+    obj_bb = utils.gen_childClean(obj, CONST_NAMES.original_bb, context, mesh, keepTrans=False, hide=not cfg.struct_showBB)
     obj_bb.show_bounds = True
     return obj_bb
 
@@ -90,7 +91,7 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, co
 def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
     for cell in cont:
         # TODO: maybe make id match the point id instead of the container id
-        name= f"{NAME_SHARDS}_{cell.id}"
+        name= f"{CONST_NAMES.shards}_{cell.id}"
 
         # create a static mesh for each one
         mesh = bpy.data.meshes.new(name)
@@ -109,7 +110,7 @@ def gen_linksObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, contex
         # TODO: maybe merge shard/link loop
 
         # group the links by cell using a parent
-        nameGroup= f"{NAME_LINKS_GROUP}_{cell.id}"
+        nameGroup= f"{CONST_NAMES.links_group}_{cell.id}"
         obj_group = utils.gen_child(obj, nameGroup, context, None, keepTrans=False, hide=False)
         #obj_group.matrix_world = Matrix.Identity(4)
         #obj_group.location = cell.centroid()

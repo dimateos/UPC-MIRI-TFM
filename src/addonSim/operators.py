@@ -88,6 +88,7 @@ class MW_gen_OT_(types.Operator):
         obj.select_set(True)
         #context.active_object = obj
         # TODO: renaming in a edit fracture unselects from active_object
+        # TODO: some error handling on unexpected deleted objects
 
 
         # Setup calc
@@ -136,10 +137,6 @@ class MW_gen_OT_(types.Operator):
         #    from . import info_inspect as ins
         #    ins.print_data(cont[0], False)
 
-        # TODO: button to delete rec -> blender delete hierarchy ignores hidden? there seem to be a BUG
-        # TODO: crash when deleted while editing... or more...
-
-        # TODO: GEN:: recenter shards origin
         # TODO: GEN:: decimation applied -> create another object
         # TODO: GEN:: convex hull applied -> create another object
         # TODO: PHYS:: add mass + cell inter-space (or shrink) + add rigid body?

@@ -8,19 +8,23 @@ from .properties import (
 )
 
 from . import utils
-DEV_DEBUG = True
-DEV_VALS = True
-DEV_LOGS = True
-DEV_LOGS_SKIPS = [
-    #{'OP_FLOW'}
-]
-# TODO: some access from UI to toggle like in debug
+
+# TODO: some access from UI to toggle dynamically?
+class DEV:
+    debug = True
+
+    ui_vals = True
+    logs = True
+    logs_skipped = [
+        #{'OP_FLOW'}
+    ]
+
 
 # -------------------------------------------------------------------
 
 def DEV_log(msg, type = {'DEV'}, ui = None):
-    if not DEV_LOGS: return
-    if type in DEV_LOGS_SKIPS: return
+    if not DEV.logs: return
+    if type in DEV.logs_skipped: return
 
     print(type, msg)
     if ui: ui.report(type, msg)
@@ -28,7 +32,7 @@ def DEV_log(msg, type = {'DEV'}, ui = None):
     #ui.report({'ERROR'}, "Operation failed!")
 
 def DEV_drawVal(layout: types.UILayout, msg, value):
-    if not DEV_VALS: return
+    if not DEV.ui_vals: return
     layout.label(text=f"{msg}: {value}", icon="BLENDER")
 
 # -------------------------------------------------------------------
@@ -111,7 +115,7 @@ def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Contex
     DEV_drawDebug(cfg, layout)
 
 def DEV_drawDebug(cfg : MW_gen_cfg, layout: types.UILayout):
-    if not DEV_DEBUG: return
+    if not DEV.debug: return
 
     # Toggle debug
     box = layout.box()
