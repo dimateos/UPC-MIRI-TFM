@@ -100,6 +100,7 @@ class MW_gen_OT_(types.Operator):
         # Get the points and transform to local space when needed
         # TODO: particles and pencil are in world position...
         # TODO: seems like not letting pick others?
+        mw_calc.detect_points_from_object(obj_copy, cfg, context)
         points = mw_calc.get_points_from_object_fallback(obj_copy, cfg, context)
         if not points:
             return self.ret_failed()

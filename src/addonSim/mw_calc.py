@@ -18,7 +18,67 @@ from tess import Container, Cell
 
 
 # -------------------------------------------------------------------
-# ref: original cell fracture modifier
+
+def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
+    """ Attempts to retrieve a point per option and disables them when none is found """
+    enabled = cfg.sourceOptions.enabled
+
+    def check_point_from_verts(ob):
+        if ob.type == 'MESH':
+            return bool(len(ob.data.vertices))
+        else:
+            depsgraph = context.evaluated_depsgraph_get()
+            obj_eval = ob.evaluated_get(depsgraph)
+            try:
+                mesh = obj_eval.to_mesh()
+                return  bool(len(mesh.vertices))
+            except:
+                return False
+
+    # geom own
+    enabled["VERT_OWN"] = check_point_from_verts(obj)
+    # geom children
+    enabled["VERT_CHILD"] = False
+    for obj_child in obj.children:
+        if check_point_from_verts(obj_child):
+            enabled["VERT_CHILD"] = True
+            break
+
+    def check_point_from_particles(ob):
+        depsgraph = context.evaluated_depsgraph_get()
+        obj_eval = ob.evaluated_get(depsgraph)
+
+        if not obj_eval.particle_systems:
+            return False
+        else:
+            sys_particles = [psys.particles for psys in obj_eval.particle_systems]
+            return any(sys_particles)
+
+    # geom own particles
+    enabled["PARTICLE_OWN"] = check_point_from_particles(obj)
+
+    # geom children particles
+    enabled["PARTICLE_CHILD"] = False
+    for obj_child in obj.children:
+        if check_point_from_particles(obj_child):
+            enabled["PARTICLE_CHILD"] = True
+            break
+
+    # grease pencil
+    if "PENCIL" in cfg.sourceOptions.all_keys:
+        def check_points_from_splines(gp):
+            if not gp.layers.active:
+                return False
+            else:
+                frame = gp.layers.active.active_frame
+                stroke_points = [stroke.points for stroke in frame.strokes]
+                return any(stroke_points)
+
+        enabled["PENCIL"] = False
+        scene = context.scene
+        gp = scene.grease_pencil
+        if gp:
+            enabled["PENCIL"] = check_points_from_splines(gp)
 
 def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, context):
     points = get_points_from_object(obj, cfg, context)
@@ -34,6 +94,9 @@ def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, context)
     return points
 
 def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
+    """ Retrieves point using the method selected
+        * REF: some get_points from original cell fracture modifier
+    """
     source = cfg.source
     if not source:
         cfg.source = source = { cfg.sourceOptions.default_key }
@@ -42,14 +105,14 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
     points = []
     matrix_toLocal = obj.matrix_world.inverted()
 
-    def points_from_verts(obj):
+    def points_from_verts(ob):
         """Takes points from _any_ object with geometry"""
-        if obj.type == 'MESH':
-            points.extend(utils.get_verts(obj, worldSpace=False))
+        if ob.type == 'MESH':
+            points.extend(utils.get_verts(ob, worldSpace=False))
         else:
             # TODO: unused because atm limited to mesh anyway
             depsgraph = context.evaluated_depsgraph_get()
-            obj_eval = obj.evaluated_get(depsgraph)
+            obj_eval = ob.evaluated_get(depsgraph)
             try:
                 mesh = obj_eval.to_mesh()
             except:
@@ -60,36 +123,36 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
                 points.extend(verts)
                 obj_eval.to_mesh_clear()
 
-    def points_from_particles(obj):
+    # geom own
+    if 'VERT_OWN' in source:
+        points_from_verts(obj)
+    # geom children
+    if 'VERT_CHILD' in source:
+        # TODO: note that not recursive
+        for obj_child in obj.children:
+            points_from_verts(obj_child)
+
+    def points_from_particles(ob):
         depsgraph = context.evaluated_depsgraph_get()
-        obj_eval = obj.evaluated_get(depsgraph)
+        obj_eval = ob.evaluated_get(depsgraph)
 
         # NOTE: chained list comprehension
         points.extend([matrix_toLocal @ p.location.copy()
                        for psys in obj_eval.particle_systems
                        for p in psys.particles])
 
-    # geom own
-    if 'VERT_OWN' in source:
-        points_from_verts(obj)
-
-    # geom children
-    if 'VERT_CHILD' in source:
-        for obj_child in obj.children:
-            points_from_verts(obj_child)
-
-    # geom particles
+    # geom own particles
     if 'PARTICLE_OWN' in source:
         points_from_particles(obj)
-
+    # geom child particles
     if 'PARTICLE_CHILD' in source:
+        # TODO: note that not recursive either
         for obj_child in obj.children:
             points_from_particles(obj_child)
 
     # grease pencil
     def points_from_stroke(stroke):
         return [matrix_toLocal @ point.co.copy() for point in stroke.points]
-
     def points_from_splines(gp):
         if gp.layers.active:
             frame = gp.layers.active.active_frame
@@ -130,6 +193,7 @@ def points_addNoise(points: list[Vector], cfg: MW_gen_cfg, bb_radius: float):
 # -------------------------------------------------------------------
 
 def cont_fromPoints(points: list[Vector], bb: list[Vector, 6], faces4D: list[Vector]) -> Container:
+    """ Build a voro++ container using the points and the faces as walls """
     # Container bounds expected as tuples
     bb_tuples = [ p.to_tuple() for p in bb ]
 
