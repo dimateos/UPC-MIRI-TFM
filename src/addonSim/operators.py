@@ -76,7 +76,7 @@ class MW_gen_OT_(types.Operator):
                 return {'FINISHED'}
             else:
                 cfg: MW_gen_cfg = self.cfg
-                obj_copy = utils.get_child(obj, mw_setup.NAME_ORIGINAL)
+                obj_copy = utils.get_child(obj, mw_setup.CONST_NAMES.original)
 
 
         # Seed simulation randomness + store it

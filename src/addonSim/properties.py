@@ -40,19 +40,38 @@ class MW_gen_cfg(types.PropertyGroup):
         description="Show fracture summary"
     )
 
-
-    source: props.EnumProperty(
-        name="Source",
-        items=(
-            ('VERT_OWN', "Own Verts", "Use own vertices"),
+    class sourceOptions:
+        all=[
+            ('VERT_OWN', "Own Verts", "Use own vertices (also set by default when other options are disabled)"),
             ('VERT_CHILD', "Child Verts", "Use child object vertices"),
             ('PARTICLE_OWN', "Own Particles", "All particle systems of the source object"),
             ('PARTICLE_CHILD', "Child Particles", "All particle systems of the child objects"),
             #('PENCIL', "Annotation Pencil", "Annotation Grease Pencil."),
-        ),
+        ]
+        all_keys = [ t[0] for t in all ]
+        enabled = {
+            'VERT_OWN': True,
+            'VERT_CHILD': True,
+            'PARTICLE_OWN': True,
+            'PARTICLE_CHILD': True,
+            #'PENCIL': False,
+        }
+        default_key = 'VERT_OWN'
+        error_key = 'NONE'
+        error_option = [ (error_key, "No point found...", f"Options: {all_keys}") ]
+
+    def source_dynamic(self, context):
+        items = [ t for t in self.sourceOptions.all if self.sourceOptions.enabled[t[0]] ]
+        if items: return items
+        else: return self.sourceOptions.error_option.copy()
+
+    source: props.EnumProperty(
+        name="Source",
+        items=source_dynamic, # default with numberID doesnt seem to work
+        #items=sourceOptions.all, default={'VERT_OWN'},
         options={'ENUM_FLAG'},
-        default={'VERT_OWN'},
     )
+
     source_limit: props.IntProperty(
         name="Limit points",
         description="Limit the number of input points, 0 for unlimited",

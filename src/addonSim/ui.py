@@ -45,7 +45,7 @@ def draw_refresh(cfg : MW_gen_cfg, layout: types.UILayout):
     split.prop(cfg, "meta_refresh", toggle=True, icon_only=True, icon='FILE_REFRESH')
 
 def draw_summary(cfg : MW_gen_cfg, layout: types.UILayout):
-    # TODO maybe scene prop to togggle show instead of object
+    # TODO: maybe scene prop to togggle show instead of object
 
     box = layout.box()
     box.prop(cfg, "meta_show_summary", toggle=True)
@@ -92,15 +92,24 @@ def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Contex
 
     box = layout.box()
     col = box.column()
-    col.label(text="Point Source:")
+
+    rowsub = col.row()
+    rowsub.alignment = "LEFT"
+    rowsub.label(text="Point Source:")
+    split = rowsub.split()
+    split.enabled = False
+    split.alignment = "LEFT"
+    split.label(text=cfg.struct_nameOriginal)
+    col.prop(cfg, "struct_nameSufix")
+
     rowsub = col.row()
     rowsub.prop(cfg, "source")
+
     rowsub = col.row()
     rowsub.prop(cfg, "source_limit")
     rowsub = col.row()
     rowsub.prop(cfg, "source_noise")
     rowsub.prop(cfg, "rnd_seed")
-    col.prop(cfg, "struct_nameSufix")
 
     box = layout.box()
     col = box.column()

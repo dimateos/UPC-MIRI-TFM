@@ -25,7 +25,7 @@ def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, context)
 
     if not points:
         DEV_log("No points found... changing to fallback (own vertices)", {"SETUP"})
-        cfg.source = {'VERT_OWN'}
+        cfg.source = { cfg.sourceOptions.default_key }
         points = get_points_from_object(obj, cfg, context)
     if not points:
         DEV_log("No points found either...", {"SETUP"})
@@ -35,32 +35,12 @@ def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, context)
 
 def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
     source = cfg.source
-    _source_all = {
-        'PARTICLE_OWN', 'PARTICLE_CHILD',
-        'PENCIL',
-        'VERT_OWN', 'VERT_CHILD',
-    }
-    # DEV_log(source - _source_all)
-    # DEV_log(source)
-    assert(len(source | _source_all) == len(_source_all))
-    assert(len(source))
-
-    points = []
+    if not source:
+        cfg.source = source = { cfg.sourceOptions.default_key }
 
     # return in local space
+    points = []
     matrix_toLocal = obj.matrix_world.inverted()
-
-    def edge_center(mesh, edge):
-        v1, v2 = edge.vertices
-        return (mesh.vertices[v1].co + mesh.vertices[v2].co) / 2.0
-    def poly_center(mesh, poly):
-        from mathutils import Vector
-        co = Vector()
-        tot = 0
-        for i in poly.loop_indices:
-            co += mesh.vertices[mesh.loops[i].vertex_index].co
-            tot += 1.0
-        return co / tot
 
     def points_from_verts(obj):
         """Takes points from _any_ object with geometry"""
@@ -127,6 +107,7 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
     DEV_log(f"Found {len(points)} points", {"SETUP"})
     return points
 
+# -------------------------------------------------------------------
 
 def points_limitNum(points: list[Vector], cfg: MW_gen_cfg):
     source_limit = cfg.source_limit
