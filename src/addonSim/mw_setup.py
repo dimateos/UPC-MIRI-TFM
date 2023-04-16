@@ -14,8 +14,8 @@ from mathutils import Vector, Matrix
 from tess import Container, Cell
 
 class CONST_NAMES:
-    original = "Original"
-    original_bb = original+"_bb"
+    original = "Original_"
+    original_bb = original+"bb"
     shards = "Shards"
     shards_points = "Shards_source"
     links = shards+"_links"
@@ -33,10 +33,8 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
     context.scene.collection.objects.link(obj_empty)
 
     # Duplicate the original object
-    obj_copy: types.Object = obj.copy()
-    obj_copy.name = CONST_NAMES.original
-    obj_copy.mw_gen.meta_type = {"CHILD"}
-    context.scene.collection.objects.link(obj_copy)
+    obj_copy = utils.copy_objectRec(obj, context, namePreffix=CONST_NAMES.original)
+    utils.cfg_setMetaTypeRec(obj_copy, {"CHILD"})
 
     # Set the transform to the empty and parent keeping the transform of the copy
     obj_empty.matrix_world = obj.matrix_world.copy()

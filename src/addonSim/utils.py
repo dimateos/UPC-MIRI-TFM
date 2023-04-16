@@ -39,6 +39,12 @@ def cfg_copyProps(src, dest):
                 # Avoid read-only RNA types
                 pass
 
+def cfg_setMetaTypeRec(obj: types.Object, type: dict):
+    """ Set the property to the object and all its children (dictionary ies copied, not referenced) """
+    obj.mw_gen.meta_type = type.copy()
+    for child in obj.children:
+        cfg_setMetaTypeRec(child, type)
+
 # -------------------------------------------------------------------
 
 def transform_points(points: list[Vector], matrix) -> list[Vector]:
@@ -153,6 +159,20 @@ def trans_printMatrices(obj: types.Object, printName=True):
 
 # -------------------------------------------------------------------
 
+def copy_objectRec(obj: types.Object, context: types.Context, namePreffix: str = None, nameSuffix: str = None) -> types.Object:
+    """ Copy the object along its children """
+    obj_copy: types.Object = obj.copy()
+    context.scene.collection.objects.link(obj_copy)
+
+    if namePreffix is None: namePreffix = ""
+    if nameSuffix is None: nameSuffix = ""
+    obj_copy.name = f"{namePreffix}{obj_copy.name}{nameSuffix}"
+
+    for child in obj.children:
+        child_copy = copy_objectRec(child, context, namePreffix, nameSuffix)
+        child_copy.parent = obj_copy
+    return obj_copy
+
 def delete_objectRec(obj: types.Object):
     """ Delete the object and children recursively """
     for child in obj.children:
@@ -164,7 +184,7 @@ def delete_childrenRec(ob_father: types.Object):
     for child in ob_father.children:
         delete_objectRec(child)
 
-def get_child(obj: types.Object, name: str):
+def get_child(obj: types.Object, name: str) -> types.Object|None:
     """ Find child by name (starts with to avoid limited exact names) """
     # All names are unique, even under children hierarchies. Blender adds .001 etc
     nameSub = name+"."
