@@ -99,11 +99,9 @@ class MW_gen_OT_(types.Operator):
         # Get the points and transform to local space when needed
         # TODO: particles and pencil are in world position...
         # TODO: seems like not letting pick others?
-        points, inWorld = mw_calc.get_points_from_object_fallback(obj_copy, cfg, context)
+        points = mw_calc.get_points_from_object_fallback(obj_copy, cfg, context)
         if not points:
             return self.ret_failed()
-        if inWorld:
-            utils.transform_points(points, obj_copy.matrix_world.inverted())
 
         # Get more data
         bb, bb_radius = utils.get_bb_radius(obj_copy, cfg.margin_box_bounds)
@@ -118,18 +116,18 @@ class MW_gen_OT_(types.Operator):
         mw_setup.gen_boundsObject(obj, bb, cfg, context)
 
 
-        ## Calc voronoi
-        #stats.log("start calc voro cells")
-        #cont = mw_calc.cont_fromPoints(points, bb_world, faces4D_world)
+        # Calc voronoi
+        stats.log("start calc voro cells")
+        # TODO: get n faces too etc cont info -> store the info in the object
+        # TODO: go back to no attempt on convex fix, plus error when no particles inside
+        cont = mw_calc.cont_fromPoints(points, bb, faces4D)
 
-        #stats.log("start build bl cells")
-        #obj_shards = mw_setup.gen_shardsEmpty(obj, cfg, context)
-        #mw_setup.gen_shardsObjects(obj_shards, cont, cfg, context)
+        stats.log("start build bl cells")
+        obj_shards = mw_setup.gen_shardsEmpty(obj, cfg, context)
+        mw_setup.gen_shardsObjects(obj_shards, cont, cfg, context)
 
-        #obj_links = mw_setup.gen_linksEmpty(obj, cfg, context)
-        #mw_setup.gen_linksObjects(obj_links, cont, cfg, context)
-
-        # TODO: GEN:: apply trans or work relative?
+        obj_links = mw_setup.gen_linksEmpty(obj, cfg, context)
+        mw_setup.gen_linksObjects(obj_links, cont, cfg, context)
 
         # TODO: store the cont inside the property pointer
         # TODO: BL:: detect property changes and avoid regen -> maybe some vis can go to panel etc
@@ -139,6 +137,7 @@ class MW_gen_OT_(types.Operator):
         #    ins.print_data(cont[0], False)
 
         # TODO: button to delete rec -> blender delete hierarchy ignores hidden? there seem to be a BUG
+        # TODO: crash when deleted while editing... or more...
 
         # TODO: GEN:: recenter shards origin
         # TODO: GEN:: decimation applied -> create another object
