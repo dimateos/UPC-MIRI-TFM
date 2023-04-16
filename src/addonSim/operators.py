@@ -154,7 +154,25 @@ class MW_gen_OT_(types.Operator):
 
 # -------------------------------------------------------------------
 
-class MW_infoData_OT_(types.Operator):
+class MW_util_delete_OT_(types.Operator):
+    bl_idname = "mw.util_delete"
+    bl_label = "Delete fracture object"
+    bl_options = {'INTERNAL'}
+    bl_description = "Blender delete hierarchy seems to fail to delete all"
+
+    @classmethod
+    def poll(cls, context):
+        obj, cfg = utils.cfg_getRoot(context.active_object)
+        return (obj and cfg)
+
+    def execute(self, context: types.Context):
+        obj, cfg = utils.cfg_getRoot(context.active_object)
+        utils.delete_objectRec(obj)
+        return {'FINISHED'}
+
+# -------------------------------------------------------------------
+
+class MW_info_data_OT_(types.Operator):
     bl_idname = "mw.info_data"
     bl_label = "Inspect mesh data"
     bl_options = {'INTERNAL'}
@@ -171,7 +189,7 @@ class MW_infoData_OT_(types.Operator):
         info_mesh.desc_mesh_data(obj.data)
         return {'FINISHED'}
 
-class MW_infoAPI_OT_(types.Operator):
+class MW_info_API_OT_(types.Operator):
     bl_idname = "mw.info_api"
     bl_label = "Inspect mesh API"
     bl_options = {'INTERNAL'}
@@ -188,7 +206,7 @@ class MW_infoAPI_OT_(types.Operator):
         info_mesh.desc_mesh_inspect(obj.data)
         return {'FINISHED'}
 
-class MW_infoMatrices_OT_(types.Operator):
+class MW_info_matrices_OT_(types.Operator):
     bl_idname = "mw.info_matrices"
     bl_label = "Inspect obj matrices"
     bl_options = {'INTERNAL'}
@@ -209,9 +227,10 @@ class MW_infoMatrices_OT_(types.Operator):
 
 classes = (
     MW_gen_OT_,
-    MW_infoData_OT_,
-    MW_infoAPI_OT_,
-    MW_infoMatrices_OT_
+    MW_util_delete_OT_,
+    MW_info_data_OT_,
+    MW_info_API_OT_,
+    MW_info_matrices_OT_
 )
 
 register, unregister = bpy.utils.register_classes_factory(classes)

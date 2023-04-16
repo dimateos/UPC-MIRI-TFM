@@ -58,6 +58,7 @@ class MW_gen_Panel(types.Panel):
 
             col = layout.column()
             col.operator(ops.MW_gen_OT_.bl_idname, text="EDIT Fracture", icon="STICKY_UVS_VERT")
+            col.operator(ops.MW_util_delete_OT_.bl_idname, text="DELETE Fracture", icon="CANCEL")
 
             ui.draw_summary(cfg, layout)
 
@@ -85,12 +86,12 @@ class MW_info_Panel(types.Panel):
             col = layout.column()
 
             ui.draw_inspect(obj, layout)
-            col.operator(ops.MW_infoMatrices_OT_.bl_idname, text="Print Matrices", icon="LATTICE_DATA")
+            col.operator(ops.MW_info_matrices_OT_.bl_idname, text="Print Matrices", icon="LATTICE_DATA")
 
             if obj.type == 'MESH':
                 col = layout.column()
-                col.operator(ops.MW_infoData_OT_.bl_idname, text="Print mesh Data", icon="HELP")
-                col.operator(ops.MW_infoAPI_OT_.bl_idname, text="Print mesh API", icon="HELP")
+                col.operator(ops.MW_info_data_OT_.bl_idname, text="Print mesh Data", icon="HELP")
+                col.operator(ops.MW_info_API_OT_.bl_idname, text="Print mesh API", icon="HELP")
 
         # check region width
         box = layout.box()
