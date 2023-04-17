@@ -22,6 +22,7 @@ from tess import Container, Cell
 def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
     """ Attempts to retrieve a point per option and disables them when none is found """
     enabled = cfg.sourceOptions.enabled
+    for key in enabled.keys(): enabled[key] = False
 
     def check_point_from_verts(ob):
         if ob.type == 'MESH':
@@ -38,7 +39,6 @@ def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
     # geom own
     enabled["VERT_OWN"] = check_point_from_verts(obj)
     # geom children
-    enabled["VERT_CHILD"] = False
     for obj_child in obj.children:
         if check_point_from_verts(obj_child):
             enabled["VERT_CHILD"] = True
@@ -58,7 +58,6 @@ def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
     enabled["PARTICLE_OWN"] = check_point_from_particles(obj)
 
     # geom children particles
-    enabled["PARTICLE_CHILD"] = False
     for obj_child in obj.children:
         if check_point_from_particles(obj_child):
             enabled["PARTICLE_CHILD"] = True
@@ -103,12 +102,12 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
 
     # return in local space
     points = []
-    matrix_toLocal = obj.matrix_world.inverted()
+    world_toLocal = obj.matrix_world.inverted()
 
-    def points_from_verts(ob):
+    def points_from_verts(ob: types.Object, isChild=False):
         """Takes points from _any_ object with geometry"""
         if ob.type == 'MESH':
-            points.extend(utils.get_verts(ob, worldSpace=False))
+            verts = utils.get_verts(ob, worldSpace=False)
         else:
             # TODO: unused because atm limited to mesh anyway
             depsgraph = context.evaluated_depsgraph_get()
@@ -120,8 +119,16 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
 
             if mesh is not None:
                 verts = [v.co for v in mesh.vertices]
-                points.extend(verts)
                 obj_eval.to_mesh_clear()
+            else:
+                verts = []
+
+        # Child points need to be in parent local space
+        if isChild:
+            matrix = world_toLocal @ ob.matrix_world
+            #matrix = ob.matrix_parent_inverse @ ob.matrix_basis
+            utils.transform_points(verts, matrix)
+        points.extend(verts)
 
     # geom own
     if 'VERT_OWN' in source:
@@ -130,14 +137,14 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
     if 'VERT_CHILD' in source:
         # TODO: note that not recursive
         for obj_child in obj.children:
-            points_from_verts(obj_child)
+            points_from_verts(obj_child, isChild=True)
 
-    def points_from_particles(ob):
+    def points_from_particles(ob: types.Object):
         depsgraph = context.evaluated_depsgraph_get()
         obj_eval = ob.evaluated_get(depsgraph)
 
         # NOTE: chained list comprehension
-        points.extend([matrix_toLocal @ p.location.copy()
+        points.extend([world_toLocal @ p.location.copy()
                        for psys in obj_eval.particle_systems
                        for p in psys.particles])
 
@@ -151,16 +158,16 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
             points_from_particles(obj_child)
 
     # grease pencil
-    def points_from_stroke(stroke):
-        return [matrix_toLocal @ point.co.copy() for point in stroke.points]
-    def points_from_splines(gp):
-        if gp.layers.active:
-            frame = gp.layers.active.active_frame
-            return [points_from_stroke(stroke) for stroke in frame.strokes]
-        else:
-            return []
-
     if 'PENCIL' in source:
+        def points_from_stroke(stroke):
+            return [world_toLocal @ point.co.copy() for point in stroke.points]
+        def points_from_splines(gp):
+            if gp.layers.active:
+                frame = gp.layers.active.active_frame
+                return [points_from_stroke(stroke) for stroke in frame.strokes]
+            else:
+                return []
+
         # Used to be from object in 2.7x, now from scene.
         scene = context.scene
         gp = scene.grease_pencil

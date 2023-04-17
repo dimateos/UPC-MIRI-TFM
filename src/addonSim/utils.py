@@ -49,7 +49,9 @@ def cfg_setMetaTypeRec(obj: types.Object, type: dict):
 
 def transform_points(points: list[Vector], matrix) -> list[Vector]:
     """ INPLACE: Transform given points by the trans matrix """
-    points = [matrix @ v.co for v in points]
+    # no list comprehension of the whole list, asigning to a reference var changes the reference not the referenced
+    for i,p in enumerate(points):
+        points[i] = matrix @ p
 
 def get_verts(obj: types.Object, worldSpace=False) -> list[Vector, 6]:
     """ Get the object vertices in world space """
@@ -116,7 +118,7 @@ def trans_update(obj: types.Object):
         * But this does not take into account constraints, only parenting.
     """
     #trans_printMatrices(obj)
-    #print("^BEFORE update")
+    #print("^ BEFORE update")
 
     if obj.parent is None:
         obj.matrix_world = obj.matrix_basis
@@ -124,7 +126,7 @@ def trans_update(obj: types.Object):
         obj.matrix_world = obj.parent.matrix_world @ obj.matrix_parent_inverse @ obj.matrix_basis
 
     #trans_printMatrices(obj)
-    #print("^AFTER update")
+    #print("^ AFTER update")
 
 def trans_reset(obj: types.Object, locally = True, updateTrans = True):
     """ Reset all transformations of the object (does reset all matrices too) """
@@ -189,7 +191,7 @@ def get_child(obj: types.Object, name: str) -> types.Object|None:
     # All names are unique, even under children hierarchies. Blender adds .001 etc
     nameSub = name+"."
 
-    # TODO tried to add a property pointer to types.Object but the addon cannot have it? for now use name
+    # TODO: tried to add a property pointer to types.Object but the addon cannot have it? for now use name
     for child in obj.children:
         if child.name == name or child.name.startswith(nameSub):
             return child
