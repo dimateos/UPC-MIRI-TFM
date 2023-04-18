@@ -94,12 +94,23 @@ class MW_gen_cfg(types.PropertyGroup):
         default=-1,
     )
 
+    shape_useWalls: props.BoolProperty(
+        name="Use planes",
+        description="Keep the object convex shape",
+        default=True,
+    )
 
-    struct_nameSufix: props.StringProperty(
-        name="Name sufix",
+    struct_namePrefix: props.StringProperty(
+        name="Prefix",
         default="MW",
     )
     struct_nameOriginal: props.StringProperty()
+    def get_struct_name(self):
+        return f"{self.struct_namePrefix}_{self.struct_nameOriginal}"
+    def get_struct_nameNew(self, newName):
+        # TODO: replace with new name?
+        #self.struct_nameOriginal = newName
+        return f"{self.struct_namePrefix}_{newName}"
 
     struct_showShards: props.BoolProperty(
         name="Shards",

@@ -119,14 +119,22 @@ def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Contex
     box = layout.box()
     col = box.column()
 
-    rowsub = col.row()
+    factor = 0.4
+    rowsub = col.row().split(factor=factor)
     rowsub.alignment = "LEFT"
     rowsub.label(text="Point Source:")
     split = rowsub.split()
     split.enabled = False
     split.alignment = "LEFT"
     split.label(text=cfg.struct_nameOriginal)
-    col.prop(cfg, "struct_nameSufix")
+
+    rowsub = col.row().split(factor=factor)
+    rowsub.alignment = "LEFT"
+    rowsub.prop(cfg, "struct_namePrefix")
+    split = rowsub.split()
+    split.enabled = False
+    split.alignment = "LEFT"
+    split.label(text=cfg.get_struct_name())
 
     rowsub = col.row()
     rowsub.prop(cfg, "source")

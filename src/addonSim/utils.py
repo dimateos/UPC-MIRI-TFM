@@ -186,6 +186,15 @@ def delete_childrenRec(ob_father: types.Object):
     for child in ob_father.children:
         delete_objectRec(child)
 
+def get_object_fromScene(scene: types.Scene, name: str) -> types.Object|None:
+    """ Find an object in the scene by name (starts with to avoid limited exact names). Returns the first found. """
+    # TODO: improve as in get_child
+    nameSub = name+"."
+    for obj in scene.objects:
+        if obj.name == name or obj.name.startswith(nameSub):
+            return obj
+    return None
+
 def get_child(obj: types.Object, name: str) -> types.Object|None:
     """ Find child by name (starts with to avoid limited exact names) """
     # All names are unique, even under children hierarchies. Blender adds .001 etc
@@ -193,6 +202,7 @@ def get_child(obj: types.Object, name: str) -> types.Object|None:
 
     # TODO: tried to add a property pointer to types.Object but the addon cannot have it? for now use name
     for child in obj.children:
+        # TODO: avoid double linear comparison
         if child.name == name or child.name.startswith(nameSub):
             return child
     return None

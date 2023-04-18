@@ -86,7 +86,7 @@ class MW_gen_OT_(types.Operator):
 
 
         # Finish scene setup
-        mw_setup.gen_naming(obj, cfg, context)
+        mw_setup.gen_renaming(obj, cfg, context)
         obj.select_set(True)
         #context.active_object = obj
         # TODO: renaming in a edit fracture unselects from active_object
@@ -136,6 +136,7 @@ class MW_gen_OT_(types.Operator):
         mw_setup.gen_linksObjects(obj_links, cont, cfg, context)
 
         # TODO: store the cont inside the property pointer
+        # TODO: get volume from cells/cont?
         # TODO: BL:: detect property changes and avoid regen -> maybe some vis can go to panel etc
         ## TEST: check out some cell properties and API
         #if 1:

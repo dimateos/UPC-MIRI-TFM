@@ -29,7 +29,7 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
     cfg.struct_nameOriginal = obj.name
 
     # Empty object to hold all of them set at the original obj trans
-    obj_empty = bpy.data.objects.new(cfg.struct_nameOriginal, None)
+    obj_empty = bpy.data.objects.new(cfg.get_struct_name(), None)
     context.scene.collection.objects.link(obj_empty)
 
     # Duplicate the original object
@@ -51,11 +51,15 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
 
     return obj_empty, obj_copy
 
-def gen_naming(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    if obj.name.startswith(cfg.struct_nameOriginal):
-        obj.name = cfg.struct_nameOriginal + "_" + cfg.struct_nameSufix
-    else:
-        obj.name += "_" + cfg.struct_nameSufix
+def gen_renaming(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
+    # split by first _
+    try:
+        prefix, name = obj.name.split("_",1)
+    except ValueError:
+        prefix, name = "", obj.name
+
+    # use new prefix preserving name
+    obj.name = cfg.get_struct_nameNew(name)
 
 def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     obj_shardsEmpty = utils.gen_childClean(obj, CONST_NAMES.shards, context, None, keepTrans=False, hide=not cfg.struct_showShards)
