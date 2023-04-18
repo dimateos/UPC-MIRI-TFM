@@ -12,6 +12,8 @@ set bpip=%bpy% -m pip
 REM open blender
 CALL :getAbsPath "..\DATA\Blender\3.4.1\blender.exe"
 set bexe=%RETVAL%
+CALL :getAbsPath "..\DATA\Blender\3.4.1\3.4\scripts\addons"
+set bscripts=%RETVAL%
 
 REM path to shared stuff
 set "src=..\DATA"
