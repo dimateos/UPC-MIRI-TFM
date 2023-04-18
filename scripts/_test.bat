@@ -15,10 +15,7 @@ REM NOTE: local pip will still try to access Python roaming packages, whereas bl
 REM         so it wont install requirements already satisfied there, maybe with --force-reinstall?
 
 REM backup env (using some common external .bat)
-CALL ./_scripts/getTS.bat
-set "back=./logFreeze/%ts%.log"
-bpip freeze > %back%
-code "%back%"
+bpip_backup code
 
 REM autocomplete for bpy and bmesh etc
 bpip install fake-bpy-module-3.4
