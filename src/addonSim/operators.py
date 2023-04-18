@@ -164,14 +164,7 @@ class MW_util_delete_OT_(types.Operator):
     bl_label = "Delete fracture object"
     bl_options = {'INTERNAL'}
     bl_description = "Blender delete hierarchy seems to fail to delete all"
-
-    unhide_original = props.BoolProperty(
-        description="Unhide the original object after deletion",
-        default=True,
-    )
-
-    _obj = None
-    _cfg = None
+    _obj, _cfg = None, None
 
     @classmethod
     def poll(cls, context):
@@ -180,11 +173,15 @@ class MW_util_delete_OT_(types.Operator):
         return (obj and cfg)
 
     def execute(self, context: types.Context):
-        if (self.unhide_original):
-            obj_original = utils.get_object_fromScene(context.scene, MW_util_delete_OT_._cfg.struct_nameOriginal)
+        obj, cfg = MW_util_delete_OT_._obj, MW_util_delete_OT_._cfg
+        prefs = getPrefs(context)
+
+        # optionally hide
+        if (prefs.OT_util_delete_unhide):
+            obj_original = utils.get_object_fromScene(context.scene, cfg.struct_nameOriginal)
             obj_original.hide_set(False)
 
-        utils.delete_objectRec(MW_util_delete_OT_._obj)
+        utils.delete_objectRec(obj)
         return {'FINISHED'}
 
 # -------------------------------------------------------------------

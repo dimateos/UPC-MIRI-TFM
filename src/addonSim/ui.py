@@ -23,6 +23,7 @@ class DEV:
 # -------------------------------------------------------------------
 
 def DEV_log(msg, type = {'DEV'}, ui = None):
+    """ Log to console if DEV.logs and type not filtered by DEV.logs_skipped """
     if not DEV.logs: return
     if type in DEV.logs_skipped: return
 
@@ -32,8 +33,18 @@ def DEV_log(msg, type = {'DEV'}, ui = None):
     #ui.report({'ERROR'}, "Operation failed!")
 
 def DEV_drawVal(layout: types.UILayout, msg, value):
+    """ Draw value with label if DEV.ui_vals is set """
     if not DEV.ui_vals: return
     layout.label(text=f"{msg}: {value}", icon="BLENDER")
+
+# -------------------------------------------------------------------
+
+def draw_toggleBox(data, prop_toggle_name:str, layout: types.UILayout):
+    """ Create a box with a toggle. Return the state of the toggle and the created layout """
+    box = layout.box()
+    box.prop(data, prop_toggle_name, toggle=True)
+    open = getattr(data, prop_toggle_name)
+    return open, box
 
 # -------------------------------------------------------------------
 
@@ -164,11 +175,9 @@ def draw_gen_cfg(cfg: MW_gen_cfg, layout: types.UILayout, context: types.Context
 
 def draw_debug_cfg(cfg: MW_gen_cfg, layout: types.UILayout):
     if not DEV.debug: return
+    open, box = draw_toggleBox(cfg, "meta_show_debug", layout)
 
-    # Toggle debug
-    box = layout.box()
-    box.prop(cfg, "meta_show_debug", toggle=True)
-    if cfg.meta_show_debug:
+    if open:
         col = box.column()
         col.label(text="Show:")
         rowsub = col.row(align=True)
