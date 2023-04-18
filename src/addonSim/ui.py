@@ -8,6 +8,7 @@ from .properties import (
 )
 
 from . import utils
+from mathutils import Vector, Matrix
 
 # TODO: some access from UI to toggle dynamically?
 class DEV:
@@ -64,11 +65,14 @@ def draw_summary(cfg : MW_gen_cfg, layout: types.UILayout):
             #col.row().label(text=prop_name + ": " + str(prop_value))
 
 def draw_inspect(obj: types.Object, layout: types.UILayout):
-    box = layout.box()
-    col = box.column()
-    col.label(text="Inspect: " + obj.name_full)
-    col.label(text="Type: " + obj.type, icon="MESH_DATA")
+    mainBox = layout.box()
+    mainCol = mainBox.column()
+    mainCol.label(text="Inspect: " + obj.name_full)
 
+    # TODO: maybe for vertices too, not just whole objects
+    box = mainCol.box()
+    col = box.column()
+    col.label(text="Type: " + obj.type, icon="MESH_DATA")
     if obj.type == "MESH":
         mesh: types.Mesh = obj.data
         col.label(text=f"V: {len(mesh.vertices)}   E: {len(mesh.edges)}   F: {len(mesh.polygons)}   T: {len(mesh.loop_triangles)}")
@@ -76,14 +80,36 @@ def draw_inspect(obj: types.Object, layout: types.UILayout):
     # shared decimal format
     fmt = ">6.3f"
     fmt_vec = f"({{:{fmt}}}, {{:{fmt}}}, {{:{fmt}}})"
-
-    pos = obj.location
-    col.label(text=f"pos: {fmt_vec}".format(*pos))
     from math import degrees
-    rot = tuple(degrees(r) for r in obj.rotation_euler)
-    col.label(text=f"rot:  {fmt_vec}".format(*rot))
-    sca = obj.scale
+
+    # group world
+    box = mainCol.box()
+    col = box.column()
+    col.label(text="World transform")
+
+    matrix: Matrix = obj.matrix_world
+    pos = matrix.to_translation()
+    col.label(text=f"pos: {fmt_vec}".format(*pos))
+    rot = matrix.to_euler()
+    rot_deg = tuple(degrees(r) for r in rot)
+    col.label(text=f"rot:  {fmt_vec}".format(*rot_deg))
+    sca = matrix.to_scale()
     col.label(text=f"sca: {fmt_vec}".format(*sca))
+
+    # group local
+    box = col.box()
+    col = box.column()
+    col.label(text="Local transform")
+
+    matrix: Matrix = obj.matrix_basis
+    pos = matrix.to_translation()
+    col.label(text=f"pos: {fmt_vec}".format(*pos))
+    rot = matrix.to_euler()
+    rot_deg = tuple(degrees(r) for r in rot)
+    col.label(text=f"rot:  {fmt_vec}".format(*rot_deg))
+    sca = matrix.to_scale()
+    col.label(text=f"sca: {fmt_vec}".format(*sca))
+
 
 # -------------------------------------------------------------------
 
