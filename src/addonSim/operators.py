@@ -52,6 +52,8 @@ class MW_gen_OT_(types.Operator):
         ui.DEV_log(f"execute auto{self.cfg.meta_auto_refresh} +r{self.cfg.meta_refresh}", {'OP_FLOW'})
 
         # TODO: atm only a single selected object + spawning direclty on the scene collection
+        # TODO: also limited to mesh, no properly tested with curves etc
+        # TODO: disabled pencil too, should check points are close enugh/inside
 
         # Handle refreshing
         if not self.cfg.meta_refresh and not self.cfg.meta_auto_refresh:
@@ -88,7 +90,7 @@ class MW_gen_OT_(types.Operator):
         obj.select_set(True)
         #context.active_object = obj
         # TODO: renaming in a edit fracture unselects from active_object
-        # TODO: some error handling on unexpected deleted objects
+        # TODO: some error handling on unexpected deleted objects?
 
 
         # Setup calc
@@ -107,7 +109,9 @@ class MW_gen_OT_(types.Operator):
 
         # Get more data
         bb, bb_radius = utils.get_bb_radius(obj_copy, cfg.margin_box_bounds)
-        faces4D = utils.get_faces_4D(obj_copy, cfg.margin_face_bounds)
+        if cfg.shape_useWalls:
+            faces4D = utils.get_faces_4D(obj_copy, cfg.margin_face_bounds)
+        else: faces4D = []
 
         # Limit and rnd a bit the points and add them to the scene
         mw_calc.points_limitNum(points, cfg)

@@ -133,6 +133,7 @@ def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Contex
 
     rowsub = col.row()
     rowsub.prop(cfg, "source_limit")
+    rowsub.prop(cfg, "shape_useWalls")
     rowsub = col.row()
     rowsub.prop(cfg, "source_noise")
     rowsub.prop(cfg, "rnd_seed")

@@ -46,9 +46,8 @@ class MW_gen_cfg(types.PropertyGroup):
             ('VERT_CHILD', "Child Verts", "Use child object vertices"),
             ('PARTICLE_OWN', "Own Particles", "All particle systems of the source object"),
             ('PARTICLE_CHILD', "Child Particles", "All particle systems of the child objects"),
-            #('PENCIL', "Annotation Pencil", "Annotation Grease Pencil."),
+            ('PENCIL', "Pencil", "Annotation Grease Pencil (only touching/inside the volume)"),
         ]
-        all_keys = [ t[0] for t in all ]
         enabled = {
             'VERT_OWN': True,
             'VERT_CHILD': True,
@@ -56,12 +55,16 @@ class MW_gen_cfg(types.PropertyGroup):
             'PARTICLE_CHILD': True,
             #'PENCIL': False,
         }
+        all_keys = [ k for k in enabled.keys() ]
         default_key = 'VERT_OWN'
         error_key = 'NONE'
         error_option = [ (error_key, "No point found...", f"Options: {all_keys}") ]
 
     def source_dynamic(self, context):
-        items = [ t for t in self.sourceOptions.all if self.sourceOptions.enabled[t[0]] ]
+        items = [
+            t for t in self.sourceOptions.all
+                if self.sourceOptions.enabled.get(t[0], False)
+        ]
         if items: return items
         else: return self.sourceOptions.error_option.copy()
 
