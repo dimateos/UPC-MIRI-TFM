@@ -2,6 +2,7 @@ import bpy
 import bpy.types as types
 import bpy.props as props
 
+from . import preferences as prefs
 from .properties import (
     MW_gen_cfg,
     MW_sim_cfg,
@@ -12,6 +13,7 @@ from . import mw_setup
 from . import mw_calc
 
 from . import utils
+from . import utils_cfg
 from . import ui
 
 from mathutils import Vector
@@ -73,7 +75,7 @@ class MW_gen_OT_(types.Operator):
         # Copy the config to the operator once
         else:
             if "NONE" in self.cfg.meta_type:
-                utils.cfg_copyProps(cfg, self.cfg)
+                utils_cfg.copyProps(cfg, self.cfg)
                 ui.DEV_log("PASS_THROUGH? copy props", {'OP_FLOW'})
                 return {'FINISHED'}
             else:
@@ -151,7 +153,7 @@ class MW_gen_OT_(types.Operator):
         # TODO: GEN:: avoid convex hull?
 
         # Add edited cfg to the object
-        utils.cfg_copyProps(self.cfg, obj.mw_gen)
+        utils_cfg.copyProps(self.cfg, obj.mw_gen)
         return {'FINISHED'}
 
 
@@ -163,14 +165,26 @@ class MW_util_delete_OT_(types.Operator):
     bl_options = {'INTERNAL'}
     bl_description = "Blender delete hierarchy seems to fail to delete all"
 
+    unhide_original = props.BoolProperty(
+        description="Unhide the original object after deletion",
+        default=True,
+    )
+
+    _obj = None
+    _cfg = None
+
     @classmethod
     def poll(cls, context):
         obj, cfg = utils.cfg_getRoot(context.active_object)
+        MW_util_delete_OT_._obj, MW_util_delete_OT_._cfg = obj, cfg
         return (obj and cfg)
 
     def execute(self, context: types.Context):
-        obj, cfg = utils.cfg_getRoot(context.active_object)
-        utils.delete_objectRec(obj)
+        if (self.unhide_original):
+            obj_original = utils.get_object_fromScene(context.scene, MW_util_delete_OT_._cfg.struct_nameOriginal)
+            obj_original.hide_set(False)
+
+        utils.delete_objectRec(MW_util_delete_OT_._obj)
         return {'FINISHED'}
 
 # -------------------------------------------------------------------

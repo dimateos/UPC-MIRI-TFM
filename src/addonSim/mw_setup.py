@@ -92,17 +92,30 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, co
 
 def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
     for cell in cont:
-        # TODO: maybe make id match the point id instead of the container id
-        name= f"{CONST_NAMES.shards}_{cell.id}"
+        source_id = cont.source_idx[cell.id]
+        name= f"{CONST_NAMES.shards}_{source_id}"
 
-        # create a static mesh for each one
+        # TODO: the centroid is not at the center of mass? problem maybe related to margins etc
+        # pos center of volume
+        pos = cell.centroid()
+        #pos = cell.pos
+        #posC = cell.centroid()
+        #posCl = cell.centroid_local()
+
+        # TODO: world do not match local + pos?
+        # create a static mesh with vertices relative to the center of mass
+        verts = cell.vertices_local_centroid()
+        #verts = cell.vertices_local()
+        #vertsW = cell.vertices()
+        #vertsW2 = [ Vector(v)+Vector(pos) for v in verts ]
+        #vertsC = cell.vertices_local_centroid()
+
+
+        # build the static mesh and child object
         mesh = bpy.data.meshes.new(name)
-        # TODO: the centroid is not at the center of mass? related to margins etc
-        mesh.from_pydata(vertices=cell.vertices_local_centroid(), edges=[], faces=cell.face_vertices())
-
+        mesh.from_pydata(vertices=verts, edges=[], faces=cell.face_vertices())
         obj_shard = utils.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showShards)
-        obj_shard.location = cell.centroid()
-        #print("cell.pos", cell.pos)
+        obj_shard.location = pos
 
 def gen_linksObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
     # TODO: atm just hiding reps -> maybe generate using a different map instead of iterating the raw cont

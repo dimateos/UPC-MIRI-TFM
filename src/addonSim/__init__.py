@@ -12,20 +12,20 @@ bl_info = {
     "category": "Development",
 }
 
-
-# -------------------------------------------------------------------
-
-import bpy
-
+from . import preferences
 from . import properties
 from . import operators
 from . import panels
 
 submodules = (
+    preferences,
     properties,
     operators,
     panels,
 )
+
+preferences.ADDON._bl_info = bl_info.copy()
+preferences.ADDON._bl_name = __name__
 
 
 # -------------------------------------------------------------------

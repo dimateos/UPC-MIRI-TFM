@@ -7,10 +7,7 @@ from .properties import (
     MW_vis_cfg,
 )
 
-from .ui import DEV_log
-
 from mathutils import Vector, Matrix
-
 
 # -------------------------------------------------------------------
 
@@ -27,17 +24,6 @@ def cfg_getRoot(obj: types.Object) -> tuple[types.Object, MW_gen_cfg]:
             obj = obj.parent
 
         return obj, obj.mw_gen
-
-def cfg_copyProps(src, dest):
-    """ Copy all properties of the property group to the object """
-    # The whole property is read-only but its values can be modified, avoid writing it one by one...
-    for prop_name in dir(src):
-        if not prop_name.startswith("__") and not callable(getattr(src, prop_name)):
-            try:
-                setattr(dest, prop_name, getattr(src, prop_name))
-            except AttributeError:
-                # Avoid read-only RNA types
-                pass
 
 def cfg_setMetaTypeRec(obj: types.Object, type: dict):
     """ Set the property to the object and all its children (dictionary ies copied, not referenced) """
@@ -78,7 +64,8 @@ def get_bb_radius(obj: types.Object, margin_disp = 0.0, worldSpace=False) -> tup
     bb = (bb_full[0]- disp, bb_full[6] + disp)
     bb_radius = ((bb[0] - bb[1]).length / 2.0)
 
-    # TODO atm limited to mesh, otherwise check and use depsgraph
+    # TODO: atm limited to mesh, otherwise check and use depsgraph
+    #from .ui import DEV_log
     #DEV_log("Found %d bound verts" % len(bb_full))
     return bb, bb_radius
 
@@ -258,12 +245,6 @@ def gen_childClean(
     return gen_child(obj, name, context, mesh, keepTrans, noInv, hide)
 
 # -------------------------------------------------------------------
-
-def match_anySub(word: str, subs: list) -> bool:
-    for sub in subs:
-        if sub in word:
-            return True
-    return False
 
 def rnd_seed(s: int = None) -> int:
     """ Persists across separate module imports, return the seed to store in the config """

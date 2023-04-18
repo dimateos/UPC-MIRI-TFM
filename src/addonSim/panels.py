@@ -1,5 +1,6 @@
 import bpy
 import bpy.types as types
+import bpy.props as props
 
 from .properties import (
     MW_gen_cfg,
@@ -9,6 +10,7 @@ from .properties import (
 from . import operators as ops
 
 from . import utils
+from . import utils_cfg
 from . import ui
 
 PANEL_CATEGORY = "Dev"
@@ -58,9 +60,18 @@ class MW_gen_Panel(types.Panel):
 
             col = layout.column()
             col.operator(ops.MW_gen_OT_.bl_idname, text="EDIT Fracture", icon="STICKY_UVS_VERT")
-            col.operator(ops.MW_util_delete_OT_.bl_idname, text="DELETE Fracture", icon="CANCEL")
 
-            ui.draw_summary(cfg, layout)
+            col_rowSplit = col.row().split(factor=0.8)
+            col_rowSplit.operator(ops.MW_util_delete_OT_.bl_idname, text="DELETE Fracture", icon="CANCEL")
+            #col_rowSplit.prop(ops.MW_util_delete_OT_, "unhide_original")
+            #col_rowSplit.prop(self, "cfg_util_delete_unhide")
+            #col_rowSplit.label(str(self.cfg_util_delete_unhide))
+            #self.layout.prop(self, "cfg_util_delete_unhide")
+
+            prefs = utils_cfg.getPrefs(context)
+            self.layout.prop(prefs, "my_bool_pref")
+
+            ui.draw_propsToggle(cfg, layout)
 
 
 class MW_info_Panel(types.Panel):
@@ -85,7 +96,7 @@ class MW_info_Panel(types.Panel):
             obj = context.active_object
             col = layout.column()
 
-            ui.draw_inspect(obj, layout)
+            ui.draw_inspectObject(obj, layout)
             col.operator(ops.MW_info_matrices_OT_.bl_idname, text="Print Matrices", icon="LATTICE_DATA")
 
             if obj.type == 'MESH':

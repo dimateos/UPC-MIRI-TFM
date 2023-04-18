@@ -7,7 +7,6 @@ from .properties import (
     MW_vis_cfg,
 )
 
-from . import utils
 from mathutils import Vector, Matrix
 
 # TODO: some access from UI to toggle dynamically?
@@ -38,14 +37,19 @@ def DEV_drawVal(layout: types.UILayout, msg, value):
 
 # -------------------------------------------------------------------
 
-def draw_refresh(cfg : MW_gen_cfg, layout: types.UILayout):
-    row = layout.box().row()
-    row.scale_y = 1.5
-    split = row.split(factor=0.75)
-    split.prop(cfg, "meta_auto_refresh", toggle=True, icon_only=False, icon='FILE_REFRESH')
-    split.prop(cfg, "meta_refresh", toggle=True, icon_only=True, icon='FILE_REFRESH')
+def draw_props(data, layout: types.UILayout, filtered_props: list[str] = None):
+    def _match_anySub(word: str, subs: list) -> bool:
+        for sub in subs:
+            if sub in word:
+                return True
+        return False
 
-def draw_summary(cfg : MW_gen_cfg, layout: types.UILayout):
+    for prop_name in data.keys():
+        if filtered_props and _match_anySub(prop_name, filtered_props):
+            continue
+        layout.row().prop(data, prop_name, text=prop_name)
+
+def draw_propsToggle(cfg: MW_gen_cfg, layout: types.UILayout):
     # TODO: maybe scene prop to togggle show instead of object
 
     box = layout.box()
@@ -54,17 +58,20 @@ def draw_summary(cfg : MW_gen_cfg, layout: types.UILayout):
         col = box.column()
         col.enabled = False
 
-        # filter out some properties shown
+        # show all props but filter out some
         filtered_props = [ "meta", "name" ]
-        for prop_name in cfg.keys():
-            if utils.match_anySub(prop_name, filtered_props):
-                continue
+        draw_props(cfg, col, [ "meta", "name" ])
 
-            col.row().prop(cfg, prop_name, text=prop_name)
-            #prop_value = cfg[prop_name]
-            #col.row().label(text=prop_name + ": " + str(prop_value))
+# -------------------------------------------------------------------
 
-def draw_inspect(obj: types.Object, layout: types.UILayout):
+def draw_refresh(cfg: MW_gen_cfg, layout: types.UILayout):
+    row = layout.box().row()
+    row.scale_y = 1.5
+    split = row.split(factor=0.75)
+    split.prop(cfg, "meta_auto_refresh", toggle=True, icon_only=False, icon='FILE_REFRESH')
+    split.prop(cfg, "meta_refresh", toggle=True, icon_only=True, icon='FILE_REFRESH')
+
+def draw_inspectObject(obj: types.Object, layout: types.UILayout):
     mainBox = layout.box()
     mainCol = mainBox.column()
     mainCol.label(text="Inspect: " + obj.name_full)
@@ -110,10 +117,9 @@ def draw_inspect(obj: types.Object, layout: types.UILayout):
     sca = matrix.to_scale()
     col.label(text=f"sca: {fmt_vec}".format(*sca))
 
-
 # -------------------------------------------------------------------
 
-def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Context):
+def draw_gen_cfg(cfg: MW_gen_cfg, layout: types.UILayout, context: types.Context):
     draw_refresh(cfg, layout)
 
     box = layout.box()
@@ -156,9 +162,9 @@ def draw_gen_cfg(cfg : MW_gen_cfg, layout: types.UILayout, context: types.Contex
     rowsub.prop(cfg, "links_width")
     rowsub.prop(cfg, "links_res")
 
-    DEV_drawDebug(cfg, layout)
+    draw_debug_cfg(cfg, layout)
 
-def DEV_drawDebug(cfg : MW_gen_cfg, layout: types.UILayout):
+def draw_debug_cfg(cfg: MW_gen_cfg, layout: types.UILayout):
     if not DEV.debug: return
 
     # Toggle debug
