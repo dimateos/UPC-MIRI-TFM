@@ -49,18 +49,16 @@ def draw_props(data, layout: types.UILayout, filtered_props: list[str] = None):
             continue
         layout.row().prop(data, prop_name, text=prop_name)
 
-def draw_propsToggle(cfg: MW_gen_cfg, layout: types.UILayout):
-    # TODO: maybe scene prop to togggle show instead of object
-
+def draw_propsToggle(data, prop_toggle_name, layout: types.UILayout):
     box = layout.box()
-    box.prop(cfg, "meta_show_summary", toggle=True)
-    if cfg.meta_show_summary:
+    box.prop(data, prop_toggle_name, toggle=True)
+    if getattr(data, prop_toggle_name):
         col = box.column()
         col.enabled = False
 
         # show all props but filter out some
         filtered_props = [ "meta", "name" ]
-        draw_props(cfg, col, [ "meta", "name" ])
+        draw_props(data, col, [ "meta", "name" ])
 
 # -------------------------------------------------------------------
 

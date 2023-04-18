@@ -35,10 +35,12 @@ class MW_gen_cfg(types.PropertyGroup):
         description="Show some debug properties"
     )
     meta_show_summary: props.BoolProperty(
-        name="Show summary...",
+        name="Show object summary...",
         default=False,
         description="Show fracture summary"
     )
+
+# -------------------------------------------------------------------
 
     class sourceOptions:
         all=[
@@ -94,6 +96,8 @@ class MW_gen_cfg(types.PropertyGroup):
         default=-1,
     )
 
+# -------------------------------------------------------------------
+
     shape_useWalls: props.BoolProperty(
         name="Use planes",
         description="Keep the object convex shape",
@@ -111,6 +115,8 @@ class MW_gen_cfg(types.PropertyGroup):
         # TODO: replace with new name?
         #self.struct_nameOriginal = newName
         return f"{self.struct_namePrefix}_{newName}"
+
+# -------------------------------------------------------------------
 
     struct_showShards: props.BoolProperty(
         name="Shards",
@@ -144,6 +150,7 @@ class MW_gen_cfg(types.PropertyGroup):
         default=True,
     )
 
+# -------------------------------------------------------------------
 
     margin_box_bounds: props.FloatProperty(
         name="Margin BB",
@@ -174,6 +181,8 @@ class MW_gen_cfg(types.PropertyGroup):
         default=0,
     )
 
+# -------------------------------------------------------------------
+# TODO: will use more or addon preferences?
 
 class MW_sim_cfg(types.PropertyGroup):
     pass

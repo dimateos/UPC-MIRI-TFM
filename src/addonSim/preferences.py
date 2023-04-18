@@ -25,6 +25,19 @@ class MW_prefs(bpy.types.AddonPreferences):
     def draw(self, context):
         draw_props(self, self.layout)
 
+    meta_show_debug: props.BoolProperty(
+        name="Show DEBUG...",
+        default=True,
+        description="Show some debug preferences"
+    )
+    meta_show_prefs: props.BoolProperty(
+        name="Show addon preferences...",
+        default=True,
+        description="Show addon preferences"
+    )
+
+# -------------------------------------------------------------------
+
     OT_util_delete_unhide: props.BoolProperty(
         name="unhide",
         description="Unhide the original object after deletion",

@@ -2,7 +2,7 @@ import bpy
 import bpy.types as types
 import bpy.props as props
 
-from . import preferences as prefs
+from .preferences import getPrefs
 from .properties import (
     MW_gen_cfg,
     MW_sim_cfg,
