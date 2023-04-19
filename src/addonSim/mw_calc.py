@@ -6,7 +6,7 @@ from .properties import (
 )
 
 from . import utils
-from .ui import DEV_log
+from .utils_dev import DEV
 
 from mathutils import Vector
 INF_FLOAT = float("inf")
@@ -83,11 +83,11 @@ def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, context)
     points = get_points_from_object(obj, cfg, context)
 
     if not points:
-        DEV_log("No points found... changing to fallback (own vertices)", {"SETUP"})
+        DEV.log_msg("No points found... changing to fallback (own vertices)", {"SETUP"})
         cfg.source = { cfg.sourceOptions.default_key }
         points = get_points_from_object(obj, cfg, context)
     if not points:
-        DEV_log("No points found either...", {"SETUP"})
+        DEV.log_msg("No points found either...", {"SETUP"})
         return []
 
     return points
@@ -174,7 +174,7 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
         if gp:
             points.extend([p for spline in points_from_splines(gp) for p in spline])
 
-    DEV_log(f"Found {len(points)} points", {"SETUP"})
+    DEV.log_msg(f"Found {len(points)} points", {"SETUP"})
     return points
 
 # -------------------------------------------------------------------
@@ -207,5 +207,5 @@ def cont_fromPoints(points: list[Vector], bb: list[Vector, 6], faces4D: list[Vec
     # Build the container and cells
     cont = Container(points=points, limits=bb_tuples, walls=faces4D)
 
-    DEV_log(f"Found {len(cont)} cells ({len(faces4D)} faces)", {"CALC"})
+    DEV.log_msg(f"Found {len(cont)} cells ({len(faces4D)} faces)", {"CALC"})
     return cont

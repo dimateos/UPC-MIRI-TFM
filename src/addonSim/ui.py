@@ -7,37 +7,11 @@ from .properties import (
     MW_vis_cfg,
 )
 
-from . import utils_cfg
+from .utils_cfg import getProps_names
+from .utils_dev import DEV
 
 from mathutils import Vector, Matrix
 
-# TODO: some access from UI to toggle dynamically?
-class DEV:
-    debug = True
-
-    ui_vals = True
-    logs = True
-    logs_skipped = [
-        #{'OP_FLOW'}
-    ]
-
-
-# -------------------------------------------------------------------
-
-def DEV_log(msg, type = {'DEV'}, ui = None):
-    """ Log to console if DEV.logs and type not filtered by DEV.logs_skipped """
-    if not DEV.logs: return
-    if type in DEV.logs_skipped: return
-
-    print(type, msg)
-    if ui: ui.report(type, msg)
-    #ui.report({'INFO'}, "Operation successful!")
-    #ui.report({'ERROR'}, "Operation failed!")
-
-def DEV_drawVal(layout: types.UILayout, msg, value):
-    """ Draw value with label if DEV.ui_vals is set """
-    if not DEV.ui_vals: return
-    layout.label(text=f"{msg}: {value}", icon="BLENDER")
 
 # -------------------------------------------------------------------
 
@@ -51,7 +25,7 @@ def draw_toggleBox(data, propToggle_name:str, layout: types.UILayout) -> tuple[b
 def draw_props(data, propFilter_name:str, layout: types.UILayout):
     """ Draw all properties of an object in a sub layout. """
     # dynamic filter prop
-    prop_names = utils_cfg.getProps_names(data)
+    prop_names = getProps_names(data)
     propFilter = getattr(data, propFilter_name)
     if propFilter:
         excluding = propFilter[0]=="-"
@@ -187,9 +161,7 @@ def draw_gen_cfg(cfg: MW_gen_cfg, layout: types.UILayout, context: types.Context
     draw_gen_cfgDebug(cfg, layout)
 
 def draw_gen_cfgDebug(cfg: MW_gen_cfg, layout: types.UILayout):
-    if not DEV.debug: return
     open, box = draw_toggleBox(cfg, "meta_show_debug", layout)
-
     if open:
         col = box.column()
         col.label(text="Show:")

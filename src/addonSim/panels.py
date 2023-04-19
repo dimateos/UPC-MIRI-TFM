@@ -10,9 +10,9 @@ from .properties import (
 )
 from . import operators as ops
 
-from . import utils
-from . import utils_cfg
 from . import ui
+from . import utils
+from .utils_dev import DEV
 
 PANEL_CATEGORY = "Dev"
 PANEL_INFO_NOTIFY_NO_SELECTED = False
@@ -95,7 +95,7 @@ class MW_addon_Panel(types.Panel):
         if open:
             col = box.column()
             # check region width
-            ui.DEV_drawVal(col, "context.region.width", context.region.width)
+            DEV.draw_val(col, "context.region.width", context.region.width)
 
 
 class MW_info_Panel(types.Panel):

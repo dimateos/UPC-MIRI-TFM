@@ -6,7 +6,7 @@ from .properties import (
 )
 
 from . import utils
-from .ui import DEV_log
+from .utils_dev import DEV
 
 from mathutils import Vector, Matrix
 
@@ -96,20 +96,24 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
         name= f"{CONST_NAMES.shards}_{source_id}"
 
         # TODO: the centroid is not at the center of mass? problem maybe related to margins etc
+        posC = cell.centroid()
+        posCL = cell.centroid_local()
+        vertsCL = cell.vertices_local_centroid()
+
+        # assert some voro properties, the more varied test cases the better
+        if DEV.assert_voro_posW:
+            posW = cell.pos
+            vertsW = cell.vertices()
+            vertsL = cell.vertices_local()
+            vertsW2 = [ Vector(v)+Vector(posW) for v in vertsL ]
+            vertsWd_diff = [ Vector(v1)-Vector(v2) for v1,v2 in zip(vertsW,vertsW2) ]
+            vertsW_check = [ d.length_squared > 0.0005 for d in vertsWd_diff ]
+            assert(not any(vertsW_check))
+
         # pos center of volume
         pos = cell.centroid()
-        #pos = cell.pos
-        #posC = cell.centroid()
-        #posCl = cell.centroid_local()
-
-        # TODO: world do not match local + pos?
         # create a static mesh with vertices relative to the center of mass
         verts = cell.vertices_local_centroid()
-        #verts = cell.vertices_local()
-        #vertsW = cell.vertices()
-        #vertsW2 = [ Vector(v)+Vector(pos) for v in verts ]
-        #vertsC = cell.vertices_local_centroid()
-
 
         # build the static mesh and child object
         mesh = bpy.data.meshes.new(name)

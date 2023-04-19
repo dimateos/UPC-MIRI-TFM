@@ -12,9 +12,10 @@ from .properties import (
 from . import mw_setup
 from . import mw_calc
 
-from . import utils
-from . import utils_cfg
 from . import ui
+from . import utils
+from .utils_cfg import copyProps
+from .utils_dev import DEV
 
 from mathutils import Vector
 from tess import Container, Cell
@@ -35,7 +36,7 @@ class MW_gen_OT_(types.Operator):
 
     def invoke(self, context, event):
         """ Runs only once on operator call """
-        ui.DEV_log("invoke", {'OP_FLOW'})
+        DEV.log_msg("invoke", {'OP_FLOW'})
 
         # refresh at least once
         self.cfg.meta_refresh = True
@@ -51,7 +52,7 @@ class MW_gen_OT_(types.Operator):
 
     def execute(self, context: types.Context):
         """ Runs once and then after every property edit in the edit last action panel """
-        ui.DEV_log(f"execute auto{self.cfg.meta_auto_refresh} +r{self.cfg.meta_refresh}", {'OP_FLOW'})
+        DEV.log_msg(f"execute auto{self.cfg.meta_auto_refresh} +r{self.cfg.meta_refresh}", {'OP_FLOW'})
 
         # TODO: atm only a single selected object + spawning direclty on the scene collection
         # TODO: also limited to mesh, no properly tested with curves etc
@@ -59,7 +60,7 @@ class MW_gen_OT_(types.Operator):
 
         # Handle refreshing
         if not self.cfg.meta_refresh and not self.cfg.meta_auto_refresh:
-            ui.DEV_log("PASS_THROUGH no refresh", {'OP_FLOW'})
+            DEV.log_msg("PASS_THROUGH no refresh", {'OP_FLOW'})
             return {'PASS_THROUGH'}
         self.cfg.meta_refresh = False
 
@@ -75,8 +76,8 @@ class MW_gen_OT_(types.Operator):
         # Copy the config to the operator once
         else:
             if "NONE" in self.cfg.meta_type:
-                utils_cfg.copyProps(cfg, self.cfg)
-                ui.DEV_log("PASS_THROUGH? copy props", {'OP_FLOW'})
+                copyProps(cfg, self.cfg)
+                DEV.log_msg("PASS_THROUGH? copy props", {'OP_FLOW'})
                 return {'FINISHED'}
             else:
                 cfg: MW_gen_cfg = self.cfg
@@ -153,9 +154,10 @@ class MW_gen_OT_(types.Operator):
         # TODO: RENDER:: add interior handle for materials
         # TODO: GEN:: recursiveness?
         # TODO: GEN:: avoid convex hull?
+        stats.log("completed execution...")
 
         # Add edited cfg to the object
-        utils_cfg.copyProps(self.cfg, obj.mw_gen)
+        copyProps(self.cfg, obj.mw_gen)
         return {'FINISHED'}
 
 

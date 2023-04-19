@@ -7,6 +7,8 @@ from .properties import (
     MW_vis_cfg,
 )
 
+from .utils_dev import DEV
+
 from mathutils import Vector, Matrix
 
 # -------------------------------------------------------------------
@@ -65,8 +67,7 @@ def get_bb_radius(obj: types.Object, margin_disp = 0.0, worldSpace=False) -> tup
     bb_radius = ((bb[0] - bb[1]).length / 2.0)
 
     # TODO: atm limited to mesh, otherwise check and use depsgraph
-    #from .ui import DEV_log
-    #DEV_log("Found %d bound verts" % len(bb_full))
+    #DEV.log_msg("Found %d bound verts" % len(bb_full))
     return bb, bb_radius
 
 def get_faces_4D(obj: types.Object, n_disp = 0.0, worldSpace=False) -> list[Vector, Vector]:

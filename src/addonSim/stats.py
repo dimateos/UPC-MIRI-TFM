@@ -5,8 +5,6 @@
 from time import time
 import psutil
 
-DEV_LOGSTATS = True
-
 try:
     import psutil
     #print('psutil available')
@@ -14,6 +12,10 @@ try:
 except ImportError:
     psutil_available = False
 
+from .utils_dev import DEV
+
+
+# -------------------------------------------------------------------
 
 class Stats:
     def __init__(self, name="Stats"):
@@ -83,16 +85,17 @@ class Stats:
         self.lastmem = d
         return d
 
+# -------------------------------------------------------------------
 
     def log(self, msg: str = " "):
-        if not DEV_LOGSTATS: return
+        if not DEV.logs_stats: return
         t = self.time()
         dt = self.time_diff()
         if msg: print(f"{self.name}//  {msg}")
         print(f"\t t:{t:>10.6f}   dt:{dt:>10.6f}")
 
     def log_mem(self, msg: str = " "):
-        if not DEV_LOGSTATS: return
+        if not DEV.logs_stats: return
         m = self.memory_max()
         lm = self.memory_last()
         dm = self.diffmem
@@ -103,6 +106,7 @@ class Stats:
         self.log(msg)
         self.log_mem("")
 
+# -------------------------------------------------------------------
 
     def testStats(self, log = False):
         # sample operations
