@@ -1,7 +1,8 @@
 # MIRI-A3DM
 # Diego Mateos (UPC)
 """ Different blender mesh queries
-    # TODO: not many used atm
+    # TODO: not many used atm + added some more geometry utils
+    # TODO: in the end optimize the critical ones that end up being used...
 """
 
 ### IMPORTS
