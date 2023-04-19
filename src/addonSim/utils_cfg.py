@@ -10,8 +10,7 @@ def getProps_names(src):
 
     for prop_name in dir(src):
         filterMask = [ prop_name.startswith(f) for f in _getProps_filter]
-        if any(filterMask):
-            continue
+        if any(filterMask): continue
 
         # skip callable methods
         if callable(getattr(src, prop_name)):

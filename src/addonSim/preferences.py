@@ -26,7 +26,7 @@ class MW_prefs(bpy.types.AddonPreferences):
         draw_props(self, self.layout)
 
     meta_show_debug: props.BoolProperty(
-        name="Show DEBUG...",
+        name="Debug...",
         default=True,
         description="Show some debug preferences"
     )

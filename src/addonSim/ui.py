@@ -7,6 +7,8 @@ from .properties import (
     MW_vis_cfg,
 )
 
+from . import utils_cfg
+
 from mathutils import Vector, Matrix
 
 # TODO: some access from UI to toggle dynamically?
@@ -39,37 +41,31 @@ def DEV_drawVal(layout: types.UILayout, msg, value):
 
 # -------------------------------------------------------------------
 
-def draw_toggleBox(data, prop_toggle_name:str, layout: types.UILayout):
+def draw_toggleBox(data, prop_toggle_name:str, layout: types.UILayout) -> tuple[bool, types.UILayout]:
     """ Create a box with a toggle. Return the state of the toggle and the created layout """
     box = layout.box()
     box.prop(data, prop_toggle_name, toggle=True)
     open = getattr(data, prop_toggle_name)
     return open, box
 
-# -------------------------------------------------------------------
-
 def draw_props(data, layout: types.UILayout, filtered_props: list[str] = None):
-    def _match_anySub(word: str, subs: list) -> bool:
-        for sub in subs:
-            if sub in word:
-                return True
-        return False
+    """ Draw all properties of an object in a sub layout. """
+    # TODO: dynamic field with filter or search bar
+    prop_names = utils_cfg.getProps_names(data)
+    for prop_name in prop_names:
+        if filtered_props:
+            filterMask = [ f in prop_name for f in filtered_props ]
+            if any(filterMask): continue
 
-    for prop_name in data.keys():
-        if filtered_props and _match_anySub(prop_name, filtered_props):
-            continue
         layout.row().prop(data, prop_name, text=prop_name)
 
-def draw_propsToggle(data, prop_toggle_name, layout: types.UILayout):
-    box = layout.box()
-    box.prop(data, prop_toggle_name, toggle=True)
-    if getattr(data, prop_toggle_name):
+def draw_propsToggle(data, prop_toggle_name, layout: types.UILayout, filtered_props: list[str] = None, readOnly = True):
+    """ Draw all properties of an object under a toggleable layout. """
+    open, box = draw_toggleBox(data, prop_toggle_name, layout)
+    if open:
         col = box.column()
-        col.enabled = False
-
-        # show all props but filter out some
-        filtered_props = [ "meta", "name" ]
-        draw_props(data, col, [ "meta", "name" ])
+        col.enabled = not readOnly
+        draw_props(data, col, filtered_props)
 
 # -------------------------------------------------------------------
 
@@ -171,9 +167,9 @@ def draw_gen_cfg(cfg: MW_gen_cfg, layout: types.UILayout, context: types.Context
     rowsub.prop(cfg, "links_width")
     rowsub.prop(cfg, "links_res")
 
-    draw_debug_cfg(cfg, layout)
+    draw_gen_cfgDebug(cfg, layout)
 
-def draw_debug_cfg(cfg: MW_gen_cfg, layout: types.UILayout):
+def draw_gen_cfgDebug(cfg: MW_gen_cfg, layout: types.UILayout):
     if not DEV.debug: return
     open, box = draw_toggleBox(cfg, "meta_show_debug", layout)
 
