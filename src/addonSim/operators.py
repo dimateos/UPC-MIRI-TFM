@@ -11,7 +11,7 @@ from .properties import (
 
 from . import mw_setup
 from . import mw_calc
-from . import mw_links
+from .mw_links import Links, Link
 
 from . import ui
 from . import utils
@@ -148,7 +148,7 @@ class MW_gen_OT_(types.Operator):
 
         # TODO: links better generated from map isntead of cont
         obj_links = mw_setup.gen_linksEmpty(obj, cfg, context)
-        links = mw_links(cont)
+        links = Links(cont, obj_shards)
         mw_setup.gen_linksObjects(obj_links, cont, cfg, context)
 
         # TODO: store the cont inside the property pointer
