@@ -64,8 +64,46 @@ def gen_copyConvex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, c
 
     # Apply convex hull to the mesh
     # TODO: not recursive?
+    # TODO: decimate beforehand too?
+    # TODO: the context/active is WRONG due to the extension runner -> update to last version to fix...
+    import bmesh
+    if False:
+        bm = bmesh.new()
+        bm.from_mesh(obj_convex.data)
+        bpy.ops.mesh.convex_hull()
 
-    # Hide and select after link
+        me = bpy.data.meshes.new(CONST_NAMES.original_convex)
+        hull = bmesh.ops.convex_hull(bm, input=bm.verts)
+        #bmesh.ops.delete(
+        #        bm,
+        #        geom=ch["geom_unused"] + ch["geom_interior"],
+        #        context='VERTS',
+        #        )
+        #bm.to_mesh(me)
+
+    if False:
+        context = bpy.context
+        scene = context.scene
+        ob = context.object
+        me = ob.data
+        bm = bmesh.new()
+        bm.from_mesh(me)
+        copy = ob.copy()
+
+        me = bpy.data.meshes.new("%s convexhull" % me.name)
+        ch = bmesh.ops.convex_hull(bm, input=bm.verts)
+        bmesh.ops.delete(
+                bm,
+                geom=ch["geom_unused"] + ch["geom_interior"],
+                context='VERTS',
+                )
+        bm.to_mesh(me)
+        copy.name = "%s (convex hull)" % ob.name
+        copy.data = me
+
+        scene.collection.objects.link(copy)
+
+        # Hide and select after link
     obj_convex.hide_set(not cfg.struct_showConvex)
 
     return obj_convex
