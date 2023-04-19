@@ -35,6 +35,16 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=True,
         description="Show addon preferences"
     )
+    meta_propFilter: props.StringProperty(
+        name="FILTER",
+        default="-meta",
+        description="Separate values with commas, start with `-` for a excluding filter."
+    )
+    meta_propEdit: props.BoolProperty(
+        name="edit",
+        default=True,
+        description="Edit the props"
+    )
 
 # -------------------------------------------------------------------
 

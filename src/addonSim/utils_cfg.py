@@ -5,7 +5,8 @@ def getProps_names(src):
     """ Get all properties names of an object, e.g. not just the modified ones in PropertyGroup.keys() """
     props_names = []
 
-    # Avoid doc attrs and read-only RNA types
+    # Avoid doc attrs and read-only RNA types, no need to trim or lowercase etc
+    # To filter further props do it outside the method on the returned names
     _getProps_filter = [ "bl_", "rna_", "__" ]
 
     for prop_name in dir(src):

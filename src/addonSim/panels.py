@@ -68,7 +68,7 @@ class MW_gen_Panel(types.Panel):
             prefs = getPrefs(context)
             col_rowSplit.prop(prefs, "OT_util_delete_unhide")
 
-            ui.draw_propsToggle(cfg, "meta_show_summary", col, filtered_props=[ "meta" ])
+            ui.draw_propsToggle(cfg, "meta_show_summary", "meta_propFilter", "meta_propEdit", col)
 
 
 class MW_addon_Panel(types.Panel):
@@ -85,7 +85,7 @@ class MW_addon_Panel(types.Panel):
         col = layout.column()
 
         prefs = getPrefs(context)
-        ui.draw_propsToggle(prefs, "meta_show_prefs", col, filtered_props=[ "meta" ], readOnly=False)
+        ui.draw_propsToggle(prefs, "meta_show_prefs", "meta_propFilter", "meta_propEdit", col)
 
         open, box = ui.draw_toggleBox(prefs, "meta_show_debug", layout)
         if open:
