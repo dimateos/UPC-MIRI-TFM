@@ -111,9 +111,9 @@ class MW_gen_cfg(types.PropertyGroup):
 # -------------------------------------------------------------------
 
     shape_useConvexHull: props.BoolProperty(
-        name="Convex hull",
-        description="WIP: Apply convex hull op beforehand",
-        default=True,
+        name="WIP: Convex hull",
+        description="Apply convex hull op beforehand",
+        default=False,
     )
     shape_useWalls: props.BoolProperty(
         name="Wall planes",
@@ -189,13 +189,13 @@ class MW_gen_cfg(types.PropertyGroup):
         name="Margin BB",
         description="Additional displacement of the box normal planes",
         # TODO: might wanna limit in the container instead
+        # TODO: could allow negative too, but then handle 0 when points are on the wall?
         min=0.001, max=1.0,
         default=0.025,
     )
     margin_face_bounds: props.FloatProperty(
         name="Margin faces",
         description="Additional displacement of the face normal planes",
-        # TODO: not sure why 0 goes to max? related to cont trying to pass convex cells by ignoring planes
         min=0.001, max=1.0,
         default=0.025,
     )

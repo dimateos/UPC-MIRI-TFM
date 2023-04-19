@@ -207,5 +207,7 @@ def cont_fromPoints(points: list[Vector], bb: list[Vector, 6], faces4D: list[Vec
     # Build the container and cells
     cont = Container(points=points, limits=bb_tuples, walls=faces4D)
 
-    DEV.log_msg(f"Found {len(cont)} cells ({len(faces4D)} faces)", {"CALC"})
+    # Check non empty
+    logType = {"CALC"} if cont else {"CALC", "ERROR"}
+    DEV.log_msg(f"Found {len(cont)} cells ({len(faces4D)} faces)", logType)
     return cont

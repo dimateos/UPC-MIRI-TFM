@@ -65,6 +65,7 @@ def gen_copyConvex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, c
     # Apply convex hull to the mesh
     # TODO: not recursive?
     # TODO: decimate beforehand too?
+    # TODO: shrink too or part of sim?
     # TODO: the context/active is WRONG due to the extension runner -> update to last version to fix...
     import bmesh
     if False:
