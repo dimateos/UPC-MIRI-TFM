@@ -16,12 +16,15 @@ from tess import Container, Cell
 class CONST_NAMES:
     original = "Original_"
     original_bb = original+"bb"
+    original_convex = original+"convex"
+    original_low = original+"low"
     shards = "Shards"
     shards_points = "Shards_source"
     links = shards+"_links"
     links_group = "Links"
 
-
+# TODO: a bit docu on methods
+# TODO:end:: option to not store intermidiate meshes for performance
 # -------------------------------------------------------------------
 
 def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
@@ -41,15 +44,31 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
     utils.set_child(obj_copy, obj_empty)
 
     # Hide and select after link
-    obj.hide_set(not cfg.struct_showOrignal)
-    obj_copy.hide_set(True)
+    obj.hide_set(not cfg.struct_showOrignal_scene)
+    obj_copy.hide_set(not cfg.struct_showOrignal)
     obj_copy.show_bounds = True
-    context.view_layer.objects.active = obj_empty
 
+    # TODO: maybe this braking the active / or required somewhere, probably the referece is lost etc
+    context.view_layer.objects.active = obj_empty
     #bpy.ops.outliner.show_active(execution_context='INVOKE_DEFAULT') cannot expand hierarchy from this context
     #tried context_override but no luck either...
 
     return obj_empty, obj_copy
+
+def gen_copyConvex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, context: types.Context):
+    # Duplicate again the copy and set child too
+    obj_convex = utils.copy_objectRec(obj_copy, context)
+    obj_convex.name = CONST_NAMES.original_convex
+    utils.cfg_setMetaTypeRec(obj_copy, {"CHILD"})
+    utils.set_child(obj_convex, obj)
+
+    # Apply convex hull to the mesh
+    # TODO: not recursive?
+
+    # Hide and select after link
+    obj_convex.hide_set(not cfg.struct_showConvex)
+
+    return obj_convex
 
 def gen_renaming(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     # split by first _

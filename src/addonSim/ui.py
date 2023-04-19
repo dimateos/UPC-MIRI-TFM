@@ -118,6 +118,7 @@ def draw_gen_cfg(cfg: MW_gen_cfg, layout: types.UILayout, context: types.Context
     draw_refresh(cfg, layout)
 
     # TODO: apply filter here too?
+    # TODO: limit avaialble e.g. show convex when available
     box = layout.box()
     col = box.column()
 
@@ -142,8 +143,8 @@ def draw_gen_cfg(cfg: MW_gen_cfg, layout: types.UILayout, context: types.Context
     rowsub.prop(cfg, "source")
 
     rowsub = col.row()
+    # TODO: show current num found? could do 1 frame delayed
     rowsub.prop(cfg, "source_limit")
-    rowsub.prop(cfg, "shape_useWalls")
     rowsub = col.row()
     rowsub.prop(cfg, "source_noise")
     rowsub.prop(cfg, "rnd_seed")
@@ -152,8 +153,17 @@ def draw_gen_cfg(cfg: MW_gen_cfg, layout: types.UILayout, context: types.Context
     col = box.column()
     col.label(text="Generation:")
     rowsub = col.row(align=True)
+    rowsub.prop(cfg, "shape_useConvexHull")
+    rowsub.prop(cfg, "shape_useWalls")
+    # TODO: add decimation too
+    rowsub = col.row(align=True)
     rowsub.prop(cfg, "margin_box_bounds")
     rowsub.prop(cfg, "margin_face_bounds")
+
+
+    box = layout.box()
+    col = box.column()
+    col.label(text="Links:")
     rowsub = col.row(align=True)
     rowsub.prop(cfg, "links_width")
     rowsub.prop(cfg, "links_res")
@@ -161,6 +171,8 @@ def draw_gen_cfg(cfg: MW_gen_cfg, layout: types.UILayout, context: types.Context
     draw_gen_cfgDebug(cfg, layout)
 
 def draw_gen_cfgDebug(cfg: MW_gen_cfg, layout: types.UILayout):
+    # TODO: not all debug but ok
+
     open, box = draw_toggleBox(cfg, "meta_show_debug", layout)
     if open:
         col = box.column()
@@ -169,7 +181,13 @@ def draw_gen_cfgDebug(cfg: MW_gen_cfg, layout: types.UILayout):
         rowsub.prop(cfg, "struct_showShards")
         rowsub.prop(cfg, "struct_showLinks")
         rowsub.prop(cfg, "struct_showLinks_walls")
+
         rowsub = col.row(align=True)
-        rowsub.prop(cfg, "struct_showOrignal")
         rowsub.prop(cfg, "struct_showPoints")
         rowsub.prop(cfg, "struct_showBB")
+        rowsub.prop(cfg, "struct_showOrignal_scene")
+
+        rowsub = col.row(align=True)
+        rowsub.prop(cfg, "struct_showOrignal")
+        rowsub.prop(cfg, "struct_showConvex")
+        rowsub.prop(cfg, "struct_showLow")

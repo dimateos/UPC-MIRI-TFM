@@ -110,9 +110,14 @@ class MW_gen_cfg(types.PropertyGroup):
 
 # -------------------------------------------------------------------
 
+    shape_useConvexHull: props.BoolProperty(
+        name="Convex hull",
+        description="WIP: Apply convex hull op beforehand",
+        default=True,
+    )
     shape_useWalls: props.BoolProperty(
-        name="Use planes",
-        description="Keep the object convex shape",
+        name="Wall planes",
+        description="Keep the object faces as container walls (kind of like boolean op)",
         default=True,
     )
 
@@ -141,16 +146,11 @@ class MW_gen_cfg(types.PropertyGroup):
         default=True,
     )
     struct_showLinks_walls: props.BoolProperty(
-        name="Links_walls",
+        name="WIP: Links_walls",
         description="Voronoi cells links to walls",
         default=True,
     )
 
-    struct_showOrignal: props.BoolProperty(
-        name="Original",
-        description="The original object, the child backup is always hidden",
-        default=False,
-    )
     struct_showPoints: props.BoolProperty(
         name="Points",
         description="The ones used for the cells generation",
@@ -160,6 +160,27 @@ class MW_gen_cfg(types.PropertyGroup):
         name="BB",
         description="The extended BB min max points, tobble show bounding box in viewport",
         default=True,
+    )
+    struct_showOrignal_scene: props.BoolProperty(
+        name="Source Obj",
+        description="The original object in the scene",
+        default=False,
+    )
+
+    struct_showOrignal: props.BoolProperty(
+        name="Original",
+        description="The original object backup child",
+        default=False,
+    )
+    struct_showConvex: props.BoolProperty(
+        name="Convex",
+        description="The original object convex hull",
+        default=False,
+    )
+    struct_showLow: props.BoolProperty(
+        name="WIP: Low",
+        description="The convex hull decimated",
+        default=False,
     )
 
 # -------------------------------------------------------------------

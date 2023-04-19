@@ -71,7 +71,9 @@ class MW_gen_OT_(types.Operator):
         # Selected object not fractured
         if not cfg:
             cfg: MW_gen_cfg = self.cfg
-            obj, obj_copy = mw_setup.gen_copyOriginal(obj, cfg, context)
+            obj, obj_toFrac = mw_setup.gen_copyOriginal(obj, cfg, context)
+            if cfg.shape_useConvexHull:
+                obj_toFrac = mw_setup.gen_copyConvex(obj, obj_toFrac, cfg, context)
 
         # Copy the config to the operator once
         else:
@@ -81,8 +83,14 @@ class MW_gen_OT_(types.Operator):
                 return {'FINISHED'}
             else:
                 cfg: MW_gen_cfg = self.cfg
+
                 # TODO: better name search / pointer store etc, also carful with . added by blender
-                obj_copy = utils.get_child(obj, f"{mw_setup.CONST_NAMES.original}{cfg.struct_nameOriginal}")
+                if cfg.shape_useConvexHull:
+                    name_toFrac = mw_setup.CONST_NAMES.original_convex
+                else:
+                    name_toFrac = f"{mw_setup.CONST_NAMES.original}{cfg.struct_nameOriginal}"
+
+                obj_toFrac = utils.get_child(obj, name_toFrac)
 
 
         # Seed simulation randomness + store it
@@ -92,7 +100,7 @@ class MW_gen_OT_(types.Operator):
         # Finish scene setup
         mw_setup.gen_renaming(obj, cfg, context)
         obj.select_set(True)
-        obj_copy.select_set(True)
+        obj_toFrac.select_set(True)
         #context.active_object = obj
         # TODO: renaming in a edit fracture unselects from active_object, also changing any prop?
         # TODO: some more error handling on unexpected deleted objects?
@@ -107,15 +115,15 @@ class MW_gen_OT_(types.Operator):
         # Get the points and transform to local space when needed
         # TODO: particles and pencil are in world position...
         # TODO: seems like not letting pick others?
-        mw_calc.detect_points_from_object(obj_copy, cfg, context)
-        points = mw_calc.get_points_from_object_fallback(obj_copy, cfg, context)
+        mw_calc.detect_points_from_object(obj_toFrac, cfg, context)
+        points = mw_calc.get_points_from_object_fallback(obj_toFrac, cfg, context)
         if not points:
             return self.ret_failed()
 
         # Get more data
-        bb, bb_radius = utils.get_bb_radius(obj_copy, cfg.margin_box_bounds)
+        bb, bb_radius = utils.get_bb_radius(obj_toFrac, cfg.margin_box_bounds)
         if cfg.shape_useWalls:
-            faces4D = utils.get_faces_4D(obj_copy, cfg.margin_face_bounds)
+            faces4D = utils.get_faces_4D(obj_toFrac, cfg.margin_face_bounds)
         else: faces4D = []
 
         # Limit and rnd a bit the points and add them to the scene
