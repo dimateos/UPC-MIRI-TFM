@@ -80,7 +80,8 @@ class MW_gen_OT_(types.Operator):
                 return {'FINISHED'}
             else:
                 cfg: MW_gen_cfg = self.cfg
-                obj_copy = utils.get_child(obj, mw_setup.CONST_NAMES.original)
+                # TODO: better name search / pointer store etc, also carful with . added by blender
+                obj_copy = utils.get_child(obj, f"{mw_setup.CONST_NAMES.original}{cfg.struct_nameOriginal}")
 
 
         # Seed simulation randomness + store it
@@ -90,9 +91,10 @@ class MW_gen_OT_(types.Operator):
         # Finish scene setup
         mw_setup.gen_renaming(obj, cfg, context)
         obj.select_set(True)
+        obj_copy.select_set(True)
         #context.active_object = obj
-        # TODO: renaming in a edit fracture unselects from active_object
-        # TODO: some error handling on unexpected deleted objects?
+        # TODO: renaming in a edit fracture unselects from active_object, also changing any prop?
+        # TODO: some more error handling on unexpected deleted objects?
 
 
         # Setup calc

@@ -31,18 +31,22 @@ class MW_gen_Panel(types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        col = layout.column()
 
         # Something selected, not last active
         if not context.selected_objects:
-            col = layout.column()
             col.label(text="No object selected...", icon="ERROR")
+            return
+
+        # TODO: some actions remove the active object
+        if not context.active_object:
+            col.label(text="Selected but removed active?", icon="ERROR")
             return
 
         obj, cfg = utils.cfg_getRoot(context.active_object)
 
         # No fracture selected
         if not cfg:
-            col = layout.column()
             col.label(text="Selected: " + obj.name_full, icon="INFO")
 
             # Check that it is a mesh
@@ -105,26 +109,29 @@ class MW_info_Panel(types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        col = layout.column()
 
         # Something selected, not last active
         if not context.selected_objects:
-            col = layout.column()
             if PANEL_INFO_NOTIFY_NO_SELECTED:
                 col.label(text="No object selected...", icon="ERROR")
             else:
                 col.label(text="...")
+            return
 
-        else:
-            obj = context.active_object
+        # TODO: some actions remove the active object
+        if not context.active_object:
+            col.label(text="Selected but removed active?", icon="ERROR")
+            return
+
+        obj = context.active_object
+        ui.draw_inspectObject(obj, layout)
+        col.operator(ops.MW_info_matrices_OT_.bl_idname, text="Print Matrices", icon="LATTICE_DATA")
+
+        if obj.type == 'MESH':
             col = layout.column()
-
-            ui.draw_inspectObject(obj, layout)
-            col.operator(ops.MW_info_matrices_OT_.bl_idname, text="Print Matrices", icon="LATTICE_DATA")
-
-            if obj.type == 'MESH':
-                col = layout.column()
-                col.operator(ops.MW_info_data_OT_.bl_idname, text="Print mesh Data", icon="HELP")
-                col.operator(ops.MW_info_API_OT_.bl_idname, text="Print mesh API", icon="HELP")
+            col.operator(ops.MW_info_data_OT_.bl_idname, text="Print mesh Data", icon="HELP")
+            col.operator(ops.MW_info_API_OT_.bl_idname, text="Print mesh API", icon="HELP")
 
 
 # -------------------------------------------------------------------

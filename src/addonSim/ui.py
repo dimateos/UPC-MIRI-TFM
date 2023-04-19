@@ -95,7 +95,7 @@ def draw_refresh(cfg: MW_gen_cfg, layout: types.UILayout):
 def draw_inspectObject(obj: types.Object, layout: types.UILayout):
     mainBox = layout.box()
     mainCol = mainBox.column()
-    mainCol.label(text="Inspect: " + obj.name_full)
+    mainCol.label(text="Inspect: " + obj.name)
 
     # TODO: maybe for vertices too, not just whole objects
     box = mainCol.box()
