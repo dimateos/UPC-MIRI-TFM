@@ -1,24 +1,104 @@
 # MIRI-A3DM
 # Diego Mateos (UPC)
-""" Different blender mesh queries """
-
+""" Different blender mesh queries
+    # TODO: not many used atm
+"""
 
 ### IMPORTS
-import mathutils
+from mathutils import Vector, Matrix
 from unionfind import UnionFind
 
-### UTILS
+
+# -------------------------------------------------------------------
+# -UTILS
+
 def r(a):
     return int(a*1000+0.5)/1000.0
 
+# ref: fracture mod
+def edge_center(mesh, edge):
+    v1, v2 = edge.vertices
+    return (mesh.vertices[v1].co + mesh.vertices[v2].co) / 2.0
+def poly_center(mesh, poly):
+    co = Vector()
+    tot = 0
+    for i in poly.loop_indices:
+        co += mesh.vertices[mesh.loops[i].vertex_index].co
+        tot += 1.0
+    return co / tot
+
 def centroid(vertices_id, vertices):
     """ Calculate average of 3D vectors given list of indices and container """
-    c = mathutils.Vector((0.0, 0.0, 0.0))
+    c = Vector((0.0, 0.0, 0.0))
     for v in vertices_id: c += vertices[v]
     c /= len(vertices_id)
     return c
+def centroid_weighted(vertices_id, vertices, weights=None):
+    """ Calculate average of 3D vectors given list of indices and container """
+    c = Vector((0.0, 0.0, 0.0))
+    for i,v in enumerate(vertices_id):
+        c += vertices[v] * weights[i] if weights else vertices[v]
+    if not weights: c /= len(vertices_id)
+    return c
+def centroid_verts(coords, weights=None):
+    """ Calculate average of 3D vectors given list of indices and container """
+    c = Vector((0.0, 0.0, 0.0))
+    for i,co in enumerate(coords):
+        c += co * weights[i] if weights else co
+    if not weights: c /= len(coords)
+    return c
 
-## Mappings
+# -------------------------------------------------------------------
+# -MAPPINGS
+
+def get_meshDicts(me, queries_dict, queries_default=False):
+    """ Returns multiple dicts of the mesh (that complement available in blender)
+        * Queries_dict optimizes the code (at least memory) and filters returned dict, Ex:
+        > { "VtoF": True, "EtoF": True, "EktoE": False }
+        > { "VtoF": [...], "VtoE": None, "EtoF": [...], "EktoE": None, "FtoE": None }
+    """
+    # add missing keys as default value
+    _expected_keys = ["VtoF", "VtoE", "EtoF", "EktoE", "FtoE"]
+    for k in queries_dict.keys():
+        if k not in _expected_keys: print(f"W- get_meshDicts_expected_keys {k}")
+    for k in _expected_keys:
+        if k not in queries_dict: queries_dict[k] = queries_default
+
+    # iterate edges to build the dictionary VtoE and EktoE
+    vertex_edges = [list() for v in me.vertices] if queries_dict["VtoE"] else None
+    _build_keys = queries_dict["EktoE"] or queries_dict["FtoE"] or queries_dict["EtoF"]
+    edgeKey_edge = dict() if _build_keys else None
+
+    if vertex_edges or _build_keys:
+        for i,e in enumerate(me.edges):
+            edgeKey_edge[e.key] = i
+            if vertex_edges:
+                for v in e.vertices:  vertex_edges[v].append(e.index)
+
+    # iterate faces to build VtoF, EtoF and FtoE (id instead of keys)
+    vertex_faces = [list() for v in me.vertices] if queries_dict["VtoF"] else None
+    face_edges = [list() for f in me.polygons] if queries_dict["FtoE"] else None
+    edge_faces = [list() for e in me.edges] if queries_dict["EtoF"] else None
+
+    if vertex_faces or edgeKey_edge:
+        for face in me.polygons:
+            if vertex_faces:
+                for v in face.vertices: vertex_faces[v].append(face.index)
+
+            if edgeKey_edge:
+                for e_key in face.edge_keys:
+                    # retrieve edge index
+                    e_index = edgeKey_edge[e_key]
+
+                    # store based on index instead of key
+                    if face_edges: face_edges[face.index].append(e_index)
+                    if edge_faces: edge_faces[e_index].append(face.index)
+
+    # return all dicts inside a packed dictionary
+    return { "VtoF": vertex_faces, "VtoE": vertex_edges,
+             "EtoF": edge_faces, "FtoE": face_edges,
+             "EktoE": edgeKey_edge if queries_dict["EktoE"] else None }
+
 def map_EtoF(me):
     """ Returns the dictionary from Edge to Faces"""
     # build the dictionary from edge "key" to edge id
@@ -66,12 +146,12 @@ def map_VtoF_EtoF_VtoE(me):
 
     return vertex_faces, edge_faces, vertex_edges
 
-### EXERCISES
-# some improvements afterwards
+# -------------------------------------------------------------------
+# -QUERIES
 
 ## EXERCISE 1
 def centroid_mesh(me, log=True):
-    c = mathutils.Vector((0.0, 0.0, 0.0))
+    c = Vector((0.0, 0.0, 0.0))
     for v in me.vertices:
         c += v.co
     c /= len(me.vertices)
@@ -220,7 +300,7 @@ def calc_area_mesh(me, log=True):
             Sz += (v1.co[0]-v2.co[0]) * (v1.co[1]+v2.co[1])
 
         # area is the lenght of the vector S=(Sx,Sy,Sz)
-        face_area = mathutils.Vector((Sx/2.0,Sy/2.0,Sz/2.0)).length
+        face_area = Vector((Sx/2.0,Sy/2.0,Sz/2.0)).length
         sum_area += face_area
         # print(f" **face= {r(face_area)}")
 
@@ -244,7 +324,7 @@ def polygon_area(me, face_index, log=True):
         Sz += (v1.co[0] - v2.co[0]) * (v1.co[1] + v2.co[1])
 
     # area is the lenght of the vector S=(Sx,Sy,Sz)
-    face_area = mathutils.Vector((Sx / 2.0, Sy / 2.0, Sz / 2.0)).length
+    face_area = Vector((Sx / 2.0, Sy / 2.0, Sz / 2.0)).length
     if log:
         print(f" **face= {r(face_area)}")
         print(f" **face(BLENDER)= {r(face.area)}")
@@ -264,7 +344,7 @@ def calc_volume_centerMass(me, calc_centerMass=False, log=True):
 
     # compute volume and center of mass per manifold shell
     sum_vol = 0
-    sum_G = mathutils.Vector((0.0, 0.0, 0.0))
+    sum_G = Vector((0.0, 0.0, 0.0))
     for i,shell in enumerate(face_shells_manifold):
         for f_index in shell:
             face = me.polygons[f_index]
@@ -308,5 +388,4 @@ def calc_volume_centerMass(me, calc_centerMass=False, log=True):
         if calc_centerMass: print(f" center_mass= {sum_G}")
 
     return sum_vol, sum_G if calc_centerMass else sum_vol
-
     return sum_vol, sum_G

@@ -4,7 +4,7 @@
 class UnionFind:
     """ Simple union-find to count connected components w/ path compression
         * also added dynamic enlarging of the container
-        # TODO: document methods
+        # TODO: document methods, maybe path compresion option as a separate class for less overhead
     """
     _enabled_path_compression = True
 
