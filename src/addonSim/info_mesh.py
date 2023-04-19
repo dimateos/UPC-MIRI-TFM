@@ -1,31 +1,37 @@
 # MIRI-A3DM
 # Diego Mateos (UPC)
-""" Sample functions to acces mesh data
-    * TODO: type annotations for autocompletion
+""" Sample functions to review mesh data
+    # TODO: type annotations for autocompletion
 """
 
 ### IMPORTS
 import bpy
+import bpy.types as types
 
 
 ### UTILS
-# Quick copypaste in blender to test stuff in its interactive shell
-#   (full access to runtime types and methods, etc)
-def desc(i=0):
-    # ob,me,v,e,f,l = desc()
+def desc(me: types.Mesh, i=0):
+    """ Quick access to data prop console:
     ob = bpy.context.active_object
     me = ob.data
-    return ob, me, me.vertices[i],me.edges[i],me.polygons[i],me.loops[i]
+    if me: v,e,f,l = desc(me)
+    """
+    v = me.vertices[i] if me.vertices else None
+    e = me.edges[i] if me.edges else None
+    f = me.polygons[i] if me.polygons else None
+    l = me.loops[i] if me.loops else None
+    return v,e,f,l
 
-# Description of the mesh
 def desc_mesh(me: bpy.types.Mesh):
+    """ Description of the mesh """
     print('Name of the mesh: %s' % me.name)
     print(' V= %d' % (len(me.vertices)))
     print(' E= %d' % (len(me.edges)))
     print(' F= %d' % (len(me.polygons)))
 
-# WIP test stuff
+# TODO: test API stuff
 def desc_mesh_inspect(me: bpy.types.Mesh):
+    """ WIP: Description of some props/api of the mesh """
     from . import info_inspect as ins
 
     import os
@@ -37,8 +43,8 @@ def desc_mesh_inspect(me: bpy.types.Mesh):
     ins.print_attributes(poly)
     #ins.print_data(poly)
 
-# Description of the mesh data, with samples per collection type
 def desc_mesh_data(me: bpy.types.Mesh, limit=8, skipLoops=True):
+    """ Description of the mesh data, with samples per collection type """
     desc_mesh(me)
 
     print('Vertex list:')
@@ -60,6 +66,7 @@ def desc_mesh_data(me: bpy.types.Mesh, limit=8, skipLoops=True):
             # equivalent to
             #       for loop_index in range(poly.loop_start, poly.loop_start + poly.loop_total):
             print("    Vertex: %d" % me.loops[loop_index].vertex_index)
+
     # can also be obtained from poly.vertices[] directly:
     #       for v in poly.vertices[:]:
     #           print("    Vertex: %d" % v)

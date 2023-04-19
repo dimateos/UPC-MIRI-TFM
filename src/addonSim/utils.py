@@ -11,6 +11,8 @@ from .utils_dev import DEV
 
 from mathutils import Vector, Matrix
 
+
+# TODO: split some more files? or import less functions
 # -------------------------------------------------------------------
 
 def cfg_getRoot(obj: types.Object) -> tuple[types.Object, MW_gen_cfg]:

@@ -10,6 +10,7 @@ bl_info = {
     "category": "Object",
 }
 
+# TODO: older version no longer mantained...
 
 # if "bpy" in locals():
 #     import importlib
