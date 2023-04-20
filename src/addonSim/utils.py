@@ -15,6 +15,8 @@ from mathutils import Vector, Matrix
 # TODO: split some more files? or import less functions
 # -------------------------------------------------------------------
 
+# TODO: too much used around in poll functions, performance hit
+# TODO: should really try to acces the parent direclty
 def cfg_getRoot(obj: types.Object) -> tuple[types.Object, MW_gen_cfg]:
     """ Retrieve the root object holding the config """
     if "NONE" in obj.mw_gen.meta_type:
@@ -150,6 +152,8 @@ def trans_printMatrices(obj: types.Object, printName=True):
     print(obj.matrix_basis, "matrix_basis\n")
 
 # -------------------------------------------------------------------
+# TODO: this recursive functions could use chidlren_recursive
+# TODO: might be problematic with lots of shards e.g. teapot
 
 def copy_objectRec(obj: types.Object, context: types.Context, namePreffix: str = None, nameSuffix: str = None) -> types.Object:
     """ Copy the object along its children """
@@ -178,7 +182,7 @@ def delete_childrenRec(ob_father: types.Object):
 
 def get_object_fromScene(scene: types.Scene, name: str) -> types.Object|None:
     """ Find an object in the scene by name (starts with to avoid limited exact names). Returns the first found. """
-    # TODO: improve as in get_child
+    # TODO: improve as in get_child, also not recursive, could try to use the parent name direclty
     nameSub = name+"."
     for obj in scene.objects:
         if obj.name == name or obj.name.startswith(nameSub):

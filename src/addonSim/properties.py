@@ -134,6 +134,8 @@ class MW_gen_cfg(types.PropertyGroup):
         return f"{self.struct_namePrefix}_{newName}"
 
 # -------------------------------------------------------------------
+    # TODO: now the elements can be properly hidden while the last operator panel is open...
+    # TODO: not only no real need, but also toggling it re-executes!
 
     struct_showShards: props.BoolProperty(
         name="Shards",

@@ -58,6 +58,7 @@ class MW_gen_OT_(types.Operator):
         # TODO: atm only a single selected object + spawning direclty on the scene collection
         # TODO: also limited to mesh, no properly tested with curves etc
         # TODO: disabled pencil too, should check points are close enugh/inside
+        # TODO: some more error handling on unexpected deleted objects?
 
         # Handle refreshing
         if not self.cfg.meta_refresh and not self.cfg.meta_auto_refresh:
@@ -98,13 +99,11 @@ class MW_gen_OT_(types.Operator):
         cfg.rnd_seed = utils.rnd_seed(cfg.rnd_seed)
 
 
-        # Finish scene setup
+        # Finish scene setup and select after optional renaming
         mw_setup.gen_renaming(obj, cfg, context)
         obj.select_set(True)
-        obj_toFrac.select_set(True)
+        context.view_layer.objects.active = obj
         #context.active_object = obj
-        # TODO: renaming in a edit fracture unselects from active_object, also changing any prop?
-        # TODO: some more error handling on unexpected deleted objects?
 
 
         # Setup calc
@@ -177,8 +176,8 @@ class MW_gen_OT_(types.Operator):
 class MW_util_delete_OT_(types.Operator):
     bl_idname = "mw.util_delete"
     bl_label = "Delete fracture object"
-    bl_options = {'INTERNAL'}
-    bl_description = "Blender delete hierarchy seems to fail to delete all"
+    bl_options = {'INTERNAL', 'UNDO'}
+    bl_description = "Instead of Blender 'delete hierarchy' which seems to fail to delete all recusively..."
     _obj, _cfg = None, None
 
     @classmethod
@@ -196,6 +195,7 @@ class MW_util_delete_OT_(types.Operator):
             obj_original = utils.get_object_fromScene(context.scene, cfg.struct_nameOriginal)
             obj_original.hide_set(False)
 
+        # UNDO as part of bl_options will cancel any edit last operation pop up
         utils.delete_objectRec(obj)
         return {'FINISHED'}
 

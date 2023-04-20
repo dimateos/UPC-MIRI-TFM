@@ -64,7 +64,6 @@ class MW_gen_Panel(types.Panel):
             col = layout.column()
             col.label(text="Root: " + obj.name_full, icon="INFO")
 
-            col = layout.column()
             col.operator(ops.MW_gen_OT_.bl_idname, text="EDIT Fracture", icon="STICKY_UVS_VERT")
 
             col_rowSplit = col.row().split(factor=0.66)
@@ -82,7 +81,7 @@ class MW_addon_Panel(types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_context = "objectmode"
-    bl_options = {'HEADER_LAYOUT_EXPAND'}
+    #bl_options = {'HEADER_LAYOUT_EXPAND'}
 
     def draw(self, context):
         layout = self.layout
@@ -105,7 +104,7 @@ class MW_info_Panel(types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_context = "objectmode"
-    bl_options = {'HEADER_LAYOUT_EXPAND'}
+    #bl_options = {'HEADER_LAYOUT_EXPAND'}
 
     def draw(self, context):
         layout = self.layout
@@ -125,7 +124,7 @@ class MW_info_Panel(types.Panel):
             return
 
         obj = context.active_object
-        ui.draw_inspectObject(obj, layout)
+        ui.draw_inspectObject(obj, col)
         col.operator(ops.MW_info_matrices_OT_.bl_idname, text="Print Matrices", icon="LATTICE_DATA")
 
         if obj.type == 'MESH':

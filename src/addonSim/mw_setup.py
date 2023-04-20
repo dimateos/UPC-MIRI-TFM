@@ -48,11 +48,6 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
     obj_copy.hide_set(not cfg.struct_showOrignal)
     obj_copy.show_bounds = True
 
-    # TODO: maybe this braking the active / or required somewhere, probably the referece is lost etc
-    context.view_layer.objects.active = obj_empty
-    #bpy.ops.outliner.show_active(execution_context='INVOKE_DEFAULT') cannot expand hierarchy from this context
-    #tried context_override but no luck either...
-
     return obj_empty, obj_copy
 
 def gen_copyConvex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, context: types.Context):
