@@ -113,7 +113,7 @@ class MW_gen_cfg(types.PropertyGroup):
     shape_useConvexHull: props.BoolProperty(
         name="WIP: Convex hull",
         description="Apply convex hull op beforehand",
-        default=False,
+        default=True,
     )
     shape_useWalls: props.BoolProperty(
         name="Wall planes",
