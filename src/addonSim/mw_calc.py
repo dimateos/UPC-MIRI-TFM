@@ -209,5 +209,5 @@ def cont_fromPoints(points: list[Vector], bb: list[Vector, 6], faces4D: list[Vec
 
     # Check non empty
     logType = {"CALC"} if cont else {"CALC", "ERROR"}
-    DEV.log_msg(f"Found {len(cont)} cells ({len(faces4D)} face walls)", logType)
+    DEV.log_msg(f"Found {len(cont)} cells ({len(cont.walls)} walls from {len(faces4D)} faces)", logType)
     return cont

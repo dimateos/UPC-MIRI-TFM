@@ -7,7 +7,7 @@
 
 ### IMPORTS
 from mathutils import Vector, Matrix
-from unionfind import UnionFind
+from .unionfind import UnionFind
 
 
 # -------------------------------------------------------------------
@@ -52,16 +52,20 @@ def centroid_verts(coords, weights=None):
 # -------------------------------------------------------------------
 # -MAPPINGS
 
-def get_meshDicts(me, queries_dict, queries_default=False):
-    """ Returns multiple dicts of the mesh (that complement available in blender)
+def get_meshDicts(me, queries_dict=None, queries_default=False):
+    """ Returns multiple dicts of the mesh (that complement available in blender, e.g. mesh.edge_keys)
         * Queries_dict optimizes the code (at least memory) and filters returned dict, Ex:
         > { "VtoF": True, "EtoF": True, "EktoE": False }
         > { "VtoF": [...], "VtoE": None, "EtoF": [...], "EktoE": None, "FtoE": None }
     """
+    # TODO: better with a set to handle AND/OR as |& etc
+    _expected_keys = ["VtoF", "VtoE", "EtoF", "EktoE", "FtoE", "FtoF"]
+
     # add missing keys as default value
-    _expected_keys = ["VtoF", "VtoE", "EtoF", "EktoE", "FtoE"]
-    for k in queries_dict.keys():
-        if k not in _expected_keys: print(f"W- get_meshDicts_expected_keys {k}")
+    if queries_dict is None: queries_dict = {}
+    if queries_dict:
+        for k in queries_dict.keys():
+            if k not in _expected_keys: print(f"W- get_meshDicts_expected_keys {k}")
     for k in _expected_keys:
         if k not in queries_dict: queries_dict[k] = queries_default
 
@@ -72,9 +76,10 @@ def get_meshDicts(me, queries_dict, queries_default=False):
 
     if vertex_edges or _build_keys:
         for i,e in enumerate(me.edges):
+            assert (e.index == i)
             edgeKey_edge[e.key] = i
             if vertex_edges:
-                for v in e.vertices:  vertex_edges[v].append(e.index)
+                for v in e.vertices:  vertex_edges[v].append(i)
 
     # iterate faces to build VtoF, EtoF and FtoE (id instead of keys)
     vertex_faces = [list() for v in me.vertices] if queries_dict["VtoF"] else None
@@ -95,9 +100,12 @@ def get_meshDicts(me, queries_dict, queries_default=False):
                     if face_edges: face_edges[face.index].append(e_index)
                     if edge_faces: edge_faces[e_index].append(face.index)
 
+    # TODO: iterate for FtoF
+    face_faces = [list() for f in me.polygons] if queries_dict["FtoF"] else None
+
     # return all dicts inside a packed dictionary
     return { "VtoF": vertex_faces, "VtoE": vertex_edges,
-             "EtoF": edge_faces, "FtoE": face_edges,
+             "EtoF": edge_faces, "FtoE": face_edges, "FtoF": face_faces,
              "EktoE": edgeKey_edge if queries_dict["EktoE"] else None }
 
 def map_EtoF(me):
