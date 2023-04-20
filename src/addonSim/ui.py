@@ -18,7 +18,7 @@ from mathutils import Vector, Matrix
 def draw_toggleBox(data, propToggle_name:str, layout: types.UILayout) -> tuple[bool, types.UILayout]:
     """ Create a box with a toggle. Return the state of the toggle and the created layout """
     box = layout.box()
-    box.prop(data, propToggle_name, toggle=True)
+    box.prop(data, propToggle_name, toggle=True, icon="DOWNARROW_HLT")
     open = getattr(data, propToggle_name)
     return open, box
 
