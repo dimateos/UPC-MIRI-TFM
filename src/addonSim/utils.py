@@ -154,31 +154,38 @@ def trans_printMatrices(obj: types.Object, printName=True):
 # -------------------------------------------------------------------
 # TODO: this recursive functions could use chidlren_recursive
 # TODO: might be problematic with lots of shards e.g. teapot
+# TODO: !!! all access to obj.children take O(n) where n is ALL objects of the scene...
 
-def copy_objectRec(obj: types.Object, context: types.Context, namePreffix: str = None, nameSuffix: str = None) -> types.Object:
+def copy_objectRec(obj: types.Object, context: types.Context, link_mesh = False, namePreffix: str = None, nameSuffix: str = None) -> types.Object:
     """ Copy the object along its children """
     obj_copy: types.Object = obj.copy()
+    if not link_mesh and obj.data:
+        obj_copy.data = obj.data.copy()
+
     context.scene.collection.objects.link(obj_copy)
 
     if namePreffix is None: namePreffix = ""
     if nameSuffix is None: nameSuffix = ""
-    obj_copy.name = f"{namePreffix}{obj_copy.name}{nameSuffix}"
+    obj_copy.name = f"{namePreffix}{obj.name}{nameSuffix}"
 
     for child in obj.children:
         child_copy = copy_objectRec(child, context, namePreffix, nameSuffix)
         child_copy.parent = obj_copy
     return obj_copy
 
-def delete_objectRec(obj: types.Object):
+def delete_objectRec(obj: types.Object, logAmount=False):
     """ Delete the object and children recursively """
-    for child in obj.children:
-        delete_objectRec(child)
-    bpy.data.objects.remove(obj, do_unlink=True)
+    delete_childrenRec(obj, logAmount)
+    bpy.data.objects.remove(obj)
 
-def delete_childrenRec(ob_father: types.Object):
+def delete_childrenRec(ob_father: types.Object, logAmount=False):
     """ Delete the children objects recursively """
-    for child in ob_father.children:
-        delete_objectRec(child)
+    childrenRec = ob_father.children_recursive
+
+    if logAmount:
+        DEV.log_msg(f"Deleting {len(childrenRec)} objects", {"DELETE"})
+    for child in childrenRec:
+        bpy.data.objects.remove(child)
 
 def get_object_fromScene(scene: types.Scene, name: str) -> types.Object|None:
     """ Find an object in the scene by name (starts with to avoid limited exact names). Returns the first found. """
@@ -253,15 +260,19 @@ def gen_childClean(
 
 # -------------------------------------------------------------------
 
+def get_timestamp() -> int:
+    """ Get current timestamp as int """
+    from datetime import datetime
+    tim = datetime.now()
+    return tim.hour*10000+tim.minute*100+tim.second
+
 def rnd_seed(s: int = None) -> int:
     """ Persists across separate module imports, return the seed to store in the config """
     import mathutils.noise as bl_rnd
     import random as rnd
 
     if s is None or s < 0:
-        from datetime import datetime
-        tim = datetime.now()
-        s = tim.hour*10000+tim.minute*100+tim.second
+        s = get_timestamp()
 
     rnd.seed(s)
     bl_rnd.seed_set(s)

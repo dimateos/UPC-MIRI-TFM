@@ -61,6 +61,8 @@ class MW_gen_OT_(types.Operator):
         # TODO: some more error handling on unexpected deleted objects?
 
         # Handle refreshing
+        # TODO: seems to still be slow, maybe related to other ui doing recursive access to root??
+        # TODO: if so maybe open panel with OK before runnin?
         if not self.cfg.meta_refresh and not self.cfg.meta_auto_refresh:
             DEV.log_msg("PASS_THROUGH no refresh", {'OP_FLOW'})
             return {'PASS_THROUGH'}
@@ -98,6 +100,11 @@ class MW_gen_OT_(types.Operator):
         # Seed simulation randomness + store it
         cfg.rnd_seed = utils.rnd_seed(cfg.rnd_seed)
 
+        # TODO: run again more smartly, like detect no need for changes or only name changed
+        DEV.log_msg(f"cfg {cfg.meta_show_debug}")
+        try: DEV.log_msg(f" obj { obj.mw_gen.meta_show_debug }")
+        except: pass
+
 
         # Finish scene setup and select after optional renaming
         mw_setup.gen_renaming(obj, cfg, context)
@@ -110,7 +117,7 @@ class MW_gen_OT_(types.Operator):
         from .stats import Stats
         stats = Stats()
         #stats.testStats()
-        stats.log("start setup points")
+        stats.logMsg("start setup points")
 
         # Get the points and transform to local space when needed
         # TODO: particles and pencil are in world position...
@@ -147,7 +154,7 @@ class MW_gen_OT_(types.Operator):
 
         # TODO: links better generated from map isntead of cont
         obj_links = mw_setup.gen_linksEmpty(obj, cfg, context)
-        links = Links(cont, obj_shards)
+        #links = Links(cont, obj_shards)
         mw_setup.gen_linksObjects(obj_links, cont, cfg, context)
 
         # TODO: store the cont inside the property pointer
@@ -195,8 +202,15 @@ class MW_util_delete_OT_(types.Operator):
             obj_original = utils.get_object_fromScene(context.scene, cfg.struct_nameOriginal)
             obj_original.hide_set(False)
 
+        # log the timing
+        from .stats import Stats
+        stats = Stats()
+        stats.logMsg("START: REC delete frac...")
+
+        utils.delete_objectRec(obj, logAmount=True)
+        stats.log("DONE: REC delete frac...")
+
         # UNDO as part of bl_options will cancel any edit last operation pop up
-        utils.delete_objectRec(obj)
         return {'FINISHED'}
 
 # -------------------------------------------------------------------

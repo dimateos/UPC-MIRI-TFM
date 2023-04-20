@@ -87,6 +87,9 @@ class Stats:
 
 # -------------------------------------------------------------------
 
+    def logMsg(self, msg):
+       print(f"{self.name}//  {msg}")
+
     def log(self, msg: str = " "):
         if not DEV.logs_stats: return
         t = self.time()
