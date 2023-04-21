@@ -94,14 +94,17 @@ class Stats:
         if not DEV.logs_stats: return
         t = self.time()
         dt = self.time_diff()
+
         if msg: print(f"{self.name}//  {msg}")
         print(f"\t t:{t:>10.6f}   dt:{dt:>10.6f}")
+
 
     def log_mem(self, msg: str = " "):
         if not DEV.logs_stats: return
         m = self.memory_max()
         lm = self.memory_last()
         dm = self.diffmem
+
         if msg: print(f"{self.name}//  {msg}")
         print(f"\t m:{m:>10}   lm:{lm:>10}   dm:{dm:>10}")
 
