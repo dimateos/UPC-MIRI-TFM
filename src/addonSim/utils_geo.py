@@ -58,6 +58,7 @@ def get_meshDicts(me, queries_dict=None, queries_default=False):
         > { "VtoF": True, "EtoF": True, "EktoE": False }
         > { "VtoF": [...], "VtoE": None, "EtoF": [...], "EktoE": None, "FtoE": None }
     """
+    # TODO: version with no options, just all dicts + compare
     # TODO: better with a set to handle AND/OR as |& etc
     _expected_keys = ["VtoF", "VtoE", "EtoF", "EktoE", "FtoE", "FtoF"]
 
@@ -95,13 +96,15 @@ def get_meshDicts(me, queries_dict=None, queries_default=False):
                 for e_key in face.edge_keys:
                     # retrieve edge index
                     e_index = edgeKey_edge[e_key]
-
                     # store based on index instead of key
                     if face_edges: face_edges[face.index].append(e_index)
                     if edge_faces: edge_faces[e_index].append(face.index)
 
-    # TODO: iterate for FtoF
+    # iterate EtoF for FtoF
     face_faces = [list() for f in me.polygons] if queries_dict["FtoF"] else None
+    for f1,f2 in edge_faces:
+        face_faces[f1].append(f2)
+        face_faces[f2].append(f1)
 
     # return all dicts inside a packed dictionary
     return { "VtoF": vertex_faces, "VtoE": vertex_edges,
