@@ -1,8 +1,8 @@
 # MIRI-A3DM
 # Diego Mateos (UPC)
-""" Different blender mesh queries
-    # OPT:: not many used atm + added some more geometry utils
-    # OPT:: in the end optimize the critical ones that end up being used...
+""" Different blender mesh queries\n
+    OPT:: not many used atm + added some more geometry utils\n
+    OPT:: in the end optimize the critical ones that end up being used...
 """
 
 ### IMPORTS
@@ -58,15 +58,19 @@ def get_meshDicts(me, queries_dict=None, queries_default=False):
         > { "VtoF": True, "EtoF": True, "EktoE": False }
         > { "VtoF": [...], "VtoE": None, "EtoF": [...], "EktoE": None, "FtoE": None }
     """
-    # TODO:: version with no options, just all dicts + compare
     # OPT:: better with a set to handle AND/OR as |& etc
     _expected_keys = ["VtoF", "VtoE", "EtoF", "EktoE", "FtoE", "FtoF"]
 
-    # add missing keys as default value
-    if queries_dict is None: queries_dict = {}
-    if queries_dict:
+    # empty dict just calculate all
+    if queries_dict is None:
+        queries_dict = {}
+        queries_default = True
+    else:
         for k in queries_dict.keys():
-            if k not in _expected_keys: print(f"W- get_meshDicts_expected_keys {k}")
+            if k not in _expected_keys:
+                print(f"W- get_meshDicts {k} not implemented...")
+
+    # add missing keys as default value
     for k in _expected_keys:
         if k not in queries_dict: queries_dict[k] = queries_default
 

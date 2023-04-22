@@ -14,6 +14,7 @@ log*/
 
 # python
 __pycache__/
+__out*
 
 # IDE
 .vs/

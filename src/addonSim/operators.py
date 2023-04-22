@@ -70,6 +70,7 @@ class MW_gen_OT_(types.Operator):
     # IDEA:: changelog / todo file to take notes there instead of all in the code?
 
     # OPT::  GEN: more error handling of user deletion of intermediate objects?
+    # OPT:: automatically add particles -> most interesting method...
     # IDEA:: GEN: support for non meshes (e.g. curves)
     # IDEA:: GEN: disabled pencil too, should check points are close enugh/inside
     # IDEA:: GEN: atm only a single selected object + spawning direclty on the scene collection
