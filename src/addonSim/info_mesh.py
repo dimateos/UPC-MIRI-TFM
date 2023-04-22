@@ -1,7 +1,7 @@
 # MIRI-A3DM
 # Diego Mateos (UPC)
 """ Sample functions to review mesh data
-    # TODO: type annotations for autocompletion
+    # OPT:: type annotations for autocompletion
 """
 
 ### IMPORTS
@@ -29,7 +29,6 @@ def desc_mesh(me: bpy.types.Mesh):
     print(' E= %d' % (len(me.edges)))
     print(' F= %d' % (len(me.polygons)))
 
-# TODO: test API stuff
 def desc_mesh_inspect(me: bpy.types.Mesh):
     """ WIP: Description of some props/api of the mesh """
     from . import info_inspect as ins

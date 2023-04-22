@@ -71,7 +71,7 @@ def draw_inspectObject(obj: types.Object, layout: types.UILayout):
     mainCol = mainBox.column()
     mainCol.label(text="Inspect: " + obj.name)
 
-    # TODO: maybe for vertices too, not just whole objects
+    # OPT:: maybe for vertices too, not just whole objects
     box = mainCol.box()
     col = box.column()
     col.label(text="Type: " + obj.type, icon="MESH_DATA")
@@ -117,8 +117,7 @@ def draw_inspectObject(obj: types.Object, layout: types.UILayout):
 def draw_gen_cfg(cfg: MW_gen_cfg, layout: types.UILayout, context: types.Context):
     draw_refresh(cfg, layout)
 
-    # TODO: apply filter here too?
-    # TODO: limit avaialble e.g. show convex when available
+    # OPT:: limit avaialble e.g. show convex when available
     box = layout.box()
     col = box.column()
 
@@ -143,8 +142,8 @@ def draw_gen_cfg(cfg: MW_gen_cfg, layout: types.UILayout, context: types.Context
     rowsub.prop(cfg, "source")
 
     rowsub = col.row()
-    # TODO: show current num found? could do 1 frame delayed
     rowsub.prop(cfg, "source_limit")
+    # IDEA:: show current num found? could do 1 frame delayed stored somewhere
     rowsub = col.row()
     rowsub.prop(cfg, "source_noise")
     rowsub.prop(cfg, "rnd_seed")
@@ -155,7 +154,6 @@ def draw_gen_cfg(cfg: MW_gen_cfg, layout: types.UILayout, context: types.Context
     rowsub = col.row(align=True)
     rowsub.prop(cfg, "shape_useConvexHull")
     rowsub.prop(cfg, "shape_useWalls")
-    # TODO: add decimation too
     rowsub = col.row(align=True)
     rowsub.prop(cfg, "margin_box_bounds")
     rowsub.prop(cfg, "margin_face_bounds")
@@ -171,7 +169,7 @@ def draw_gen_cfg(cfg: MW_gen_cfg, layout: types.UILayout, context: types.Context
     draw_gen_cfgDebug(cfg, layout)
 
 def draw_gen_cfgDebug(cfg: MW_gen_cfg, layout: types.UILayout):
-    # TODO: not all debug but ok
+    # OPT:: not all debug etc... sensible ui in the end
 
     open, box = draw_toggleBox(cfg, "meta_show_debug", layout)
     if open:

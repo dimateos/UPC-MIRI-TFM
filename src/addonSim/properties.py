@@ -8,6 +8,9 @@ from tess import Container, Cell
 # -------------------------------------------------------------------
 
 class MW_gen_cfg(types.PropertyGroup):
+
+    # TODO:: meta props should go to addon prefs instead of object stored settings
+    # NOTE:: will still re-execute on interaction with meta_show_debug
     meta_show_debug: props.BoolProperty(
         name="Show DEBUG...",
         default=True,
@@ -129,13 +132,12 @@ class MW_gen_cfg(types.PropertyGroup):
     def get_struct_name(self):
         return f"{self.struct_namePrefix}_{self.struct_nameOriginal}"
     def get_struct_nameNew(self, newName):
-        # TODO: replace with new name?
         #self.struct_nameOriginal = newName
         return f"{self.struct_namePrefix}_{newName}"
 
 # -------------------------------------------------------------------
-    # TODO: now the elements can be properly hidden while the last operator panel is open...
-    # TODO: not only no real need, but also toggling it re-executes!
+    # NOTE:: now the elements can be properly hidden while the last operator panel is open...
+    # IDEA:: use for actually adding to the scene or not
 
     struct_showShards: props.BoolProperty(
         name="Shards",
@@ -187,11 +189,11 @@ class MW_gen_cfg(types.PropertyGroup):
 
 # -------------------------------------------------------------------
 
+    # NOTE:: inter-spacing for physics is not possible atm
+    # IDEA:: could allow negative margins, but then handle 0 when points are on the wall?
     margin_box_bounds: props.FloatProperty(
         name="Margin BB",
         description="Additional displacement of the box normal planes",
-        # TODO: might wanna limit in the container instead
-        # TODO: could allow negative too, but then handle 0 when points are on the wall?
         min=0.001, max=1.0,
         default=0.025,
     )
@@ -209,7 +211,7 @@ class MW_gen_cfg(types.PropertyGroup):
         default=0.1,
     )
     links_res: props.IntProperty(
-        # TODO: maybe set smooth shading too
+        # OPT:: set smooth shading too
         name="Link res",
         description="WIP: ",
         min=0, max=8,
@@ -217,7 +219,6 @@ class MW_gen_cfg(types.PropertyGroup):
     )
 
 # -------------------------------------------------------------------
-# TODO: will use more or addon preferences?
 
 class MW_sim_cfg(types.PropertyGroup):
     pass

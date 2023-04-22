@@ -1,8 +1,8 @@
 # MIRI-A3DM
 # Diego Mateos (UPC)
 """ Different blender mesh queries
-    # TODO: not many used atm + added some more geometry utils
-    # TODO: in the end optimize the critical ones that end up being used...
+    # OPT:: not many used atm + added some more geometry utils
+    # OPT:: in the end optimize the critical ones that end up being used...
 """
 
 ### IMPORTS
@@ -58,8 +58,8 @@ def get_meshDicts(me, queries_dict=None, queries_default=False):
         > { "VtoF": True, "EtoF": True, "EktoE": False }
         > { "VtoF": [...], "VtoE": None, "EtoF": [...], "EktoE": None, "FtoE": None }
     """
-    # TODO: version with no options, just all dicts + compare
-    # TODO: better with a set to handle AND/OR as |& etc
+    # TODO:: version with no options, just all dicts + compare
+    # OPT:: better with a set to handle AND/OR as |& etc
     _expected_keys = ["VtoF", "VtoE", "EtoF", "EktoE", "FtoE", "FtoF"]
 
     # add missing keys as default value

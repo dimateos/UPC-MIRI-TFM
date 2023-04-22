@@ -109,7 +109,7 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
         if ob.type == 'MESH':
             verts = utils.get_verts(ob, worldSpace=False)
         else:
-            # TODO: unused because atm limited to mesh anyway
+            # NOTE:: unused because atm limited to mesh in ui/operator anyway
             depsgraph = context.evaluated_depsgraph_get()
             obj_eval = ob.evaluated_get(depsgraph)
             try:
@@ -135,7 +135,7 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
         points_from_verts(obj)
     # geom children
     if 'VERT_CHILD' in source:
-        # TODO: note that not recursive
+        # NOTE:: not recursive atm
         for obj_child in obj.children:
             points_from_verts(obj_child, isChild=True)
 
@@ -153,7 +153,7 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
         points_from_particles(obj)
     # geom child particles
     if 'PARTICLE_CHILD' in source:
-        # TODO: note that not recursive either
+        # NOTE:: not recursive either
         for obj_child in obj.children:
             points_from_particles(obj_child)
 

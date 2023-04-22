@@ -12,11 +12,11 @@ from .utils_dev import DEV
 from mathutils import Vector, Matrix
 
 
-# TODO: split some more files? or import less functions
+# OPT:: split some more files? or import less functions
 # -------------------------------------------------------------------
 
-# TODO: too much used around in poll functions, performance hit
-# TODO: should really try to acces the parent direclty
+# TODO:: should really try to acces the parent direclty
+# XXX:: too much used around in poll functions, performance hit?
 def cfg_getRoot(obj: types.Object) -> tuple[types.Object, MW_gen_cfg]:
     """ Retrieve the root object holding the config """
     if "NONE" in obj.mw_gen.meta_type:
@@ -70,7 +70,7 @@ def get_bb_radius(obj: types.Object, margin_disp = 0.0, worldSpace=False) -> tup
     bb = (bb_full[0]- disp, bb_full[6] + disp)
     bb_radius = ((bb[0] - bb[1]).length / 2.0)
 
-    # TODO: atm limited to mesh, otherwise check and use depsgraph
+    # NOTE:: atm limited to mesh, otherwise check and use depsgraph
     #DEV.log_msg("Found %d bound verts" % len(bb_full))
     return bb, bb_radius
 
@@ -152,9 +152,8 @@ def trans_printMatrices(obj: types.Object, printName=True):
     print(obj.matrix_basis, "matrix_basis\n")
 
 # -------------------------------------------------------------------
-# TODO: this recursive functions could use chidlren_recursive
-# TODO: might be problematic with lots of shards e.g. teapot
-# TODO: !!! all access to obj.children take O(n) where n is ALL objects of the scene...
+# TODO:: performance hit with teapot due to REC or scene childen access?
+# XXX:: all access to obj.children take O(n) where n is ALL objects of the scene...
 
 def copy_objectRec(obj: types.Object, context: types.Context, link_mesh = False, namePreffix: str = None, nameSuffix: str = None) -> types.Object:
     """ Copy the object along its children """
@@ -189,7 +188,7 @@ def delete_childrenRec(ob_father: types.Object, logAmount=False):
 
 def get_object_fromScene(scene: types.Scene, name: str) -> types.Object|None:
     """ Find an object in the scene by name (starts with to avoid limited exact names). Returns the first found. """
-    # TODO: improve as in get_child, also not recursive, could try to use the parent name direclty
+    # OPT:: improve as in get_child, also not recursive, could try to use the parent name direclty
     nameSub = name+"."
     for obj in scene.objects:
         if obj.name == name or obj.name.startswith(nameSub):
@@ -201,9 +200,8 @@ def get_child(obj: types.Object, name: str) -> types.Object|None:
     # All names are unique, even under children hierarchies. Blender adds .001 etc
     nameSub = name+"."
 
-    # TODO: tried to add a property pointer to types.Object but the addon cannot have it? for now use name
     for child in obj.children:
-        # TODO: avoid double linear comparison
+        # OPT:: avoid double linear comparison
         if child.name == name or child.name.startswith(nameSub):
             return child
     return None

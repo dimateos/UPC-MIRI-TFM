@@ -67,23 +67,37 @@ class MW_gen_OT_(types.Operator):
         self.report({'ERROR'}, f"Operation failed: {msg}")
         self.end_op(msg, skip)
 
+    # IDEA:: changelog / todo file to take notes there instead of all in the code?
+
+    # OPT::  GEN: more error handling of user deletion of intermediate objects?
+    # IDEA:: GEN: support for non meshes (e.g. curves)
+    # IDEA:: GEN: disabled pencil too, should check points are close enugh/inside
+    # IDEA:: GEN: atm only a single selected object + spawning direclty on the scene collection
+    # IDEA:: GEN: recursiveness of shards?
+    # NOTE:: GEN: avoid convex hull from voro++
+    # OPT:: RENDER: interior handle for materials
+
+    # IDEA:: SIM: shrink here or as part of sim, e.g. smoothing? -> support physics interspace
+    # IDEA:: SIM: add mass add rigid body proportional to volume? from voro++?
 
     def execute(self, context: types.Context):
         """ Runs once and then after every property edit in the edit last action panel """
         self.start_op("START: fracture OP")
 
-        # TODO: atm only a single selected object + spawning direclty on the scene collection
-        # TODO: also limited to mesh, no properly tested with curves etc
-        # TODO: disabled pencil too, should check points are close enugh/inside
-        # TODO: some more error handling on unexpected deleted objects?
+        # TODO:: store cont across simulations in the object or info from it
+        # TODO:: run again more smartly, like detect no need for changes or only name changed -> compare both props
+        # XXX:: particles are in world position?
+        # XXX:: refresh is slow, maybe related to other ui doing recursive access to root?? maybe panel with ok before?
+        # OPT:: separate simulation and scene generation: option to no store inter meshes
+        # OPT:: avoid recursion with pointer to parent instead of search by name
+        # IDEA:: decimate before/after convex, test perf?
 
         # Handle refreshing
-        # TODO: seems to still be slow, maybe related to other ui doing recursive access to root??
-        # TODO: if so maybe open panel with OK before runnin?
         if not self.cfg.meta_refresh and not self.cfg.meta_auto_refresh:
             return self.end_op("PASS_THROUGH no refresh", skip=True)
         self.cfg.meta_refresh = False
 
+        # TODO:: divide execute in functions?
 
         # Need to copy the properties from the object if its already a fracture
         obj, cfg = utils.cfg_getRoot(context.active_object)
@@ -111,7 +125,6 @@ class MW_gen_OT_(types.Operator):
                 DEV.log_msg("cfg found: getting toFrac child", {'SETUP'})
                 cfg: MW_gen_cfg = self.cfg
 
-                # TODO: better name search / pointer store etc, also carful with . added by blender
                 if cfg.shape_useConvexHull:
                     name_toFrac = mw_setup.CONST_NAMES.original_convex
                 else:
@@ -120,18 +133,16 @@ class MW_gen_OT_(types.Operator):
                 obj_toFrac = utils.get_child(obj, name_toFrac)
                 self.stats.log("retrieved toFrac object")
 
-        # TODO: run again more smartly, like detect no need for changes or only name changed
         DEV.log_msg(f"cfg {cfg.meta_show_debug}")
         try: DEV.log_msg(f" obj { obj.mw_gen.meta_show_debug }")
         except: pass
+
 
 
         DEV.log_msg("Start calc points", {'SETUP'})
         cfg.rnd_seed = utils.rnd_seed(cfg.rnd_seed) # seed common random gen
 
         # Get the points and transform to local space when needed
-        # TODO: particles and pencil are in world position...
-        # TODO: seems like not letting pick others?
         mw_calc.detect_points_from_object(obj_toFrac, cfg, context)
         points = mw_calc.get_points_from_object_fallback(obj_toFrac, cfg, context)
         self.stats.log("retrieved points")
@@ -151,41 +162,24 @@ class MW_gen_OT_(types.Operator):
         mw_calc.points_addNoise(points, cfg, bb_radius)
         self.stats.log("transform/limit points")
 
+
         # Calc voronoi
         DEV.log_msg("Start calc cont", {'SETUP'})
-        # TODO: get n faces too etc cont info -> store the info in the object
-        # TODO: go back to no attempt on convex fix, plus error when no particles inside
         cont = mw_calc.cont_fromPoints(points, bb, faces4D)
         self.stats.log("calculated cont")
 
-        # TODO: decouple scene from sim? but using cells mesh tho
-        # TODO: in case of decoupled delete them?
         obj_shards = mw_setup.gen_shardsEmpty(obj, cfg, context)
         mw_setup.gen_shardsObjects(obj_shards, cont, cfg, context)
         self.stats.log("generated shards objects")
 
+
         DEV.log_msg("Start calc links", {'SETUP'})
-        # TODO: links better generated from map isntead of cont
         links = Links(cont, obj_shards)
         self.stats.log("calculated links")
+        # NOTE:: links better generated from map isntead of cont
         obj_links = mw_setup.gen_linksEmpty(obj, cfg, context)
         mw_setup.gen_linksObjects(obj_links, cont, cfg, context)
         self.stats.log("generated links objects")
-
-        # TODO: store the cont inside the property pointer
-        # TODO: get volume from cells/cont?
-        # TODO: BL:: detect property changes and avoid regen -> maybe some vis can go to panel etc
-        ## TEST: check out some cell properties and API
-        #if 1:
-        #    from . import info_inspect as ins
-        #    ins.print_data(cont[0], False)
-
-        # TODO: GEN:: decimation applied -> create another object
-        # TODO: GEN:: convex hull applied -> create another object
-        # TODO: PHYS:: add mass + cell inter-space (or shrink) + add rigid body?
-        # TODO: RENDER:: add interior handle for materials
-        # TODO: GEN:: recursiveness?
-        # TODO: GEN:: avoid convex hull?
 
 
 

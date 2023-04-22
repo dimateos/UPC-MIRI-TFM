@@ -23,8 +23,7 @@ class CONST_NAMES:
     links = shards+"_links"
     links_group = "Links"
 
-# TODO: a bit docu on methods
-# TODO:end:: option to not store intermidiate meshes for performance
+# OPT:: more docu on methods
 # -------------------------------------------------------------------
 
 def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
@@ -58,9 +57,7 @@ def gen_copyConvex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, c
     utils.set_child(obj_convex, obj)
 
     # Apply convex hull to the mesh
-    # TODO: not recursive?
-    # TODO: decimate beforehand too?
-    # TODO: shrink too or part of sim?
+    # NOTE:: not recursive?
     import bmesh
     bm = bmesh.new()
     bm.from_mesh(obj_convex.data)
@@ -122,7 +119,7 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
         source_id = cont.source_idx[cell.id]
         name= f"{CONST_NAMES.shards}_{source_id}"
 
-        # TODO: the centroid is not at the center of mass? problem maybe related to margins etc
+        # XXX:: the centroid is not at the center of mass? problem maybe related to margins etc
         posC = cell.centroid()
         posCL = cell.centroid_local()
         vertsCL = cell.vertices_local_centroid()
@@ -149,19 +146,18 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
         obj_shard.location = pos
 
 def gen_linksObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
-    # TODO: atm just hiding reps -> maybe generate using a different map instead of iterating the raw cont
+    # WIP:: atm just hiding reps -> maybe generate using a different map instead of iterating the raw cont
+    #   maybe merge shard/link loop
     neigh_set = set()
 
     for cell in cont:
-        # TODO: maybe merge shard/link loop
-
         # group the links by cell using a parent
         nameGroup= f"{CONST_NAMES.links_group}_{cell.id}"
         obj_group = utils.gen_child(obj, nameGroup, context, None, keepTrans=False, hide=False)
         #obj_group.matrix_world = Matrix.Identity(4)
         #obj_group.location = cell.centroid()
 
-        # TODO: position world/local?
+        # WIP:: position world/local?
         cell_centroid_4d = Vector(cell.centroid()).to_4d()
 
         # iterate the cell neighbours

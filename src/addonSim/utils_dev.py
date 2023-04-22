@@ -1,7 +1,7 @@
 # Avoiding imports for circular dependencies
 # -------------------------------------------------------------------
 
-# TODO: some access from UI to toggle dynamically?
+# IDEA:: some access from UI to toggle dynamically?
 class DEV:
     DEBUG = True
 

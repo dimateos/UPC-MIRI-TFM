@@ -38,7 +38,6 @@ class MW_gen_Panel(types.Panel):
             col.label(text="No object selected...", icon="ERROR")
             return
 
-        # TODO: some actions remove the active object
         if not context.active_object:
             col.label(text="Selected but removed active?", icon="ERROR")
             return
@@ -118,7 +117,6 @@ class MW_info_Panel(types.Panel):
                 col.label(text="...")
             return
 
-        # TODO: some actions remove the active object
         if not context.active_object:
             col.label(text="Selected but removed active?", icon="ERROR")
             return

@@ -23,7 +23,7 @@ def getProps_names(src):
 def copyProps(src, dest):
     """ Copy all properties of the property group to the object, so not just the modified ones in src.keys() """
     # The whole property is read-only but its values can be modified, avoid writing it one by one...
-    # TODO: add filter props
+    # IDEA:: add filter props?
     props_names = getProps_names(src)
     for prop_name in props_names:
         setattr(dest, prop_name, getattr(src, prop_name))
