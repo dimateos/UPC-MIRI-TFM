@@ -66,10 +66,11 @@ def draw_refresh(cfg: MW_gen_cfg, layout: types.UILayout):
     split.prop(cfg, "meta_auto_refresh", toggle=True, icon_only=False, icon='FILE_REFRESH')
     split.prop(cfg, "meta_refresh", toggle=True, icon_only=True, icon='FILE_REFRESH')
 
-def draw_inspectObject(obj: types.Object, layout: types.UILayout):
+def draw_inspectObject(obj: types.Object, layout: types.UILayout, drawTrans=True) -> types.UILayout:
     mainBox = layout.box()
     mainCol = mainBox.column()
-    mainCol.label(text="Inspect: " + obj.name)
+    mainCol.label(text="Object: " + obj.name),
+    mainCol.scale_y = 0.8
 
     # OPT:: maybe for vertices too, not just whole objects
     box = mainCol.box()
@@ -79,38 +80,41 @@ def draw_inspectObject(obj: types.Object, layout: types.UILayout):
         mesh: types.Mesh = obj.data
         col.label(text=f"V: {len(mesh.vertices)}   E: {len(mesh.edges)}   F: {len(mesh.polygons)}   T: {len(mesh.loop_triangles)}")
 
-    # shared decimal format
-    fmt = ">6.3f"
-    fmt_vec = f"({{:{fmt}}}, {{:{fmt}}}, {{:{fmt}}})"
-    from math import degrees
+    if drawTrans:
+        # shared decimal format
+        fmt = ">6.3f"
+        fmt_vec = f"({{:{fmt}}}, {{:{fmt}}}, {{:{fmt}}})"
+        from math import degrees
 
-    # group world
-    box = mainCol.box()
-    col = box.column()
-    col.label(text="World transform")
+        # group world
+        box = mainCol.box()
+        col = box.column()
+        col.label(text="World transform")
 
-    matrix: Matrix = obj.matrix_world
-    pos = matrix.to_translation()
-    col.label(text=f"pos: {fmt_vec}".format(*pos))
-    rot = matrix.to_euler()
-    rot_deg = tuple(degrees(r) for r in rot)
-    col.label(text=f"rot:  {fmt_vec}".format(*rot_deg))
-    sca = matrix.to_scale()
-    col.label(text=f"sca: {fmt_vec}".format(*sca))
+        matrix: Matrix = obj.matrix_world
+        pos = matrix.to_translation()
+        col.label(text=f"pos: {fmt_vec}".format(*pos))
+        rot = matrix.to_euler()
+        rot_deg = tuple(degrees(r) for r in rot)
+        col.label(text=f"rot:  {fmt_vec}".format(*rot_deg))
+        sca = matrix.to_scale()
+        col.label(text=f"sca: {fmt_vec}".format(*sca))
 
-    # group local
-    box = col.box()
-    col = box.column()
-    col.label(text="Local transform")
+        # group local
+        box = col.box()
+        col = box.column()
+        col.label(text="Local transform")
 
-    matrix: Matrix = obj.matrix_basis
-    pos = matrix.to_translation()
-    col.label(text=f"pos: {fmt_vec}".format(*pos))
-    rot = matrix.to_euler()
-    rot_deg = tuple(degrees(r) for r in rot)
-    col.label(text=f"rot:  {fmt_vec}".format(*rot_deg))
-    sca = matrix.to_scale()
-    col.label(text=f"sca: {fmt_vec}".format(*sca))
+        matrix: Matrix = obj.matrix_basis
+        pos = matrix.to_translation()
+        col.label(text=f"pos: {fmt_vec}".format(*pos))
+        rot = matrix.to_euler()
+        rot_deg = tuple(degrees(r) for r in rot)
+        col.label(text=f"rot:  {fmt_vec}".format(*rot_deg))
+        sca = matrix.to_scale()
+        col.label(text=f"sca: {fmt_vec}".format(*sca))
+
+    return mainCol
 
 # -------------------------------------------------------------------
 

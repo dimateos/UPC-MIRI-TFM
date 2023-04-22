@@ -102,10 +102,18 @@ class MW_info_Panel(types.Panel):
     bl_idname = "MW_PT_info"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_context = "objectmode"
+    #bl_context = "objectmode"
     #bl_options = {'HEADER_LAYOUT_EXPAND'}
 
     def draw(self, context):
+        if bpy.context.mode == 'OBJECT':
+            #DEV.log_msg(f"info OBJECT", {'PT_FLOW'})
+            self.draw_objectMode(context)
+        elif bpy.context.mode == 'EDIT_MESH':
+            #DEV.log_msg(f"info MESH", {'PT_FLOW'})
+            self.draw_editMode(context)
+
+    def draw_objectMode(self, context):
         layout = self.layout
         col = layout.column()
 
@@ -129,6 +137,43 @@ class MW_info_Panel(types.Panel):
             col = layout.column()
             col.operator(ops.MW_info_data_OT_.bl_idname, text="Print mesh Data", icon="HELP")
             col.operator(ops.MW_info_API_OT_.bl_idname, text="Print mesh API", icon="HELP")
+
+    def draw_editMode(self, context):
+        layout = self.layout
+
+        mainCol = ui.draw_inspectObject(bpy.context.object, layout, drawTrans=False)
+
+        col = mainCol.column()
+        col.enabled = False
+        col.alignment = 'LEFT'
+        col.scale_x = 0.5
+        col.scale_y = 1.6
+        col.label(text=f"toggle EDIT/OBJECT to update", icon="QUESTION")
+
+        # Mesh selected is not up to date...
+        mesh = bpy.context.object.data
+        selected_verts = [v for v in mesh.vertices if v.select]
+        selected_edges = [e for e in mesh.edges if e.select]
+        selected_faces = [f for f in mesh.polygons if f.select]
+
+        # common format
+        fmt = ">5.1f"
+        fmt_vec = f"({{:{fmt}}}, {{:{fmt}}}, {{:{fmt}}})"
+
+        box = mainCol.box()
+        col = box.column()
+        col.label(text=f"verts: {len(selected_verts)}")
+        for v in selected_verts: col.label(text=f"{v.index}: " + f"{fmt_vec}".format(*v.co))
+
+        box = mainCol.box()
+        col = box.column()
+        col.label(text=f"edges: {len(selected_edges)}")
+        for e in selected_edges: col.label(text=f"{e.index}: {e.key}")
+
+        box = mainCol.box()
+        col = box.column()
+        col.label(text=f"faces: {len(selected_faces)}")
+        for f in selected_faces: col.label(text=f"{f.index}: " + f"{fmt_vec}".format(*f.center))
 
 
 # -------------------------------------------------------------------
