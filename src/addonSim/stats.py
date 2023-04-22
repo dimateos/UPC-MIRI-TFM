@@ -95,8 +95,10 @@ class Stats:
         t = self.time()
         dt = self.time_diff()
 
-        if msg: print(f"{self.name}//  {msg}")
-        print(f"\t t:{t:>10.6f}   dt:{dt:>10.6f}")
+        #if msg: print(f"{self.name}//  {msg}")
+        #print(f"\t t:{t:>10.6f}   dt:{dt:>10.6f}")
+
+        if msg: print(f"{self.name}// dt:{dt:>10.6f} ({t:>10.6f}) - {msg}")
 
 
     def log_mem(self, msg: str = " "):

@@ -55,12 +55,14 @@ class MW_gen_OT_(types.Operator):
     def start_op(self, msg = ""):
         self.stats.reset()
         #self.stats.testStats()
+        print()
         DEV.log_msg(msg, {'SETUP'})
         DEV.log_msg(f"execute auto_refresh:{self.cfg.meta_auto_refresh} refresh:{self.cfg.meta_refresh}", {'OP_FLOW'})
 
     def end_op(self, msg = "", skip=False):
         DEV.log_msg(f"END: {msg}", {'OP_FLOW'})
         self.stats.log("finished execution")
+        print()
         return {"FINISHED"} if not skip else {'PASS_THROUGH'}
 
     def end_op_error(self, msg = "", skip=False):
@@ -90,6 +92,7 @@ class MW_gen_OT_(types.Operator):
         # XXX:: particles are in world position?
         # XXX:: refresh is slow, maybe related to other ui doing recursive access to root?? maybe panel with ok before?
         # OPT:: separate simulation and scene generation: option to no store inter meshes
+        # OPT:: adding many objects to the scene takes most of the time -> single global mesh?
         # OPT:: avoid recursion with pointer to parent instead of search by name
         # IDEA:: decimate before/after convex, test perf?
 
@@ -135,7 +138,7 @@ class MW_gen_OT_(types.Operator):
                 self.stats.log("retrieved toFrac object")
 
         DEV.log_msg(f"cfg {cfg.meta_show_debug}")
-        try: DEV.log_msg(f" obj { obj.mw_gen.meta_show_debug }")
+        try: DEV.log_msg(f"obj { obj.mw_gen.meta_show_debug }")
         except: pass
 
 
@@ -175,7 +178,7 @@ class MW_gen_OT_(types.Operator):
 
 
         DEV.log_msg("Start calc links", {'SETUP'})
-        links = Links(cont, obj_shards)
+        links = Links(cont, obj_shards, self.stats)
         self.stats.log("calculated links")
         # NOTE:: links better generated from map isntead of cont
         obj_links = mw_setup.gen_linksEmpty(obj, cfg, context)
