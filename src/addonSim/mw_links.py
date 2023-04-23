@@ -15,17 +15,19 @@ from tess import Container, Cell
 
 # OPT:: could use a class or an array of props? pyhton already slow so ok class?
 class Link():
+    keyType = tuple[int, int]
 
-    def __init__(self, key_cells: tuple[int, int], key_faces: tuple[int, int]):
+    def __init__(self, key_cells: tuple[int, int], key_faces: tuple[int, int], toWall=False):
         self.life = 1.0
-        self.wall = self.air = key_cells[0] < 0 or key_cells[1] < 0
+        self.toWall = toWall
 
         # no directionality
-        self.key_cells = key_cells
-        self.key_faces = key_faces
+        self.key_cells: Link.keyType = key_cells
+        self.key_faces: Link.keyType = key_faces
 
         # neighs populated afterwards
-        self.neighs = []
+        # IDEA:: separate to cells / walls?
+        self.neighs: list[Link.keyType] = list()
 
 # -------------------------------------------------------------------
 
@@ -54,13 +56,15 @@ class Links():
 
         # TODO:: unionfind joined components
         # IDEA:: dynamic lists of separated?
-        self.link_map: dict[tuple[int, int], Link] = dict()
+        self.link_map: dict[Link.keyType, Link] = dict()
+        self.num_toCells = 0
+        self.num_toWalls = 0
 
         # IDEA:: keys to global map or direclty the links?
         # init cell dict with lists of its faces size (later index by face)
-        self.keys_perCell: dict[int, list[Link]] = {cell.id: list([None]* len(cont_neighs[cell.id])) for cell in cont}
+        self.keys_perCell: dict[int, list[Link.keyType]] = {cell.id: list([Link.keyType()]* len(cont_neighs[cell.id])) for cell in cont}
         # init wall dict with just empty lists (some will remain empty)
-        self.keys_perWall: dict[int, list[Link]] = {id: list() for id in cont.get_conainerId_limitWalls()+cont.walls_cont_idx}
+        self.keys_perWall: dict[int, list[Link.keyType]] = {id: list() for id in cont.get_conainerId_limitWalls()+cont.walls_cont_idx}
 
 
         # FIRST loop to build the global dictionaries
@@ -72,11 +76,13 @@ class Links():
                 if idx_neighCell < 0:
                     key = (idx_neighCell, idx_cell)
                     key_faces = (idx_neighCell, idx_face)
-                    l = Link(key, key_faces)
-                    # add to mappings
+                    l = Link(key, key_faces, toWall=True)
+
+                    # add to mappings per wall and cell
+                    self.num_toWalls += 1
                     self.link_map[key] = l
-                    self.keys_perCell[idx_cell][idx_face] = key
                     self.keys_perWall[idx_neighCell].append(key)
+                    self.keys_perCell[idx_cell][idx_face] = key
                     continue
 
                 # check unique links between cells
@@ -91,26 +97,45 @@ class Links():
                 key_faces = Links.getKey(idx_face, idx_neighFace, swap)
                 l = Link(key, key_faces)
 
-                # add to global, per wall and to the cell
+                # add to mappings for both per cells
+                self.num_toCells += 1
                 self.link_map[key] = l
                 self.keys_perCell[idx_cell][idx_face] = key
                 self.keys_perCell[idx_neighCell][idx_neighFace] = key
 
-        stats.log("created link set")
+        stats.log("created link map")
 
-        #self.per_wall_empty: dict[int, list[Link]] = {id: [] for id in cont.walls_cont_idx}
 
-        ## SECOND loop to aggregate the links neighbours
-        #for link in self.in_air:
-        #    c1, c2 = link.key_cells
-        #    f1, f2 = link.key_faces
-        #    neighs1 = meshes_dicts[c1]["FtoF"][f1]
-        #    neighs2 = meshes_dicts[c2]["FtoF"][f2]
-        #    links1 = [  ]
-        #    #link.neighs
+        # SECOND loop to aggregate the links neighbours, only need to iterate keys_perCell
+        for idx_cell,keys_perFace in self.keys_perCell.items():
+            for idx_face,key in enumerate(keys_perFace):
+                l = self.link_map[key]
 
-        logType = {"CALC"} if self.in_cells else {"CALC", "ERROR"}
-        DEV.log_msg(f"Found {len(self.in_cells)} links in cells ({len(self.in_air)} in air walls)", logType)
+                # avoid recalculating link neighs (and duplicating them)
+                if l.neighs:
+                    continue
+
+                # walls only add local faces from the same cell
+                if l.toWall:
+                    w_neighs = meshes_dicts[idx_cell]["FtoF"][idx_face]
+                    w_neighs = [ keys_perFace[f] for f in w_neighs ]
+                    l.neighs += w_neighs
+                    continue
+
+                # links connecting cells have a sorted key, but no need to check which is local
+                c1, c2 = l.key_cells
+                f1, f2 = l.key_faces
+
+                f1_neighs = meshes_dicts[c1]["FtoF"][f1]
+                c1_neighs = [ keys_perFace[f] for f in f1_neighs ]
+                f2_neighs = meshes_dicts[c2]["FtoF"][f2]
+                c2_neighs = [ keys_perFace[f] for f in f2_neighs ]
+                l.neighs += c1_neighs + c2_neighs
+
+        stats.log("aggregated link neighbours")
+
+        logType = {"CALC"} if self.link_map else {"CALC", "ERROR"}
+        DEV.log_msg(f"Found {self.num_toCells} links to cells + {self.num_toWalls} links to walls (total {len(self.link_map)})", logType)
 
 
     @staticmethod
