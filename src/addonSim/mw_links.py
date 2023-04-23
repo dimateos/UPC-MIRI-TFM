@@ -18,7 +18,7 @@ class Link():
 
     def __init__(self, key_cells: tuple[int, int], key_faces: tuple[int, int]):
         self.life = 1.0
-        self.air = key_cells[0] < 0 or key_cells[1] < 0
+        self.wall = self.air = key_cells[0] < 0 or key_cells[1] < 0
 
         # no directionality
         self.key_cells = key_cells
@@ -42,6 +42,7 @@ class Links():
         stats.log("calculated shards mesh dicts")
 
         # XXX:: could be calculated in voro++, also avoid checking twice...
+        # XXX:: using lists or maps to support non linear cell.id?
         cont_neighs = [ cell.neighbors() for cell in cont ]
         stats.log("calculated voro cell neighs")
         cont_neighs_faces = []
@@ -51,47 +52,74 @@ class Links():
         stats.log("calculated cell neighs faces")
 
 
-        # IDEA:: dynamic lists or global one?
-        self.in_air: list[Link] = []
-        self.in_cells: list[Link] = []
-        link_keySet = set()
+        # TODO:: unionfind joined components
+        # IDEA:: dynamic lists of separated?
+        self.link_map: dict[tuple[int, int], Link] = dict()
 
-        for idx_cell,cell in enumerate(cont):
-            for idx_face, idx_neighCell in enumerate(cont_neighs[i]):
+        # IDEA:: keys to global map or direclty the links?
+        # init cell dict with lists of its faces size (later index by face)
+        self.keys_perCell: dict[int, list[Link]] = {cell.id: list([None]* len(cont_neighs[cell.id])) for cell in cont}
+        # init wall dict with just empty lists (some will remain empty)
+        self.keys_perWall: dict[int, list[Link]] = {id: list() for id in cont.get_conainerId_limitWalls()+cont.walls_cont_idx}
 
-                # link to wall, wont be repeated
+
+        # FIRST loop to build the global dictionaries
+        for cell in cont:
+            idx_cell = cell.id
+            for idx_face, idx_neighCell in enumerate(cont_neighs[idx_cell]):
+
+                # link to a wall, wont be repeated
                 if idx_neighCell < 0:
                     key = (idx_neighCell, idx_cell)
                     key_faces = (idx_neighCell, idx_face)
                     l = Link(key, key_faces)
-                    self.in_air.append(l)
+                    # add to mappings
+                    self.link_map[key] = l
+                    self.keys_perCell[idx_cell][idx_face] = key
+                    self.keys_perWall[idx_neighCell].append(key)
                     continue
 
                 # check unique links between cells
-                swap = idx_cell > idx_neighCell
-                key = (idx_cell, idx_neighCell) if not swap else (idx_neighCell, idx_cell)
-                key_rep = key in link_keySet
+                # NOTE:: key does not include faces, expected only one face conected between cells
+                key,swap = Links.getKey_swap(idx_cell, idx_neighCell)
+                key_rep = key in self.link_map
                 if key_rep:
                     continue
 
                 # build the link
-                link_keySet.add(key)
-                idx_neighFace = cont_neighs_faces[i][idx_face]
-                key_faces = (idx_face, idx_neighFace) if not swap else (idx_neighFace, idx_face)
-
+                idx_neighFace = cont_neighs_faces[idx_cell][idx_face]
+                key_faces = Links.getKey(idx_face, idx_neighFace, swap)
                 l = Link(key, key_faces)
-                self.in_cells.append(l)
 
-        # now calculate neighs with blender mesh map
+                # add to global, per wall and to the cell
+                self.link_map[key] = l
+                self.keys_perCell[idx_cell][idx_face] = key
+                self.keys_perCell[idx_neighCell][idx_neighFace] = key
+
         stats.log("created link set")
 
-        for link in self.in_air:
-            c1, c2 = link.key_cells
-            f1, f2 = link.key_faces
+        #self.per_wall_empty: dict[int, list[Link]] = {id: [] for id in cont.walls_cont_idx}
 
-        #    me_maps = utils_geo.get_meshDicts(me, queries_default=True)
-        #    FtoF = me_maps["FtoF"]
+        ## SECOND loop to aggregate the links neighbours
+        #for link in self.in_air:
+        #    c1, c2 = link.key_cells
+        #    f1, f2 = link.key_faces
+        #    neighs1 = meshes_dicts[c1]["FtoF"][f1]
+        #    neighs2 = meshes_dicts[c2]["FtoF"][f2]
+        #    links1 = [  ]
+        #    #link.neighs
 
         logType = {"CALC"} if self.in_cells else {"CALC", "ERROR"}
         DEV.log_msg(f"Found {len(self.in_cells)} links in cells ({len(self.in_air)} in air walls)", logType)
 
+
+    @staticmethod
+    def getKey_swap(k1,k2):
+        swap = k1 > k2
+        key = (k1, k2) if not swap else (k2, k1)
+        return key,swap
+
+    @staticmethod
+    def getKey(k1,k2, swap):
+        key = (k1, k2) if not swap else (k2, k1)
+        return key

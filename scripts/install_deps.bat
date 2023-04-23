@@ -4,7 +4,6 @@ REM install or update dependencies, includes voro++
 :_env
     CALL ./env
     %bpy% --version
-    ::%bpip% install --upgrade pip
 
     REM backup env freeze to a txt
     CALL ./bpip_backup
