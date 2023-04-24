@@ -1,7 +1,9 @@
 import bpy
 import bpy.types as types
 import bpy.props as props
+from mathutils import Vector, Matrix
 
+from .operators_utils import Common_OT_StartRefres
 from .preferences import getPrefs
 from .properties import (
     MW_gen_cfg,
@@ -12,6 +14,7 @@ from .properties import (
 from . import mw_setup
 from . import mw_calc
 from .mw_links import Links, Link
+from tess import Container, Cell
 
 from . import ui
 from . import utils
@@ -21,14 +24,11 @@ from .utils_cfg import copyProps
 from .utils_dev import DEV
 from .stats import getStats
 
-from mathutils import Vector, Matrix
-from tess import Container, Cell
-
 
 # OPT:: split operators utils from main
 #-------------------------------------------------------------------
 
-class MW_gen_OT_(types.Operator):
+class MW_gen_OT_(Common_OT_StartRefres):
     bl_idname = "mw.gen"
     bl_label = "Fracture generation"
     bl_options = {'PRESET', 'REGISTER', 'UNDO'}
@@ -54,23 +54,6 @@ class MW_gen_OT_(types.Operator):
     def __init__(self) -> None:
         super().__init__()
 
-    def start_op(self, msg = ""):
-        getStats().reset()
-        #getStats().testStats()
-        print()
-        DEV.log_msg(msg, {'SETUP'})
-        DEV.log_msg(f"execute auto_refresh:{self.cfg.meta_auto_refresh} refresh:{self.cfg.meta_refresh}", {'OP_FLOW'})
-
-    def end_op(self, msg = "", skip=False):
-        DEV.log_msg(f"END: {msg}", {'OP_FLOW'})
-        getStats().logT("finished execution")
-        print()
-        return {"FINISHED"} if not skip else {'PASS_THROUGH'}
-
-    def end_op_error(self, msg = "", skip=False):
-        self.report({'ERROR'}, f"Operation failed: {msg}")
-        self.end_op(msg, skip)
-
     # IDEA:: changelog / todo file to take notes there instead of all in the code?
 
     # OPT::  GEN: more error handling of user deletion of intermediate objects?
@@ -88,6 +71,7 @@ class MW_gen_OT_(types.Operator):
     def execute(self, context: types.Context):
         """ Runs once and then after every property edit in the edit last action panel """
         self.start_op("START: fracture OP")
+        DEV.log_msg(f"execute auto_refresh:{self.cfg.meta_auto_refresh} refresh:{self.cfg.meta_refresh}", {'OP_FLOW'})
 
         # TODO:: store cont across simulations in the object or info from it
         # TODO:: run again more smartly, like detect no need for changes (e.g. name change or prefs debug show) -> compare both props, or use prop update func self ref?
@@ -132,7 +116,7 @@ class MW_gen_OT_(types.Operator):
                 cfg: MW_gen_cfg = self.cfg
 
                 if cfg.shape_useConvexHull:
-                    name_toFrac = mw_setup.CONST_NAMES.original_convex
+                    name_toFrac = mw_setup.CONST_NAMES.original_c
                 else:
                     name_toFrac = f"{mw_setup.CONST_NAMES.original}{cfg.struct_nameOriginal}"
 
@@ -171,7 +155,7 @@ class MW_gen_OT_(types.Operator):
         #const int max_wall_size=2048;
 
         DEV.log_msg("Start calc links", {'SETUP'})
-        links = Links(cont, obj_shards)
+        #links = Links(cont, obj_shards)
         # NOTE:: links better generated from map isntead of cont
         obj_links = mw_setup.gen_linksEmpty(obj, cfg, context)
         mw_setup.gen_linksObjects(obj_links, cont, cfg, context)
@@ -241,12 +225,12 @@ class MW_util_indices_OT_(types.Operator):
         faces = "faces_Indices"
 
     # toggles and scale per data
-    _prop_showName = props.BoolProperty(name="name", description="Toggle viewport vis of names", default=True)
-    _prop_scale = props.FloatProperty(name="s", default=0.3, min=0.01, max=2.0)
+    _prop_showName = props.BoolProperty(name="name", description="Toggle viewport vis of names", default=False)
+    _prop_scale = props.FloatProperty(name="s", default=0.25, min=0.01, max=2.0)
     verts_gen: props.BoolProperty( name="Verts (octa)", default=True)
     verts_name: _prop_showName
     verts_scale: _prop_scale
-    edges_gen: props.BoolProperty( name="Edges (cube)", default=True)
+    edges_gen: props.BoolProperty( name="Edges (cube)", default=False)
     edges_name: _prop_showName
     edge_scale: _prop_scale
     faces_gen: props.BoolProperty( name="Faces (tetra)", default=True)
@@ -306,6 +290,7 @@ class MW_util_indices_OT_(types.Operator):
         rowsub.prop(self, "namePrefix")
 
     def execute(self, context: types.Context):
+        getStats().logMsg(f"START: {self.bl_label} ({self.bl_idname})")
         obj = context.active_object
         child_empty = utils.gen_childClean(obj, self.CONST_NAMES.empty, context, None, keepTrans=False)
 
@@ -333,6 +318,11 @@ class MW_util_indices_OT_(types.Operator):
                 child.scale = scaleV
                 child.active_material = mat
                 child.show_name = self.verts_name
+                # orient vert out
+                v_rot0: Vector = Vector([0,0,1])
+                v_rot1: Vector = v.normal
+                child.rotation_mode = "QUATERNION"
+                child.rotation_quaternion = v_rot0.rotation_difference(v_rot1)
 
         if self.edges_gen:
             # edges use a cube for rep
@@ -385,7 +375,7 @@ class MW_util_indices_OT_(types.Operator):
                 child.rotation_quaternion = v_rot0.rotation_difference(v_rot1)
 
 
-        getStats().logDt("END: " + self.bl_label)
+        getStats().logT(f"END: {self.bl_label} ({self.bl_idname})")
         return {'FINISHED'}
 
 class MW_util_deleteIndices_OT_(types.Operator):
@@ -405,11 +395,12 @@ class MW_util_deleteIndices_OT_(types.Operator):
         return obj
 
     def execute(self, context: types.Context):
+        getStats().logMsg(f"START: {self.bl_label} ({self.bl_idname})")
         obj = MW_util_deleteIndices_OT_._obj
         utils.delete_objectRec(obj, logAmount=True)
 
         # UNDO as part of bl_options will cancel any edit last operation pop up
-        getStats().logDt("END: " + self.bl_label)
+        getStats().logMsg(f"END: {self.bl_label} ({self.bl_idname})")
         return {'FINISHED'}
 
 #-------------------------------------------------------------------
