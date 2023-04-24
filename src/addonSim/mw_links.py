@@ -41,18 +41,18 @@ class Links():
         # XXX:: decouple scene from sim? calculate the FtoF map inside voro isntead of blender mesh...
         meshes = [ shard.data for shard in obj_shards.children ]
         meshes_dicts = [ utils_geo.get_meshDicts(me) for me in meshes ]
-        stats.log("calculated shards mesh dicts")
+        stats.logDt("calculated shards mesh dicts")
 
         # XXX:: could be calculated in voro++, also avoid checking twice...
         # XXX:: using lists or maps to support non linear cell.id?
         cont_neighs = [ cell.neighbors() for cell in cont ]
-        stats.log("calculated voro cell neighs")
+        stats.logDt("calculated voro cell neighs")
 
         cont_neighs_faces = []
         for i,neighs in enumerate(cont_neighs):
             faces = [ n if n<0 else cont_neighs[n].index(i) for n in neighs ]
             cont_neighs_faces.append(faces)
-        stats.log("calculated cell neighs faces")
+        stats.logDt("calculated cell neighs faces")
 
 
         # TODO:: unionfind joined components
@@ -104,7 +104,7 @@ class Links():
                 self.keys_perCell[idx_cell][idx_face] = key
                 self.keys_perCell[idx_neighCell][idx_neighFace] = key
 
-        stats.log("created link map")
+        stats.logDt("created link map")
 
 
         # SECOND loop to aggregate the links neighbours, only need to iterate keys_perCell
@@ -135,7 +135,7 @@ class Links():
                 c2_neighs = [ self.keys_perCell[c2][f] for f in f2_neighs ]
                 l.neighs += c1_neighs + c2_neighs
 
-        stats.log("aggregated link neighbours")
+        stats.logDt("aggregated link neighbours")
         logType = {"CALC"} if self.link_map else {"CALC", "ERROR"}
         DEV.log_msg(f"Found {self.num_toCells} links to cells + {self.num_toWalls} links to walls (total {len(self.link_map)})", logType)
 

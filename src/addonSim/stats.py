@@ -87,9 +87,9 @@ class Stats:
 # -------------------------------------------------------------------
 
     def logMsg(self, msg):
-       print(f"{self.name}//  {msg}")
+       print(f"{self.name}//                              - {msg}")
 
-    def log(self, msg: str = " "):
+    def logDt(self, msg: str = " "):
         if not DEV.logs_stats: return
         t = self.time()
         dt = self.time_diff()
@@ -98,23 +98,24 @@ class Stats:
         #print(f"\t t:{t:>10.6f}   dt:{dt:>10.6f}")
         if msg: print(f"{self.name}// dt:{dt:>10.6f}s ({t:>10.6f}s) - {msg}")
 
-    def log_time(self, msg: str = " "):
+    def logT(self, msg: str = " "):
         if not DEV.logs_stats: return
         t = self.time()
         if msg: print(f"{self.name}// total time:    ({t:>10.6f}s) - {msg}")
 
-    def log_mem(self, msg: str = " "):
+    # OPT:: single line or something like log
+    def logMem(self, msg: str = " "):
         if not DEV.logs_stats: return
         m = self.memory_max()
         lm = self.memory_last()
         dm = self.diffmem
 
-        if msg: print(f"{self.name}//  {msg}")
+        if msg: print(f"{self.name}// {msg}")
         print(f"\t m:{m:>10}   lm:{lm:>10}   dm:{dm:>10}")
 
-    def log_full(self, msg: str = " "):
+    def logFull(self, msg: str = " "):
         self.log(msg)
-        self.log_mem("")
+        self.logMem("")
 
 # -------------------------------------------------------------------
 
@@ -131,24 +132,24 @@ def testStats(log = False):
     # sample operations
     import numpy as np
     stats = getStats()
-    stats.log_full()
+    stats.logFull()
 
     a = np.zeros(10000000)
     if log:
         print("\n>> a = np.zeros(10000000)")
-        stats.log_full()
+        stats.logFull()
 
     a = np.sin(a)
     if log:
         print("\n>> a = np.sin(a)")
-        stats.log_full()
+        stats.logFull()
 
     a = np.cos(a)
     if log:
         print("\n>> a = np.cos(a)")
-        stats.log_full()
+        stats.logFull()
 
     a = np.cos(a) ** 2 + np.sin(a) ** 2
     if log:
         print("\n>> a = np.cos(a) ** 2 + np.sin(a) ** 2")
-        stats.log_full()
+        stats.logFull()

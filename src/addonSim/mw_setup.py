@@ -48,7 +48,7 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
     obj_empty.matrix_world = obj.matrix_world.copy()
     utils.set_child(obj_copy, obj_empty)
 
-    getStats().log("generated copy object")
+    getStats().logDt("generated copy object")
     return obj_empty, obj_copy
 
 def gen_copyConvex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, context: types.Context):
@@ -77,7 +77,7 @@ def gen_copyConvex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, c
             )
     bm.to_mesh(obj_convex.data)
 
-    getStats().log("generated convex object")
+    getStats().logDt("generated convex object")
     return obj_convex
 
 def gen_renaming(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
@@ -106,7 +106,7 @@ def gen_pointsObject(obj: types.Object, points: list[Vector], cfg: MW_gen_cfg, c
 
     obj_points = utils.gen_childClean(obj, CONST_NAMES.shards_points, context, mesh, keepTrans=False, hide=not cfg.struct_showPoints)
 
-    getStats().log("generated points object")
+    getStats().logDt("generated points object")
     return obj_points
 
 def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, context: types.Context):
@@ -118,7 +118,7 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, co
     obj_bb = utils.gen_childClean(obj, CONST_NAMES.original_bb, context, mesh, keepTrans=False, hide=not cfg.struct_showBB)
     obj_bb.show_bounds = True
 
-    getStats().log("generated bounds object")
+    getStats().logDt("generated bounds object")
     return obj_bb
 
 # -------------------------------------------------------------------
@@ -154,7 +154,7 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
         obj_shard = utils.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showShards)
         obj_shard.location = pos
 
-    getStats().log("generated shards objects")
+    getStats().logDt("generated shards objects")
 
 
 def gen_linksObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
@@ -212,4 +212,4 @@ def gen_linksObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, contex
                 obj_link.hide_set(key_rep)
                 #obj_link.location = cell.centroid()
 
-    getStats().log("generated links objects")
+    getStats().logDt("generated links objects")

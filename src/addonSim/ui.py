@@ -112,7 +112,7 @@ def draw_inspectObject(obj: types.Object, layout: types.UILayout, drawTrans=True
         sca = matrix.to_scale()
         col.label(text=f"sca: {fmt_vec}".format(*sca))
 
-    return mainCol
+    return mainCol, mainBox
 
 # -------------------------------------------------------------------
 

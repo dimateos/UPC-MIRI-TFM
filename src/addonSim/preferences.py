@@ -13,7 +13,7 @@ class ADDON:
 # -------------------------------------------------------------------
 
 class MW_prefs(bpy.types.AddonPreferences):
-    # NOTE: MUST be the same as module name
+    # XXX:: __name__ must be exaclty used for addon prefs, so check when deploying without the addon
     bl_idname = ADDON.mod_name_prefs
 
     def draw(self, context):

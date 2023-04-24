@@ -131,27 +131,28 @@ class MW_info_Panel(types.Panel):
             return
 
         obj = context.active_object
-        ui.draw_inspectObject(obj, col)
-        col.operator(ops.MW_info_matrices_OT_.bl_idname, text="Print Matrices", icon="LATTICE_DATA")
+        mainCol, mainBox = ui.draw_inspectObject(obj, col)
+        col.operator(ops.MW_util_indices_OT_.bl_idname, icon="TRACKER")
+        mainBox.operator(ops.MW_info_matrices_OT_.bl_idname, icon="LATTICE_DATA")
 
         if obj.type == 'MESH':
             col = layout.column()
-            col.operator(ops.MW_info_data_OT_.bl_idname, text="Print mesh Data", icon="HELP")
-            col.operator(ops.MW_info_API_OT_.bl_idname, text="Print mesh API", icon="HELP")
+            col.operator(ops.MW_info_data_OT_.bl_idname, icon="HELP")
+            col.operator(ops.MW_info_API_OT_.bl_idname, icon="HELP")
 
     def draw_editMode(self, context):
         layout = self.layout
         prefs = getPrefs()
         obj = bpy.context.object
 
-        mainCol = ui.draw_inspectObject(obj, layout, drawTrans=False)
+        mainCol, mainBox = ui.draw_inspectObject(obj, layout, drawTrans=False)
 
         col = mainCol.column()
         col.enabled = False
         col.alignment = 'LEFT'
-        col.scale_x = 0.5
-        col.scale_y = 1.6
+        col.scale_y = 1.2
         col.label(text=f"toggle EDIT/OBJECT to update", icon="QUESTION")
+        col.label(text=f"object mode to spawn indices", icon="LIGHT")
 
         # Mesh selected is not up to date...
         mesh = obj.data

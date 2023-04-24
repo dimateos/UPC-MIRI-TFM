@@ -73,7 +73,7 @@ def get_bb_radius(obj: types.Object, margin_disp = 0.0, worldSpace=False) -> tup
     bb_radius = ((bb[0] - bb[1]).length / 2.0)
 
     # NOTE:: atm limited to mesh, otherwise check and use depsgraph
-    getStats().log(f"calc bb: r {bb_radius:.3f} (margin {margin_disp:.4f})")
+    getStats().logDt(f"calc bb: r {bb_radius:.3f} (margin {margin_disp:.4f})")
     return bb, bb_radius
 
 def get_faces_4D(obj: types.Object, n_disp = 0.0, worldSpace=False) -> list[Vector, Vector]:
@@ -96,7 +96,7 @@ def get_faces_4D(obj: types.Object, n_disp = 0.0, worldSpace=False) -> list[Vect
         for (fc,fn) in zip(face_centers, face_normals)
     ]
 
-    getStats().log(f"calc faces4D: {len(faces4D)} (n_disp {n_disp:.4f})")
+    getStats().logDt(f"calc faces4D: {len(faces4D)} (n_disp {n_disp:.4f})")
     return faces4D
 
 def get_worldMatrix_normalMatrix(obj: types.Object) -> tuple[types.Object, MW_gen_cfg]:

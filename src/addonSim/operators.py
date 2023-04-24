@@ -60,7 +60,7 @@ class MW_gen_OT_(types.Operator):
 
     def end_op(self, msg = "", skip=False):
         DEV.log_msg(f"END: {msg}", {'OP_FLOW'})
-        getStats().log_time("finished execution")
+        getStats().logT("finished execution")
         print()
         return {"FINISHED"} if not skip else {'PASS_THROUGH'}
 
@@ -105,7 +105,7 @@ class MW_gen_OT_(types.Operator):
 
         # Need to copy the properties from the object if its already a fracture
         obj, cfg = utils.cfg_getRoot(context.active_object)
-        getStats().log("retrieved root object")
+        getStats().logDt("retrieved root object")
 
         # Selected object not fractured
         if not cfg:
@@ -134,7 +134,7 @@ class MW_gen_OT_(types.Operator):
                     name_toFrac = f"{mw_setup.CONST_NAMES.original}{cfg.struct_nameOriginal}"
 
                 obj_toFrac = utils.get_child(obj, name_toFrac)
-                getStats().log("retrieved toFrac object")
+                getStats().logDt("retrieved toFrac object")
 
 
         DEV.log_msg("Start calc points", {'SETUP'})
@@ -181,7 +181,7 @@ class MW_gen_OT_(types.Operator):
         obj.select_set(True)
         context.view_layer.objects.active = obj
         #context.active_object = obj
-        getStats().log("renamed and selected")
+        getStats().logDt("renamed and selected")
 
         mw_setup.gen_pointsObject(obj, points, cfg, context)
         mw_setup.gen_boundsObject(obj, bb, cfg, context)
@@ -207,6 +207,8 @@ class MW_util_delete_OT_(types.Operator):
         return (obj and cfg)
 
     def execute(self, context: types.Context):
+        getStats().logMsg("START: " + self.bl_label)
+
         obj, cfg = MW_util_delete_OT_._obj, MW_util_delete_OT_._cfg
         prefs = getPrefs()
 
@@ -215,19 +217,37 @@ class MW_util_delete_OT_(types.Operator):
             obj_original = utils.get_object_fromScene(context.scene, cfg.struct_nameOriginal)
             obj_original.hide_set(False)
 
-        # log the timing
-        getStats().logMsg("START: REC delete frac...")
         utils.delete_objectRec(obj, logAmount=True)
-        getStats().log("END: REC delete frac...")
 
         # UNDO as part of bl_options will cancel any edit last operation pop up
+        getStats().logDt("END: " + self.bl_label)
+        return {'FINISHED'}
+
+# -------------------------------------------------------------------
+
+class MW_util_indices_OT_(types.Operator):
+    bl_idname = "mw.util_indices"
+    bl_label = "Spawn mesh indices"
+    bl_options = {'REGISTER', 'UNDO'}
+    bl_description = "Spawn named objects at mesh data indices positons"
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return obj and obj.data
+
+    def execute(self, context: types.Context):
+        getStats().logMsg("START: " + self.bl_label)
+
+
+        getStats().logDt("END: " + self.bl_label)
         return {'FINISHED'}
 
 # -------------------------------------------------------------------
 
 class MW_info_data_OT_(types.Operator):
     bl_idname = "mw.info_data"
-    bl_label = "Inspect mesh data"
+    bl_label = "Print mesh data"
     bl_options = {'INTERNAL'}
     bl_description = "DEBUG print in the console some mesh data etc"
 
@@ -244,7 +264,7 @@ class MW_info_data_OT_(types.Operator):
 
 class MW_info_API_OT_(types.Operator):
     bl_idname = "mw.info_api"
-    bl_label = "Inspect mesh API"
+    bl_label = "Print mesh API"
     bl_options = {'INTERNAL'}
     bl_description = "DEBUG print in the console some mesh API etc"
 
@@ -261,7 +281,7 @@ class MW_info_API_OT_(types.Operator):
 
 class MW_info_matrices_OT_(types.Operator):
     bl_idname = "mw.info_matrices"
-    bl_label = "Inspect obj matrices"
+    bl_label = "Print obj matrices"
     bl_options = {'INTERNAL'}
     bl_description = "DEBUG print in the console the matrices etc"
 
@@ -281,6 +301,7 @@ class MW_info_matrices_OT_(types.Operator):
 classes = (
     MW_gen_OT_,
     MW_util_delete_OT_,
+    MW_util_indices_OT_,
     MW_info_data_OT_,
     MW_info_API_OT_,
     MW_info_matrices_OT_
