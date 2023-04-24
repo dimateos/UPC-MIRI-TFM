@@ -14,6 +14,7 @@ from . import ui
 from . import utils
 from .utils_dev import DEV
 
+
 PANEL_CATEGORY = "Dev"
 PANEL_INFO_NOTIFY_NO_SELECTED = False
 
@@ -151,8 +152,8 @@ class MW_info_Panel(types.Panel):
         col.enabled = False
         col.alignment = 'LEFT'
         col.scale_y = 1.2
-        col.label(text=f"toggle EDIT/OBJECT to update", icon="QUESTION")
-        col.label(text=f"object mode to spawn indices", icon="LIGHT")
+        col.label(text=f"[toggle Edit/Object]: update", icon="QUESTION")
+        col.label(text=f"[Object Mode]: spawn indices", icon="LIGHT")
 
         # Mesh selected is not up to date...
         mesh = obj.data

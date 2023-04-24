@@ -14,6 +14,7 @@ from mathutils import Vector, Matrix
 # Using tess voro++ adaptor
 from tess import Container, Cell
 
+
 class CONST_NAMES:
     original = "Original_"
     original_bb = original+"bb"
@@ -23,6 +24,7 @@ class CONST_NAMES:
     shards_points = "Shards_source"
     links = shards+"_links"
     links_group = "Links"
+
 
 # OPT:: more docu on methods
 # -------------------------------------------------------------------

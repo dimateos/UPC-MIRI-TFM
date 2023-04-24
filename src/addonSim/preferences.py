@@ -2,6 +2,7 @@ import bpy
 import bpy.types as types
 import bpy.props as props
 
+
 # Access from other modules to constants
 class ADDON:
     _bl_info = None
@@ -21,7 +22,7 @@ class MW_prefs(bpy.types.AddonPreferences):
         from .ui import draw_props
         draw_props(self, self.layout)
 
-# -------------------------------------------------------------------
+    # -------------------------------------------------------------------
 
     meta_show_prefs: props.BoolProperty(
         name="Show addon preferences...", description="Show addon preferences",
@@ -41,7 +42,7 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=True,
     )
 
-# -------------------------------------------------------------------
+    # -------------------------------------------------------------------
 
     PT_gen_show_summary: props.BoolProperty(
         name="Show object summary...", description="Show fracture summary",
@@ -61,7 +62,7 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=True,
     )
 
-# -------------------------------------------------------------------
+    # -------------------------------------------------------------------
 
     PT_info_edit_showWorld: props.BoolProperty(
         name="world space", description="Show vertices positions in world space",

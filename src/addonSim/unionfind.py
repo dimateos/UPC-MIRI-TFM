@@ -1,5 +1,6 @@
 # MIRI-A3DM
 # Diego Mateos (UPC)
+# IDEA:: start with all joined and break pieces, or use link info without other structure
 
 class UnionFind:
     """ Simple union-find to count connected components w/ path compression

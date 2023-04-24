@@ -5,7 +5,6 @@
     OPT:: in the end optimize the critical ones that end up being used...
 """
 
-### IMPORTS
 from mathutils import Vector, Matrix
 from .unionfind import UnionFind
 

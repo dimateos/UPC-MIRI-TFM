@@ -4,12 +4,13 @@
     OPT:: type annotations for autocompletion
 """
 
-### IMPORTS
 import bpy
 import bpy.types as types
 
 
-### UTILS
+# -------------------------------------------------------------------
+#- UTILS
+
 def desc(me: types.Mesh, i=0):
     """ Quick access to data prop console:
     ob = bpy.context.active_object

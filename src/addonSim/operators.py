@@ -15,6 +15,7 @@ from .mw_links import Links, Link
 
 from . import ui
 from . import utils
+from . import utils_render
 from .utils_cfg import copyProps
 from .utils_dev import DEV
 from .stats import getStats
@@ -207,8 +208,6 @@ class MW_util_delete_OT_(types.Operator):
         return (obj and cfg)
 
     def execute(self, context: types.Context):
-        getStats().logMsg("START: " + self.bl_label)
-
         obj, cfg = MW_util_delete_OT_._obj, MW_util_delete_OT_._cfg
         prefs = getPrefs()
 
@@ -231,12 +230,29 @@ class MW_util_indices_OT_(types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     bl_description = "Spawn named objects at mesh data indices positons"
 
-    do_verts: props.BoolProperty( name="Vertices", description="Add tetrahedron per vert", default=True)
-    show_vertsNames: props.BoolProperty( name="view names", description="Toggle viewport vis of names", default=True)
-    do_edges: props.BoolProperty( name="Eges", description="Add tetrahedron per vert", default=True)
-    show_edgesNames: props.BoolProperty( name="view names", description="Toggle viewport vis of names", default=True)
-    do_faces: props.BoolProperty( name="Faces", description="Add tetrahedron per vert", default=True)
-    show_facesNames: props.BoolProperty( name="view names", description="Toggle viewport vis of names", default=True)
+    class CONST_NAMES:
+        empty = "spawn_Indices"
+        verts = "verts_Indices"
+        edges = "edges_Indices"
+        faces = "faces_Indices"
+
+    # toggles and scale per data
+    _prop_showName = props.BoolProperty(name="name", description="Toggle viewport vis of names", default=True)
+    _prop_scale = props.FloatProperty(name="s", default=0.3, min=0.01, max=2.0)
+    verts_gen: props.BoolProperty( name="Verts (octa)", default=True)
+    verts_name: _prop_showName
+    verts_scale: _prop_scale
+    edges_gen: props.BoolProperty( name="Edges (cube)", default=True)
+    edges_name: _prop_showName
+    edge_scale: _prop_scale
+    faces_gen: props.BoolProperty( name="Faces (tetra)", default=True)
+    faces_name: _prop_showName
+    faces_scale: _prop_scale
+
+    # basic color
+    color_alpha: props.FloatProperty(name="color alpha", default=0.66, min=0.1, max=1.0)
+    color_useGray: props.BoolProperty( name="grayscale", default=False)
+    color_gray: props.FloatProperty(name="white", default=0.66, min=0.0, max=1.0)
 
     @classmethod
     def poll(cls, context):
@@ -250,24 +266,69 @@ class MW_util_indices_OT_(types.Operator):
 
     def draw(self, context: types.Context):
         col = self.layout.column()
-        row = col.row()
-        row.prop(self, "do_verts")
-        row.prop(self, "show_vertsNames")
-        row = col.row()
-        row.prop(self, "do_edges")
-        row.prop(self, "show_edgesNames")
-        row = col.row()
-        row.prop(self, "do_faces")
-        row.prop(self, "show_facesNames")
+        col.label(text=f"[Overlay>Text info]: see names", icon="QUESTION")
+        f1 = 0.5
+
+        row = col.row().split(factor=f1)
+        row.prop(self, "verts_gen")
+        row.prop(self, "verts_name")
+        row.prop(self, "verts_scale")
+        row = col.row().split(factor=f1)
+        row.prop(self, "edges_gen")
+        row.prop(self, "edges_name")
+        row.prop(self, "edge_scale")
+        row = col.row().split(factor=f1)
+        row.prop(self, "faces_gen")
+        row.prop(self, "faces_name")
+        row.prop(self, "faces_scale")
+
+        f2 = 0.5
+        col.prop(self, "color_alpha")
+        row = col.row().split(factor=f2)
+        row.prop(self, "color_useGray")
+        row.prop(self, "color_gray")
 
     def execute(self, context: types.Context):
-        getStats().logMsg("START: " + self.bl_label)
         obj = context.active_object
-
         mesh = obj.data
-        verts = [v for v in mesh.vertices]
-        edges = [e for e in mesh.edges]
-        faces = [f for f in mesh.polygons]
+        child_empty = utils.gen_childClean(obj, self.CONST_NAMES.empty, context, None, keepTrans=False)
+
+        # optional grayscale common color mat
+        if self.color_useGray:
+            mat_gray = utils_render.get_colorMat(utils_render.COLORS.white * self.color_gray, self.color_alpha)
+
+        if self.verts_gen:
+            # verts use a octahedron for rep
+            verts_octa = [
+                Vector((0, 0, 1)),
+                Vector((1, 0, 0)), Vector((0, 1, 0)), Vector((-1, 0, 0)), Vector((0, -1, 0)),
+                Vector((0, 0, -1)),
+            ]
+            faces_octa = [
+                [0,1,2], [0,2,3], [0,3,4], [0,4,1],
+                [5,2,1], [5,3,2], [5,4,3], [5,1,4],
+            ]
+            mesh_octa = bpy.data.meshes.new("vert_octa")
+            mesh_octa.from_pydata(vertices=verts_octa, edges=[], faces=faces_octa)
+            scaleV = Vector([self.verts_scale]*3)
+
+            # red colored mat
+            if self.color_useGray: mat_octa = mat_gray
+            else: mat_octa = utils_render.get_colorMat(utils_render.COLORS.red, self.color_alpha)
+
+            # spawn as children
+            child_verts = utils.gen_child(child_empty, self.CONST_NAMES.verts, context, None, keepTrans=False)
+            for v in mesh.vertices:
+                name = f"v{v.index}"
+                child = utils.gen_child(child_verts, name, context, mesh_octa, keepTrans=False)
+                child.location = v.co
+                child.scale = scaleV
+                child.active_material = mat_octa
+                child.show_name = self.verts_name
+
+
+        #edges = [e for e in mesh.edges]
+        #faces = [f for f in mesh.polygons]
 
         getStats().logDt("END: " + self.bl_label)
         return {'FINISHED'}
