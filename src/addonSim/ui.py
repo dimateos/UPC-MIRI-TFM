@@ -15,18 +15,17 @@ from mathutils import Vector, Matrix
 
 # -------------------------------------------------------------------
 
-def draw_toggleBox(data, propToggle_name:str, layout: types.UILayout) -> tuple[bool, types.UILayout]:
+def draw_toggleBox(metadata, propToggle_name:str, layout: types.UILayout) -> tuple[bool, types.UILayout]:
     """ Create a box with a toggle. Return the state of the toggle and the created layout """
     box = layout.box()
-    box.prop(data, propToggle_name, toggle=True, icon="DOWNARROW_HLT")
-    open = getattr(data, propToggle_name)
+    box.prop(metadata, propToggle_name, toggle=True, icon="DOWNARROW_HLT")
+    open = getattr(metadata, propToggle_name)
     return open, box
 
-def draw_props(data, propFilter_name:str, layout: types.UILayout):
+def draw_props(data, propFilter:str, layout: types.UILayout):
     """ Draw all properties of an object in a sub layout. """
     # dynamic filter prop
     prop_names = getProps_names(data)
-    propFilter = getattr(data, propFilter_name)
     if propFilter:
         excluding = propFilter[0]=="-"
         if excluding: propFilter = propFilter[1:]
@@ -35,8 +34,6 @@ def draw_props(data, propFilter_name:str, layout: types.UILayout):
         filtered_props = []
 
     for prop_name in prop_names:
-        # optionally always skip the filter
-        if prop_name == propFilter_name: continue
         # apply excluding/including filter
         if filtered_props:
             filterMask = [ f.strip().lower() in prop_name.strip().lower() for f in filtered_props ]
@@ -46,16 +43,17 @@ def draw_props(data, propFilter_name:str, layout: types.UILayout):
 
         layout.row().prop(data, prop_name, text=prop_name)
 
-def draw_propsToggle(data, propToggle_name:str, propFilter_name:str, propEdit_name:str, layout: types.UILayout):
+def draw_propsToggle(data, metadata, propToggle_name:str, propFilter_name:str, propEdit_name:str, layout: types.UILayout):
     """ Draw all properties of an object under a toggleable layout. """
-    open, box = draw_toggleBox(data, propToggle_name, layout)
+    open, box = draw_toggleBox(metadata, propToggle_name, layout)
     if open:
         split = box.split(factor=0.75)
-        split.prop(data, propFilter_name)
-        split.prop(data, propEdit_name)
+        split.prop(metadata, propFilter_name)
+        split.prop(metadata, propEdit_name)
         col = box.column()
-        col.enabled = getattr(data, propEdit_name)
-        draw_props(data, propFilter_name, col)
+        col.enabled = getattr(metadata, propEdit_name)
+        propFilter = getattr(metadata, propFilter_name)
+        draw_props(data, propFilter, col)
 
 # -------------------------------------------------------------------
 
@@ -175,7 +173,11 @@ def draw_gen_cfg(cfg: MW_gen_cfg, layout: types.UILayout, context: types.Context
 def draw_gen_cfgDebug(cfg: MW_gen_cfg, layout: types.UILayout):
     # OPT:: not all debug etc... sensible ui in the end
 
-    open, box = draw_toggleBox(cfg, "meta_show_debug", layout)
+    # Careful with circular deps
+    from .preferences import getPrefs
+    prefs = getPrefs()
+
+    open, box = draw_toggleBox(prefs, "PT_gen_show_tmpDebug", layout)
     if open:
         col = box.column()
         col.label(text="Show:")

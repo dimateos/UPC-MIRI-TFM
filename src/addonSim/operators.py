@@ -88,7 +88,7 @@ class MW_gen_OT_(types.Operator):
         self.start_op("START: fracture OP")
 
         # TODO:: store cont across simulations in the object or info from it
-        # TODO:: run again more smartly, like detect no need for changes or only name changed -> compare both props
+        # TODO:: run again more smartly, like detect no need for changes (e.g. name change or prefs debug show) -> compare both props, or use prop update func self ref?
         # XXX:: particles are in world position?
         # XXX:: refresh is slow, maybe related to other ui doing recursive access to root?? maybe panel with ok before?
         # OPT:: separate simulation and scene generation: option to no store inter meshes
@@ -138,11 +138,6 @@ class MW_gen_OT_(types.Operator):
 
                 obj_toFrac = utils.get_child(obj, name_toFrac)
                 self.stats.log("retrieved toFrac object")
-
-        DEV.log_msg(f"cfg {cfg.meta_show_debug}")
-        try: DEV.log_msg(f"obj { obj.mw_gen.meta_show_debug }")
-        except: pass
-
 
 
         DEV.log_msg("Start calc points", {'SETUP'})
@@ -225,7 +220,7 @@ class MW_util_delete_OT_(types.Operator):
 
     def execute(self, context: types.Context):
         obj, cfg = MW_util_delete_OT_._obj, MW_util_delete_OT_._cfg
-        prefs = getPrefs(context)
+        prefs = getPrefs()
 
         # optionally hide
         if (prefs.OT_util_delete_unhide):

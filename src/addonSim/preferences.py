@@ -2,9 +2,6 @@ import bpy
 import bpy.types as types
 import bpy.props as props
 
-# Careful with circulare dependecies
-from .ui import draw_props
-
 # Access from other modules to constants
 class ADDON:
     _bl_info = None
@@ -20,16 +17,12 @@ class MW_prefs(bpy.types.AddonPreferences):
     bl_idname = ADDON.mod_name_prefs
 
     def draw(self, context):
+        # Careful with circulare dependecies, maybe split the class with draw and props
+        from .ui import draw_props
         draw_props(self, self.layout)
 
 # -------------------------------------------------------------------
 
-    # TODO:: rename cause the cfg meta props are the same and will be moved here
-    meta_show_debug: props.BoolProperty(
-        name="Show debug...",
-        default=True,
-        description="Show some debug preferences",
-    )
     meta_show_prefs: props.BoolProperty(
         name="Show addon preferences...",
         default=True,
@@ -44,6 +37,36 @@ class MW_prefs(bpy.types.AddonPreferences):
         name="edit",
         default=True,
         description="Edit the props"
+    )
+
+    meta_show_tmpDebug: props.BoolProperty(
+        name="Show debug...",
+        default=True,
+        description="WIP: Show some debug stuff",
+    )
+
+# -------------------------------------------------------------------
+
+    PT_gen_show_summary: props.BoolProperty(
+        name="Show object summary...",
+        default=False,
+        description="Show fracture summary"
+    )
+    PT_gen_propFilter: props.StringProperty(
+        name="FILTER",
+        default="-meta",
+        description="Separate values with commas, start with `-` for a excluding filter."
+    )
+    PT_gen_propEdit: props.BoolProperty(
+        name="edit",
+        default=False,
+        description="Edit the props"
+    )
+
+    PT_gen_show_tmpDebug: props.BoolProperty(
+        name="Show DEBUG...",
+        default=True,
+        description="WIP: Show some debug stuff"
     )
 
 # -------------------------------------------------------------------
@@ -63,19 +86,16 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=False,
     )
 
-# -------------------------------------------------------------------
-
     OT_util_delete_unhide: props.BoolProperty(
         name="unhide",
         description="Unhide the original object after deletion",
         default=True,
     )
 
-# -------------------------------------------------------------------
 
-def getPrefs(context: types.Context) -> MW_prefs:
+def getPrefs() -> MW_prefs:
     """ Get addon preferences from blender """
-    return context.preferences.addons[MW_prefs.bl_idname].preferences
+    return bpy.context.preferences.addons[MW_prefs.bl_idname].preferences
 
 
 # -------------------------------------------------------------------

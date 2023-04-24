@@ -9,31 +9,6 @@ from tess import Container, Cell
 
 class MW_gen_cfg(types.PropertyGroup):
 
-    # TODO:: meta props should go to addon prefs instead of object stored settings
-    # NOTE:: will still re-execute on interaction with meta_show_debug
-    meta_show_debug: props.BoolProperty(
-        name="Show DEBUG...",
-        default=True,
-        description="Show some debug properties"
-    )
-    meta_show_summary: props.BoolProperty(
-        name="Show object summary...",
-        default=False,
-        description="Show fracture summary"
-    )
-    meta_propFilter: props.StringProperty(
-        name="FILTER",
-        default="-meta",
-        description="Separate values with commas, start with `-` for a excluding filter."
-    )
-    meta_propEdit: props.BoolProperty(
-        name="edit",
-        default=False,
-        description="Edit the props"
-    )
-
-# -------------------------------------------------------------------
-
     meta_refresh: props.BoolProperty(
         name="Refresh",
         default=False,

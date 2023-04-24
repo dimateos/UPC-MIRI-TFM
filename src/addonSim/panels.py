@@ -30,6 +30,7 @@ class MW_gen_Panel(types.Panel):
     bl_options = {'HEADER_LAYOUT_EXPAND'}
 
     def draw(self, context):
+        prefs = getPrefs()
         layout = self.layout
         col = layout.column()
 
@@ -67,10 +68,10 @@ class MW_gen_Panel(types.Panel):
 
             col_rowSplit = col.row().split(factor=0.66)
             col_rowSplit.operator(ops.MW_util_delete_OT_.bl_idname, text="DELETE rec", icon="CANCEL")
-            prefs = getPrefs(context)
+            prefs = getPrefs()
             col_rowSplit.prop(prefs, "OT_util_delete_unhide")
 
-            ui.draw_propsToggle(cfg, "meta_show_summary", "meta_propFilter", "meta_propEdit", col)
+            ui.draw_propsToggle(cfg, prefs, "PT_gen_show_summary", "PT_gen_propFilter", "PT_gen_propEdit", col)
 
 
 class MW_addon_Panel(types.Panel):
@@ -79,17 +80,17 @@ class MW_addon_Panel(types.Panel):
     bl_idname = "MW_PT_addon"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_context = "objectmode"
-    #bl_options = {'HEADER_LAYOUT_EXPAND'}
+    #bl_context = "objectmode"
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
+        prefs = getPrefs()
         layout = self.layout
         col = layout.column()
 
-        prefs = getPrefs(context)
-        ui.draw_propsToggle(prefs, "meta_show_prefs", "meta_propFilter", "meta_propEdit", col)
+        ui.draw_propsToggle(prefs, prefs, "meta_show_prefs", "meta_propFilter", "meta_propEdit", col)
 
-        open, box = ui.draw_toggleBox(prefs, "meta_show_debug", layout)
+        open, box = ui.draw_toggleBox(prefs, "meta_show_tmpDebug", layout)
         if open:
             col = box.column()
             # check region width
@@ -103,7 +104,7 @@ class MW_info_Panel(types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     #bl_context = "objectmode"
-    #bl_options = {'HEADER_LAYOUT_EXPAND'}
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
         if bpy.context.mode == 'OBJECT':
@@ -140,7 +141,7 @@ class MW_info_Panel(types.Panel):
 
     def draw_editMode(self, context):
         layout = self.layout
-        prefs = getPrefs(context)
+        prefs = getPrefs()
         obj = bpy.context.object
 
         mainCol = ui.draw_inspectObject(obj, layout, drawTrans=False)
@@ -201,9 +202,9 @@ class MW_info_Panel(types.Panel):
 # Blender events
 
 classes = (
-    MW_gen_Panel,
-    MW_addon_Panel,
+    MW_gen_Panel, # sort to set default order?
     MW_info_Panel,
+    MW_addon_Panel,
 )
 
 def register():
