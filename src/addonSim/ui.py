@@ -57,12 +57,12 @@ def draw_propsToggle(data, metadata, propToggle_name:str, propFilter_name:str, p
 
 #-------------------------------------------------------------------
 
-def draw_refresh(cfg: MW_gen_cfg, layout: types.UILayout):
+def draw_refresh(data, layout: types.UILayout):
     row = layout.box().row()
     row.scale_y = 1.5
     split = row.split(factor=0.75)
-    split.prop(cfg, "meta_auto_refresh", toggle=True, icon_only=False, icon='FILE_REFRESH')
-    split.prop(cfg, "meta_refresh", toggle=True, icon_only=True, icon='FILE_REFRESH')
+    split.prop(data, "meta_auto_refresh", toggle=True, icon_only=False, icon='FILE_REFRESH')
+    split.prop(data, "meta_refresh", toggle=True, icon_only=True, icon='FILE_REFRESH')
 
 def draw_inspectObject(obj: types.Object, layout: types.UILayout, drawTrans=True) -> types.UILayout:
     mainBox = layout.box()
@@ -117,9 +117,6 @@ def draw_inspectObject(obj: types.Object, layout: types.UILayout, drawTrans=True
 #-------------------------------------------------------------------
 
 def draw_gen_cfg(cfg: MW_gen_cfg, layout: types.UILayout, context: types.Context):
-    draw_refresh(cfg, layout)
-
-    # OPT:: limit avaialble e.g. show convex when available
     box = layout.box()
     col = box.column()
 
@@ -150,6 +147,7 @@ def draw_gen_cfg(cfg: MW_gen_cfg, layout: types.UILayout, context: types.Context
     rowsub.prop(cfg, "source_noise")
     rowsub.prop(cfg, "rnd_seed")
 
+    # OPT:: limit avaialble e.g. show convex when available
     box = layout.box()
     col = box.column()
     col.label(text="Generation:")

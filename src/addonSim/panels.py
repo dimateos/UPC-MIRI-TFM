@@ -9,6 +9,7 @@ from .properties import (
     MW_vis_cfg,
 )
 from . import operators as ops
+from . import operators_utils as ops_util
 
 from . import ui
 from . import utils
@@ -134,16 +135,16 @@ class MW_info_Panel(types.Panel):
 
         obj = context.active_object
         mainCol, mainBox = ui.draw_inspectObject(obj, col)
-        mainBox.operator(ops.MW_info_matrices_OT_.bl_idname, icon="LATTICE_DATA")
+        mainBox.operator(ops_util.MW_info_matrices_OT_.bl_idname, icon="LATTICE_DATA")
 
         col_rowSplit = col.row().split(factor=0.8)
-        col_rowSplit.operator(ops.MW_util_indices_OT_.bl_idname, icon="TRACKER")
-        col_rowSplit.operator(ops.MW_util_deleteIndices_OT_.bl_idname, icon="CANCEL")
+        col_rowSplit.operator(ops_util.MW_util_indices_OT_.bl_idname, icon="TRACKER")
+        col_rowSplit.operator(ops_util.MW_util_deleteIndices_OT_.bl_idname, icon="CANCEL")
 
         if obj.type == 'MESH':
             col = layout.column()
-            col.operator(ops.MW_info_data_OT_.bl_idname, icon="HELP")
-            col.operator(ops.MW_info_API_OT_.bl_idname, icon="HELP")
+            col.operator(ops_util.MW_info_data_OT_.bl_idname, icon="HELP")
+            col.operator(ops_util.MW_info_API_OT_.bl_idname, icon="HELP")
 
     def draw_editMode(self, context):
         layout = self.layout

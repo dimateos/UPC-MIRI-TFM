@@ -9,14 +9,6 @@ from tess import Container, Cell
 
 class MW_gen_cfg(types.PropertyGroup):
 
-    meta_refresh: props.BoolProperty(
-        name="Refresh", description="Refresh once on click",
-        default=False,
-    )
-    meta_auto_refresh: props.BoolProperty(
-        name="Auto-Refresh", description="Automatic refresh",
-        default=True,
-    )
     meta_type: props.EnumProperty(
         name="Type", description="Meta type added to the object to control some logic",
         items=(
