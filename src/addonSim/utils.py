@@ -8,6 +8,7 @@ from .properties import (
 )
 
 from .utils_dev import DEV
+from .stats import getStats
 
 from mathutils import Vector, Matrix
 
@@ -30,6 +31,7 @@ def cfg_getRoot(obj: types.Object) -> tuple[types.Object, MW_gen_cfg]:
             obj = obj.parent
 
         return obj, obj.mw_gen
+
 
 def cfg_setMetaTypeRec(obj: types.Object, type: dict):
     """ Set the property to the object and all its children (dictionary ies copied, not referenced) """
@@ -71,7 +73,7 @@ def get_bb_radius(obj: types.Object, margin_disp = 0.0, worldSpace=False) -> tup
     bb_radius = ((bb[0] - bb[1]).length / 2.0)
 
     # NOTE:: atm limited to mesh, otherwise check and use depsgraph
-    #DEV.log_msg("Found %d bound verts" % len(bb_full))
+    getStats().log(f"calc bb: r {bb_radius:.3f} (margin {margin_disp:.4f})")
     return bb, bb_radius
 
 def get_faces_4D(obj: types.Object, n_disp = 0.0, worldSpace=False) -> list[Vector, Vector]:
@@ -89,11 +91,13 @@ def get_faces_4D(obj: types.Object, n_disp = 0.0, worldSpace=False) -> list[Vect
         face_centers = [(f.center + f.normal * n_disp) for f in mesh.polygons]
         face_normals = [f.normal for f in mesh.polygons]
 
-    faces_4D = [
+    faces4D = [
             Vector( [fn.x, fn.y, fn.z, fn.dot(fc)] )
         for (fc,fn) in zip(face_centers, face_normals)
     ]
-    return faces_4D
+
+    getStats().log(f"calc faces4D: {len(faces4D)} (n_disp {n_disp:.4f})")
+    return faces4D
 
 def get_worldMatrix_normalMatrix(obj: types.Object) -> tuple[types.Object, MW_gen_cfg]:
     """ Get the object world matrix and normal world matrix """

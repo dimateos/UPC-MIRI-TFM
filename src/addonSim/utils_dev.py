@@ -1,16 +1,18 @@
 # Avoiding imports for circular dependencies
 # -------------------------------------------------------------------
 
-# IDEA:: some access from UI to toggle dynamically?
 class DEV:
     DEBUG = True
 
+    # IDEA:: some access from UI to toggle dynamically?
     logs = True
-    logs_stats = True
     logs_skipped = [
         #{'OP_FLOW'}
     ]
     ui_vals = True
+
+    # IDEA:: profiling levels instead of just bool, or stats log uisng log_msg with tags
+    logs_stats = True
 
     assert_voro_posW = True
 

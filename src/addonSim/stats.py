@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # ref: ant_landscape addon
-# Probably too much logic during the trace logging but ok
+# OPT:: Probably too much logic during the trace logging but ok e.g. checking psutil and its version
 
 from time import time
-import psutil
 
 try:
     import psutil
@@ -97,9 +96,12 @@ class Stats:
 
         #if msg: print(f"{self.name}//  {msg}")
         #print(f"\t t:{t:>10.6f}   dt:{dt:>10.6f}")
+        if msg: print(f"{self.name}// dt:{dt:>10.6f}s ({t:>10.6f}s) - {msg}")
 
-        if msg: print(f"{self.name}// dt:{dt:>10.6f} ({t:>10.6f}) - {msg}")
-
+    def log_time(self, msg: str = " "):
+        if not DEV.logs_stats: return
+        t = self.time()
+        if msg: print(f"{self.name}// total time:    ({t:>10.6f}s) - {msg}")
 
     def log_mem(self, msg: str = " "):
         if not DEV.logs_stats: return
@@ -116,27 +118,37 @@ class Stats:
 
 # -------------------------------------------------------------------
 
-    def testStats(self, log = False):
-        # sample operations
-        import numpy as np
-        self.log_full()
+gStats = None
+def getStats() -> Stats:
+    """ Globally shared stats """
+    global gStats
+    if gStats is None:
+        gStats = Stats()
+    return gStats
 
-        a = np.zeros(10000000)
-        if log:
-            print("\n>> a = np.zeros(10000000)")
-            self.log_full()
 
-        a = np.sin(a)
-        if log:
-            print("\n>> a = np.sin(a)")
-            self.log_full()
+def testStats(log = False):
+    # sample operations
+    import numpy as np
+    stats = getStats()
+    stats.log_full()
 
-        a = np.cos(a)
-        if log:
-            print("\n>> a = np.cos(a)")
-            self.log_full()
+    a = np.zeros(10000000)
+    if log:
+        print("\n>> a = np.zeros(10000000)")
+        stats.log_full()
 
-        a = np.cos(a) ** 2 + np.sin(a) ** 2
-        if log:
-            print("\n>> a = np.cos(a) ** 2 + np.sin(a) ** 2")
-            self.log_full()
+    a = np.sin(a)
+    if log:
+        print("\n>> a = np.sin(a)")
+        stats.log_full()
+
+    a = np.cos(a)
+    if log:
+        print("\n>> a = np.cos(a)")
+        stats.log_full()
+
+    a = np.cos(a) ** 2 + np.sin(a) ** 2
+    if log:
+        print("\n>> a = np.cos(a) ** 2 + np.sin(a) ** 2")
+        stats.log_full()

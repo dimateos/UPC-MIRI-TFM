@@ -3,7 +3,7 @@ import bpy.types as types
 from . import utils
 from . import utils_geo
 from .utils_dev import DEV
-from .stats import Stats
+from .stats import getStats
 
 from mathutils import Vector, Matrix
 
@@ -33,7 +33,8 @@ class Link():
 
 class Links():
 
-    def __init__(self, cont: Container, obj_shards: types.Object, stats: Stats):
+    def __init__(self, cont: Container, obj_shards: types.Object):
+        stats = getStats()
         self.cont = cont
         self.obj_shards = obj_shards
 
@@ -46,6 +47,7 @@ class Links():
         # XXX:: using lists or maps to support non linear cell.id?
         cont_neighs = [ cell.neighbors() for cell in cont ]
         stats.log("calculated voro cell neighs")
+
         cont_neighs_faces = []
         for i,neighs in enumerate(cont_neighs):
             faces = [ n if n<0 else cont_neighs[n].index(i) for n in neighs ]
@@ -109,7 +111,7 @@ class Links():
         for idx_cell,keys_perFace in self.keys_perCell.items():
             for idx_face,key in enumerate(keys_perFace):
                 l = self.link_map[key]
-                DEV.log_msg(f"l {l.key_cells} {l.key_cells}")
+                #DEV.log_msg(f"l {l.key_cells} {l.key_cells}")
 
                 # avoid recalculating link neighs (and duplicating them)
                 if l.neighs:
@@ -134,8 +136,6 @@ class Links():
                 l.neighs += c1_neighs + c2_neighs
 
         stats.log("aggregated link neighbours")
-
-
         logType = {"CALC"} if self.link_map else {"CALC", "ERROR"}
         DEV.log_msg(f"Found {self.num_toCells} links to cells + {self.num_toWalls} links to walls (total {len(self.link_map)})", logType)
 

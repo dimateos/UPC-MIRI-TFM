@@ -7,6 +7,7 @@ from .properties import (
 
 from . import utils
 from .utils_dev import DEV
+from .stats import getStats
 
 from mathutils import Vector, Matrix
 
@@ -38,15 +39,16 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
     obj_copy = utils.copy_objectRec(obj, context, namePreffix=CONST_NAMES.original)
     utils.cfg_setMetaTypeRec(obj_copy, {"CHILD"})
 
-    # Set the transform to the empty and parent keeping the transform of the copy
-    obj_empty.matrix_world = obj.matrix_world.copy()
-    utils.set_child(obj_copy, obj_empty)
-
-    # Hide and select after link
+    # Scene viewport
     obj.hide_set(not cfg.struct_showOrignal_scene)
     obj_copy.hide_set(not cfg.struct_showOrignal)
     obj_copy.show_bounds = True
 
+    # Set the transform to the empty and parent keeping the transform of the copy
+    obj_empty.matrix_world = obj.matrix_world.copy()
+    utils.set_child(obj_copy, obj_empty)
+
+    getStats().log("generated copy object")
     return obj_empty, obj_copy
 
 def gen_copyConvex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, context: types.Context):
@@ -55,6 +57,9 @@ def gen_copyConvex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, c
     obj_convex.name = CONST_NAMES.original_convex
     utils.cfg_setMetaTypeRec(obj_copy, {"CHILD"})
     utils.set_child(obj_convex, obj)
+
+    # Scene viewport
+    obj_convex.hide_set(not cfg.struct_showConvex)
 
     # Apply convex hull to the mesh
     # NOTE:: not recursive?
@@ -72,7 +77,7 @@ def gen_copyConvex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, c
             )
     bm.to_mesh(obj_convex.data)
 
-    obj_convex.hide_set(not cfg.struct_showConvex)
+    getStats().log("generated convex object")
     return obj_convex
 
 def gen_renaming(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
@@ -100,6 +105,8 @@ def gen_pointsObject(obj: types.Object, points: list[Vector], cfg: MW_gen_cfg, c
     #mesh.update()
 
     obj_points = utils.gen_childClean(obj, CONST_NAMES.shards_points, context, mesh, keepTrans=False, hide=not cfg.struct_showPoints)
+
+    getStats().log("generated points object")
     return obj_points
 
 def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, context: types.Context):
@@ -110,6 +117,8 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, co
     # Generate it taking the transform as it is (points already in local space)
     obj_bb = utils.gen_childClean(obj, CONST_NAMES.original_bb, context, mesh, keepTrans=False, hide=not cfg.struct_showBB)
     obj_bb.show_bounds = True
+
+    getStats().log("generated bounds object")
     return obj_bb
 
 # -------------------------------------------------------------------
@@ -144,6 +153,9 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
         mesh.from_pydata(vertices=verts, edges=[], faces=cell.face_vertices())
         obj_shard = utils.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showShards)
         obj_shard.location = pos
+
+    getStats().log("generated shards objects")
+
 
 def gen_linksObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
     # WIP:: atm just hiding reps -> maybe generate using a different map instead of iterating the raw cont
@@ -199,3 +211,5 @@ def gen_linksObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, contex
 
                 obj_link.hide_set(key_rep)
                 #obj_link.location = cell.centroid()
+
+    getStats().log("generated links objects")

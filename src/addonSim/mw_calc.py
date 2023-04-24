@@ -7,6 +7,7 @@ from .properties import (
 
 from . import utils
 from .utils_dev import DEV
+from .stats import getStats
 
 from mathutils import Vector
 INF_FLOAT = float("inf")
@@ -88,8 +89,9 @@ def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, context)
         points = get_points_from_object(obj, cfg, context)
     if not points:
         DEV.log_msg("No points found either...", {"SETUP"})
-        return []
+        points = []
 
+    getStats().log(f"retrieved points: {len(points)}")
     return points
 
 def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
@@ -197,6 +199,13 @@ def points_addNoise(points: list[Vector], cfg: MW_gen_cfg, bb_radius: float):
         scalar = noise * bb_radius # boundbox radius to aprox scale
         points[:] = [p + (bl_rnd.random_unit_vector() * scalar * rnd.random()) for p in points]
 
+def points_transformCfg(points: list[Vector], cfg: MW_gen_cfg, bb_radius: float):
+    """ Applies all transformations to the set of points obtained """
+    points_limitNum(points, cfg)
+    points_noDoubles(points, cfg)
+    points_addNoise(points, cfg, bb_radius)
+    getStats().log(f"transform/limit points: {len(points)} (noise {cfg.source_noise:.4f})")
+
 # -------------------------------------------------------------------
 
 def cont_fromPoints(points: list[Vector], bb: list[Vector, 6], faces4D: list[Vector]) -> Container:
@@ -208,6 +217,7 @@ def cont_fromPoints(points: list[Vector], bb: list[Vector, 6], faces4D: list[Vec
     cont = Container(points=points, limits=bb_tuples, walls=faces4D)
 
     # Check non empty
+    getStats().log("calculated cont")
     logType = {"CALC"} if cont else {"CALC", "ERROR"}
     DEV.log_msg(f"Found {len(cont)} cells ({len(cont.walls)} walls from {len(faces4D)} faces)", logType)
     return cont
