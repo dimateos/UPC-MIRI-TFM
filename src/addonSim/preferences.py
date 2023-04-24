@@ -19,8 +19,8 @@ class MW_prefs(bpy.types.AddonPreferences):
 
     def draw(self, context):
         # Careful with circulare dependecies, maybe split the class with draw and props
-        from .ui import draw_props
-        draw_props(self, self.layout)
+        from .ui import draw_propsToggle
+        draw_propsToggle(self, self, "meta_show_prefs", "meta_propFilter", "meta_propEdit", self.layout)
 
     #-------------------------------------------------------------------
 
@@ -64,19 +64,6 @@ class MW_prefs(bpy.types.AddonPreferences):
 
     #-------------------------------------------------------------------
 
-    PT_info_edit_showWorld: props.BoolProperty(
-        name="world space", description="Show vertices positions in world space",
-        default=False,
-    )
-    PT_info_edit_showEdges: props.BoolProperty(
-        name="Show edges...", description="Show long list of edges with its key (v1, v2)",
-        default=False,
-    )
-    PT_info_edit_showFaceCenters: props.BoolProperty(
-        name="center position", description="Show face center position instead of vertex indices",
-        default=False,
-    )
-
     OT_util_delete_unhide: props.BoolProperty(
         name="unhide", description="Unhide the original object after deletion",
         default=True,
@@ -91,9 +78,9 @@ def getPrefs() -> MW_prefs:
 #-------------------------------------------------------------------
 # Blender events
 
-classes = (
+classes = [
     MW_prefs,
-)
+]
 
 def register():
     # Class declaration cannot be dynamic, so could assert afterwards

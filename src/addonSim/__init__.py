@@ -1,5 +1,5 @@
 bl_info = {
-    "name": "_dimateos MW_sim",
+    "name": "_dimateos MW",
     "author": "dimateos",
     "version": (0, 1, 0),
     "blender": (2, 90, 0),
@@ -25,12 +25,12 @@ preferences.ADDON._bl_name = __name__
 #-------------------------------------------------------------------
 # Blender events
 
-submodules = (
+submodules = [
     preferences,
     properties,
     operators,
     panels,
-)
+]
 
 def register():
     for m in submodules:

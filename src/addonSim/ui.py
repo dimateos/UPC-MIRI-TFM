@@ -1,16 +1,13 @@
 import bpy
 import bpy.types as types
+from mathutils import Vector, Matrix
 
 from .properties import (
     MW_gen_cfg,
-    MW_sim_cfg,
-    MW_vis_cfg,
 )
 
 from .utils_cfg import getProps_names
 from .utils_dev import DEV
-
-from mathutils import Vector, Matrix
 
 
 #-------------------------------------------------------------------

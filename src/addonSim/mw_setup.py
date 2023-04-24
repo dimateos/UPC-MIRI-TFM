@@ -1,20 +1,18 @@
 import bpy
 import bpy.types as types
 import bmesh
+from mathutils import Vector, Matrix
+from math import radians
 
 from .properties import (
     MW_gen_cfg,
 )
 
+from tess import Container, Cell
+
 from . import utils
 from .utils_dev import DEV
 from .stats import getStats
-
-from mathutils import Vector, Matrix
-from math import radians
-
-# Using tess voro++ adaptor
-from tess import Container, Cell
 
 
 class CONST_NAMES:

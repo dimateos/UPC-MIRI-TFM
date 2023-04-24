@@ -3,14 +3,11 @@ import bpy.types as types
 import bpy.props as props
 from mathutils import Vector, Matrix
 
-from .operators_utils import Common_OT_StartRefresh, op_util_classes
-from . import operators_utils
 from .preferences import getPrefs
 from .properties import (
     MW_gen_cfg,
-    MW_sim_cfg,
-    MW_vis_cfg,
 )
+from .operators_utils import _StartRefresh_OT, util_classes_op
 
 from . import mw_setup
 from . import mw_calc
@@ -26,7 +23,7 @@ from .stats import getStats
 
 #-------------------------------------------------------------------
 
-class MW_gen_OT_(Common_OT_StartRefresh):
+class MW_gen_OT(_StartRefresh_OT):
     bl_idname = "mw.gen"
     bl_label = "Fracture generation"
     bl_options = {'PRESET', 'REGISTER', 'UNDO'}
@@ -168,7 +165,7 @@ class MW_gen_OT_(Common_OT_StartRefresh):
 #-------------------------------------------------------------------
 
 # OPT:: maybe delete hierarchy fail due to some issue caused by me
-class MW_util_delete_OT_(types.Operator):
+class MW_util_delete_OT(types.Operator):
     bl_idname = "mw.util_delete"
     bl_label = "Delete fracture object"
     bl_options = {'INTERNAL', 'UNDO'}
@@ -179,11 +176,11 @@ class MW_util_delete_OT_(types.Operator):
     @classmethod
     def poll(cls, context):
         obj, cfg = utils.cfg_getRoot(context.active_object)
-        MW_util_delete_OT_._obj, MW_util_delete_OT_._cfg = obj, cfg
+        MW_util_delete_OT._obj, MW_util_delete_OT._cfg = obj, cfg
         return (obj and cfg)
 
     def execute(self, context: types.Context):
-        obj, cfg = MW_util_delete_OT_._obj, MW_util_delete_OT_._cfg
+        obj, cfg = MW_util_delete_OT._obj, MW_util_delete_OT._cfg
         prefs = getPrefs()
 
         # optionally hide
@@ -202,8 +199,8 @@ class MW_util_delete_OT_(types.Operator):
 # Blender events
 
 classes = [
-    MW_gen_OT_,
-    MW_util_delete_OT_,
-] + op_util_classes
+    MW_gen_OT,
+    MW_util_delete_OT,
+] + util_classes_op
 
 register, unregister = bpy.utils.register_classes_factory(classes)

@@ -1,14 +1,12 @@
 import bpy.types as types
+from mathutils import Vector, Matrix
+
+from tess import Container, Cell
 
 from . import utils
 from . import utils_geo
 from .utils_dev import DEV
 from .stats import getStats
-
-from mathutils import Vector, Matrix
-
-# Using tess voro++ adaptor
-from tess import Container, Cell
 
 
 #-------------------------------------------------------------------

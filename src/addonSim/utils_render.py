@@ -1,6 +1,5 @@
 import bpy
 import bpy.types as types
-
 from mathutils import Vector, Matrix
 
 

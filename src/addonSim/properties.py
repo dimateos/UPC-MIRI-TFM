@@ -2,8 +2,6 @@ import bpy
 import bpy.types as types
 import bpy.props as props
 
-from tess import Container, Cell
-
 
 #-------------------------------------------------------------------
 
@@ -170,11 +168,11 @@ class MW_vis_cfg(types.PropertyGroup):
 #-------------------------------------------------------------------
 # Blender events
 
-classes = (
+classes = [
     MW_gen_cfg,
-    MW_sim_cfg,
-    MW_vis_cfg,
-)
+    #MW_sim_cfg,
+    #MW_vis_cfg,
+]
 
 def register():
     for cls in classes:
@@ -184,14 +182,14 @@ def register():
         type=MW_gen_cfg,
         name="MW_Generation", description="MW generation properties")
 
-    bpy.types.Object.mw_sim = props.PointerProperty(
-        type=MW_sim_cfg,
-        name="MW_Simulation", description="MW simulation properties")
+    #bpy.types.Object.mw_sim = props.PointerProperty(
+    #    type=MW_sim_cfg,
+    #    name="MW_Simulation", description="MW simulation properties")
 
-    # WIP maybe visualization stored in scene?
-    bpy.types.Object.mw_vis = props.PointerProperty(
-        type=MW_vis_cfg,
-        name="MW_Visualization", description="MW visualization properties")
+    ## WIP maybe visualization stored in scene?
+    #bpy.types.Object.mw_vis = props.PointerProperty(
+    #    type=MW_vis_cfg,
+    #    name="MW_Visualization", description="MW visualization properties")
 
 def unregister():
     for cls in reversed(classes):

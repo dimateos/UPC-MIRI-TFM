@@ -1,21 +1,20 @@
 import bpy
 import bpy.types as types
+from mathutils import Vector
+import mathutils.noise as bl_rnd
+import random as rnd
+INF_FLOAT = float("inf")
 
 from .properties import (
     MW_gen_cfg,
 )
 
+# Using tess voro++ adaptor
+from tess import Container, Cell
+
 from . import utils
 from .utils_dev import DEV
 from .stats import getStats
-
-from mathutils import Vector
-INF_FLOAT = float("inf")
-import mathutils.noise as bl_rnd
-import random as rnd
-
-# Using tess voro++ adaptor
-from tess import Container, Cell
 
 
 #-------------------------------------------------------------------

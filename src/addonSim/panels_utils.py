@@ -16,12 +16,15 @@ PANEL_INFO_NOTIFY_NO_SELECTED = False
 #-------------------------------------------------------------------
 
 class Info_Inpect_PT(types.Panel):
-    bl_category = PANEL_CATEGORY
-    bl_label = "MW_info"
-    bl_idname = "MW_PT_info"
+    bl_idname = "DM_PT_info_inpect"
+    """ PT bl_idname must have _PT_ e.g. TEST_PT_addon"""
+
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     #bl_context = "objectmode"
+    bl_category = PANEL_CATEGORY
+
+    bl_label = "DM_info"
     bl_options = {'DEFAULT_CLOSED'}
 
     edit_showWorld: props.BoolProperty(
@@ -64,16 +67,16 @@ class Info_Inpect_PT(types.Panel):
 
         obj = context.active_object
         mainCol, mainBox = ui.draw_inspectObject(obj, col)
-        mainBox.operator(ops_util.Info_PrintMatrices_OT_.bl_idname, icon="LATTICE_DATA")
+        mainBox.operator(ops_util.Info_PrintMatrices_OT.bl_idname, icon="LATTICE_DATA")
 
         col_rowSplit = col.row().split(factor=0.8)
-        col_rowSplit.operator(ops_util.Util_SpawnIndices_OT_.bl_idname, icon="TRACKER")
-        col_rowSplit.operator(ops_util.Util_deleteIndices_OT_.bl_idname, icon="CANCEL")
+        col_rowSplit.operator(ops_util.Util_SpawnIndices_OT.bl_idname, icon="TRACKER")
+        col_rowSplit.operator(ops_util.Util_deleteIndices_OT.bl_idname, icon="CANCEL")
 
         if obj.type == 'MESH':
             col = layout.column()
-            col.operator(ops_util.Info_PrintData_OT_.bl_idname, icon="HELP")
-            col.operator(ops_util.Info_PrintAPI_OT_.bl_idname, icon="HELP")
+            col.operator(ops_util.Info_PrintData_OT.bl_idname, icon="HELP")
+            col.operator(ops_util.Info_PrintAPI_OT.bl_idname, icon="HELP")
 
     def draw_editMode(self, context):
         layout = self.layout

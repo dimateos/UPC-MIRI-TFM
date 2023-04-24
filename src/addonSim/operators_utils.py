@@ -13,8 +13,10 @@ from .stats import getStats
 
 #-------------------------------------------------------------------
 
-class Common_OT_StartRefresh(types.Operator):
+class _StartRefresh_OT(types.Operator):
     """ Common operator class with start/end messages/stats + controlled refresh """
+    bl_idname = "__to_override__"
+    """ Op bl_idname must be undercase and one . (and only one)"""
 
     def __init__(self) -> None:
         super().__init__()
@@ -116,8 +118,8 @@ class Common_OT_StartRefresh(types.Operator):
 
 #-------------------------------------------------------------------
 
-class MW_util_indices_OT_(types.Operator):
-    bl_idname = "mw.util_indices"
+class Util_SpawnIndices_OT(types.Operator):
+    bl_idname = "dm.util_spawn_indices"
     bl_label = "Spawn mesh indices"
     bl_options = {"PRESET", 'REGISTER', 'UNDO'}
     bl_description = "Spawn named objects at mesh data indices positons"
@@ -283,8 +285,8 @@ class MW_util_indices_OT_(types.Operator):
         return {'FINISHED'}
 
 
-class MW_util_deleteIndices_OT_(types.Operator):
-    bl_idname = "mw.util_indices_delete"
+class Util_deleteIndices_OT(types.Operator):
+    bl_idname = "dm.util_delete_indices"
     bl_label = "del"
     bl_options = {'INTERNAL', 'UNDO'}
     bl_description = "Instead of Blender 'delete hierarchy' which seems to fail to delete all recusively..."
@@ -295,13 +297,13 @@ class MW_util_deleteIndices_OT_(types.Operator):
         if not context.active_object:
             return False
 
-        obj = utils.get_child(context.active_object, MW_util_indices_OT_.CONST_NAMES.empty)
-        MW_util_deleteIndices_OT_._obj = obj
+        obj = utils.get_child(context.active_object, Util_SpawnIndices_OT.CONST_NAMES.empty)
+        Util_deleteIndices_OT._obj = obj
         return obj
 
     def execute(self, context: types.Context):
         getStats().logMsg(f"START: {self.bl_label} ({self.bl_idname})")
-        obj = MW_util_deleteIndices_OT_._obj
+        obj = Util_deleteIndices_OT._obj
         utils.delete_objectRec(obj, logAmount=True)
 
         # UNDO as part of bl_options will cancel any edit last operation pop up
@@ -310,8 +312,8 @@ class MW_util_deleteIndices_OT_(types.Operator):
 
 #-------------------------------------------------------------------
 
-class MW_info_data_OT_(types.Operator):
-    bl_idname = "mw.info_data"
+class Info_PrintData_OT(types.Operator):
+    bl_idname = "dm.info_print_data"
     bl_label = "Print mesh data"
     bl_options = {'INTERNAL'}
     bl_description = "DEBUG print in the console some mesh data etc"
@@ -327,8 +329,8 @@ class MW_info_data_OT_(types.Operator):
         info_mesh.desc_mesh_data(obj.data)
         return {'FINISHED'}
 
-class MW_info_API_OT_(types.Operator):
-    bl_idname = "mw.info_api"
+class Info_PrintAPI_OT(types.Operator):
+    bl_idname = "dm.info_print_api"
     bl_label = "Print mesh API"
     bl_options = {'INTERNAL'}
     bl_description = "DEBUG print in the console some mesh API etc"
@@ -344,8 +346,8 @@ class MW_info_API_OT_(types.Operator):
         info_mesh.desc_mesh_inspect(obj.data)
         return {'FINISHED'}
 
-class MW_info_matrices_OT_(types.Operator):
-    bl_idname = "mw.info_matrices"
+class Info_PrintMatrices_OT(types.Operator):
+    bl_idname = "dm.info_print_matrices"
     bl_label = "Print obj matrices"
     bl_options = {'INTERNAL'}
     bl_description = "DEBUG print in the console the matrices etc"
@@ -364,10 +366,10 @@ class MW_info_matrices_OT_(types.Operator):
 #-------------------------------------------------------------------
 # Blender events
 
-op_util_classes = [
-    MW_util_indices_OT_,
-    MW_util_deleteIndices_OT_,
-    MW_info_data_OT_,
-    MW_info_API_OT_,
-    MW_info_matrices_OT_
+util_classes_op = [
+    Util_SpawnIndices_OT,
+    Util_deleteIndices_OT,
+    Info_PrintData_OT,
+    Info_PrintAPI_OT,
+    Info_PrintMatrices_OT
 ]
