@@ -231,14 +231,43 @@ class MW_util_indices_OT_(types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     bl_description = "Spawn named objects at mesh data indices positons"
 
+    do_verts: props.BoolProperty( name="Vertices", description="Add tetrahedron per vert", default=True)
+    show_vertsNames: props.BoolProperty( name="view names", description="Toggle viewport vis of names", default=True)
+    do_edges: props.BoolProperty( name="Eges", description="Add tetrahedron per vert", default=True)
+    show_edgesNames: props.BoolProperty( name="view names", description="Toggle viewport vis of names", default=True)
+    do_faces: props.BoolProperty( name="Faces", description="Add tetrahedron per vert", default=True)
+    show_facesNames: props.BoolProperty( name="view names", description="Toggle viewport vis of names", default=True)
+
     @classmethod
     def poll(cls, context):
         obj = context.active_object
         return obj and obj.data
 
+    #def invoke(self, context, event):
+    #    # print(self.recursion_chance_select)
+    #    wm = context.window_manager
+    #    return wm.invoke_props_dialog(self)
+
+    def draw(self, context: types.Context):
+        col = self.layout.column()
+        row = col.row()
+        row.prop(self, "do_verts")
+        row.prop(self, "show_vertsNames")
+        row = col.row()
+        row.prop(self, "do_edges")
+        row.prop(self, "show_edgesNames")
+        row = col.row()
+        row.prop(self, "do_faces")
+        row.prop(self, "show_facesNames")
+
     def execute(self, context: types.Context):
         getStats().logMsg("START: " + self.bl_label)
+        obj = context.active_object
 
+        mesh = obj.data
+        verts = [v for v in mesh.vertices]
+        edges = [e for e in mesh.edges]
+        faces = [f for f in mesh.polygons]
 
         getStats().logDt("END: " + self.bl_label)
         return {'FINISHED'}

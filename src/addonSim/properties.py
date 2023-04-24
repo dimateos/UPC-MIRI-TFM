@@ -10,17 +10,15 @@ from tess import Container, Cell
 class MW_gen_cfg(types.PropertyGroup):
 
     meta_refresh: props.BoolProperty(
-        name="Refresh",
+        name="Refresh", description="Refresh once on click",
         default=False,
-        description="Refresh once on click"
     )
     meta_auto_refresh: props.BoolProperty(
-        name="Auto-Refresh",
+        name="Auto-Refresh", description="Automatic refresh",
         default=True,
-        description="Automatic refresh"
     )
     meta_type: props.EnumProperty(
-        name="Type",
+        name="Type", description="Meta type added to the object to control some logic",
         items=(
             ('NONE', "No fracture", "No fracture generated"),
             ('ROOT', "Root object", "Root object holding the fracture"),
@@ -61,41 +59,33 @@ class MW_gen_cfg(types.PropertyGroup):
         else: return self.sourceOptions.error_option.copy()
 
     source: props.EnumProperty(
-        name="Source",
+        name="Source", description="Available source from where to retrieve points",
         items=source_dynamic, # default with numberID doesnt seem to work
         #items=sourceOptions.all, default={'VERT_OWN'},
         options={'ENUM_FLAG'},
     )
 
     source_limit: props.IntProperty(
-        name="Limit points",
-        description="Limit the number of input points, 0 for unlimited",
-        min=0, max=5000,
-        default=100,
+        name="Limit points", description="Limit the number of input points, 0 for unlimited",
+        default=100, min=0, max=5000,
     )
     source_noise: props.FloatProperty(
-        name="RND noise",
-        description="Randomize point distribution",
-        min=0.0, max=1.0,
-        default=0.0,
+        name="RND noise", description="Randomize point distribution",
+        default=0.0, min=0.0, max=1.0,
     )
     rnd_seed: props.IntProperty(
-        name="RND seed",
-        description="Seed the random generator, -1 to unseed it",
-        min=-1,
-        default=-1,
+        name="RND seed", description="Seed the random generator, -1 to unseed it",
+        default=-1, min=-1,
     )
 
 # -------------------------------------------------------------------
 
     shape_useConvexHull: props.BoolProperty(
-        name="WIP: Convex hull",
-        description="Apply convex hull op beforehand",
+        name="WIP: Convex hull", description="Apply convex hull op beforehand",
         default=True,
     )
     shape_useWalls: props.BoolProperty(
-        name="Wall planes",
-        description="Keep the object faces as container walls (kind of like boolean op)",
+        name="Wall planes", description="Keep the object faces as container walls (kind of like boolean op)",
         default=True,
     )
 
@@ -115,50 +105,41 @@ class MW_gen_cfg(types.PropertyGroup):
     # IDEA:: use for actually adding to the scene or not
 
     struct_showShards: props.BoolProperty(
-        name="Shards",
-        description="Voronoi cells",
+        name="Shards", description="Voronoi cells",
         default=True,
     )
     struct_showLinks: props.BoolProperty(
-        name="Links",
-        description="Voronoi cells links",
+        name="Links", description="Voronoi cells links",
         default=True,
     )
     struct_showLinks_walls: props.BoolProperty(
-        name="WIP: Links_walls",
-        description="Voronoi cells links to walls",
+        name="WIP: Links_walls", description="Voronoi cells links to walls",
         default=True,
     )
 
     struct_showPoints: props.BoolProperty(
-        name="Points",
-        description="The ones used for the cells generation",
+        name="Points", description="The ones used for the cells generation",
         default=True,
     )
     struct_showBB: props.BoolProperty(
-        name="BB",
-        description="The extended BB min max points, tobble show bounding box in viewport",
+        name="BB", description="The extended BB min max points, tobble show bounding box in viewport",
         default=True,
     )
     struct_showOrignal_scene: props.BoolProperty(
-        name="Source Obj",
-        description="The original object in the scene",
+        name="Source Obj", description="The original object in the scene",
         default=False,
     )
 
     struct_showOrignal: props.BoolProperty(
-        name="Original",
-        description="The original object backup child",
+        name="Original", description="The original object backup child",
         default=False,
     )
     struct_showConvex: props.BoolProperty(
-        name="Convex",
-        description="The original object convex hull",
+        name="Convex", description="The original object convex hull",
         default=False,
     )
     struct_showLow: props.BoolProperty(
-        name="WIP: Low",
-        description="The convex hull decimated",
+        name="WIP: Low", description="The convex hull decimated",
         default=False,
     )
 
@@ -167,30 +148,22 @@ class MW_gen_cfg(types.PropertyGroup):
     # NOTE:: inter-spacing for physics is not possible atm
     # IDEA:: could allow negative margins, but then handle 0 when points are on the wall?
     margin_box_bounds: props.FloatProperty(
-        name="Margin BB",
-        description="Additional displacement of the box normal planes",
-        min=0.001, max=1.0,
-        default=0.025,
+        name="Margin BB", description="Additional displacement of the box normal planes",
+        default=0.025, min=0.001, max=1.0,
     )
     margin_face_bounds: props.FloatProperty(
-        name="Margin faces",
-        description="Additional displacement of the face normal planes",
-        min=0.001, max=1.0,
-        default=0.025,
+        name="Margin faces", description="Additional displacement of the face normal planes",
+        default=0.025, min=0.001, max=1.0,
     )
 
     links_width: props.FloatProperty(
-        name="Link width",
-        description="WIP: how wide the base link is",
-        min=0.01, max=2.0,
-        default=0.1,
+        name="Link width", description="WIP: how wide the base link is",
+        default=0.1, min=0.01, max=2.0,
     )
     links_res: props.IntProperty(
         # OPT:: set smooth shading too
-        name="Link res",
-        description="WIP: ",
-        min=0, max=8,
-        default=0,
+        name="Link res", description="WIP: ",
+        default=0, min=0, max=8,
     )
 
 # -------------------------------------------------------------------
@@ -217,19 +190,16 @@ def register():
 
     bpy.types.Object.mw_gen = props.PointerProperty(
         type=MW_gen_cfg,
-        name="MW_Generation",
-        description="MW generation properties")
+        name="MW_Generation", description="MW generation properties")
 
     bpy.types.Object.mw_sim = props.PointerProperty(
         type=MW_sim_cfg,
-        name="MW_Simulation",
-        description="MW simulation properties")
+        name="MW_Simulation", description="MW simulation properties")
 
     # WIP maybe visualization stored in scene?
     bpy.types.Object.mw_vis = props.PointerProperty(
         type=MW_vis_cfg,
-        name="MW_Visualization",
-        description="MW visualization properties")
+        name="MW_Visualization", description="MW visualization properties")
 
 def unregister():
     for cls in reversed(classes):

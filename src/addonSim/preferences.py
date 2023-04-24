@@ -24,71 +24,60 @@ class MW_prefs(bpy.types.AddonPreferences):
 # -------------------------------------------------------------------
 
     meta_show_prefs: props.BoolProperty(
-        name="Show addon preferences...",
+        name="Show addon preferences...", description="Show addon preferences",
         default=True,
-        description="Show addon preferences"
     )
     meta_propFilter: props.StringProperty(
-        name="FILTER",
+        name="FILTER", description="Separate values with commas, start with `-` for a excluding filter.",
         default="-meta",
-        description="Separate values with commas, start with `-` for a excluding filter."
     )
     meta_propEdit: props.BoolProperty(
-        name="edit",
+        name="edit", description="Edit the props",
         default=True,
-        description="Edit the props"
     )
 
     meta_show_tmpDebug: props.BoolProperty(
-        name="Show debug...",
+        name="Show debug...", description="WIP: Show some debug stuff",
         default=True,
-        description="WIP: Show some debug stuff",
     )
 
 # -------------------------------------------------------------------
 
     PT_gen_show_summary: props.BoolProperty(
-        name="Show object summary...",
+        name="Show object summary...", description="Show fracture summary",
         default=False,
-        description="Show fracture summary"
     )
     PT_gen_propFilter: props.StringProperty(
-        name="FILTER",
+        name="FILTER", description="Separate values with commas, start with `-` for a excluding filter.",
         default="-meta",
-        description="Separate values with commas, start with `-` for a excluding filter."
     )
     PT_gen_propEdit: props.BoolProperty(
-        name="edit",
+        name="edit", description="Edit the props",
         default=False,
-        description="Edit the props"
     )
 
     PT_gen_show_tmpDebug: props.BoolProperty(
-        name="Show DEBUG...",
+        name="Show DEBUG...", description="WIP: Show some debug stuff",
         default=True,
-        description="WIP: Show some debug stuff"
     )
 
 # -------------------------------------------------------------------
 
     PT_info_edit_showWorld: props.BoolProperty(
-        name="world space",
-        description="Show vertices positions in world space",
+        name="world space", description="Show vertices positions in world space",
         default=False,
     )
     PT_info_edit_showEdges: props.BoolProperty(
-        name="Show edges...",
+        name="Show edges...", description="Show long list of edges with its key (v1, v2)",
         default=False,
     )
     PT_info_edit_showFaceCenters: props.BoolProperty(
-        name="center position",
-        description="Show face center position instead of vertex indices",
+        name="center position", description="Show face center position instead of vertex indices",
         default=False,
     )
 
     OT_util_delete_unhide: props.BoolProperty(
-        name="unhide",
-        description="Unhide the original object after deletion",
+        name="unhide", description="Unhide the original object after deletion",
         default=True,
     )
 
