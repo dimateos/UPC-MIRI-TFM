@@ -19,6 +19,7 @@ PANEL_CATEGORY = "Dev"
 PANEL_INFO_NOTIFY_NO_SELECTED = False
 
 
+# OPT:: split panel utils from main
 #-------------------------------------------------------------------
 
 class MW_gen_Panel(types.Panel):
@@ -133,8 +134,11 @@ class MW_info_Panel(types.Panel):
 
         obj = context.active_object
         mainCol, mainBox = ui.draw_inspectObject(obj, col)
-        col.operator(ops.MW_util_indices_OT_.bl_idname, icon="TRACKER")
         mainBox.operator(ops.MW_info_matrices_OT_.bl_idname, icon="LATTICE_DATA")
+
+        col_rowSplit = col.row().split(factor=0.8)
+        col_rowSplit.operator(ops.MW_util_indices_OT_.bl_idname, icon="TRACKER")
+        col_rowSplit.operator(ops.MW_util_deleteIndices_OT_.bl_idname, icon="CANCEL")
 
         if obj.type == 'MESH':
             col = layout.column()

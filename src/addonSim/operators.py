@@ -15,15 +15,17 @@ from .mw_links import Links, Link
 
 from . import ui
 from . import utils
+from . import utils_geo
 from . import utils_render
 from .utils_cfg import copyProps
 from .utils_dev import DEV
 from .stats import getStats
 
-from mathutils import Vector
+from mathutils import Vector, Matrix
 from tess import Container, Cell
 
 
+# OPT:: split operators utils from main
 #-------------------------------------------------------------------
 
 class MW_gen_OT_(types.Operator):
@@ -194,12 +196,14 @@ class MW_gen_OT_(types.Operator):
 
 #-------------------------------------------------------------------
 
+# OPT:: maybe delete hierarchy fail due to some issue caused by me
 class MW_util_delete_OT_(types.Operator):
     bl_idname = "mw.util_delete"
     bl_label = "Delete fracture object"
     bl_options = {'INTERNAL', 'UNDO'}
     bl_description = "Instead of Blender 'delete hierarchy' which seems to fail to delete all recusively..."
-    _obj, _cfg = None, None
+    _obj: types.Object = None
+    _cfg: MW_gen_cfg = None
 
     @classmethod
     def poll(cls, context):
@@ -227,7 +231,7 @@ class MW_util_delete_OT_(types.Operator):
 class MW_util_indices_OT_(types.Operator):
     bl_idname = "mw.util_indices"
     bl_label = "Spawn mesh indices"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {"PRESET", 'REGISTER', 'UNDO'}
     bl_description = "Spawn named objects at mesh data indices positons"
 
     class CONST_NAMES:
@@ -249,20 +253,26 @@ class MW_util_indices_OT_(types.Operator):
     faces_name: _prop_showName
     faces_scale: _prop_scale
 
-    # basic color
-    color_alpha: props.FloatProperty(name="color alpha", default=0.66, min=0.1, max=1.0)
+    # rendering
+    color_alpha: props.FloatProperty(name="color alpha", default=0.5, min=0.1, max=1.0)
     color_useGray: props.BoolProperty( name="grayscale", default=False)
-    color_gray: props.FloatProperty(name="white", default=0.66, min=0.0, max=1.0)
+    color_gray: props.FloatProperty(name="white", default=0.5, min=0.0, max=1.0)
+    mesh_useShape: props.BoolProperty( name="use mesh shapes", default=True)
+    mesh_scale: _prop_scale
+    namePrefix: props.StringProperty(
+        name="obj prefix", description="Avoid blender adding .001 to repeated objects/meshes",
+        default="",
+    )
 
     @classmethod
     def poll(cls, context):
         obj = context.active_object
         return obj and obj.data
 
-    #def invoke(self, context, event):
-    #    # print(self.recursion_chance_select)
-    #    wm = context.window_manager
-    #    return wm.invoke_props_dialog(self)
+    def invoke(self, context, event):
+        # print(self.recursion_chance_select)
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
 
     def draw(self, context: types.Context):
         col = self.layout.column()
@@ -287,49 +297,118 @@ class MW_util_indices_OT_(types.Operator):
         row = col.row().split(factor=f2)
         row.prop(self, "color_useGray")
         row.prop(self, "color_gray")
+        row = col.row().split(factor=f2)
+        row.prop(self, "mesh_useShape")
+        row.prop(self, "mesh_scale", text="scale")
+
+        rowsub = col.row()
+        rowsub.alignment = "LEFT"
+        rowsub.prop(self, "namePrefix")
 
     def execute(self, context: types.Context):
         obj = context.active_object
-        mesh = obj.data
         child_empty = utils.gen_childClean(obj, self.CONST_NAMES.empty, context, None, keepTrans=False)
 
         # optional grayscale common color mat
+        gray3 = utils_render.COLORS.white * self.color_gray
         if self.color_useGray:
-            mat_gray = utils_render.get_colorMat(utils_render.COLORS.white * self.color_gray, self.color_alpha)
+            mat_gray = utils_render.get_colorMat(gray3, self.color_alpha)
 
         if self.verts_gen:
             # verts use a octahedron for rep
-            verts_octa = [
-                Vector((0, 0, 1)),
-                Vector((1, 0, 0)), Vector((0, 1, 0)), Vector((-1, 0, 0)), Vector((0, -1, 0)),
-                Vector((0, 0, -1)),
-            ]
-            faces_octa = [
-                [0,1,2], [0,2,3], [0,3,4], [0,4,1],
-                [5,2,1], [5,3,2], [5,4,3], [5,1,4],
-            ]
-            mesh_octa = bpy.data.meshes.new("vert_octa")
-            mesh_octa.from_pydata(vertices=verts_octa, edges=[], faces=faces_octa)
-            scaleV = Vector([self.verts_scale]*3)
+            if self.mesh_useShape: mesh = utils_render.SHAPES.get_octahedron(f"{self.namePrefix}.vert")
+            else: mesh= None
+            scaleV = Vector([self.verts_scale * self.mesh_scale]*3)
 
             # red colored mat
-            if self.color_useGray: mat_octa = mat_gray
-            else: mat_octa = utils_render.get_colorMat(utils_render.COLORS.red, self.color_alpha)
+            if self.color_useGray: mat = mat_gray
+            else: mat = utils_render.get_colorMat(utils_render.COLORS.red+gray3, self.color_alpha)
 
             # spawn as children
-            child_verts = utils.gen_child(child_empty, self.CONST_NAMES.verts, context, None, keepTrans=False)
-            for v in mesh.vertices:
-                name = f"v{v.index}"
-                child = utils.gen_child(child_verts, name, context, mesh_octa, keepTrans=False)
+            parent = utils.gen_child(child_empty, self.CONST_NAMES.verts, context, None, keepTrans=False)
+            for v in obj.data.vertices:
+                name = f"{self.namePrefix}.v{v.index}"
+                child = utils.gen_child(parent, name, context, mesh, keepTrans=False)
                 child.location = v.co
                 child.scale = scaleV
-                child.active_material = mat_octa
+                child.active_material = mat
                 child.show_name = self.verts_name
 
+        if self.edges_gen:
+            # edges use a cube for rep
+            if self.mesh_useShape: mesh = utils_render.SHAPES.get_cuboid(f"{self.namePrefix}.edge")
+            else: mesh= None
+            scaleV = Vector([self.edge_scale * self.mesh_scale]*3)
 
-        #edges = [e for e in mesh.edges]
-        #faces = [f for f in mesh.polygons]
+            # red colored mat
+            if self.color_useGray: mat = mat_gray
+            else: mat = utils_render.get_colorMat(utils_render.COLORS.green+gray3, self.color_alpha)
 
+            # spawn as children
+            parent = utils.gen_child(child_empty, self.CONST_NAMES.edges, context, None, keepTrans=False)
+            for e in obj.data.edges:
+                name = f"{self.namePrefix}.e{e.index}"
+                child = utils.gen_child(parent, name, context, mesh, keepTrans=False)
+                child.location = utils_geo.edge_center(obj.data, e)
+                child.scale = scaleV
+                child.active_material = mat
+                child.show_name = self.edges_name
+                # orient edge along
+                v_rot0: Vector = Vector([0,0,1])
+                v_rot1: Vector = utils_geo.edge_dir(obj.data, e)
+                child.rotation_mode = "QUATERNION"
+                child.rotation_quaternion = v_rot0.rotation_difference(v_rot1)
+
+        if self.faces_gen:
+            # faces use a tetrahedron for rep
+            if self.mesh_useShape: mesh = utils_render.SHAPES.get_tetrahedron(f"{self.namePrefix}.face")
+            else: mesh= None
+            scaleV = Vector([self.faces_scale * self.mesh_scale]*3)
+
+            # red colored mat
+            if self.color_useGray: mat = mat_gray
+            else: mat = utils_render.get_colorMat(utils_render.COLORS.blue+gray3, self.color_alpha)
+
+            # spawn as children
+            parent = utils.gen_child(child_empty, self.CONST_NAMES.faces, context, None, keepTrans=False)
+            for f in obj.data.polygons:
+                name = f"{self.namePrefix}.f{f.index}"
+                child = utils.gen_child(parent, name, context, mesh, keepTrans=False)
+                child.location = f.center + f.normal*0.1*scaleV[0]
+                child.scale = scaleV
+                child.active_material = mat
+                child.show_name = self.faces_name
+                # orient face out
+                v_rot0: Vector = Vector([0,0,1])
+                v_rot1: Vector = f.normal
+                child.rotation_mode = "QUATERNION"
+                child.rotation_quaternion = v_rot0.rotation_difference(v_rot1)
+
+
+        getStats().logDt("END: " + self.bl_label)
+        return {'FINISHED'}
+
+class MW_util_deleteIndices_OT_(types.Operator):
+    bl_idname = "mw.util_indices_delete"
+    bl_label = "del"
+    bl_options = {'INTERNAL', 'UNDO'}
+    bl_description = "Instead of Blender 'delete hierarchy' which seems to fail to delete all recusively..."
+    _obj:types.Object = None
+
+    @classmethod
+    def poll(cls, context):
+        if not context.active_object:
+            return False
+
+        obj = utils.get_child(context.active_object, MW_util_indices_OT_.CONST_NAMES.empty)
+        MW_util_deleteIndices_OT_._obj = obj
+        return obj
+
+    def execute(self, context: types.Context):
+        obj = MW_util_deleteIndices_OT_._obj
+        utils.delete_objectRec(obj, logAmount=True)
+
+        # UNDO as part of bl_options will cancel any edit last operation pop up
         getStats().logDt("END: " + self.bl_label)
         return {'FINISHED'}
 
@@ -392,6 +471,7 @@ classes = (
     MW_gen_OT_,
     MW_util_delete_OT_,
     MW_util_indices_OT_,
+    MW_util_deleteIndices_OT_,
     MW_info_data_OT_,
     MW_info_API_OT_,
     MW_info_matrices_OT_

@@ -19,6 +19,10 @@ def r(a):
 def edge_center(mesh, edge):
     v1, v2 = edge.vertices
     return (mesh.vertices[v1].co + mesh.vertices[v2].co) / 2.0
+def edge_dir(mesh, edge):
+    v1, v2 = edge.vertices
+    return (mesh.vertices[v2].co - mesh.vertices[v1].co).normalized()
+
 def poly_center(mesh, poly):
     co = Vector()
     tot = 0
