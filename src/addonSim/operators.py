@@ -26,10 +26,18 @@ from .stats import getStats
 class MW_gen_OT(_StartRefresh_OT):
     bl_idname = "mw.gen"
     bl_label = "Fracture generation"
-    bl_options = {'PRESET', 'REGISTER', 'UNDO'}
     bl_description = "Fracture generation using voro++"
 
+    # REGISTER + UNDO pops the edit last op window
+    bl_options = {'PRESET', 'REGISTER', 'UNDO'}
     cfg: props.PointerProperty(type=MW_gen_cfg)
+
+    def __init__(self) -> None:
+        super().__init__()
+        # config some base class log flags...
+        self.invoke_log = True
+        self.refresh_log = True
+        self.end_log = True
 
     def draw(self, context: types.Context):
         super().draw(context)
@@ -40,7 +48,10 @@ class MW_gen_OT(_StartRefresh_OT):
         self.cfg.meta_type = {"NONE"}
         return super().invoke(context, event)
 
+    #-------------------------------------------------------------------
+
     # IDEA:: changelog / todo file to take notes there instead of all in the code?
+    # NOTE:: no poll because the button is removed from ui isntead
 
     # OPT:: GEN: more error handling of user deletion of intermediate objects?
     # OPT:: automatically add particles -> most interesting method...
@@ -56,23 +67,19 @@ class MW_gen_OT(_StartRefresh_OT):
 
     def execute(self, context: types.Context):
         self.start_op()
+        cancel = self.checkRefresh_cancel()
+        if cancel: return self.end_op_refresh()
 
         # TODO:: store cont across simulations in the object or info from it
         # TODO:: run again more smartly, like detect no need for changes (e.g. name change or prefs debug show) -> compare both props, or use prop update func self ref?
+        # OPT:: separate simulation and scene generation: option to no store inter meshes
+        # IDEA:: divide execute in function? sim/vis
         # XXX:: particles are in world position?
         # XXX:: refresh is slow, maybe related to other ui doing recursive access to root?? maybe panel with ok before?
-        # OPT:: separate simulation and scene generation: option to no store inter meshes
         # OPT:: adding many objects to the scene takes most of the time -> single global mesh?
         # OPT:: avoid recursion with pointer to parent instead of search by name
         # IDEA:: decimate before/after convex, test perf?
 
-        # Handle refreshing
-        cancel = self.checkRefresh_cancel()
-        if cancel:
-            return self.end_op_refresh()
-
-        # TODO:: divide execute in functions?
-        # TODO:: make timing stats global and time from the methods not here
 
         # Need to copy the properties from the object if its already a fracture
         obj, cfg = utils.cfg_getRoot(context.active_object)
@@ -145,7 +152,6 @@ class MW_gen_OT(_StartRefresh_OT):
         mw_setup.gen_linksObjects(obj_links, cont, cfg, context)
 
 
-
         DEV.log_msg("Do some more scene setup", {'SETUP'})
         # Finish scene setup and select after optional renaming
         mw_setup.gen_renaming(obj, cfg, context)
@@ -165,13 +171,20 @@ class MW_gen_OT(_StartRefresh_OT):
 #-------------------------------------------------------------------
 
 # OPT:: maybe delete hierarchy fail due to some issue caused by me
-class MW_util_delete_OT(types.Operator):
+class MW_util_delete_OT(_StartRefresh_OT):
     bl_idname = "mw.util_delete"
     bl_label = "Delete fracture object"
-    bl_options = {'INTERNAL', 'UNDO'}
     bl_description = "Instead of Blender 'delete hierarchy' which seems to fail to delete all recusively..."
+
+    # UNDO as part of bl_options will cancel any edit last operation pop up
+    bl_options = {'INTERNAL', 'UNDO'}
     _obj: types.Object = None
     _cfg: MW_gen_cfg = None
+
+    def __init__(self) -> None:
+        super().__init__()
+        # config some base class log flags...
+        self.start_resetStats = False
 
     @classmethod
     def poll(cls, context):
@@ -180,6 +193,7 @@ class MW_util_delete_OT(types.Operator):
         return (obj and cfg)
 
     def execute(self, context: types.Context):
+        self.start_op()
         obj, cfg = MW_util_delete_OT._obj, MW_util_delete_OT._cfg
         prefs = getPrefs()
 
@@ -189,10 +203,7 @@ class MW_util_delete_OT(types.Operator):
             obj_original.hide_set(False)
 
         utils.delete_objectRec(obj, logAmount=True)
-
-        # UNDO as part of bl_options will cancel any edit last operation pop up
-        getStats().logDt("END: " + self.bl_label)
-        return {'FINISHED'}
+        return self.end_op()
 
 
 #-------------------------------------------------------------------
