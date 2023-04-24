@@ -140,8 +140,10 @@ class MW_info_Panel(types.Panel):
 
     def draw_editMode(self, context):
         layout = self.layout
+        prefs = getPrefs(context)
+        obj = bpy.context.object
 
-        mainCol = ui.draw_inspectObject(bpy.context.object, layout, drawTrans=False)
+        mainCol = ui.draw_inspectObject(obj, layout, drawTrans=False)
 
         col = mainCol.column()
         col.enabled = False
@@ -151,7 +153,7 @@ class MW_info_Panel(types.Panel):
         col.label(text=f"toggle EDIT/OBJECT to update", icon="QUESTION")
 
         # Mesh selected is not up to date...
-        mesh = bpy.context.object.data
+        mesh = obj.data
         selected_verts = [v for v in mesh.vertices if v.select]
         selected_edges = [e for e in mesh.edges if e.select]
         selected_faces = [f for f in mesh.polygons if f.select]
@@ -160,21 +162,40 @@ class MW_info_Panel(types.Panel):
         fmt = ">5.1f"
         fmt_vec = f"({{:{fmt}}}, {{:{fmt}}}, {{:{fmt}}})"
 
+
+        # verts with optional world space toggle
         box = mainCol.box()
         col = box.column()
-        col.label(text=f"verts: {len(selected_verts)}")
-        for v in selected_verts: col.label(text=f"{v.index}: " + f"{fmt_vec}".format(*v.co))
+        row = col.row()
+        row.alignment= "LEFT"
+        row.label(text=f"verts: {len(selected_verts)}")
+        row.prop(prefs, "PT_info_edit_showWorld")
+        for v in selected_verts:
+            if prefs.PT_info_edit_showWorld: pos = obj.matrix_world @ v.co
+            else: pos = v.co
+            col.label(text=f"{v.index}: " + f"{fmt_vec}".format(*pos))
 
+        # optional edges
+        open, box = ui.draw_toggleBox(prefs, "PT_info_edit_showEdges", mainCol)
+        if open:
+            col = box.column()
+            col.label(text=f"edges: {len(selected_edges)}")
+            for e in selected_edges: col.label(text=f"{e.index}: {e.key}")
+
+        # faces with option too
         box = mainCol.box()
         col = box.column()
-        col.label(text=f"edges: {len(selected_edges)}")
-        for e in selected_edges: col.label(text=f"{e.index}: {e.key}")
-
-        box = mainCol.box()
-        col = box.column()
-        col.label(text=f"faces: {len(selected_faces)}")
-        for f in selected_faces: col.label(text=f"{f.index}: " + f"{fmt_vec}".format(*f.center))
-
+        row = col.row()
+        row.alignment= "LEFT"
+        row.label(text=f"faces: {len(selected_faces)}")
+        row.prop(prefs, "PT_info_edit_showFaceCenters")
+        if (prefs.PT_info_edit_showFaceCenters):
+            for f in selected_faces:
+                if prefs.PT_info_edit_showWorld: pos = obj.matrix_world @ f.center
+                else: pos = f.center
+                col.label(text=f"{f.index}: " + f"{fmt_vec}".format(*pos))
+        else:
+            for f in selected_faces: col.label(text=f"{f.index}: {f.vertices[:]}")
 
 # -------------------------------------------------------------------
 # Blender events

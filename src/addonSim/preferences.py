@@ -15,9 +15,6 @@ class ADDON:
 
 # -------------------------------------------------------------------
 
-def getPrefs(context: types.Context):
-    return context.preferences.addons[MW_prefs.bl_idname].preferences
-
 class MW_prefs(bpy.types.AddonPreferences):
     # NOTE: MUST be the same as module name
     bl_idname = ADDON.mod_name_prefs
@@ -25,6 +22,9 @@ class MW_prefs(bpy.types.AddonPreferences):
     def draw(self, context):
         draw_props(self, self.layout)
 
+# -------------------------------------------------------------------
+
+    # TODO:: rename cause the cfg meta props are the same and will be moved here
     meta_show_debug: props.BoolProperty(
         name="Show debug...",
         default=True,
@@ -48,11 +48,34 @@ class MW_prefs(bpy.types.AddonPreferences):
 
 # -------------------------------------------------------------------
 
+    PT_info_edit_showWorld: props.BoolProperty(
+        name="world space",
+        description="Show vertices positions in world space",
+        default=False,
+    )
+    PT_info_edit_showEdges: props.BoolProperty(
+        name="Show edges...",
+        default=False,
+    )
+    PT_info_edit_showFaceCenters: props.BoolProperty(
+        name="center position",
+        description="Show face center position instead of vertex indices",
+        default=False,
+    )
+
+# -------------------------------------------------------------------
+
     OT_util_delete_unhide: props.BoolProperty(
         name="unhide",
         description="Unhide the original object after deletion",
         default=True,
     )
+
+# -------------------------------------------------------------------
+
+def getPrefs(context: types.Context) -> MW_prefs:
+    """ Get addon preferences from blender """
+    return context.preferences.addons[MW_prefs.bl_idname].preferences
 
 
 # -------------------------------------------------------------------
