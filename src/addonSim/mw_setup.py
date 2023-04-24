@@ -1,5 +1,6 @@
 import bpy
 import bpy.types as types
+import bmesh
 
 from .properties import (
     MW_gen_cfg,
@@ -10,6 +11,7 @@ from .utils_dev import DEV
 from .stats import getStats
 
 from mathutils import Vector, Matrix
+from math import radians
 
 # Using tess voro++ adaptor
 from tess import Container, Cell
@@ -18,8 +20,8 @@ from tess import Container, Cell
 class CONST_NAMES:
     original = "Original_"
     original_bb = original+"bb"
-    original_convex = original+"convex"
-    original_low = original+"low"
+    original_c = original+"c"
+    original_d = original+"d"
     shards = "Shards"
     shards_points = "Shards_source"
     links = shards+"_links"
@@ -53,34 +55,42 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
     getStats().logDt("generated copy object")
     return obj_empty, obj_copy
 
+# NOTE:: not recursive hull not face dissolve
 def gen_copyConvex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, context: types.Context):
     # Duplicate again the copy and set child too
-    obj_convex = utils.copy_objectRec(obj_copy, context)
-    obj_convex.name = CONST_NAMES.original_convex
-    utils.cfg_setMetaTypeRec(obj_copy, {"CHILD"})
-    utils.set_child(obj_convex, obj)
+    obj_c = utils.copy_objectRec(obj_copy, context)
+    obj_c.name = CONST_NAMES.original_c
+    utils.cfg_setMetaTypeRec(obj_c, {"CHILD"})
+    utils.set_child(obj_c, obj)
 
-    # Scene viewport
-    obj_convex.hide_set(not cfg.struct_showConvex)
-
-    # Apply convex hull to the mesh
-    # NOTE:: not recursive?
-    import bmesh
+    # build convex hull with only verts
     bm = bmesh.new()
-    bm.from_mesh(obj_convex.data)
-
+    bm.from_mesh(obj_c.data)
     ch = bmesh.ops.convex_hull(bm, input=bm.verts)
-
     # either delete unused and interior or build another mesh with "geom"
     bmesh.ops.delete(
             bm,
             geom=ch["geom_unused"] + ch["geom_interior"],
             context='VERTS',
             )
-    bm.to_mesh(obj_convex.data)
+    bm.to_mesh(obj_c.data)
 
+    # Second copy with the face dissolve
+    obj_d = utils.copy_objectRec(obj_c, context)
+    obj_d.name = CONST_NAMES.original_d
+    utils.cfg_setMetaTypeRec(obj_d, {"CHILD"})
+    utils.set_child(obj_d, obj)
+
+    # dissolve faces based on angle limit
+    bmesh.ops.dissolve_limit(bm, angle_limit=radians(1.7), use_dissolve_boundaries=True, verts=bm.verts, edges=bm.edges)
+    bm.to_mesh(obj_d.data)
+
+    # Scene viewport
+    obj_d.hide_set(not cfg.struct_showConvex)
+
+    bm.free()
     getStats().logDt("generated convex object")
-    return obj_convex
+    return obj_d
 
 def gen_renaming(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     # split by first _
