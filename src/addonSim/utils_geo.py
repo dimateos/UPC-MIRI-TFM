@@ -9,8 +9,8 @@ from mathutils import Vector, Matrix
 from .unionfind import UnionFind
 
 
-# -------------------------------------------------------------------
-# -UTILS
+#-------------------------------------------------------------------
+#-UTILS
 
 def r(a):
     return int(a*1000+0.5)/1000.0
@@ -48,8 +48,8 @@ def centroid_verts(coords, weights=None):
     if not weights: c /= len(coords)
     return c
 
-# -------------------------------------------------------------------
-# -MAPPINGS
+#-------------------------------------------------------------------
+#-MAPPINGS
 
 def get_meshDicts(me, queries_dict=None, queries_default=False):
     """ Returns multiple dicts of the mesh (that complement available in blender, e.g. mesh.edge_keys)
@@ -161,8 +161,8 @@ def map_VtoF_EtoF_VtoE(me):
 
     return vertex_faces, edge_faces, vertex_edges
 
-# -------------------------------------------------------------------
-# -QUERIES
+#-------------------------------------------------------------------
+#-QUERIES
 
 ## EXERCISE 1
 def centroid_mesh(me, log=True):

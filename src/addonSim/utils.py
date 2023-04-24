@@ -14,7 +14,7 @@ from mathutils import Vector, Matrix
 
 
 # OPT:: split some more files? or import less functions
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 # TODO:: should really try to acces the parent direclty
 # XXX:: too much used around in poll functions, performance hit?
@@ -39,7 +39,7 @@ def cfg_setMetaTypeRec(obj: types.Object, type: dict):
     for child in obj.children:
         cfg_setMetaTypeRec(child, type)
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 def transform_points(points: list[Vector], matrix) -> list[Vector]:
     """ INPLACE: Transform given points by the trans matrix """
@@ -107,7 +107,7 @@ def get_worldMatrix_normalMatrix(obj: types.Object) -> tuple[types.Object, MW_ge
     matrix_normal = matrix.inverted_safe().transposed().to_3x3()
     return matrix, matrix_normal
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 def trans_update(obj: types.Object):
     """ Updates the world matrix of the object, better than updating the whole scene with context.view_layer.update()
@@ -155,7 +155,7 @@ def trans_printMatrices(obj: types.Object, printName=True):
     # calculated on pos/rot/scale update and also when world/local is modified
     print(obj.matrix_basis, "matrix_basis\n")
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 # TODO:: performance hit with teapot due to REC or scene childen access?
 # XXX:: all access to obj.children take O(n) where n is ALL objects of the scene...
 
@@ -217,7 +217,7 @@ def hide_objectRec(obj: types.Object, hide=True):
 
     obj.hide_set(hide)
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 def set_child(child: types.Object, parent: types.Object, keepTrans = True, noInv = False):
     """ Child object with the same options as the viewport, also updates the child world matrix """
@@ -260,7 +260,7 @@ def gen_childClean(
         delete_objectRec(obj_child)
     return gen_child(obj, name, context, mesh, keepTrans, noInv, hide)
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 def get_timestamp() -> int:
     """ Get current timestamp as int """

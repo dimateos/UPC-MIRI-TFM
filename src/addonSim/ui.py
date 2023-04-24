@@ -13,7 +13,7 @@ from .utils_dev import DEV
 from mathutils import Vector, Matrix
 
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 def draw_toggleBox(metadata, propToggle_name:str, layout: types.UILayout) -> tuple[bool, types.UILayout]:
     """ Create a box with a toggle. Return the state of the toggle and the created layout """
@@ -55,7 +55,7 @@ def draw_propsToggle(data, metadata, propToggle_name:str, propFilter_name:str, p
         propFilter = getattr(metadata, propFilter_name)
         draw_props(data, propFilter, col)
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 def draw_refresh(cfg: MW_gen_cfg, layout: types.UILayout):
     row = layout.box().row()
@@ -114,7 +114,7 @@ def draw_inspectObject(obj: types.Object, layout: types.UILayout, drawTrans=True
 
     return mainCol, mainBox
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 def draw_gen_cfg(cfg: MW_gen_cfg, layout: types.UILayout, context: types.Context):
     draw_refresh(cfg, layout)

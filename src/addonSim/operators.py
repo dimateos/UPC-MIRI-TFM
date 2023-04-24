@@ -24,7 +24,7 @@ from mathutils import Vector
 from tess import Container, Cell
 
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 class MW_gen_OT_(types.Operator):
     bl_idname = "mw.gen"
@@ -192,7 +192,7 @@ class MW_gen_OT_(types.Operator):
         return self.end_op("completed...")
 
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 class MW_util_delete_OT_(types.Operator):
     bl_idname = "mw.util_delete"
@@ -222,7 +222,7 @@ class MW_util_delete_OT_(types.Operator):
         getStats().logDt("END: " + self.bl_label)
         return {'FINISHED'}
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 class MW_util_indices_OT_(types.Operator):
     bl_idname = "mw.util_indices"
@@ -333,7 +333,7 @@ class MW_util_indices_OT_(types.Operator):
         getStats().logDt("END: " + self.bl_label)
         return {'FINISHED'}
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 class MW_info_data_OT_(types.Operator):
     bl_idname = "mw.info_data"
@@ -385,7 +385,7 @@ class MW_info_matrices_OT_(types.Operator):
         utils.trans_printMatrices(obj)
         return {'FINISHED'}
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 # Blender events
 
 classes = (

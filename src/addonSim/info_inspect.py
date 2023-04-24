@@ -4,7 +4,7 @@ from inspect import getmembers, ismethod
 from types import FunctionType
 
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 def get_attributes(obj, queryDoc = False):
     """ Retrieve the attributes separated by callables and properties

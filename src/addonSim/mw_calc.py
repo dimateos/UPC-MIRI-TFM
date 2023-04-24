@@ -18,7 +18,7 @@ import random as rnd
 from tess import Container, Cell
 
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
     """ Attempts to retrieve a point per option and disables them when none is found """
@@ -179,7 +179,7 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
     DEV.log_msg(f"Found {len(points)} points", {"SETUP"})
     return points
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 def points_limitNum(points: list[Vector], cfg: MW_gen_cfg):
     source_limit = cfg.source_limit
@@ -206,7 +206,7 @@ def points_transformCfg(points: list[Vector], cfg: MW_gen_cfg, bb_radius: float)
     points_addNoise(points, cfg, bb_radius)
     getStats().logDt(f"transform/limit points: {len(points)} (noise {cfg.source_noise:.4f})")
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 def cont_fromPoints(points: list[Vector], bb: list[Vector, 6], faces4D: list[Vector]) -> Container:
     """ Build a voro++ container using the points and the faces as walls """

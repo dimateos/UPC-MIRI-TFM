@@ -27,7 +27,7 @@ class CONST_NAMES:
 
 
 # OPT:: more docu on methods
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     cfg.meta_type = {"ROOT"}
@@ -123,7 +123,7 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, co
     getStats().logDt("generated bounds object")
     return obj_bb
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
     for cell in cont:

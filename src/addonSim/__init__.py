@@ -22,7 +22,7 @@ preferences.ADDON._bl_info = bl_info.copy()
 preferences.ADDON._bl_name = __name__
 
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 # Blender events
 
 submodules = (

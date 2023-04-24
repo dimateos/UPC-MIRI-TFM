@@ -5,7 +5,7 @@ import bpy.props as props
 from tess import Container, Cell
 
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 class MW_gen_cfg(types.PropertyGroup):
 
@@ -28,7 +28,7 @@ class MW_gen_cfg(types.PropertyGroup):
         default={'NONE'},
     )
 
-    # -------------------------------------------------------------------
+    #-------------------------------------------------------------------
 
     class sourceOptions:
         all=[
@@ -78,7 +78,7 @@ class MW_gen_cfg(types.PropertyGroup):
         default=-1, min=-1,
     )
 
-    # -------------------------------------------------------------------
+    #-------------------------------------------------------------------
 
     shape_useConvexHull: props.BoolProperty(
         name="WIP: Convex hull", description="Apply convex hull op beforehand",
@@ -100,7 +100,7 @@ class MW_gen_cfg(types.PropertyGroup):
         #self.struct_nameOriginal = newName
         return f"{self.struct_namePrefix}_{newName}"
 
-    # -------------------------------------------------------------------
+    #-------------------------------------------------------------------
     # NOTE:: now the elements can be properly hidden while the last operator panel is open...
     # IDEA:: use for actually adding to the scene or not
 
@@ -143,7 +143,7 @@ class MW_gen_cfg(types.PropertyGroup):
         default=False,
     )
 
-    # -------------------------------------------------------------------
+    #-------------------------------------------------------------------
 
     # NOTE:: inter-spacing for physics is not possible atm
     # IDEA:: could allow negative margins, but then handle 0 when points are on the wall?
@@ -166,7 +166,7 @@ class MW_gen_cfg(types.PropertyGroup):
         default=0, min=0, max=8,
     )
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 class MW_sim_cfg(types.PropertyGroup):
     pass
@@ -175,7 +175,7 @@ class MW_vis_cfg(types.PropertyGroup):
     pass
 
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 # Blender events
 
 classes = (

@@ -19,7 +19,7 @@ PANEL_CATEGORY = "Dev"
 PANEL_INFO_NOTIFY_NO_SELECTED = False
 
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 class MW_gen_Panel(types.Panel):
     bl_category = PANEL_CATEGORY
@@ -200,7 +200,7 @@ class MW_info_Panel(types.Panel):
         else:
             for f in selected_faces: col.label(text=f"{f.index}: {f.vertices[:]}")
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 # Blender events
 
 classes = (

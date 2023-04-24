@@ -1,5 +1,5 @@
 # Avoiding circular imports around properties and preferences management
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 def getProps_names(src):
     """ Get all properties names of an object, e.g. not just the modified ones in PropertyGroup.keys() """

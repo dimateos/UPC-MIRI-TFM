@@ -11,7 +11,7 @@ from mathutils import Vector, Matrix
 from tess import Container, Cell
 
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 # OPT:: could use a class or an array of props? pyhton already slow so ok class?
 class Link():
@@ -29,7 +29,7 @@ class Link():
         self.toWall = toWall
         self.neighs: list[Link.keyType] = list()
 
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 class Links():
 
