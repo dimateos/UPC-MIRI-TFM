@@ -19,7 +19,6 @@ class Link():
 
     def __init__(self, key_cells: tuple[int, int], key_faces: tuple[int, int], toWall=False):
         self.life = 1.0
-        self.toWall = toWall
 
         # no directionality
         self.key_cells: Link.keyType = key_cells
@@ -27,6 +26,7 @@ class Link():
 
         # neighs populated afterwards
         # IDEA:: separate to cells / walls?
+        self.toWall = toWall
         self.neighs: list[Link.keyType] = list()
 
 # -------------------------------------------------------------------
@@ -34,7 +34,6 @@ class Link():
 class Links():
 
     def __init__(self, cont: Container, obj_shards: types.Object, stats: Stats):
-        # WIP:: copy instead of ref?
         self.cont = cont
         self.obj_shards = obj_shards
 
@@ -110,6 +109,7 @@ class Links():
         for idx_cell,keys_perFace in self.keys_perCell.items():
             for idx_face,key in enumerate(keys_perFace):
                 l = self.link_map[key]
+                DEV.log_msg(f"l {l.key_cells} {l.key_cells}")
 
                 # avoid recalculating link neighs (and duplicating them)
                 if l.neighs:
@@ -122,17 +122,19 @@ class Links():
                     l.neighs += w_neighs
                     continue
 
-                # links connecting cells have a sorted key, but no need to check which is local
+                # extract idx and geometry faces neighs
                 c1, c2 = l.key_cells
                 f1, f2 = l.key_faces
-
                 f1_neighs = meshes_dicts[c1]["FtoF"][f1]
-                c1_neighs = [ keys_perFace[f] for f in f1_neighs ]
                 f2_neighs = meshes_dicts[c2]["FtoF"][f2]
-                c2_neighs = [ keys_perFace[f] for f in f2_neighs ]
+
+                # the key is sorted, so query the keys per cell per each one
+                c1_neighs = [ self.keys_perCell[c1][f] for f in f1_neighs ]
+                c2_neighs = [ self.keys_perCell[c2][f] for f in f2_neighs ]
                 l.neighs += c1_neighs + c2_neighs
 
         stats.log("aggregated link neighbours")
+
 
         logType = {"CALC"} if self.link_map else {"CALC", "ERROR"}
         DEV.log_msg(f"Found {self.num_toCells} links to cells + {self.num_toWalls} links to walls (total {len(self.link_map)})", logType)
