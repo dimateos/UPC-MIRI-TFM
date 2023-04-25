@@ -2,6 +2,7 @@ import bpy
 import bpy.types as types
 import bpy.props as props
 
+from .preferences import getPrefs, ADDON
 from . import operators_utils as ops_util
 
 from . import ui
@@ -9,10 +10,7 @@ from . import utils
 from .utils_dev import DEV
 
 
-PANEL_CATEGORY = "Dev"
-PANEL_INFO_NOTIFY_NO_SELECTED = False
-
-
+# OPT:: coherent poll to disable OT vs not spawning the ui
 #-------------------------------------------------------------------
 
 class Info_Inpect_PT(types.Panel):
@@ -22,23 +20,11 @@ class Info_Inpect_PT(types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     #bl_context = "objectmode"
-    bl_category = PANEL_CATEGORY
+    bl_category = ADDON.panel_cat
 
     bl_label = "DM_info"
     bl_options = {'DEFAULT_CLOSED'}
-
-    edit_showWorld: props.BoolProperty(
-        name="world space", description="Show vertices positions in world space",
-        default=False,
-    )
-    edit_showEdges: props.BoolProperty(
-        name="Show edges...", description="Show long list of edges with its key (v1, v2)",
-        default=False,
-    )
-    edit_showFaceCenters: props.BoolProperty(
-        name="center position", description="Show face center position instead of vertex indices",
-        default=False,
-    )
+    NOTIFY_NO_SELECTED = False
 
 
     def draw(self, context):
@@ -55,7 +41,7 @@ class Info_Inpect_PT(types.Panel):
 
         # Something selected, not last active
         if not context.selected_objects:
-            if PANEL_INFO_NOTIFY_NO_SELECTED:
+            if self.NOTIFY_NO_SELECTED:
                 col.label(text="No object selected...", icon="ERROR")
             else:
                 col.label(text="...")
@@ -73,12 +59,15 @@ class Info_Inpect_PT(types.Panel):
         col_rowSplit.operator(ops_util.Util_SpawnIndices_OT.bl_idname, icon="TRACKER")
         col_rowSplit.operator(ops_util.Util_deleteIndices_OT.bl_idname, icon="CANCEL")
 
+        # IDEA:: print mesh dicts with input text for type
+
         if obj.type == 'MESH':
             col = layout.column()
             col.operator(ops_util.Info_PrintData_OT.bl_idname, icon="HELP")
             col.operator(ops_util.Info_PrintAPI_OT.bl_idname, icon="HELP")
 
     def draw_editMode(self, context):
+        prefs = getPrefs()
         layout = self.layout
         obj = bpy.context.object
 
@@ -108,14 +97,14 @@ class Info_Inpect_PT(types.Panel):
         row = col.row()
         row.alignment= "LEFT"
         row.label(text=f"verts: {len(selected_verts)}")
-        row.prop(self, "edit_showWorld")
+        row.prop(prefs, "PT_info_edit_showWorld")
         for v in selected_verts:
-            if self.edit_showWorld: pos = obj.matrix_world @ v.co
+            if prefs.PT_info_edit_showWorld: pos = obj.matrix_world @ v.co
             else: pos = v.co
             col.label(text=f"{v.index}: " + f"{fmt_vec}".format(*pos))
 
         # optional edges
-        open, box = ui.draw_toggleBox(self, "edit_showEdges", mainCol)
+        open, box = ui.draw_toggleBox(prefs, "PT_edit_showEdges", mainCol)
         if open:
             col = box.column()
             col.label(text=f"edges: {len(selected_edges)}")
@@ -127,10 +116,10 @@ class Info_Inpect_PT(types.Panel):
         row = col.row()
         row.alignment= "LEFT"
         row.label(text=f"faces: {len(selected_faces)}")
-        row.prop(self, "edit_showFaceCenters")
-        if (self.edit_showFaceCenters):
+        row.prop(prefs, "PT_edit_showFaceCenters")
+        if (prefs.PT_edit_showFaceCenters):
             for f in selected_faces:
-                if self.edit_showWorld: pos = obj.matrix_world @ f.center
+                if prefs.PT_info_edit_showWorld: pos = obj.matrix_world @ f.center
                 else: pos = f.center
                 col.label(text=f"{f.index}: " + f"{fmt_vec}".format(*pos))
         else:

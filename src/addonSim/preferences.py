@@ -10,6 +10,8 @@ class ADDON:
     mod_name = __name__
     mod_name_prefs = mod_name.split(".")[0]
 
+    panel_cat = "Dev"
+
 
 #-------------------------------------------------------------------
 
@@ -74,6 +76,21 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=True,
     )
 
+    #-------------------------------------------------------------------
+    # XXX:: panels alone cannot store properties... here mixing dm panels with mw stuff, could separate the addons
+
+    PT_info_edit_showWorld: props.BoolProperty(
+        name="world space", description="Show vertices positions in world space",
+        default=False,
+    )
+    PT_edit_showEdges: props.BoolProperty(
+        name="Show edges...", description="Show long list of edges with its key (v1, v2)",
+        default=False,
+    )
+    PT_edit_showFaceCenters: props.BoolProperty(
+        name="center position", description="Show face center position instead of vertex indices",
+        default=False,
+    )
 
 def getPrefs() -> MW_prefs:
     """ Get addon preferences from blender """

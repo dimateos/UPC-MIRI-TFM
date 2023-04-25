@@ -212,7 +212,7 @@ class Util_SpawnIndices_OT(_StartRefresh_OT):
     @classmethod
     def poll(cls, context):
         obj = context.active_object
-        return obj and obj.data
+        return obj and obj.type == 'MESH' and obj.data
 
     def execute(self, context: types.Context):
         self.start_op()
@@ -227,15 +227,18 @@ class Util_SpawnIndices_OT(_StartRefresh_OT):
         if self.color_useGray:
             mat_gray = utils_render.get_colorMat(gray3, self.color_alpha)
 
-        if self.verts_gen:
-            # verts use a octahedron for rep
-            if self.mesh_useShape: mesh = utils_render.SHAPES.get_octahedron(f"{self.namePrefix}.vert")
-            else: mesh= None
-            scaleV = Vector([self.verts_scale * self.mesh_scale]*3)
+        # IDEA:: add more info as suffix + rename after delete so no .001 + also applied to some setup
 
-            # red colored mat
-            if self.color_useGray: mat = mat_gray
-            else: mat = utils_render.get_colorMat(utils_render.COLORS.red+gray3, self.color_alpha)
+        if self.verts_gen:
+            # verts use a red octahedron for rep
+            scaleV = Vector([self.verts_scale * self.mesh_scale]*3)
+            if self.mesh_useShape:
+                mesh = utils_render.SHAPES.get_octahedron(f"{self.namePrefix}.vert")
+                if self.color_useGray: mat = mat_gray
+                else: mat = utils_render.get_colorMat(utils_render.COLORS.red+gray3, self.color_alpha)
+            else:
+                mesh= None
+                mat = None
 
             # spawn as children
             parent = utils.gen_child(child_empty, self.CONST_NAMES.verts, context, None, keepTrans=False)
@@ -253,14 +256,15 @@ class Util_SpawnIndices_OT(_StartRefresh_OT):
                 child.rotation_quaternion = v_rot0.rotation_difference(v_rot1)
 
         if self.edges_gen:
-            # edges use a cube for rep
-            if self.mesh_useShape: mesh = utils_render.SHAPES.get_cuboid(f"{self.namePrefix}.edge")
-            else: mesh= None
+            # edges use a green cuboid  for rep
             scaleV = Vector([self.edge_scale * self.mesh_scale]*3)
-
-            # red colored mat
-            if self.color_useGray: mat = mat_gray
-            else: mat = utils_render.get_colorMat(utils_render.COLORS.green+gray3, self.color_alpha)
+            if self.mesh_useShape:
+                mesh = utils_render.SHAPES.get_cuboid(f"{self.namePrefix}.edge")
+                if self.color_useGray: mat = mat_gray
+                else: mat = utils_render.get_colorMat(utils_render.COLORS.green+gray3, self.color_alpha)
+            else:
+                mesh= None
+                mat = None
 
             # spawn as children
             parent = utils.gen_child(child_empty, self.CONST_NAMES.edges, context, None, keepTrans=False)
@@ -278,14 +282,15 @@ class Util_SpawnIndices_OT(_StartRefresh_OT):
                 child.rotation_quaternion = v_rot0.rotation_difference(v_rot1)
 
         if self.faces_gen:
-            # faces use a tetrahedron for rep
-            if self.mesh_useShape: mesh = utils_render.SHAPES.get_tetrahedron(f"{self.namePrefix}.face")
-            else: mesh= None
+            # faces use a blue tetrahedron for rep
             scaleV = Vector([self.faces_scale * self.mesh_scale]*3)
-
-            # red colored mat
-            if self.color_useGray: mat = mat_gray
-            else: mat = utils_render.get_colorMat(utils_render.COLORS.blue+gray3, self.color_alpha)
+            if self.mesh_useShape:
+                mesh = utils_render.SHAPES.get_tetrahedron(f"{self.namePrefix}.face")
+                if self.color_useGray: mat = mat_gray
+                else: mat = utils_render.get_colorMat(utils_render.COLORS.blue+gray3, self.color_alpha)
+            else:
+                mesh= None
+                mat = None
 
             # spawn as children
             parent = utils.gen_child(child_empty, self.CONST_NAMES.faces, context, None, keepTrans=False)

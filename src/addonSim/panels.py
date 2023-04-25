@@ -2,7 +2,7 @@ import bpy
 import bpy.types as types
 import bpy.props as props
 
-from .preferences import getPrefs
+from .preferences import getPrefs, ADDON
 from .properties import (
     MW_gen_cfg,
 )
@@ -15,10 +15,6 @@ from . import utils
 from .utils_dev import DEV
 
 
-PANEL_CATEGORY = "Dev"
-PANEL_INFO_NOTIFY_NO_SELECTED = False
-
-
 # OPT:: split panel utils from main
 #-------------------------------------------------------------------
 
@@ -28,7 +24,7 @@ class MW_gen_PT(types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_context = "objectmode"
-    bl_category = PANEL_CATEGORY
+    bl_category = ADDON.panel_cat
 
     bl_label = "MW_gen"
     bl_options = {'HEADER_LAYOUT_EXPAND'}
@@ -83,7 +79,7 @@ class MW_addon_PT(types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     #bl_context = "objectmode"
-    bl_category = PANEL_CATEGORY
+    bl_category = ADDON.panel_cat
 
     bl_label = "MW_addon"
     bl_options = {'DEFAULT_CLOSED'}
