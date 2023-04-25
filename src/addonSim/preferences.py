@@ -30,7 +30,7 @@ class MW_prefs(bpy.types.AddonPreferences):
     )
     meta_propFilter: props.StringProperty(
         name="FILTER", description="Separate values with commas, start with `-` for a excluding filter.",
-        default="-meta",
+        default="OT",
     )
     meta_propEdit: props.BoolProperty(
         name="edit", description="Edit the props",
@@ -63,6 +63,11 @@ class MW_prefs(bpy.types.AddonPreferences):
     )
 
     #-------------------------------------------------------------------
+
+    OT_invert_shardNormals: props.BoolProperty(
+        name="Invert final shards face normals", description="Seems like they end up reversed due to voro face ordering.",
+        default=True,
+    )
 
     OT_util_delete_unhide: props.BoolProperty(
         name="unhide", description="Unhide the original object after deletion",

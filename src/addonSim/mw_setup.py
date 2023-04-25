@@ -61,6 +61,8 @@ def gen_copyConvex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, c
     utils.cfg_setMetaTypeRec(obj_c, {"CHILD"})
     utils.set_child(obj_c, obj)
 
+    # XXX:: need to mesh update? + decimate before more perf? but need to change EDIT/OBJ modes?
+
     # build convex hull with only verts
     bm = bmesh.new()
     bm.from_mesh(obj_c.data)
@@ -133,7 +135,7 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, co
 
 #-------------------------------------------------------------------
 
-def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
+def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context, invertOrientation = False):
     for cell in cont:
         source_id = cont.source_idx[cell.id]
         name= f"{CONST_NAMES.shards}_{source_id}"
@@ -158,9 +160,13 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
         # create a static mesh with vertices relative to the center of mass
         verts = cell.vertices_local_centroid()
 
+        # maybe reorient faces
+        faces_voro = cell.face_vertices()
+        faces_blender = [ f_indices[::-1] for f_indices in faces_voro ] if invertOrientation else faces_voro
+
         # build the static mesh and child object
         mesh = bpy.data.meshes.new(name)
-        mesh.from_pydata(vertices=verts, edges=[], faces=cell.face_vertices())
+        mesh.from_pydata(vertices=verts, edges=[], faces=faces_blender)
         obj_shard = utils.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showShards)
         obj_shard.location = pos
 

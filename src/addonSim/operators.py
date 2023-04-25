@@ -71,7 +71,7 @@ class MW_gen_OT(_StartRefresh_OT):
         if cancel: return self.end_op_refresh()
 
         # TODO:: store cont across simulations in the object or info from it
-        # TODO:: run again more smartly, like detect no need for changes (e.g. name change or prefs debug show) -> compare both props, or use prop update func self ref?
+        # TODO:: run again more smartly, like detect no need for changes (e.g. name change or prefs debug show) -> compare both props, or use prop update func self ref? also for spawn indices
         # OPT:: separate simulation and scene generation: option to no store inter meshes
         # IDEA:: divide execute in function? sim/vis
         # XXX:: particles are in world position?
@@ -114,10 +114,12 @@ class MW_gen_OT(_StartRefresh_OT):
                 obj_toFrac = utils.get_child(obj, name_toFrac)
                 getStats().logDt("retrieved toFrac object")
 
+        # IDEA:: global rnd in prefs?
+        cfg.rnd_seed = utils.rnd_seed(cfg.rnd_seed) # seed common random gen
+        prefs = getPrefs()
+
 
         DEV.log_msg("Start calc points", {'SETUP'})
-        cfg.rnd_seed = utils.rnd_seed(cfg.rnd_seed) # seed common random gen
-
         # Get the points and transform to local space when needed
         mw_calc.detect_points_from_object(obj_toFrac, cfg, context)
         points = mw_calc.get_points_from_object_fallback(obj_toFrac, cfg, context)
@@ -139,14 +141,14 @@ class MW_gen_OT(_StartRefresh_OT):
         cont = mw_calc.cont_fromPoints(points, bb, faces4D)
 
         obj_shards = mw_setup.gen_shardsEmpty(obj, cfg, context)
-        mw_setup.gen_shardsObjects(obj_shards, cont, cfg, context)
+        mw_setup.gen_shardsObjects(obj_shards, cont, cfg, context, invertOrientation=prefs.OT_invert_shardNormals)
 
         # XXX:: there is a hard limit in the number of voro++ walls
         #/** The maximum size for the wall pointer array. */
         #const int max_wall_size=2048;
 
         DEV.log_msg("Start calc links", {'SETUP'})
-        #links = Links(cont, obj_shards)
+        links = Links(cont, obj_shards)
         # NOTE:: links better generated from map isntead of cont
         obj_links = mw_setup.gen_linksEmpty(obj, cfg, context)
         mw_setup.gen_linksObjects(obj_links, cont, cfg, context)
