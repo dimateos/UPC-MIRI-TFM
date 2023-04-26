@@ -212,6 +212,12 @@ def cont_fromPoints(points: list[Vector], bb: list[Vector, 6], faces4D: list[Vec
     # Container bounds expected as tuples
     bb_tuples = [ p.to_tuple() for p in bb ]
 
+    #Legacy cont some tests mid operator
+    if DEV.LEGACY_CONT:
+        cont = Container(points=points, limits=bb_tuples)
+        DEV.log_msg(f"Found {len(cont)} cells (NO walls - {len(faces4D)} faces)", {"CALC-LEGACY"})
+        return cont
+
     # Set wall planes precision used
     if precision != Container.custom_walls_precision_default:
         Container.custom_walls_precision = precision

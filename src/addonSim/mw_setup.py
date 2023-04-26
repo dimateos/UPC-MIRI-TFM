@@ -172,6 +172,47 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
 
     getStats().logDt("generated shards objects")
 
+def _gen_LEGACY_CONT(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
+    centroids = []
+    vertices = []
+    volume = []
+    face_vertices = []
+    surface_area = []
+    normals = []
+    neighbors = []
+
+    for cell in cont:
+        c = cell.centroid()
+        vs = cell.vertices()
+        v = cell.volume()
+        f = cell.face_vertices()
+        s = cell.surface_area()
+        n = cell.normals()
+        ns = cell.neighbors()
+
+        centroids += [c]
+        vertices += [vs]
+        volume += [v]
+        face_vertices += [f]
+        surface_area += [s]
+        normals += [n]
+        neighbors += [ns]
+
+        # build the static mesh and child object just at the origin
+        name= f"{CONST_NAMES.shards}_{cell.id}"
+        mesh = bpy.data.meshes.new(name)
+        mesh.from_pydata(vertices=vs, edges=[], faces=f)
+        obj_shard = utils.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showShards)
+        pass
+    getStats().logDt("generated LEGACY shards objects")
+
+    numVerts = [ len(vs) for vs in vertices ]
+    numFaces = [ len(fs) for fs in face_vertices ]
+
+    import numpy as np
+    stVolume = np.std(volume)
+    stArea = np.std(surface_area)
+    getStats().logDt("calculated stats (use breakpoints to see)")
 
 def gen_linksObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
     # WIP:: atm just hiding reps -> maybe generate using a different map instead of iterating the raw cont

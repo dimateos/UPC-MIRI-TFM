@@ -3,6 +3,7 @@
 
 class DEV:
     DEBUG = True
+    LEGACY_CONT = True
 
     # IDEA:: some access from UI to toggle dynamically?
     logs = True

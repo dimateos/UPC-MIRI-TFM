@@ -139,36 +139,49 @@ class MW_gen_OT(_StartRefresh_OT):
         # Calc voronoi
         DEV.log_msg("Start calc cont", {'SETUP'})
         cont = mw_calc.cont_fromPoints(points, bb, faces4D, precision=prefs.calc_precision)
-
         obj_shards = mw_setup.gen_shardsEmpty(obj, cfg, context)
-        mw_setup.gen_shardsObjects(obj_shards, cont, cfg, context, invertOrientation=prefs.gen_invert_shardNormals)
 
         # XXX:: there is a hard limit in the number of voro++ walls
         #/** The maximum size for the wall pointer array. */
         #const int max_wall_size=2048;
 
+        #test some legacy stuff
+        if DEV.LEGACY_CONT:
+            mw_setup._gen_LEGACY_CONT(obj_shards, cont, cfg, context)
+            self.setup_final(obj, context)
+            return self.end_op("DEV.LEGACY_CONT stop...")
+
+        mw_setup.gen_shardsObjects(obj_shards, cont, cfg, context, invertOrientation=prefs.gen_invert_shardNormals)
+
+
         DEV.log_msg("Start calc links", {'SETUP'})
         links = Links(cont, obj_shards)
+
         # NOTE:: links better generated from map isntead of cont
         obj_links = mw_setup.gen_linksEmpty(obj, cfg, context)
         mw_setup.gen_linksObjects(obj_links, cont, cfg, context)
 
+        self.setup_final(obj, context, points, bb)
+        return self.end_op()
 
-        DEV.log_msg("Do some more scene setup", {'SETUP'})
-        # Finish scene setup and select after optional renaming
-        mw_setup.gen_renaming(obj, cfg, context)
-        obj.select_set(True)
-        context.view_layer.objects.active = obj
-        #context.active_object = obj
+    # OPT:: maybe use class atttrs instead of args
+    def setup_final(self, obj: types.Object, ctx: types.Context, points=None, bb=None):
+        DEV.log_msg("Do final scene setup", {'SETUP'})
+
+        # Select after renaming
+        mw_setup.gen_renaming(obj, self.cfg, ctx)
+        utils.select_unhide(obj, ctx)
         getStats().logDt("renamed and selected")
 
-        mw_setup.gen_pointsObject(obj, points, cfg, context)
-        mw_setup.gen_boundsObject(obj, bb, cfg, context)
+        # OPT:: prefs to select what to add
+        # spawn more visible objects
+        if points and bb:
+            mw_setup.gen_pointsObject(obj, points, self.cfg, ctx)
+            mw_setup.gen_boundsObject(obj, bb, self.cfg, ctx)
+            getStats().logDt("spawned points objs")
 
         # Add edited cfg to the object
         copyProps(self.cfg, obj.mw_gen)
-        return self.end_op()
-
 
 #-------------------------------------------------------------------
 

@@ -86,7 +86,7 @@ class MW_prefs(bpy.types.AddonPreferences):
     # XXX:: panels alone cannot store properties... here mixing dm panels with mw stuff, could separate the addons
 
     dm_PT_info_edit_showWorld: props.BoolProperty(
-        name="world space", description="Show vertices positions in world space",
+        name="world", description="Show vertices positions in world space",
         default=False,
     )
     dm_PT_edit_showEdges: props.BoolProperty(
@@ -94,8 +94,12 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=False,
     )
     dm_PT_edit_showFaceCenters: props.BoolProperty(
-        name="center position", description="Show face center position instead of vertex indices",
+        name="show center", description="Show face center position instead of vertex indices",
         default=False,
+    )
+    dm_PT_edit_showPrecision: props.IntProperty(
+        name="decimals", description="Number of decimals shown, will make colum wider.",
+        default=2, min=0, max=16,
     )
 
 

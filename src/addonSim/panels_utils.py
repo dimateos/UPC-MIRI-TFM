@@ -88,9 +88,12 @@ class Info_Inpect_PT(types.Panel):
         selected_faces = [f for f in mesh.polygons if f.select]
 
         # common format
-        fmt = ">5.1f"
+        fmt = f">5.{prefs.dm_PT_edit_showPrecision}f"
         fmt_vec = f"({{:{fmt}}}, {{:{fmt}}}, {{:{fmt}}})"
-
+        row = mainCol.row()
+        row.alignment= "LEFT"
+        row.prop(prefs, "dm_PT_info_edit_showWorld")
+        row.prop(prefs, "dm_PT_edit_showPrecision")
 
         # verts with optional world space toggle
         box = mainCol.box()
@@ -98,7 +101,7 @@ class Info_Inpect_PT(types.Panel):
         row = col.row()
         row.alignment= "LEFT"
         row.label(text=f"verts: {len(selected_verts)}")
-        row.prop(prefs, "dm_PT_info_edit_showWorld")
+        #row.prop(prefs, "dm_PT_info_edit_showWorld")
         for v in selected_verts:
             if prefs.dm_PT_info_edit_showWorld: pos = obj.matrix_world @ v.co
             else: pos = v.co
