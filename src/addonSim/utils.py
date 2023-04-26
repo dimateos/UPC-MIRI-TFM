@@ -156,7 +156,7 @@ def trans_printMatrices(obj: types.Object, printName=True):
 # TODO:: performance hit with teapot due to REC or scene childen access?
 # XXX:: all access to obj.children take O(n) where n is ALL objects of the scene...
 
-def copy_objectRec(obj: types.Object, context: types.Context, link_mesh = False, namePreffix: str = None, nameSuffix: str = None) -> types.Object:
+def copy_objectRec(obj: types.Object, context: types.Context, link_mesh = False, namePreffix = "", nameSuffix = "") -> types.Object:
     """ Copy the object along its children """
     obj_copy: types.Object = obj.copy()
     if not link_mesh and obj.data:
@@ -164,9 +164,9 @@ def copy_objectRec(obj: types.Object, context: types.Context, link_mesh = False,
 
     context.scene.collection.objects.link(obj_copy)
 
-    if namePreffix is None: namePreffix = ""
-    if nameSuffix is None: nameSuffix = ""
-    obj_copy.name = f"{namePreffix}{obj.name}{nameSuffix}"
+    # avoid setting name unless specified, otherwise the copy gets the priority name without .001
+    if namePreffix or nameSuffix:
+        obj_copy.name = f"{namePreffix}{obj.name}{nameSuffix}"
 
     for child in obj.children:
         child_copy = copy_objectRec(child, context, namePreffix, nameSuffix)

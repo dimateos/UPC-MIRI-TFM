@@ -86,6 +86,7 @@ def gen_copyConvex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, c
     bm.to_mesh(obj_d.data)
 
     # Scene viewport
+    obj_c.hide_set(True)
     obj_d.hide_set(not cfg.struct_showConvex)
 
     bm.free()
@@ -214,6 +215,8 @@ def _gen_LEGACY_CONT(obj: types.Object, cont: Container, cfg: MW_gen_cfg, contex
     stArea = np.std(surface_area)
     getStats().logDt("calculated stats (use breakpoints to see)")
 
+#-------------------------------------------------------------------
+
 def gen_linksObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
     # WIP:: atm just hiding reps -> maybe generate using a different map instead of iterating the raw cont
     #   maybe merge shard/link loop
@@ -266,7 +269,7 @@ def gen_linksObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, contex
 
                 obj_link = utils.gen_child(obj_group, name, context, curve_data, keepTrans=False, hide=not cfg.struct_showLinks)
 
-                obj_link.hide_set(key_rep)
+                obj_link.hide_set(key_rep or not cfg.struct_showLinks)
                 #obj_link.location = cell.centroid()
 
     getStats().logDt("generated links objects")

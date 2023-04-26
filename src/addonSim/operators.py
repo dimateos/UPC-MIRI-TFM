@@ -139,6 +139,7 @@ class MW_gen_OT(_StartRefresh_OT):
         # Calc voronoi
         DEV.log_msg("Start calc cont", {'SETUP'})
 
+        # XXX:: detect meshes with no volume? test basic shape for crashes...
         # XXX:: voro++ has some static constant values that have to be edited in compile time...
         #e.g. max_wall_size, tolerance for vertices,
 
