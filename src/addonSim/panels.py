@@ -69,7 +69,7 @@ class MW_gen_PT(types.Panel):
             col_rowSplit = col.row().split(factor=0.66)
             col_rowSplit.operator(ops.MW_util_delete_OT.bl_idname, text="DELETE rec", icon="CANCEL")
             prefs = getPrefs()
-            col_rowSplit.prop(prefs, "OT_util_delete_unhide")
+            col_rowSplit.prop(prefs, "OT_util_delete_unhideSelect")
 
             ui.draw_propsToggle(cfg, prefs, "gen_meta_PT_show_summary", "gen_meta_PT_propFilter", "gen_meta_PT_propEdit", col)
 

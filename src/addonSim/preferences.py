@@ -50,7 +50,7 @@ class MW_prefs(bpy.types.AddonPreferences):
     )
     gen_meta_PT_propFilter: props.StringProperty(
         name="FILTER", description="Separate values with commas, start with `-` for a excluding filter.",
-        default="",
+        default="-show",
     )
     gen_meta_PT_propEdit: props.BoolProperty(
         name="edit", description="Edit the props",
@@ -63,7 +63,7 @@ class MW_prefs(bpy.types.AddonPreferences):
     )
 
     #-------------------------------------------------------------------
-    # XXX:: what to store per object and what in prefs?
+    # TODO:: what to store per object and what in prefs?
 
     calc_precision: props.IntProperty(
         name="Wall precision", description="Number of decimals used to round and cluster wall planes",
@@ -77,7 +77,7 @@ class MW_prefs(bpy.types.AddonPreferences):
 
     #-------------------------------------------------------------------
 
-    OT_util_delete_unhide: props.BoolProperty(
+    OT_util_delete_unhideSelect: props.BoolProperty(
         name="unhide", description="Unhide the original object after deletion",
         default=True,
     )

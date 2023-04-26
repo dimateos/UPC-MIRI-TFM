@@ -21,22 +21,28 @@ def draw_toggleBox(metadata, propToggle_name:str, layout: types.UILayout) -> tup
 
 def draw_props(data, propFilter:str, layout: types.UILayout):
     """ Draw all properties of an object in a sub layout. """
-    # dynamic filter prop
+    # build dynamic filter prop
     prop_names = getProps_names(data)
     if propFilter:
-        excluding = propFilter[0]=="-"
-        if excluding: propFilter = propFilter[1:]
-        filtered_props = propFilter.split(",")
+        propFilter_clean = propFilter.replace(" ","").lower()
+        filters =  [ f for f in propFilter_clean.split(",") if f]
+        filters_inc = [f for f in filters if f[0]!="-"]
+        filters_exc = [f[1:] for f in filters if f[0]=="-"]
     else:
-        filtered_props = []
+        filters_inc = filters_exc = []
+    #DEV.draw_val(layout, "filter_inc", filters_inc)
+    #DEV.draw_val(layout, "filter_exc", filters_exc)
 
+    # iterate the props and check agains all filters before adding to ui
     for prop_name in prop_names:
         # apply excluding/including filter
-        if filtered_props:
-            filterMask = [ f.strip().lower() in prop_name.strip().lower() for f in filtered_props ]
-            if excluding:
-                if any(filterMask): continue
-            elif not any(filterMask): continue
+        prop_name_clean = prop_name.strip().lower()
+        if (filters_inc):
+            mask_inc = [ f in prop_name_clean for f in filters_inc ]
+            if not any(mask_inc): continue
+        if (filters_exc):
+            mask_exc = [ f in prop_name_clean for f in filters_exc ]
+            if any(mask_exc): continue
 
         layout.row().prop(data, prop_name, text=prop_name)
 

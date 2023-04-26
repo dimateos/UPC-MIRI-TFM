@@ -138,10 +138,10 @@ class MW_gen_OT(_StartRefresh_OT):
 
         # Calc voronoi
         DEV.log_msg("Start calc cont", {'SETUP'})
-        cont = mw_calc.cont_fromPoints(points, bb, faces4D)
+        cont = mw_calc.cont_fromPoints(points, bb, faces4D, precision=prefs.calc_precision)
 
         obj_shards = mw_setup.gen_shardsEmpty(obj, cfg, context)
-        mw_setup.gen_shardsObjects(obj_shards, cont, cfg, context, invertOrientation=prefs.OT_invert_shardNormals)
+        mw_setup.gen_shardsObjects(obj_shards, cont, cfg, context, invertOrientation=prefs.gen_invert_shardNormals)
 
         # XXX:: there is a hard limit in the number of voro++ walls
         #/** The maximum size for the wall pointer array. */
@@ -199,12 +199,16 @@ class MW_util_delete_OT(_StartRefresh_OT):
         obj, cfg = MW_util_delete_OT._obj, MW_util_delete_OT._cfg
         prefs = getPrefs()
 
-        # optionally hide
-        if (prefs.OT_util_delete_unhide):
+        # optional unhide flag
+        if (prefs.OT_util_delete_unhideSelect):
             obj_original = utils.get_object_fromScene(context.scene, cfg.struct_nameOriginal)
-            obj_original.hide_set(False)
+            if not obj_original:
+                self.logReport("obj_original not found -> wont unhide")
+            else:
+                utils.select_unhideRec(obj_original, context, selectChildren=False)
 
         utils.delete_objectRec(obj, logAmount=True)
+
         return self.end_op()
 
 

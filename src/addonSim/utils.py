@@ -207,11 +207,32 @@ def get_child(obj: types.Object, name: str) -> types.Object|None:
             return child
     return None
 
+#-------------------------------------------------------------------
+
+def select_unhide(obj: types.Object, context: types.Context, select=True):
+    obj.hide_set(False)
+
+    if select:
+        obj.select_set(True)
+        context.view_layer.objects.active = obj
+        #context.view_layer.objects.selected += [obj]   # appended by select_set
+        #context.active_object = obj                    # read-only
+    else:
+        obj.select_set(False)
+        # XXX:: also remove from lists?
+
+    #DEV.log_msg(f"{obj.name}: select {select}", {"SELECT"})
+
+def select_unhideRec(obj: types.Object, context: types.Context, select=True, selectChildren=True):
+    """ Hide the object and children recursively """
+    for child in obj.children_recursive:
+        select_unhide(child, context, selectChildren)
+    select_unhide(obj, context, select)
+
 def hide_objectRec(obj: types.Object, hide=True):
     """ Hide the object and children recursively """
-    for child in obj.children:
+    for child in obj.children_recursive:
         hide_objectRec(child)
-
     obj.hide_set(hide)
 
 #-------------------------------------------------------------------
