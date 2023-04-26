@@ -61,6 +61,7 @@ class Info_Inpect_PT(types.Panel):
         col_rowSplit.operator(ops_util.Util_deleteIndices_OT.bl_idname, icon="CANCEL")
 
         # IDEA:: print mesh dicts with input text for type
+        # IDEA:: add an index option and print that only + its neighbours
 
         if obj.type == 'MESH':
             col = layout.column()

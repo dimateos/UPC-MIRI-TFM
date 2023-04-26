@@ -138,19 +138,18 @@ class MW_gen_OT(_StartRefresh_OT):
 
         # Calc voronoi
         DEV.log_msg("Start calc cont", {'SETUP'})
+
+        # XXX:: voro++ has some static constant values that have to be edited in compile time...
+        #e.g. max_wall_size, tolerance for vertices,
+
         cont = mw_calc.cont_fromPoints(points, bb, faces4D, precision=prefs.calc_precision)
         obj_shards = mw_setup.gen_shardsEmpty(obj, cfg, context)
 
-        # XXX:: there is a hard limit in the number of voro++ walls
-        #/** The maximum size for the wall pointer array. */
-        #const int max_wall_size=2048;
-
-        #test some legacy stuff
+        #test some legacy or statistics stuff
         if DEV.LEGACY_CONT:
             mw_setup._gen_LEGACY_CONT(obj_shards, cont, cfg, context)
             self.setup_final(obj, context)
             return self.end_op("DEV.LEGACY_CONT stop...")
-
         mw_setup.gen_shardsObjects(obj_shards, cont, cfg, context, invertOrientation=prefs.gen_invert_shardNormals)
 
 

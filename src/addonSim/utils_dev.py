@@ -3,7 +3,9 @@
 
 class DEV:
     DEBUG = True
-    LEGACY_CONT = True
+
+    LEGACY_CONT = False
+    """ Checking some stats of legacy cont (could also do for the regular one) """
 
     # IDEA:: some access from UI to toggle dynamically?
     logs = True

@@ -20,6 +20,15 @@ cont = Container(points=[c], limits=bb)
 print("\n? print_data(cont[0])", cont)
 print_data(cont[0])
 
+# %% Read err ouput?
+import py, sys
+capture = py.io.StdCaptureFD(out=False, in_=False)
+ns = cont[0].neighbors()
+sys.stderr.write("world")
+out,err = capture.reset()
+print("out", out)
+print("err", err)
+
 # %% list container methods
 print_attributes(Container, False)
 print_data(cont, False)
