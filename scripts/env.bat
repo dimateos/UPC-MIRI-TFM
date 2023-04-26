@@ -1,26 +1,41 @@
 @echo off
 REM env variables for local python expanded to absolute path
 
-REM use local blender python to be able to share the enviroment easily
-CALL :getAbsPath "..\DATA\Blender\3.4.1\3.4\python\bin\python.exe"
-set bpy=%RETVAL%
-::echo SET bpy: %bpy%
+REM shared paths
+:_paths
+    set "dDATA=..\DATA"
+    set "nBLENDER=Blender"
+    set "dBLENDER=%dDATA%\%nBLENDER%"
+    set "nBUILD=3.4.1"
+    set "dBUILD=%dBLENDER%\%nBUILD%"
 
-REM pass arguments directly to local pip
-set bpip=%bpy% -m pip
+:_env:
+    REM use local blender python to be able to share the enviroment easily
+    CALL :getAbsPath "%dBUILD%\3.4\python\bin\python.exe"
+    set bpy=%RETVAL%
+    ::echo SET bpy: %bpy%
 
-REM open blender
-CALL :getAbsPath "..\DATA\Blender\3.4.1\blender.exe"
-set bexe=%RETVAL%
-CALL :getAbsPath "..\DATA\Blender\3.4.1\3.4\scripts\addons"
-set bscripts=%RETVAL%
+    REM pass arguments directly to local pip
+    set bpip=%bpy% -m pip
 
-REM path to shared stuff
-set "src=..\DATA"
-set "src_folder=Blender"
-set "src_build=3.4.1"
-set "dest=C:\Users\Diego\Desktop\__stream-DRIVE\UPC\.shortcut-targets-by-id\1y_ROJTEoZxvMw6SsSFvZTUuMaTztJfSi\TFM Diego Mateos\DATA"
-::set "dest=C:\OneDrive\Drive Google\UPC\_TFM\DATA"
+    REM open blender
+    CALL :getAbsPath "%dBUILD%\blender.exe"
+    set bexe=%RETVAL%
+    CALL :getAbsPath "%dBUILD%\3.4\scripts\addons"
+    set bscripts=%RETVAL%
+
+:_voro
+    set "dBUILD_tfm=%dDATA%\UPC-MIRI-TFM-tess"
+    set "fBUILD_cfg=%dBUILD_tfm%\src\config.hh"
+    set "fBUILD_dbins=%dBUILD_tfm%\build"
+    set "fBUILD_pybin=%dBUILD_tfm%\tess\_voro.*.pyd"
+
+    set "dBUILD_tess=%dDATA%\py_tess"
+
+:_share
+    REM path to shared stuff
+    set "dSHARED=C:\Users\Diego\Desktop\__stream-DRIVE\UPC\.shortcut-targets-by-id\1y_ROJTEoZxvMw6SsSFvZTUuMaTztJfSi\TFM Diego Mateos"
+    set "dSHARED_DATA=%dSHARED%\DATA"
 
 
 ::========== FUNCTIONS ==========

@@ -1,3 +1,3 @@
 @echo off
 CALL ./env
-explorer %dest%
+explorer %dSHARED_DATA%

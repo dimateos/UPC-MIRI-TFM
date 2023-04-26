@@ -7,14 +7,15 @@ CALL ./env
 
 :assets
     set "folder=models-TEST"
-    robocopy "%src%/%folder%" "%dest%/%folder%" *.blend /MIR /FFT /MT:32 /R:1 /W:1 &REM limit to non backup files
+    REM limit to non backup files
+    robocopy "%dDATA%/%folder%" "%dSHARED_DATA%/%folder%" *.blend /MIR /FFT /MT:32 /R:1 /W:1
 
     ::set "folder=models-Terrenos"
-    ::robocopy "%src%/%folder%" "%dest%/%folder%" /MIR /FFT /MT:32 /R:1 /W:1
+    ::robocopy "%dDATA%/%folder%" "%dSHARED_DATA%/%folder%" /MIR /FFT /MT:32 /R:1 /W:1
 
     ::set "folder=geogebra"
-    ::robocopy "%src%/%folder%" "%dest%/%folder%" /MIR /FFT /MT:32 /R:1 /W:1
+    ::robocopy "%dDATA%/%folder%" "%dSHARED_DATA%/%folder%" /MIR /FFT /MT:32 /R:1 /W:1
 
-:src
+:dDATA
     ::set "folder=py_object_fracture_cell"
-    ::robocopy "%src%/%folder%" "%dest%/%folder%" /MIR /FFT /MT:32 /R:1 /W:1
+    ::robocopy "%dDATA%/%folder%" "%dSHARED_DATA%/%folder%" /MIR /FFT /MT:32 /R:1 /W:1
