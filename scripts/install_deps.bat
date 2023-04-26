@@ -26,6 +26,10 @@ REM install or update dependencies, includes voro++
     REM own updated fork or local version
     %bpip% uninstall tess --yes
     ::%bpip% install ../DATA/UPC-MIRI-TFM-tess
+
     REM two methods of dynamic installation
     %bpip% install --editable ../DATA/UPC-MIRI-TFM-tess
     ::pushd %CD% && cd ../DATA/UPC-MIRI-TFM-tess && %bpy% setup.py develop && popd &REM needs to be executed at the root of the library repository
+
+    REM install the original to test some changes
+    ::%bpip% install --editable ../DATA/py_tess

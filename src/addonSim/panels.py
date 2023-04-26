@@ -71,7 +71,7 @@ class MW_gen_PT(types.Panel):
             prefs = getPrefs()
             col_rowSplit.prop(prefs, "OT_util_delete_unhide")
 
-            ui.draw_propsToggle(cfg, prefs, "PT_gen_show_summary", "PT_gen_propFilter", "PT_gen_propEdit", col)
+            ui.draw_propsToggle(cfg, prefs, "gen_meta_PT_show_summary", "gen_meta_PT_propFilter", "gen_meta_PT_propEdit", col)
 
 class MW_addon_PT(types.Panel):
     bl_idname = "MW_PT_addon"
@@ -89,9 +89,9 @@ class MW_addon_PT(types.Panel):
         layout = self.layout
         col = layout.column()
 
-        ui.draw_propsToggle(prefs, prefs, "meta_show_prefs", "meta_propFilter", "meta_propEdit", col)
+        ui.draw_propsToggle(prefs, prefs, "meta_PT_show_prefs", "meta_PT_propFilter", "meta_PT_propEdit", col)
 
-        open, box = ui.draw_toggleBox(prefs, "meta_show_tmpDebug", layout)
+        open, box = ui.draw_toggleBox(prefs, "meta_PT_show_tmpDebug", layout)
         if open:
             col = box.column()
             # check region width

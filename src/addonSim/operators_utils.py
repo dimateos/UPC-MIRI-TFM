@@ -80,6 +80,7 @@ class _StartRefresh_OT(types.Operator):
     )
 
     def checkRefresh_cancel(self):
+        """ Checks and updates auto/refresh state, returns True when there is no need to continue exec """
         if self.refresh_log:
             DEV.log_msg(f"execute auto_refresh:{self.meta_auto_refresh} refresh:{self.meta_refresh}", {'OP_FLOW'})
 
@@ -93,6 +94,7 @@ class _StartRefresh_OT(types.Operator):
     # common log+stats
 
     def start_op(self, msg=""):
+        """ Default exit flow at the start of execution """
         stats = getStats()
         if self.start_resetStats: stats.reset()
         #stats.testStats()
@@ -105,6 +107,7 @@ class _StartRefresh_OT(types.Operator):
         if self.start_logStats: stats.logDt(f"timing: ({self.bl_idname})...")
 
     def end_op(self, msg="", skipLog=False, retPass=False):
+        """ Default exit flow at the end of execution """
         if self.end_log:
             if not msg: msg= f"{self.bl_label}"
             DEV.log_msg(f"Op END: {msg} ({self.bl_idname})", {'OP_FLOW'})
@@ -116,14 +119,28 @@ class _StartRefresh_OT(types.Operator):
         return {"FINISHED"} if not retPass else {'PASS_THROUGH'}
 
     def end_op_error(self, msg = "", skipLog=False, retPass=False):
-        # blender pop up that shows the message
-        self.report({'ERROR'}, f"Op FAILED: {msg}")
+        """ Default exit flow after an error """
+        self.logReport(f"Op FAILED: {msg}", {'ERROR'})
         if not msg: msg= f"failed execution"
         return self.end_op(msg, skipLog, retPass)
 
     def end_op_refresh(self, msg = "", skipLog=True, retPass=True):
+        """ Default exit flow after a cancelled refresh """
         if not msg: msg= f"cancel execution (refresh)"
         return self.end_op(msg, skipLog, retPass)
+
+    def logReport(self, msg, rtype = {'WARNING'}):
+        """ blender rtype of kind INFO, WARNING or ERROR"""
+        # check valid blender type
+        if rtype & { "INFO", "WARNING", "ERROR" } == {}:
+            DEV.log_msg(f"{msg} (report-FAIL)", rtype)
+
+        else:
+            # regular log too
+            DEV.log_msg(f"{msg} (report)", rtype)
+            # blender pop up that shows the message
+            self.report(rtype, f"{msg}")
+
 
 #-------------------------------------------------------------------
 

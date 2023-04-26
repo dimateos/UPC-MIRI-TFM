@@ -207,10 +207,17 @@ def points_transformCfg(points: list[Vector], cfg: MW_gen_cfg, bb_radius: float)
 
 #-------------------------------------------------------------------
 
-def cont_fromPoints(points: list[Vector], bb: list[Vector, 6], faces4D: list[Vector]) -> Container:
+def cont_fromPoints(points: list[Vector], bb: list[Vector, 6], faces4D: list[Vector], precision: int) -> Container:
     """ Build a voro++ container using the points and the faces as walls """
     # Container bounds expected as tuples
     bb_tuples = [ p.to_tuple() for p in bb ]
+
+    # Set wall planes precision used
+    if precision != Container.custom_walls_precision_default:
+        Container.custom_walls_precision = precision
+        DEV.log_msg(f"Set Container.custom_walls_precision: {precision}", {"CALC"})
+    else:
+        Container.custom_walls_precision = Container.custom_walls_precision_default
 
     # Build the container and cells
     cont = Container(points=points, limits=bb_tuples, walls=faces4D)

@@ -11,6 +11,7 @@ from .utils_dev import DEV
 
 
 # OPT:: coherent poll to disable OT vs not spawning the ui
+# OPT:: add deps graph calc check + also for mesh indices spawn
 #-------------------------------------------------------------------
 
 class Info_Inpect_PT(types.Panel):
@@ -97,14 +98,14 @@ class Info_Inpect_PT(types.Panel):
         row = col.row()
         row.alignment= "LEFT"
         row.label(text=f"verts: {len(selected_verts)}")
-        row.prop(prefs, "PT_info_edit_showWorld")
+        row.prop(prefs, "dm_PT_info_edit_showWorld")
         for v in selected_verts:
-            if prefs.PT_info_edit_showWorld: pos = obj.matrix_world @ v.co
+            if prefs.dm_PT_info_edit_showWorld: pos = obj.matrix_world @ v.co
             else: pos = v.co
             col.label(text=f"{v.index}: " + f"{fmt_vec}".format(*pos))
 
         # optional edges
-        open, box = ui.draw_toggleBox(prefs, "PT_edit_showEdges", mainCol)
+        open, box = ui.draw_toggleBox(prefs, "dm_PT_edit_showEdges", mainCol)
         if open:
             col = box.column()
             col.label(text=f"edges: {len(selected_edges)}")
@@ -116,10 +117,10 @@ class Info_Inpect_PT(types.Panel):
         row = col.row()
         row.alignment= "LEFT"
         row.label(text=f"faces: {len(selected_faces)}")
-        row.prop(prefs, "PT_edit_showFaceCenters")
-        if (prefs.PT_edit_showFaceCenters):
+        row.prop(prefs, "dm_PT_edit_showFaceCenters")
+        if (prefs.dm_PT_edit_showFaceCenters):
             for f in selected_faces:
-                if prefs.PT_info_edit_showWorld: pos = obj.matrix_world @ f.center
+                if prefs.dm_PT_info_edit_showWorld: pos = obj.matrix_world @ f.center
                 else: pos = f.center
                 col.label(text=f"{f.index}: " + f"{fmt_vec}".format(*pos))
         else:

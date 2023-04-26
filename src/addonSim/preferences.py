@@ -22,54 +22,60 @@ class MW_prefs(bpy.types.AddonPreferences):
     def draw(self, context):
         # Careful with circulare dependecies, maybe split the class with draw and props
         from .ui import draw_propsToggle
-        draw_propsToggle(self, self, "meta_show_prefs", "meta_propFilter", "meta_propEdit", self.layout)
+        draw_propsToggle(self, self, "meta_PT_show_prefs", "meta_PT_propFilter", "meta_PT_propEdit", self.layout)
 
-    #-------------------------------------------------------------------
-
-    meta_show_prefs: props.BoolProperty(
+    meta_PT_show_prefs: props.BoolProperty(
         name="Show addon preferences...", description="Show addon preferences",
         default=True,
     )
-    meta_propFilter: props.StringProperty(
+    meta_PT_propFilter: props.StringProperty(
         name="FILTER", description="Separate values with commas, start with `-` for a excluding filter.",
-        default="OT",
+        default="-PT,",
     )
-    meta_propEdit: props.BoolProperty(
+    meta_PT_propEdit: props.BoolProperty(
         name="edit", description="Edit the props",
         default=True,
     )
 
-    meta_show_tmpDebug: props.BoolProperty(
+    meta_PT_show_tmpDebug: props.BoolProperty(
         name="Show debug...", description="WIP: Show some debug stuff",
         default=True,
     )
 
     #-------------------------------------------------------------------
 
-    PT_gen_show_summary: props.BoolProperty(
+    gen_meta_PT_show_summary: props.BoolProperty(
         name="Show object summary...", description="Show fracture summary",
         default=False,
     )
-    PT_gen_propFilter: props.StringProperty(
+    gen_meta_PT_propFilter: props.StringProperty(
         name="FILTER", description="Separate values with commas, start with `-` for a excluding filter.",
-        default="-meta",
+        default="",
     )
-    PT_gen_propEdit: props.BoolProperty(
+    gen_meta_PT_propEdit: props.BoolProperty(
         name="edit", description="Edit the props",
         default=False,
     )
 
-    PT_gen_show_tmpDebug: props.BoolProperty(
+    gen_meta_PT_show_tmpDebug: props.BoolProperty(
         name="Show DEBUG...", description="WIP: Show some debug stuff",
         default=True,
     )
 
     #-------------------------------------------------------------------
+    # XXX:: what to store per object and what in prefs?
 
-    OT_invert_shardNormals: props.BoolProperty(
+    calc_precision: props.IntProperty(
+        name="Wall precision", description="Number of decimals used to round and cluster wall planes",
+        default=4, min=0, max=10,
+    )
+
+    gen_invert_shardNormals: props.BoolProperty(
         name="Invert final shards face normals", description="Seems like they end up reversed due to voro face ordering.",
         default=True,
     )
+
+    #-------------------------------------------------------------------
 
     OT_util_delete_unhide: props.BoolProperty(
         name="unhide", description="Unhide the original object after deletion",
@@ -79,18 +85,21 @@ class MW_prefs(bpy.types.AddonPreferences):
     #-------------------------------------------------------------------
     # XXX:: panels alone cannot store properties... here mixing dm panels with mw stuff, could separate the addons
 
-    PT_info_edit_showWorld: props.BoolProperty(
+    dm_PT_info_edit_showWorld: props.BoolProperty(
         name="world space", description="Show vertices positions in world space",
         default=False,
     )
-    PT_edit_showEdges: props.BoolProperty(
+    dm_PT_edit_showEdges: props.BoolProperty(
         name="Show edges...", description="Show long list of edges with its key (v1, v2)",
         default=False,
     )
-    PT_edit_showFaceCenters: props.BoolProperty(
+    dm_PT_edit_showFaceCenters: props.BoolProperty(
         name="center position", description="Show face center position instead of vertex indices",
         default=False,
     )
+
+
+#-------------------------------------------------------------------
 
 def getPrefs() -> MW_prefs:
     """ Get addon preferences from blender """

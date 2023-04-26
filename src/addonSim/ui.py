@@ -172,7 +172,7 @@ def draw_gen_cfgDebug(cfg: MW_gen_cfg, layout: types.UILayout):
     from .preferences import getPrefs
     prefs = getPrefs()
 
-    open, box = draw_toggleBox(prefs, "PT_gen_show_tmpDebug", layout)
+    open, box = draw_toggleBox(prefs, "gen_meta_PT_show_tmpDebug", layout)
     if open:
         col = box.column()
         col.label(text="Show:")
