@@ -86,8 +86,8 @@ def gen_copyConvex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, c
     bm.to_mesh(obj_d.data)
 
     # Scene viewport
-    obj_c.hide_set(True)
-    obj_d.hide_set(not cfg.struct_showConvex)
+    utils.hide_objectRec(obj_c)
+    utils.hide_objectRec(obj_d, not cfg.struct_showConvex)
 
     bm.free()
     getStats().logDt("generated convex object")

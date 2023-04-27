@@ -36,7 +36,8 @@ class MW_gen_cfg(types.PropertyGroup):
             #'PENCIL': False,
         }
         all_keys = [ k for k in enabled.keys() ]
-        default_key = 'VERT_OWN'
+        default_key = 'PARTICLE_CHILD'
+        fallback_key = 'VERT_OWN'
         error_key = 'NONE'
         error_option = [ (error_key, "No point found...", f"Options: {all_keys}") ]
 

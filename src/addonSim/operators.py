@@ -72,8 +72,11 @@ class MW_gen_OT(_StartRefresh_OT):
 
         # TODO:: store cont across simulations in the object or info from it
         # TODO:: run again more smartly, like detect no need for changes (e.g. name change or prefs debug show) -> compare both props, or use prop update func self ref? also for spawn indices
+        # IDEA:: move all visual toggles to the side panel to avoid recalculations...
+        # IDEA:: delete frac button in gen panel too
         # OPT:: separate simulation and scene generation: option to no store inter meshes
         # IDEA:: divide execute in function? sim/vis
+
         # XXX:: particles are in world position?
         # XXX:: refresh is slow, maybe related to other ui doing recursive access to root?? maybe panel with ok before?
         # OPT:: adding many objects to the scene takes most of the time -> single global mesh?
@@ -107,18 +110,19 @@ class MW_gen_OT(_StartRefresh_OT):
                 DEV.log_msg("cfg found: getting toFrac child", {'SETUP'})
                 cfg: MW_gen_cfg = self.cfg
 
+                name_original = f"{mw_setup.CONST_NAMES.original}{cfg.struct_nameOriginal}"
+                obj_original = utils.get_child(obj, name_original)
                 if cfg.shape_useConvexHull:
-                    name_toFrac = mw_setup.CONST_NAMES.original_c
-                else:
-                    name_toFrac = f"{mw_setup.CONST_NAMES.original}{cfg.struct_nameOriginal}"
-
-                obj_toFrac = utils.get_child(obj, name_toFrac)
+                    obj_toFrac = utils.get_child(obj, mw_setup.CONST_NAMES.original_c)
+                else: obj_toFrac = obj_original
                 getStats().logDt("retrieved toFrac object")
+
 
         # IDEA:: global rnd in prefs?
         cfg.rnd_seed = utils.rnd_seed(cfg.rnd_seed) # seed common random gen
         prefs = getPrefs()
 
+        # XXX:: generation from zero is more done twice faster than generating -> deleting all objects previosly?
 
         DEV.log_msg("Start calc points", {'SETUP'})
         # Get the points and transform to local space when needed

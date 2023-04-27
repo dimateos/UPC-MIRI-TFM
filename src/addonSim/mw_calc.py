@@ -85,9 +85,10 @@ def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
 def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, context):
     points = get_points_from_object(obj, cfg, context)
 
+    # OPT:: wont happen anymore?
     if not points:
-        DEV.log_msg("No points found... changing to fallback (own vertices)", {"SETUP"})
-        cfg.source = { cfg.sourceOptions.default_key }
+        DEV.log_msg(f"No points found... changing to fallback ({cfg.sourceOptions.fallback_key})", {"SETUP"})
+        cfg.source = { cfg.sourceOptions.fallback_key }
         points = get_points_from_object(obj, cfg, context)
     if not points:
         DEV.log_msg("No points found either...", {"SETUP"})
@@ -102,7 +103,10 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
     """
     source = cfg.source
     if not source:
-        cfg.source = source = { cfg.sourceOptions.default_key }
+        if cfg.sourceOptions.enabled[cfg.sourceOptions.default_key]:
+            source = { cfg.sourceOptions.default_key }
+        else: source = { cfg.sourceOptions.fallback_key }
+        cfg.source = source
 
     # return in local space
     points = []
