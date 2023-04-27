@@ -225,11 +225,18 @@ def cont_fromPoints(points: list[Vector], bb: list[Vector, 6], faces4D: list[Vec
     else:
         Container.custom_walls_precision = Container.custom_walls_precision_default
 
-    # Build the container and cells
-    cont = Container(points=points, limits=bb_tuples, walls=faces4D)
+    try:
+        # Build the container and cells
+        cont = Container(points=points, limits=bb_tuples, walls=faces4D)
 
-    # Check non empty
-    getStats().logDt("calculated cont")
-    logType = {"CALC"} if cont else {"CALC", "ERROR"}
-    DEV.log_msg(f"Found {len(cont)} cells ({len(cont.walls)} walls from {len(faces4D)} faces)", logType)
-    return cont
+        # Check non empty
+        getStats().logDt("calculated cont")
+        logType = {"CALC"} if cont else {"CALC", "ERROR"}
+        DEV.log_msg(f"Found {len(cont)} cells ({len(cont.walls)} walls from {len(faces4D)} faces)", logType)
+        return cont
+
+    # XXX:: container creation might fail do to some voro++ config params... hard to tweak for all?
+    # XXX:: also seems that if the mesh vertices/partilces are further appart if behaves better?
+    except Exception as e:
+        DEV.log_msg(f"exception cont >> {str(e)}", {"CALC", "ERROR"})
+        return []

@@ -144,6 +144,9 @@ class MW_gen_OT(_StartRefresh_OT):
         #e.g. max_wall_size, tolerance for vertices,
 
         cont = mw_calc.cont_fromPoints(points, bb, faces4D, precision=prefs.calc_precision)
+        if not cont:
+            return self.end_op_error("found no cont... but could try recalculate!")
+
         obj_shards = mw_setup.gen_shardsEmpty(obj, cfg, context)
 
         #test some legacy or statistics stuff

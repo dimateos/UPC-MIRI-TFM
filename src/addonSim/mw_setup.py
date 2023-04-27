@@ -139,7 +139,7 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, co
 def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context, invertOrientation = False):
     for cell in cont:
         source_id = cont.source_idx[cell.id]
-        name= f"{CONST_NAMES.shards}_{source_id}"
+        name= f"{CONST_NAMES.shards}_{source_id:03}"
 
         # XXX:: the centroid is not at the center of mass? problem maybe related to margins etc
         posC = cell.centroid()
@@ -224,7 +224,7 @@ def gen_linksObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, contex
 
     for cell in cont:
         # group the links by cell using a parent
-        nameGroup= f"{CONST_NAMES.links_group}_{cell.id}"
+        nameGroup= f"{CONST_NAMES.links_group}_{cell.id:03}"
         obj_group = utils.gen_child(obj, nameGroup, context, None, keepTrans=False, hide=False)
         #obj_group.matrix_world = Matrix.Identity(4)
         #obj_group.location = cell.centroid()

@@ -35,9 +35,12 @@ class Links():
         stats = getStats()
         self.cont = cont
         self.obj_shards = obj_shards
+        #return
 
         # XXX:: decouple scene from sim? calculate the FtoF map inside voro isntead of blender mesh...
         meshes = [ shard.data for shard in obj_shards.children ]
+        # TODO:: the children objects are ordered lexicographically 0 1 10 11 12 13... dynamically add zeroes or sort after?
+
         meshes_dicts = [ utils_geo.get_meshDicts(me) for me in meshes ]
         stats.logDt("calculated shards mesh dicts")
 
@@ -47,10 +50,15 @@ class Links():
         stats.logDt("calculated voro cell neighs")
 
         cont_neighs_faces = []
-        for i,neighs in enumerate(cont_neighs):
-            faces = [ n if n<0 else cont_neighs[n].index(i) for n in neighs ]
-            cont_neighs_faces.append(faces)
-        stats.logDt("calculated cell neighs faces")
+        try:
+            for i,neighs in enumerate(cont_neighs):
+                faces = [ n if n<0 else cont_neighs[n].index(i) for n in neighs ]
+                cont_neighs_faces.append(faces)
+            stats.logDt("calculated cell neighs faces")
+        except:
+            # TODO:: the map could be asymetric! and .index(i) fail -> needs to be handle and maybe breaks later parts...
+            stats.logDt("non asimetric neighboring map...")
+            return
 
 
         # TODO:: unionfind joined components
@@ -126,12 +134,16 @@ class Links():
                 # extract idx and geometry faces neighs
                 c1, c2 = l.key_cells
                 f1, f2 = l.key_faces
-                f1_neighs = meshes_dicts[c1]["FtoF"][f1]
-                f2_neighs = meshes_dicts[c2]["FtoF"][f2]
+                m1_neighs = meshes_dicts[c1]["FtoF"]
+                m2_neighs = meshes_dicts[c2]["FtoF"]
+                f1_neighs = m1_neighs[f1]
+                f2_neighs = m2_neighs[f2]
 
                 # the key is sorted, so query the keys per cell per each one
-                c1_neighs = [ self.keys_perCell[c1][f] for f in f1_neighs ]
-                c2_neighs = [ self.keys_perCell[c2][f] for f in f2_neighs ]
+                c1_keys = self.keys_perCell[c1]
+                c2_keys = self.keys_perCell[c2]
+                c1_neighs = [ c1_keys[f] for f in f1_neighs ]
+                c2_neighs = [ c2_keys[f] for f in f2_neighs ]
                 l.neighs += c1_neighs + c2_neighs
 
         stats.logDt("aggregated link neighbours")
