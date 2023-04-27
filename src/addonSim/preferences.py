@@ -66,6 +66,7 @@ class MW_prefs(bpy.types.AddonPreferences):
     # TODO:: what to store per object and what in prefs?
 
     calc_precision: props.IntProperty(
+        # OPT:: read voro++ config from python? API/file system
         name="Wall precision", description="Number of decimals used to round and cluster wall planes",
         default=4, min=0, max=10,
     )

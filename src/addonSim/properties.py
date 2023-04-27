@@ -139,19 +139,18 @@ class MW_gen_cfg(types.PropertyGroup):
     # IDEA:: could allow negative margins, but then handle 0 when points are on the wall?
     margin_box_bounds: props.FloatProperty(
         name="Margin BB", description="Additional displacement of the box normal planes",
-        default=0.025, min=0.001, max=1.0,
+        default=0.05, min=0.001, max=1.0, step=1, precision=3
     )
     margin_face_bounds: props.FloatProperty(
         name="Margin faces", description="Additional displacement of the face normal planes",
-        default=0.025, min=0.001, max=1.0,
+        default=0.025, min=0.001, max=1.0, step=1, precision=3
     )
 
     links_width: props.FloatProperty(
         name="Link width", description="WIP: how wide the base link is",
-        default=0.1, min=0.01, max=2.0,
+        default=0.02, min=0.005, max=0.1, step=0.05, precision=4
     )
     links_res: props.IntProperty(
-        # OPT:: set smooth shading too
         name="Link res", description="WIP: ",
         default=0, min=0, max=8,
     )

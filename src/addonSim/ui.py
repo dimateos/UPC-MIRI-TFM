@@ -1,6 +1,5 @@
 import bpy
 import bpy.types as types
-from mathutils import Vector, Matrix
 
 from .properties import (
     MW_gen_cfg,
@@ -66,56 +65,6 @@ def draw_refresh(data, layout: types.UILayout):
     split = row.split(factor=0.75)
     split.prop(data, "meta_auto_refresh", toggle=True, icon_only=False, icon='FILE_REFRESH')
     split.prop(data, "meta_refresh", toggle=True, icon_only=True, icon='FILE_REFRESH')
-
-def draw_inspectObject(obj: types.Object, layout: types.UILayout, drawTrans=True) -> types.UILayout:
-    mainBox = layout.box()
-    mainCol = mainBox.column()
-    mainCol.label(text="Object: " + obj.name),
-    mainCol.scale_y = 0.8
-
-    # OPT:: maybe for vertices too, not just whole objects
-    box = mainCol.box()
-    col = box.column()
-    col.label(text="Type: " + obj.type, icon="MESH_DATA")
-    if obj.type == "MESH":
-        mesh: types.Mesh = obj.data
-        col.label(text=f"V: {len(mesh.vertices)}   E: {len(mesh.edges)}   F: {len(mesh.polygons)}   T: {len(mesh.loop_triangles)}")
-
-    if drawTrans:
-        # shared decimal format
-        fmt = ">6.3f"
-        fmt_vec = f"({{:{fmt}}}, {{:{fmt}}}, {{:{fmt}}})"
-        from math import degrees
-
-        # group world
-        box = mainCol.box()
-        col = box.column()
-        col.label(text="World transform")
-
-        matrix: Matrix = obj.matrix_world
-        pos = matrix.to_translation()
-        col.label(text=f"pos: {fmt_vec}".format(*pos))
-        rot = matrix.to_euler()
-        rot_deg = tuple(degrees(r) for r in rot)
-        col.label(text=f"rot:  {fmt_vec}".format(*rot_deg))
-        sca = matrix.to_scale()
-        col.label(text=f"sca: {fmt_vec}".format(*sca))
-
-        # group local
-        box = col.box()
-        col = box.column()
-        col.label(text="Local transform")
-
-        matrix: Matrix = obj.matrix_basis
-        pos = matrix.to_translation()
-        col.label(text=f"pos: {fmt_vec}".format(*pos))
-        rot = matrix.to_euler()
-        rot_deg = tuple(degrees(r) for r in rot)
-        col.label(text=f"rot:  {fmt_vec}".format(*rot_deg))
-        sca = matrix.to_scale()
-        col.label(text=f"sca: {fmt_vec}".format(*sca))
-
-    return mainCol, mainBox
 
 #-------------------------------------------------------------------
 

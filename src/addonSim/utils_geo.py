@@ -170,6 +170,7 @@ def map_VtoF_EtoF_VtoE(me):
 
 ## EXERCISE 1
 def centroid_mesh(me, log=True):
+    """ Calculate average of mesh vertices in local coordinates """
     c = Vector((0.0, 0.0, 0.0))
     for v in me.vertices:
         c += v.co

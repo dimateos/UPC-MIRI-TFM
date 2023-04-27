@@ -171,7 +171,7 @@ class Util_SpawnIndices_OT(_StartRefresh_OT):
 
     # toggles and scale per data
     _prop_showName = props.BoolProperty(name="name", description="Toggle viewport vis of names", default=False)
-    _prop_scale = props.FloatProperty(name="s", default=0.25, min=0.01, max=2.0)
+    _prop_scale = props.FloatProperty(name="s", default=0.25, min=0.01, max=1.0, step=0.5, precision=3)
     verts_gen: props.BoolProperty( name="Verts (octa)", default=True)
     verts_name: _prop_showName
     verts_scale: _prop_scale
@@ -183,9 +183,9 @@ class Util_SpawnIndices_OT(_StartRefresh_OT):
     faces_scale: _prop_scale
 
     # rendering
-    color_alpha: props.FloatProperty(name="color alpha", default=0.5, min=0.1, max=1.0)
+    color_alpha: props.FloatProperty(name="color alpha", default=0.5, min=0.1, max=1.0, step=0.5)
     color_useGray: props.BoolProperty( name="grayscale", default=False)
-    color_gray: props.FloatProperty(name="white", default=0.5, min=0.0, max=1.0)
+    color_gray: props.FloatProperty(name="white", default=0.5, min=0.0, max=1.0, step=0.5)
     mesh_useShape: props.BoolProperty( name="use mesh shapes", default=True)
     mesh_scale: _prop_scale
     namePrefix: props.StringProperty(
@@ -195,9 +195,15 @@ class Util_SpawnIndices_OT(_StartRefresh_OT):
 
     def draw_menu(self):
         col = self.layout.column()
+        #col.enabled = False
+        col.scale_y = 0.8
         col.label(text=f"[Overlay>Text info]: see names", icon="QUESTION")
         f1 = 0.5
+        f2 = 0.5
 
+        # type
+        box = self.layout.box()
+        col = box.column()
         row = col.row().split(factor=f1)
         row.prop(self, "verts_gen")
         row.prop(self, "verts_name")
@@ -211,18 +217,26 @@ class Util_SpawnIndices_OT(_StartRefresh_OT):
         row.prop(self, "faces_name")
         row.prop(self, "faces_scale")
 
-        f2 = 0.5
-        col.prop(self, "color_alpha")
-        row = col.row().split(factor=f2)
-        row.prop(self, "color_useGray")
-        row.prop(self, "color_gray")
+        # shape
+        col = self.layout.column()
         row = col.row().split(factor=f2)
         row.prop(self, "mesh_useShape")
         row.prop(self, "mesh_scale", text="scale")
 
-        rowsub = col.row()
-        rowsub.alignment = "LEFT"
-        rowsub.prop(self, "namePrefix")
+        # color
+        box = self.layout.box()
+        col = box.column()
+        col.prop(self, "color_alpha")
+        row = col.row().split(factor=f2)
+        row.prop(self, "color_useGray")
+        row.prop(self, "color_gray")
+
+        # ui
+        col = self.layout.column()
+        row = col.row()
+        #row = col.row().split(factor=f2)
+        row.alignment = "LEFT"
+        row.prop(self, "namePrefix")
 
     #-------------------------------------------------------------------
 

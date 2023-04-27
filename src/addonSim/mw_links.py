@@ -103,14 +103,14 @@ class Links():
                 self.keys_perCell[idx_neighCell][idx_neighFace] = key
 
         stats.logDt("created link map")
-        return
+        #return
 
 
         # SECOND loop to aggregate the links neighbours, only need to iterate keys_perCell
         for idx_cell,keys_perFace in self.keys_perCell.items():
             for idx_face,key in enumerate(keys_perFace):
                 l = self.link_map[key]
-                DEV.log_msg(f"l {l.key_cells} {l.key_cells}")
+                #DEV.log_msg(f"l {l.key_cells} {l.key_cells}")
 
                 # avoid recalculating link neighs (and duplicating them)
                 if l.neighs:
