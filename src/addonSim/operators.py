@@ -91,9 +91,10 @@ class MW_gen_OT(_StartRefresh_OT):
             cfg: MW_gen_cfg = self.cfg
 
             # TODO:: convex hull triangulates the faces... just decimate pls
-            obj, obj_toFrac = mw_setup.gen_copyOriginal(obj, cfg, context)
+            obj, obj_original = mw_setup.gen_copyOriginal(obj, cfg, context)
             if cfg.shape_useConvexHull:
-                obj_toFrac = mw_setup.gen_copyConvex(obj, obj_toFrac, cfg, context)
+                obj_toFrac = mw_setup.gen_copyConvex(obj, obj_original, cfg, context)
+            else: obj_toFrac = obj_original
 
         # Copy the config to the operator once
         else:
@@ -121,8 +122,8 @@ class MW_gen_OT(_StartRefresh_OT):
 
         DEV.log_msg("Start calc points", {'SETUP'})
         # Get the points and transform to local space when needed
-        mw_calc.detect_points_from_object(obj_toFrac, cfg, context)
-        points = mw_calc.get_points_from_object_fallback(obj_toFrac, cfg, context)
+        mw_calc.detect_points_from_object(obj_original, cfg, context)
+        points = mw_calc.get_points_from_object_fallback(obj_original, cfg, context)
         if not points:
             return self.end_op_error("found no points...")
 
@@ -131,6 +132,10 @@ class MW_gen_OT(_StartRefresh_OT):
         if cfg.shape_useWalls:
             faces4D = utils.get_faces_4D(obj_toFrac, cfg.margin_face_bounds)
         else: faces4D = []
+        # XXX:: 2D objects should use the boundary? limits walls per axis
+        # XXX:: limit particles axis too?
+        # XXX:: child verts / partilces should be checked inside?
+
 
         # Limit and rnd a bit the points and add them to the scene
         mw_calc.points_transformCfg(points, cfg, bb_radius)
@@ -145,6 +150,7 @@ class MW_gen_OT(_StartRefresh_OT):
 
         cont = mw_calc.cont_fromPoints(points, bb, faces4D, precision=prefs.calc_precision)
         if not cont:
+            self.setup_final(obj, context, points, bb)
             return self.end_op_error("found no cont... but could try recalculate!")
 
         obj_shards = mw_setup.gen_shardsEmpty(obj, cfg, context)
@@ -152,7 +158,7 @@ class MW_gen_OT(_StartRefresh_OT):
         #test some legacy or statistics stuff
         if DEV.LEGACY_CONT:
             mw_setup._gen_LEGACY_CONT(obj_shards, cont, cfg, context)
-            self.setup_final(obj, context)
+            self.setup_final(obj, context, points, bb)
             return self.end_op("DEV.LEGACY_CONT stop...")
         mw_setup.gen_shardsObjects(obj_shards, cont, cfg, context, invertOrientation=prefs.gen_invert_shardNormals)
 

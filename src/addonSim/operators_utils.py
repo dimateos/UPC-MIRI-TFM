@@ -198,6 +198,7 @@ class Util_SpawnIndices_OT(_StartRefresh_OT):
         #col.enabled = False
         col.scale_y = 0.8
         col.label(text=f"[Overlay>Text info]: see names", icon="QUESTION")
+        col.label(text=f"[Overlay>Relationship lines]: hide", icon="QUESTION")
         f1 = 0.5
         f2 = 0.5
 

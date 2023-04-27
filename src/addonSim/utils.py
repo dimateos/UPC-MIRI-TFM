@@ -156,21 +156,29 @@ def trans_printMatrices(obj: types.Object, printName=True):
 # TODO:: performance hit with teapot due to REC or scene childen access?
 # XXX:: all access to obj.children take O(n) where n is ALL objects of the scene...
 
-def copy_objectRec(obj: types.Object, context: types.Context, link_mesh = False, namePreffix = "", nameSuffix = "") -> types.Object:
+def copy_objectRec(obj: types.Object, context: types.Context, link_mesh = False, keep_mods = True, namePreffix = "", nameSuffix = "") -> types.Object:
     """ Copy the object along its children """
     obj_copy: types.Object = obj.copy()
+    context.scene.collection.objects.link(obj_copy)
+
+    # make a raw copy of leave a linked mesh
     if not link_mesh and obj.data:
         obj_copy.data = obj.data.copy()
 
-    context.scene.collection.objects.link(obj_copy)
+    # remove mods or not
+    if not keep_mods:
+        for mod in obj_copy.modifiers:
+            obj_copy.modifiers.remove(mod)
 
     # avoid setting name unless specified, otherwise the copy gets the priority name without .001
     if namePreffix or nameSuffix:
         obj_copy.name = f"{namePreffix}{obj.name}{nameSuffix}"
 
+    # copy rec + set parenting and force them to keep the original world pos
     for child in obj.children:
-        child_copy = copy_objectRec(child, context, namePreffix, nameSuffix)
+        child_copy = copy_objectRec(child, **get_kwargs(1))
         child_copy.parent = obj_copy
+        child_copy.matrix_world = child.matrix_world
     return obj_copy
 
 def delete_objectRec(obj: types.Object, logAmount=False):
@@ -232,7 +240,7 @@ def select_unhideRec(obj: types.Object, context: types.Context, select=True, sel
 def hide_objectRec(obj: types.Object, hide=True):
     """ Hide the object and children recursively """
     for child in obj.children_recursive:
-        hide_objectRec(child)
+        hide_objectRec(child, hide)
     obj.hide_set(hide)
 
 #-------------------------------------------------------------------
@@ -297,3 +305,13 @@ def rnd_seed(s: int = None) -> int:
     rnd.seed(s)
     bl_rnd.seed_set(s)
     return s
+
+def get_kwargs(startKey_index = 0):
+    from inspect import currentframe, getargvalues
+    frame = currentframe().f_back
+    keys, _, _, values = getargvalues(frame)
+    kwargs = {}
+    for key in keys[startKey_index:]:
+        if key != 'self':
+            kwargs[key] = values[key]
+    return kwargs

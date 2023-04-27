@@ -46,12 +46,13 @@ def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
 
     def check_point_from_particles(ob):
         depsgraph = context.evaluated_depsgraph_get()
-        obj_eval = ob.evaluated_get(depsgraph)
+        ob_eval = ob.evaluated_get(depsgraph)
 
-        if not obj_eval.particle_systems:
+        if not ob_eval.particle_systems:
             return False
         else:
-            sys_particles = [psys.particles for psys in obj_eval.particle_systems]
+            sys_particles = [bool(psys.particles) for psys in ob_eval.particle_systems]
+            DEV.log_msg(f"check parts: {ob.name} -> {len(ob_eval.particle_systems[0].particles)} -> {sys_particles}")
             return any(sys_particles)
 
     # geom own particles
@@ -78,6 +79,8 @@ def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
         gp = scene.grease_pencil
         if gp:
             enabled["PENCIL"] = check_points_from_splines(gp)
+
+    getStats().logDt(f"detected points: {enabled}")
 
 def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, context):
     points = get_points_from_object(obj, cfg, context)
@@ -175,7 +178,6 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
         if gp:
             points.extend([p for spline in points_from_splines(gp) for p in spline])
 
-    DEV.log_msg(f"Found {len(points)} points", {"SETUP"})
     return points
 
 #-------------------------------------------------------------------
@@ -228,6 +230,7 @@ def cont_fromPoints(points: list[Vector], bb: list[Vector, 6], faces4D: list[Vec
     try:
         # Build the container and cells
         cont = Container(points=points, limits=bb_tuples, walls=faces4D)
+        # TODO:: log verts outside?
 
         # Check non empty
         getStats().logDt("calculated cont")

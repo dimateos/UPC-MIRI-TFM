@@ -42,8 +42,8 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
     utils.cfg_setMetaTypeRec(obj_copy, {"CHILD"})
 
     # Scene viewport
-    obj.hide_set(not cfg.struct_showOrignal_scene)
-    obj_copy.hide_set(not cfg.struct_showOrignal)
+    utils.hide_objectRec(obj, not cfg.struct_showOrignal_scene)
+    utils.hide_objectRec(obj_copy, not cfg.struct_showOrignal)
     obj_copy.show_bounds = True
 
     # Set the transform to the empty and parent keeping the transform of the copy
@@ -56,7 +56,7 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
 # NOTE:: not recursive hull not face dissolve
 def gen_copyConvex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, context: types.Context):
     # Duplicate again the copy and set child too
-    obj_c = utils.copy_objectRec(obj_copy, context)
+    obj_c = utils.copy_objectRec(obj_copy, context, keep_mods=False)
     obj_c.name = CONST_NAMES.original_c
     utils.cfg_setMetaTypeRec(obj_c, {"CHILD"})
     utils.set_child(obj_c, obj)
@@ -76,7 +76,7 @@ def gen_copyConvex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, c
     bm.to_mesh(obj_c.data)
 
     # Second copy with the face dissolve
-    obj_d = utils.copy_objectRec(obj_c, context)
+    obj_d = utils.copy_objectRec(obj_c, context, keep_mods=False)
     obj_d.name = CONST_NAMES.original_d
     utils.cfg_setMetaTypeRec(obj_d, {"CHILD"})
     utils.set_child(obj_d, obj)
