@@ -99,13 +99,18 @@ class MW_gen_cfg(types.PropertyGroup):
         name="Shards", description="Voronoi cells",
         default=True,
     )
+
     struct_showLinks: props.BoolProperty(
-        name="Links", description="Voronoi cells links",
+        name="WIP: Links", description="Voronoi cells links per face",
         default=True,
     )
-    struct_showLinks_walls: props.BoolProperty(
-        name="WIP: Links_walls", description="Voronoi cells links to walls",
+    struct_showLinks_toWalls: props.BoolProperty(
+        name="WIP: Links to walls", description="Voronoi cells links per face to walls",
         default=True,
+    )
+    struct_showLinks_perCell: props.BoolProperty(
+        name="Cell links (centroid)", description="Links from centroids to neigh cells",
+        default=False,
     )
 
     struct_showPoints: props.BoolProperty(

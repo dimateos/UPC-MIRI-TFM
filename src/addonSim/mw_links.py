@@ -27,6 +27,7 @@ class Link():
         self.toWall = toWall
         self.neighs: list[Link.keyType] = list()
 
+
 #-------------------------------------------------------------------
 
 class Links():
@@ -38,15 +39,15 @@ class Links():
         #return
 
         # XXX:: decouple scene from sim? calculate the FtoF map inside voro isntead of blender mesh...
-        meshes = [ shard.data for shard in obj_shards.children ]
+        self.meshes = [ shard.data for shard in obj_shards.children ]
         # TODO:: the children objects are ordered lexicographically 0 1 10 11 12 13... dynamically add zeroes or sort after?
 
-        meshes_dicts = [ utils_geo.get_meshDicts(me) for me in meshes ]
+        meshes_dicts = [ utils_geo.get_meshDicts(me) for me in self.meshes ]
         stats.logDt("calculated shards mesh dicts")
 
         # XXX:: could be calculated in voro++, also avoid checking twice...
         # XXX:: using lists or maps to support non linear cell.id?
-        cont_neighs = [ cell.neighbors() for cell in cont ]
+        cont_neighs = [ cell.neighbors() for cell in cont if cell is not None ]
         stats.logDt("calculated voro cell neighs")
 
         cont_neighs_faces = []
@@ -69,13 +70,14 @@ class Links():
 
         # IDEA:: keys to global map or direclty the links?
         # init cell dict with lists of its faces size (later index by face)
-        self.keys_perCell: dict[int, list[Link.keyType]] = {cell.id: list([Link.keyType()]* len(cont_neighs[cell.id])) for cell in cont}
+        self.keys_perCell: dict[int, list[Link.keyType]] = {cell.id: list([Link.keyType()]* len(cont_neighs[cell.id])) for cell in cont  if cell is not None }
         # init wall dict with just empty lists (some will remain empty)
         self.keys_perWall: dict[int, list[Link.keyType]] = {id: list() for id in cont.get_conainerId_limitWalls()+cont.walls_cont_idx}
 
 
         # FIRST loop to build the global dictionaries
         for cell in cont:
+            if cell is None: continue
             idx_cell = cell.id
             for idx_face, idx_neighCell in enumerate(cont_neighs[idx_cell]):
 
@@ -150,6 +152,23 @@ class Links():
         logType = {"CALC"} if self.link_map else {"CALC", "ERROR"}
         DEV.log_msg(f"Found {self.num_toCells} links to cells + {self.num_toWalls} links to walls (total {len(self.link_map)})", logType)
 
+
+    def getMesh(self, idx: list[int]|int) -> list[types.Mesh]|types.Mesh:
+        """ return a mesh or list of meshes given idx  """
+        try:
+            return self.meshes[idx]
+        except TypeError:
+            return [ self.meshes[i] for i in idx ]
+
+    def getFace(self, midx: list[int]|int, fidx: list[int]|int) -> list[types.Mesh]|types.Mesh:
+        """ return a face or list of faces given idx  """
+        try:
+            return self.meshes[midx].polygons[fidx]
+        except TypeError:
+            return [ self.meshes[i].polygons[j] for i,j in zip(midx,fidx) ]
+
+
+#-------------------------------------------------------------------
 
     @staticmethod
     def getKey_swap(k1,k2):

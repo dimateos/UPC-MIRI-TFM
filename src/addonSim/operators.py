@@ -148,6 +148,7 @@ class MW_gen_OT(_StartRefresh_OT):
         # Calc voronoi
         DEV.log_msg("Start calc cont", {'SETUP'})
 
+        # IDEA:: mesh conecting input points + use single mesh instead of one per link?
         # XXX:: detect meshes with no volume? test basic shape for crashes...
         # XXX:: voro++ has some static constant values that have to be edited in compile time...
         #e.g. max_wall_size, tolerance for vertices,
@@ -170,9 +171,10 @@ class MW_gen_OT(_StartRefresh_OT):
         DEV.log_msg("Start calc links", {'SETUP'})
         links = Links(cont, obj_shards)
 
-        # NOTE:: links better generated from map isntead of cont
-        obj_links = mw_setup.gen_linksEmpty(obj, cfg, context)
-        mw_setup.gen_linksObjects(obj_links, cont, cfg, context)
+        # WIP:: links better generated from map isntead of cont?
+        obj_links, obj_links_toWall, obj_links_perCell = mw_setup.gen_linksEmpties(obj, cfg, context)
+        mw_setup.gen_linksObjects(obj_links, obj_links_toWall, links, cfg, context)
+        mw_setup.gen_linksCellObjects(obj_links_perCell, cont, cfg, context)
 
         self.setup_final(obj, context, points, bb)
         return self.end_op()

@@ -234,7 +234,7 @@ def cont_fromPoints(points: list[Vector], bb: list[Vector, 6], faces4D: list[Vec
     try:
         # Build the container and cells
         cont = Container(points=points, limits=bb_tuples, walls=faces4D)
-        # TODO:: log verts outside?
+        # TODO:: log verts outside/ cell not calculated?
 
         # Check non empty
         getStats().logDt("calculated cont")
@@ -243,7 +243,10 @@ def cont_fromPoints(points: list[Vector], bb: list[Vector, 6], faces4D: list[Vec
         return cont
 
     # XXX:: container creation might fail do to some voro++ config params... hard to tweak for all?
-    # XXX:: also seems that if the mesh vertices/partilces are further appart if behaves better?
+    # XXX:: also seems that if the mesh vertices/partilces are further appart if behaves better? clustered by tolerance?
+    # TODO:: allow for missing cells but handle correclty None insdie the cont
+    # XXX:: some tiny intersection between cells might happen due to tolerance -> check or not worth it, we shrink then would not be noticeable
+
     except Exception as e:
         DEV.log_msg(f"exception cont >> {str(e)}", {"CALC", "ERROR"})
         return []

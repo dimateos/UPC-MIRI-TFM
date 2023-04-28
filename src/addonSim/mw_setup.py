@@ -8,6 +8,7 @@ from .properties import (
     MW_gen_cfg,
 )
 
+from .mw_links import Links, Link
 from tess import Container, Cell
 
 from . import utils
@@ -20,11 +21,21 @@ class CONST_NAMES:
     original_bb = original+"bb"
     original_c = original+"c"
     original_d = original+"d"
+
     shards = "Shards"
     shards_points = "Shards_source"
+
     links = shards+"_links"
+    links_perCell = links+"_perCell"
+    links_toWalls = links+"_toWall"
     links_group = "Links"
 
+    # OPT:: dynamic depending on number of cells
+    child_idFormat = ":03"
+
+def get_IdFormated(idx:int):
+    """ Pad with a certain amount of zeroes to achieve a correct lexicographic order """
+    return f"{idx}{CONST_NAMES.child_idFormat}"
 
 # OPT:: more docu on methods
 #-------------------------------------------------------------------
@@ -107,9 +118,11 @@ def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     obj_shardsEmpty = utils.gen_childClean(obj, CONST_NAMES.shards, context, None, keepTrans=False, hide=not cfg.struct_showShards)
     return obj_shardsEmpty
 
-def gen_linksEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_linksEmpty = utils.gen_childClean(obj, CONST_NAMES.links, context, None, keepTrans=False, hide=not cfg.struct_showLinks)
-    return obj_linksEmpty
+def gen_linksEmpties(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
+    obj_links = utils.gen_childClean(obj, CONST_NAMES.links, context, None, keepTrans=False, hide=not cfg.struct_showLinks)
+    obj_links_toWall = utils.gen_childClean(obj, CONST_NAMES.links_toWalls, context, None, keepTrans=False, hide=not cfg.struct_showLinks_toWalls)
+    obj_links_perCell = utils.gen_childClean(obj, CONST_NAMES.links_perCell, context, None, keepTrans=False, hide=not cfg.struct_showLinks_perCell)
+    return obj_links, obj_links_toWall, obj_links_perCell
 
 def gen_pointsObject(obj: types.Object, points: list[Vector], cfg: MW_gen_cfg, context: types.Context):
     # Create a new mesh data block and add only verts
@@ -138,16 +151,15 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, co
 
 def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context, invertOrientation = False):
     for cell in cont:
+        if cell is None: continue
         source_id = cont.source_idx[cell.id]
-        name= f"{CONST_NAMES.shards}_{source_id:03}"
+        name= f"{CONST_NAMES.shards}_{get_IdFormated(source_id)}"
 
-        # XXX:: the centroid is not at the center of mass? problem maybe related to margins etc
-        posC = cell.centroid()
-        posCL = cell.centroid_local()
-        vertsCL = cell.vertices_local_centroid()
-
-        # assert some voro properties, the more varied test cases the better
+        # assert some voro properties, the more varied test cases the better: center of mass at the center of volume
         if DEV.assert_voro_posW:
+            posC = cell.centroid()
+            posCL = cell.centroid_local()
+            vertsCL = cell.vertices_local_centroid()
             posW = cell.pos
             vertsW = cell.vertices()
             vertsL = cell.vertices_local()
@@ -183,6 +195,7 @@ def _gen_LEGACY_CONT(obj: types.Object, cont: Container, cfg: MW_gen_cfg, contex
     neighbors = []
 
     for cell in cont:
+        if cell is None: continue
         c = cell.centroid()
         vs = cell.vertices()
         v = cell.volume()
@@ -217,20 +230,90 @@ def _gen_LEGACY_CONT(obj: types.Object, cont: Container, cfg: MW_gen_cfg, contex
 
 #-------------------------------------------------------------------
 
-def gen_linksObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
+def gen_curveData(points: list[Vector], name ="poly-curve", w=0.05, res=0):
+    # Create new POLY curve
+    curve_data = bpy.data.curves.new(name, 'CURVE')
+    curve_data.dimensions = '3D'
+    line = curve_data.splines.new('POLY')
+
+    # Add the points to the spline
+    for i,p in enumerate(points):
+        if i!=0: line.points.add(1)
+        line.points[i].co = p.to_4d()
+
+    # Set the visuals
+    curve_data.bevel_depth = w
+    curve_data.bevel_resolution = res
+    curve_data.fill_mode = "FULL" #'FULL', 'HALF', 'FRONT', 'BACK'
+    return curve_data
+
+def gen_linksObjects(obj: types.Object, objWall: types.Object, links: Links, cfg: MW_gen_cfg, context: types.Context):
+    # NOTE:: could iterate just global links better?
+    return
+
+    # start with links per cell
+    for idx_cell,keys_perFace in links.keys_perCell.items():
+        for idx_face,key in enumerate(keys_perFace):
+            l = links.link_map[key]
+            c1, c2 = l.key_cells
+            f1, f2 = l.key_faces
+            name= f"c{c1}_c{c2}-f{f1}_f{f2}"
+
+            # retrieve f2 because in case of wall c1,f1 are negative
+            face = links.getFace(c2,f2)
+            p = face.center
+            n = face.normal
+
+            # Find the two points around the face
+            p1 = p + n*0.1
+            p2 = p - n*0.1
+
+            # Create new curve per link and spawn
+            curve = gen_curveData([p1, p2], name, cfg.links_width, cfg.links_res)
+            obj_link = utils.gen_child(obj, name, context, curve, keepTrans=False, hide=not cfg.struct_showLinks)
+
+    getStats().logDt("generated links objects")
+
+    # start with links per cell
+    for idx_cell,keys_perFace in links.keys_perWall.items():
+        for idx_face,key in enumerate(keys_perFace):
+            l = links.link_map[key]
+            w1, c2 = l.key_cells
+            w1, f2 = l.key_faces
+            name= f"w{c1}_c{c2}-f{f2}"
+
+            # retrieve f2 because in case of wall c1,f1 are negative
+            face = links.getFace(c2,f2)
+            p = face.center
+            n = face.normal
+
+            # Find the two points around the face
+            p1 = p
+            p2 = p + n*0.1
+
+            # Create new curve per link and spawn
+            curve = gen_curveData([p1, p2], name, cfg.links_width, cfg.links_res)
+            obj_link = utils.gen_child(objWall, name, context, curve, keepTrans=False, hide=not cfg.struct_showLinks)
+
+    getStats().logDt("generated links to walls objects")
+
+
+def gen_linksCellObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
     # WIP:: atm just hiding reps -> maybe generate using a different map instead of iterating the raw cont
     #   maybe merge shard/link loop
     neigh_set = set()
 
     for cell in cont:
+        if cell is None: continue
+
         # group the links by cell using a parent
-        nameGroup= f"{CONST_NAMES.links_group}_{cell.id:03}"
+        nameGroup= f"{CONST_NAMES.links_group}_{get_IdFormated(cell.id)}"
         obj_group = utils.gen_child(obj, nameGroup, context, None, keepTrans=False, hide=False)
         #obj_group.matrix_world = Matrix.Identity(4)
         #obj_group.location = cell.centroid()
 
         # WIP:: position world/local?
-        cell_centroid_4d = Vector(cell.centroid()).to_4d()
+        cell_centroid = Vector(cell.centroid())
 
         # iterate the cell neighbours
         neigh = cell.neighbors()
@@ -238,38 +321,25 @@ def gen_linksObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, contex
             # wall link
             if n_id < 0:
                 name= f"s{cell.id}_w{-n_id}"
-                obj_link = utils.gen_child(obj_group, name, context, None, keepTrans=False, hide=not cfg.struct_showLinks_walls)
+                obj_link = utils.gen_child(obj_group, name, context, None, keepTrans=False, hide=not cfg.struct_showLinks_toWalls)
                 continue
 
-            # neighbour link
-            else:
-                # check repetition
-                key = tuple( sorted([cell.id, n_id]) )
-                key_rep = key in neigh_set
-                if not key_rep: neigh_set.add(key)
+            if cont[n_id] is None:
+                continue
 
-                # custom ordered name
-                name= f"s{cell.id}_n{n_id}"
+            # neighbour link -> check rep
+            key = tuple( sorted([cell.id, n_id]) )
+            key_rep = key in neigh_set
+            if not key_rep: neigh_set.add(key)
 
+            # custom ordered name
+            name= f"s{cell.id}_n{n_id}"
+            neigh_centroid = Vector(cont[n_id].centroid())
 
-                # Create new curve per neighbour
-                curve_data = bpy.data.curves.new(name, 'CURVE')
-                curve_data.dimensions = '3D'
+            curve = gen_curveData([cell_centroid, neigh_centroid], name, cfg.links_width, cfg.links_res)
+            obj_link = utils.gen_child(obj_group, name, context, curve, keepTrans=False, hide=not cfg.struct_showLinks)
 
-                # Add the centroid points using a poly line
-                neigh_centroid_4d = Vector(cont[n_id].centroid()).to_4d()
-                line = curve_data.splines.new('POLY')
-                line.points.add(1)
-                line.points[0].co = cell_centroid_4d
-                line.points[1].co = neigh_centroid_4d
+            obj_link.hide_set(key_rep or not cfg.struct_showLinks_perCell)
+            #obj_link.location = cell.centroid()
 
-                # Set the width
-                curve_data.bevel_depth = cfg.links_width
-                curve_data.bevel_resolution = cfg.links_res
-
-                obj_link = utils.gen_child(obj_group, name, context, curve_data, keepTrans=False, hide=not cfg.struct_showLinks)
-
-                obj_link.hide_set(key_rep or not cfg.struct_showLinks)
-                #obj_link.location = cell.centroid()
-
-    getStats().logDt("generated links objects")
+    getStats().logDt("generated links per cell objects")
