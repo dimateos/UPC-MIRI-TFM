@@ -31,11 +31,11 @@ class CONST_NAMES:
     links_group = "Links"
 
     # OPT:: dynamic depending on number of cells
-    child_idFormat = ":03"
+    child_idFormat = "03"
 
 def get_IdFormated(idx:int):
     """ Pad with a certain amount of zeroes to achieve a correct lexicographic order """
-    return f"{idx}{CONST_NAMES.child_idFormat}"
+    return f"{{:{CONST_NAMES.child_idFormat}}}".format(idx)
 
 # OPT:: more docu on methods
 #-------------------------------------------------------------------
@@ -249,7 +249,6 @@ def gen_curveData(points: list[Vector], name ="poly-curve", w=0.05, res=0):
 
 def gen_linksObjects(obj: types.Object, objWall: types.Object, links: Links, cfg: MW_gen_cfg, context: types.Context):
     # NOTE:: could iterate just global links better?
-    return
 
     # start with links per cell
     for idx_cell,keys_perFace in links.keys_perCell.items():
@@ -274,7 +273,7 @@ def gen_linksObjects(obj: types.Object, objWall: types.Object, links: Links, cfg
 
     getStats().logDt("generated links objects")
 
-    # start with links per cell
+    # then links per wall
     for idx_cell,keys_perFace in links.keys_perWall.items():
         for idx_face,key in enumerate(keys_perFace):
             l = links.link_map[key]
@@ -304,6 +303,7 @@ def gen_linksCellObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, co
     neigh_set = set()
 
     for cell in cont:
+        # NOTE:: in the case of directly iterating the cont there could be missing ones
         if cell is None: continue
 
         # group the links by cell using a parent
@@ -324,6 +324,7 @@ def gen_linksCellObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, co
                 obj_link = utils.gen_child(obj_group, name, context, None, keepTrans=False, hide=not cfg.struct_showLinks_toWalls)
                 continue
 
+            # TODO:: so some cells actually connect with the missing ones...
             if cont[n_id] is None:
                 continue
 

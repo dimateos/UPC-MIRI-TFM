@@ -65,7 +65,12 @@ class MW_prefs(bpy.types.AddonPreferences):
     #-------------------------------------------------------------------
     # TODO:: what to store per object and what in prefs?
 
-    calc_precision: props.IntProperty(
+    calc_defaultSeed: props.IntProperty(
+        name="Default random seed", description="Leave <0 for random",
+        default=64, min=-1,
+    )
+
+    calc_precisionWalls: props.IntProperty(
         # OPT:: read voro++ config from python? API/file system
         name="Wall precision", description="Number of decimals used to round and cluster wall planes",
         default=4, min=0, max=10,

@@ -153,7 +153,7 @@ class MW_gen_OT(_StartRefresh_OT):
         # XXX:: voro++ has some static constant values that have to be edited in compile time...
         #e.g. max_wall_size, tolerance for vertices,
 
-        cont = mw_calc.cont_fromPoints(points, bb, faces4D, precision=prefs.calc_precision)
+        cont = mw_calc.cont_fromPoints(points, bb, faces4D, precision=prefs.calc_precisionWalls)
         if not cont:
             self.setup_final(obj, context, points, bb)
             return self.end_op_error("found no cont... but could try recalculate!")
@@ -171,10 +171,16 @@ class MW_gen_OT(_StartRefresh_OT):
         DEV.log_msg("Start calc links", {'SETUP'})
         links = Links(cont, obj_shards)
 
+
         # WIP:: links better generated from map isntead of cont?
         obj_links, obj_links_toWall, obj_links_perCell = mw_setup.gen_linksEmpties(obj, cfg, context)
-        mw_setup.gen_linksObjects(obj_links, obj_links_toWall, links, cfg, context)
+        if links.link_map:
+            mw_setup.gen_linksObjects(obj_links, obj_links_toWall, links, cfg, context)
+        else:
+            utils.delete_objectRec(obj_links)
+            utils.delete_objectRec(obj_links_toWall)
         mw_setup.gen_linksCellObjects(obj_links_perCell, cont, cfg, context)
+
 
         self.setup_final(obj, context, points, bb)
         return self.end_op()

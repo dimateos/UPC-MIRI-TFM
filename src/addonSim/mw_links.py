@@ -36,7 +36,14 @@ class Links():
         stats = getStats()
         self.cont = cont
         self.obj_shards = obj_shards
+
+        # TODO:: unionfind joined components
+        # IDEA:: dynamic lists of separated?
+        self.link_map: dict[Link.keyType, Link] = dict()
+        self.num_toCells = 0
+        self.num_toWalls = 0
         #return
+
 
         # XXX:: decouple scene from sim? calculate the FtoF map inside voro isntead of blender mesh...
         self.meshes = [ shard.data for shard in obj_shards.children ]
@@ -47,37 +54,35 @@ class Links():
 
         # XXX:: could be calculated in voro++, also avoid checking twice...
         # XXX:: using lists or maps to support non linear cell.id?
-        cont_neighs = [ cell.neighbors() for cell in cont if cell is not None ]
+        cont_neighs = [ cell.neighbors() for cell in cont if cell is not None ] # None cell will probably lead to asymmetry tho
         stats.logDt("calculated voro cell neighs")
 
         cont_neighs_faces = []
         try:
             for i,neighs in enumerate(cont_neighs):
-                faces = [ n if n<0 else cont_neighs[n].index(i) for n in neighs ]
+                #faces = [ n if n<0 else cont_neighs[n].index(i) for n in neighs ]
+                faces = [None] *len(neighs)
+                for f,n in enumerate(neighs):
+                    faces[f] = n if n<0 else cont_neighs[n].index(i)
                 cont_neighs_faces.append(faces)
-            stats.logDt("calculated cell neighs faces")
         except:
             # TODO:: the map could be asymetric! and .index(i) fail -> needs to be handle and maybe breaks later parts...
-            stats.logDt("non asimetric neighboring map...")
+            DEV.log_msg(f"NO LINKS: asymetric cell neighs due to cell failed computation or tolerante issues", {"CALC", "ERROR"})
+            print({"i":i, "faces":faces, "f":f, "neighs":neighs, "n":n, "cont_neighs[n]":cont_neighs[n] })
             return
+        stats.logDt("calculated cell neighs faces")
 
-
-        # TODO:: unionfind joined components
-        # IDEA:: dynamic lists of separated?
-        self.link_map: dict[Link.keyType, Link] = dict()
-        self.num_toCells = 0
-        self.num_toWalls = 0
 
         # IDEA:: keys to global map or direclty the links?
         # init cell dict with lists of its faces size (later index by face)
-        self.keys_perCell: dict[int, list[Link.keyType]] = {cell.id: list([Link.keyType()]* len(cont_neighs[cell.id])) for cell in cont  if cell is not None }
+        self.keys_perCell: dict[int, list[Link.keyType]] = {cell.id: list([Link.keyType()]* len(cont_neighs[cell.id])) for cell in cont } # if cell is not None
         # init wall dict with just empty lists (some will remain empty)
         self.keys_perWall: dict[int, list[Link.keyType]] = {id: list() for id in cont.get_conainerId_limitWalls()+cont.walls_cont_idx}
 
 
         # FIRST loop to build the global dictionaries
         for cell in cont:
-            if cell is None: continue
+            #if cell is None: continue
             idx_cell = cell.id
             for idx_face, idx_neighCell in enumerate(cont_neighs[idx_cell]):
 

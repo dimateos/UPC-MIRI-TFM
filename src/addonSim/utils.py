@@ -2,6 +2,7 @@ import bpy
 import bpy.types as types
 from mathutils import Vector, Matrix
 
+from .preferences import getPrefs, ADDON
 from .properties import (
     MW_gen_cfg,
 )
@@ -300,7 +301,9 @@ def rnd_seed(s: int = None) -> int:
     import random as rnd
 
     if s is None or s < 0:
-        s = get_timestamp()
+        default = getPrefs().calc_defaultSeed
+        if default < 0: s = get_timestamp()
+        else: s = default
 
     rnd.seed(s)
     bl_rnd.seed_set(s)
