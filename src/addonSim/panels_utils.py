@@ -182,18 +182,19 @@ class Info_Inpect_PT(types.Panel):
         selected_faces = [f for f in mesh.polygons if f.select]
 
         # verts with optional world space toggle
-        box = layout.box()
-        col = box.column()
-        row = col.row()
-        row.alignment= "LEFT"
-        row.label(text=f"verts: {len(selected_verts)}")
-        row.prop(prefs, "dm_PT_info_edit_showWorld")
-        for v in selected_verts:
-            if prefs.dm_PT_info_edit_showWorld: pos = obj.matrix_world @ v.co
-            else: pos = v.co
-            col.label(text=f"{v.index}: " + f"{fmt_vec}".format(*pos))
+        open, box = ui.draw_toggleBox(prefs, "dm_PT_edit_showVerts", layout)
+        if open:
+            col = box.column()
+            row = col.row()
+            row.alignment= "LEFT"
+            row.label(text=f"verts: {len(selected_verts)}")
+            row.prop(prefs, "dm_PT_info_edit_showWorld")
+            for v in selected_verts:
+                if prefs.dm_PT_info_edit_showWorld: pos = obj.matrix_world @ v.co
+                else: pos = v.co
+                col.label(text=f"{v.index}: " + f"{fmt_vec}".format(*pos))
 
-        # optional edges
+        # edges
         open, box = ui.draw_toggleBox(prefs, "dm_PT_edit_showEdges", layout)
         if open:
             col = box.column()
@@ -201,19 +202,20 @@ class Info_Inpect_PT(types.Panel):
             for e in selected_edges: col.label(text=f"{e.index}: {e.key}")
 
         # faces with option too
-        box = layout.box()
-        col = box.column()
-        row = col.row()
-        row.alignment= "LEFT"
-        row.label(text=f"faces: {len(selected_faces)}")
-        row.prop(prefs, "dm_PT_edit_showFaceCenters")
-        if (prefs.dm_PT_edit_showFaceCenters):
-            for f in selected_faces:
-                if prefs.dm_PT_info_edit_showWorld: pos = obj.matrix_world @ f.center
-                else: pos = f.center
-                col.label(text=f"{f.index}: " + f"{fmt_vec}".format(*pos))
-        else:
-            for f in selected_faces: col.label(text=f"{f.index}: {f.vertices[:]}")
+        open, box = ui.draw_toggleBox(prefs, "dm_PT_edit_showFaces", layout)
+        if open:
+            col = box.column()
+            row = col.row()
+            row.alignment= "LEFT"
+            row.label(text=f"faces: {len(selected_faces)}")
+            row.prop(prefs, "dm_PT_edit_showFaceCenters")
+            if (prefs.dm_PT_edit_showFaceCenters):
+                for f in selected_faces:
+                    if prefs.dm_PT_info_edit_showWorld: pos = obj.matrix_world @ f.center
+                    else: pos = f.center
+                    col.label(text=f"{f.index}: " + f"{fmt_vec}".format(*pos))
+            else:
+                for f in selected_faces: col.label(text=f"{f.index}: {f.vertices[:]}")
 
 #-------------------------------------------------------------------
 # Blender events

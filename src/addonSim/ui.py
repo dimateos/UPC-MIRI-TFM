@@ -5,7 +5,7 @@ from .properties import (
     MW_gen_cfg,
 )
 
-from .utils_cfg import getProps_names
+from .utils_cfg import getProps_namesFiltered
 from .utils_dev import DEV
 
 
@@ -20,29 +20,11 @@ def draw_toggleBox(metadata, propToggle_name:str, layout: types.UILayout) -> tup
 
 def draw_props(data, propFilter:str, layout: types.UILayout):
     """ Draw all properties of an object in a sub layout. """
-    # build dynamic filter prop
-    prop_names = getProps_names(data)
-    if propFilter:
-        propFilter_clean = propFilter.replace(" ","").lower()
-        filters =  [ f for f in propFilter_clean.split(",") if f]
-        filters_inc = [f for f in filters if f[0]!="-"]
-        filters_exc = [f[1:] for f in filters if f[0]=="-"]
-    else:
-        filters_inc = filters_exc = []
-    #DEV.draw_val(layout, "filter_inc", filters_inc)
-    #DEV.draw_val(layout, "filter_exc", filters_exc)
+    # get the props filtered without the non prop ones
+    prop_names = getProps_namesFiltered(data, propFilter, exc_nonBlProp=True)
 
-    # iterate the props and check agains all filters before adding to ui
+    # all should be bl props
     for prop_name in prop_names:
-        # apply excluding/including filter
-        prop_name_clean = prop_name.strip().lower()
-        if (filters_inc):
-            mask_inc = [ f in prop_name_clean for f in filters_inc ]
-            if not any(mask_inc): continue
-        if (filters_exc):
-            mask_exc = [ f in prop_name_clean for f in filters_exc ]
-            if any(mask_exc): continue
-
         layout.row().prop(data, prop_name, text=prop_name)
 
 def draw_propsToggle(data, metadata, propToggle_name:str, propFilter_name:str, propEdit_name:str, layout: types.UILayout):
@@ -127,7 +109,7 @@ def draw_gen_cfgDebug(cfg: MW_gen_cfg, layout: types.UILayout):
     from .preferences import getPrefs
     prefs = getPrefs()
 
-    open, box = draw_toggleBox(prefs, "gen_meta_PT_show_tmpDebug", layout)
+    open, box = draw_toggleBox(prefs, "gen_PT_meta_show_tmpDebug", layout)
     if open:
         col = box.column()
         col.label(text="Show:")

@@ -22,42 +22,44 @@ class MW_prefs(bpy.types.AddonPreferences):
     def draw(self, context):
         # Careful with circulare dependecies, maybe split the class with draw and props
         from .ui import draw_propsToggle
-        draw_propsToggle(self, self, "meta_PT_show_prefs", "meta_PT_propFilter", "meta_PT_propEdit", self.layout)
+        draw_propsToggle(self, self, "prefs_PT_meta_show_prefs", "prefs_PT_meta_propFilter", "prefs_PT_meta_propEdit", self.layout)
 
-    meta_PT_show_prefs: props.BoolProperty(
+    # meta filter for addon prefs
+    prefs_PT_meta_show_prefs: props.BoolProperty(
         name="Show addon preferences...", description="Show addon preferences",
         default=True,
     )
-    meta_PT_propFilter: props.StringProperty(
+    prefs_PT_meta_propFilter: props.StringProperty(
         name="FILTER", description="Separate values with commas, start with `-` for a excluding filter.",
         default="-PT,",
     )
-    meta_PT_propEdit: props.BoolProperty(
+    prefs_PT_meta_propEdit: props.BoolProperty(
         name="edit", description="Edit the props",
         default=True,
     )
 
-    meta_PT_show_tmpDebug: props.BoolProperty(
+    prefs_PT_meta_show_tmpDebug: props.BoolProperty(
         name="Show debug...", description="WIP: Show some debug stuff",
         default=True,
     )
 
     #-------------------------------------------------------------------
 
-    gen_meta_PT_show_summary: props.BoolProperty(
+    # meta filter for OP props
+    gen_PT_meta_show_summary: props.BoolProperty(
         name="Show object summary...", description="Show fracture summary",
         default=False,
     )
-    gen_meta_PT_propFilter: props.StringProperty(
+    gen_PT_meta_propFilter: props.StringProperty(
         name="FILTER", description="Separate values with commas, start with `-` for a excluding filter.",
         default="-show",
     )
-    gen_meta_PT_propEdit: props.BoolProperty(
+    gen_PT_meta_propEdit: props.BoolProperty(
         name="edit", description="Edit the props",
         default=False,
     )
 
-    gen_meta_PT_show_tmpDebug: props.BoolProperty(
+    gen_PT_meta_show_tmpDebug: props.BoolProperty(
         name="Show DEBUG...", description="WIP: Show some debug stuff",
         default=True,
     )
@@ -83,30 +85,51 @@ class MW_prefs(bpy.types.AddonPreferences):
 
     #-------------------------------------------------------------------
 
-    OT_util_delete_unhideSelect: props.BoolProperty(
+    util_delete_OT_unhideSelect: props.BoolProperty(
         name="unhide", description="Unhide the original object after deletion",
         default=True,
     )
 
     #-------------------------------------------------------------------
-    # XXX:: panels alone cannot store properties... here mixing dm panels with mw stuff, could separate the addons
+    # NOTE:: panels alone cannot store properties... here mixing dm panels with mw stuff, could separate the addons
+    # OPT:: quite similar options as the spawn indices OP
 
-    dm_PT_info_edit_showWorld: props.BoolProperty(
-        name="world", description="Show vertices positions in world space",
+    dm_PT_edit_showPrecision: props.IntProperty(
+        name="decimals", description="Number of decimals shown, will make colum wider.",
+        default=2, min=0, max=16,
+    )
+
+    # edit options
+    dm_PT_edit_showVerts: props.BoolProperty(
+        name="Show verts...", description="Show long list of verts with its pos",
         default=False,
     )
     dm_PT_edit_showEdges: props.BoolProperty(
         name="Show edges...", description="Show long list of edges with its key (v1, v2)",
         default=False,
     )
+    dm_PT_edit_showFaces: props.BoolProperty(
+        name="Show faces...", description="Show long list of faces with its verts id / center",
+        default=True,
+    )
+
+    # toggle visual
+    dm_PT_info_edit_showWorld: props.BoolProperty(
+        name="world", description="Show vertices positions in world space",
+        default=False,
+    )
     dm_PT_edit_showFaceCenters: props.BoolProperty(
         name="show center", description="Show face center position instead of vertex indices",
         default=False,
     )
-    dm_PT_edit_showPrecision: props.IntProperty(
-        name="decimals", description="Number of decimals shown, will make colum wider.",
-        default=2, min=0, max=16,
-    )
+
+    # filters
+    #dm_PT_edit_showLimit: props.IntProperty(
+    #    name="limit", description="Number of items shown, blender has a limit size of scrollable UI area.",
+    #    default=100, min=1, max=16,
+    #)
+
+
 
 
 #-------------------------------------------------------------------

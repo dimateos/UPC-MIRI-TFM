@@ -69,9 +69,9 @@ class MW_gen_PT(types.Panel):
             col_rowSplit = col.row().split(factor=0.66)
             col_rowSplit.operator(ops.MW_util_delete_OT.bl_idname, text="DELETE rec", icon="CANCEL")
             prefs = getPrefs()
-            col_rowSplit.prop(prefs, "OT_util_delete_unhideSelect")
+            col_rowSplit.prop(prefs, "util_delete_OT_unhideSelect")
 
-            ui.draw_propsToggle(cfg, prefs, "gen_meta_PT_show_summary", "gen_meta_PT_propFilter", "gen_meta_PT_propEdit", col)
+            ui.draw_propsToggle(cfg, prefs, "gen_PT_meta_show_summary", "gen_PT_meta_propFilter", "gen_PT_meta_propEdit", col)
 
 class MW_addon_PT(types.Panel):
     bl_idname = "MW_PT_addon"
@@ -89,9 +89,9 @@ class MW_addon_PT(types.Panel):
         layout = self.layout
         col = layout.column()
 
-        ui.draw_propsToggle(prefs, prefs, "meta_PT_show_prefs", "meta_PT_propFilter", "meta_PT_propEdit", col)
+        ui.draw_propsToggle(prefs, prefs, "prefs_PT_meta_show_prefs", "prefs_PT_meta_propFilter", "prefs_PT_meta_propEdit", col)
 
-        open, box = ui.draw_toggleBox(prefs, "meta_PT_show_tmpDebug", layout)
+        open, box = ui.draw_toggleBox(prefs, "prefs_PT_meta_show_tmpDebug", layout)
         if open:
             col = box.column()
             # check region width

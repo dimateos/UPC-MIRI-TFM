@@ -68,18 +68,14 @@ class MW_gen_OT(_StartRefresh_OT):
     def execute(self, context: types.Context):
         self.start_op()
         cancel = self.checkRefresh_cancel()
-        if cancel: return self.end_op_refresh()
+        if cancel: return self.end_op_refresh(skipLog=True)
 
         # TODO:: store cont across simulations in the object or info from it
         # TODO:: run again more smartly, like detect no need for changes (e.g. name change or prefs debug show) -> compare both props, or use prop update func self ref? also for spawn indices
         # IDEA:: move all visual toggles to the side panel to avoid recalculations...
-        # IDEA:: delete frac button in gen panel too
         # OPT:: separate simulation and scene generation: option to no store inter meshes
         # IDEA:: divide execute in function? sim/vis
 
-        # XXX:: particles are in world position?
-        # XXX:: refresh is slow, maybe related to other ui doing recursive access to root?? maybe panel with ok before?
-        # OPT:: adding many objects to the scene takes most of the time -> single global mesh?
         # OPT:: avoid recursion with pointer to parent instead of search by name
         # IDEA:: decimate before/after convex, test perf?
 
@@ -158,6 +154,7 @@ class MW_gen_OT(_StartRefresh_OT):
             self.setup_final(obj, context, points, bb)
             return self.end_op_error("found no cont... but could try recalculate!")
 
+        cfg.nbl_cont = cont
         obj_shards = mw_setup.gen_shardsEmpty(obj, cfg, context)
 
         #test some legacy or statistics stuff
@@ -234,7 +231,7 @@ class MW_util_delete_OT(_StartRefresh_OT):
         prefs = getPrefs()
 
         # optional unhide flag
-        if (prefs.OT_util_delete_unhideSelect):
+        if (prefs.util_delete_OT_unhideSelect):
             obj_original = utils.get_object_fromScene(context.scene, cfg.struct_nameOriginal)
             if not obj_original:
                 self.logReport("obj_original not found -> wont unhide")

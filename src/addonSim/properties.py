@@ -2,10 +2,13 @@ import bpy
 import bpy.types as types
 import bpy.props as props
 
+from tess import Container, Cell
+
 
 #-------------------------------------------------------------------
 
 class MW_gen_cfg(types.PropertyGroup):
+    nbl_cont: Container = None
 
     meta_type: props.EnumProperty(
         name="Type", description="Meta type added to the object to control some logic",

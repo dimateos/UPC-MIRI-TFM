@@ -42,8 +42,8 @@ class Links():
         self.cont = cont
         self.obj_shards = obj_shards
 
-        # TODO:: unionfind joined components
-        # IDEA:: dynamic lists of separated?
+        # TODO:: unionfind joined components + manually delete links
+        # IDEA:: dynamic lists of broken?
         self.link_map: dict[Link.keyType, Link] = dict()
         self.num_toCells = 0
         self.num_toWalls = 0
