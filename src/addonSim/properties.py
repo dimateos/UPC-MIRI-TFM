@@ -69,7 +69,7 @@ class MW_gen_cfg(types.PropertyGroup):
     )
     rnd_seed: props.IntProperty(
         name="RND seed", description="Seed the random generator, -1 to unseed it",
-        default=-1, min=-1,
+        default=64, min=-1,
     )
 
     #-------------------------------------------------------------------

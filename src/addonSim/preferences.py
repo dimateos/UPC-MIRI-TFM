@@ -59,6 +59,10 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=False,
     )
 
+    #gen_PT_meta_show_visuals: props.BoolProperty(
+    #    name="Show visual toggle...", description="Toggle fracture elements ",
+    #    default=True,
+    #)
     gen_PT_meta_show_tmpDebug: props.BoolProperty(
         name="Show DEBUG...", description="WIP: Show some debug stuff",
         default=True,
@@ -67,10 +71,11 @@ class MW_prefs(bpy.types.AddonPreferences):
     #-------------------------------------------------------------------
     # TODO:: what to store per object and what in prefs?
 
-    calc_defaultSeed: props.IntProperty(
-        name="Default random seed", description="Leave <0 for random",
-        default=64, min=-1,
-    )
+    ## IDEA:: global rnd needed?
+    #calc_defaultSeed: props.IntProperty(
+    #    name="Default random seed", description="Leave <0 for random",
+    #    default=64, min=-1,
+    #)
 
     calc_precisionWalls: props.IntProperty(
         # OPT:: read voro++ config from python? API/file system

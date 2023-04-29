@@ -33,20 +33,18 @@ class MW_gen_PT(types.Panel):
         prefs = getPrefs()
         layout = self.layout
         col = layout.column()
+        obj = context.active_object
 
         # Something selected, not last active
         if not context.selected_objects:
             col.label(text="No object selected...", icon="ERROR")
             return
-
         if not context.active_object:
             col.label(text="Selected but removed active?", icon="ERROR")
             return
 
-        obj, cfg = utils.cfg_getRoot(context.active_object)
-
         # No fracture selected
-        if not cfg:
+        if not utils.cfg_hasRoot(obj):
             col.label(text="Selected: " + obj.name_full, icon="INFO")
 
             # Check that it is a mesh
@@ -61,6 +59,7 @@ class MW_gen_PT(types.Panel):
 
         # Edit/info of selected
         else:
+            obj, cfg = utils.cfg_getRoot(obj)
             col = layout.column()
             col.label(text="Root: " + obj.name_full, icon="INFO")
 

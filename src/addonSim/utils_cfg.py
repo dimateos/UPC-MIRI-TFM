@@ -18,7 +18,7 @@ def getProps_names(data):
     """ Get all properties names of an object, e.g. not just the modified ones in PropertyGroup.keys() """
     props_names = []
     for prop_name in dir(data):
-        # skip callable methods
+        # skip callable methods (sub classes are class props, not instance)
         if callable(getattr(data, prop_name)): continue
 
         # minumun filter of read only props

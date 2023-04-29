@@ -14,6 +14,10 @@ from .stats import getStats
 # OPT:: split some more files? or import less functions
 #-------------------------------------------------------------------
 
+def cfg_hasRoot(obj: types.Object) -> bool:
+    """ Quick check if the object is part of a fracture """
+    return "NONE" not in obj.mw_gen.meta_type
+
 # TODO:: should really try to acces the parent direclty
 # XXX:: too much used around in poll functions, performance hit?
 def cfg_getRoot(obj: types.Object) -> tuple[types.Object, MW_gen_cfg]:
@@ -21,14 +25,15 @@ def cfg_getRoot(obj: types.Object) -> tuple[types.Object, MW_gen_cfg]:
     if "NONE" in obj.mw_gen.meta_type:
         return obj, None
 
-    else:
-        while "CHILD" in obj.mw_gen.meta_type:
-            # Maybe the user deleted the root only
-            if not obj.parent:
-                return obj, None
-            obj = obj.parent
-
-        return obj, obj.mw_gen
+    # Maybe the user deleted the root only
+    try:
+        obj_chain = obj
+        while "CHILD" in obj_chain.mw_gen.meta_type:
+            obj_chain = obj.parent
+        return obj_chain, obj_chain.mw_gen
+    except:
+        DEV.log_msg(f"cfg_getRoot chain broke ({obj.name})", {"ERROR", "CFG"})
+        return obj, None
 
 
 def cfg_setMetaTypeRec(obj: types.Object, type: dict):
@@ -302,9 +307,7 @@ def rnd_seed(s: int = None) -> int:
     import random as rnd
 
     if s is None or s < 0:
-        default = getPrefs().calc_defaultSeed
-        if default < 0: s = get_timestamp()
-        else: s = default
+        s = get_timestamp()
 
     rnd.seed(s)
     bl_rnd.seed_set(s)
