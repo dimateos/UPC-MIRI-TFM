@@ -247,52 +247,33 @@ def gen_curveData(points: list[Vector], name ="poly-curve", w=0.05, res=0):
     curve_data.fill_mode = "FULL" #'FULL', 'HALF', 'FRONT', 'BACK'
     return curve_data
 
-def gen_linksObjects(obj: types.Object, objWall: types.Object, links: Links, cfg: MW_gen_cfg, context: types.Context):
-    # NOTE:: could iterate just global links better?
+def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: Links, cfg: MW_gen_cfg, context: types.Context):
+    # iterate the global map
+    for key,l in links.link_map.items():
+        c1, c2 = l.key_cells
+        f1, f2 = l.key_faces
 
-    # start with links per cell
-    for idx_cell,keys_perFace in links.keys_perCell.items():
-        for idx_face,key in enumerate(keys_perFace):
-            l = links.link_map[key]
-            c1, c2 = l.key_cells
-            f1, f2 = l.key_faces
-            name= f"c{c1}_c{c2}-f{f1}_f{f2}"
-
-            # retrieve f2 because in case of wall c1,f1 are negative
-            face = links.getFace(c2,f2)
-            p = face.center
-            n = face.normal
-
-            # Find the two points around the face
-            p1 = p + n*0.1
-            p2 = p - n*0.1
-
-            # Create new curve per link and spawn
-            curve = gen_curveData([p1, p2], name, cfg.links_width, cfg.links_res)
-            obj_link = utils.gen_child(obj, name, context, curve, keepTrans=False, hide=not cfg.struct_showLinks)
-
-    getStats().logDt("generated links objects")
-
-    # then links per wall
-    for idx_cell,keys_perFace in links.keys_perWall.items():
-        for idx_face,key in enumerate(keys_perFace):
-            l = links.link_map[key]
-            w1, c2 = l.key_cells
-            w1, f2 = l.key_faces
+        # links to walls
+        if l.toWall:
             name= f"w{c1}_c{c2}-f{f2}"
+            obj = objWall
 
-            # retrieve f2 because in case of wall c1,f1 are negative
-            face = links.getFace(c2,f2)
-            p = face.center
-            n = face.normal
+            # start at the face outward
+            p1 = l.pos
+            p2 = l.pos + l.dir*0.1
 
-            # Find the two points around the face
-            p1 = p
-            p2 = p + n*0.1
+        # regular links
+        else:
+            name= f"c{c1}_c{c2}-f{f1}_f{f2}"
+            obj = objLinks
 
-            # Create new curve per link and spawn
-            curve = gen_curveData([p1, p2], name, cfg.links_width, cfg.links_res)
-            obj_link = utils.gen_child(objWall, name, context, curve, keepTrans=False, hide=not cfg.struct_showLinks)
+            # two points around the face
+            p1 = l.pos + l.dir*0.1
+            p2 = l.pos - l.dir*0.1
+
+        # Create new curve per link and spawn
+        curve = gen_curveData([p1, p2], name, cfg.links_width, cfg.links_res)
+        obj_link = utils.gen_child(obj, name, context, curve, keepTrans=False, hide=not cfg.struct_showLinks)
 
     getStats().logDt("generated links to walls objects")
 

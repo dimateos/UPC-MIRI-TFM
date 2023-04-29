@@ -15,16 +15,21 @@ from .stats import getStats
 class Link():
     keyType = tuple[int, int]
 
-    def __init__(self, key_cells: tuple[int, int], key_faces: tuple[int, int], toWall=False):
+    def __init__(self, key_cells: tuple[int, int], key_faces: tuple[int, int], pos_world:Vector, dir_world:Vector, toWall=False):
         self.life = 1.0
 
         # no directionality
         self.key_cells: Link.keyType = key_cells
         self.key_faces: Link.keyType = key_faces
 
-        # neighs populated afterwards
-        # IDEA:: separate to cells / walls?
+        # properties in world space
+        self.pos = pos_world
+        self.dir = dir_world
+
+        # WIP:: arg? position of the key being first?
         self.toWall = toWall
+
+        # neighs populated afterwards
         self.neighs: list[Link.keyType] = list()
 
 
@@ -46,10 +51,11 @@ class Links():
 
 
         # XXX:: decouple scene from sim? calculate the FtoF map inside voro isntead of blender mesh...
-        self.meshes = [ shard.data for shard in obj_shards.children ]
+        self.shard_objs: types.Object = [ shard for shard in obj_shards.children ]
+        self.shard_meshes: types.Mesh= [ shard.data for shard in obj_shards.children ]
         # TODO:: the children objects are ordered lexicographically 0 1 10 11 12 13... dynamically add zeroes or sort after?
 
-        meshes_dicts = [ utils_geo.get_meshDicts(me) for me in self.meshes ]
+        meshes_dicts = [ utils_geo.get_meshDicts(me) for me in self.shard_meshes ]
         stats.logDt("calculated shards mesh dicts")
 
         # XXX:: could be calculated in voro++, also avoid checking twice...
@@ -84,13 +90,21 @@ class Links():
         for cell in cont:
             #if cell is None: continue
             idx_cell = cell.id
+            obj = self.shard_objs[idx_cell]
+            me = self.shard_meshes[idx_cell]
+            m_toWorld, mn_toWorld = utils.get_worldMatrix_normalMatrix(obj, update=True)
+
             for idx_face, idx_neighCell in enumerate(cont_neighs[idx_cell]):
+                # get world props
+                face = me.polygons[idx_face]
+                pos = m_toWorld @ face.center
+                normal = mn_toWorld @ face.normal
 
                 # link to a wall, wont be repeated
                 if idx_neighCell < 0:
                     key = (idx_neighCell, idx_cell)
                     key_faces = (idx_neighCell, idx_face)
-                    l = Link(key, key_faces, toWall=True)
+                    l = Link(key, key_faces, pos, normal, toWall=True)
 
                     # add to mappings per wall and cell
                     self.num_toWalls += 1
@@ -109,7 +123,7 @@ class Links():
                 # build the link
                 idx_neighFace = cont_neighs_faces[idx_cell][idx_face]
                 key_faces = Links.getKey(idx_face, idx_neighFace, swap)
-                l = Link(key, key_faces)
+                l = Link(key, key_faces, pos, normal)
 
                 # add to mappings for both per cells
                 self.num_toCells += 1
@@ -161,16 +175,16 @@ class Links():
     def getMesh(self, idx: list[int]|int) -> list[types.Mesh]|types.Mesh:
         """ return a mesh or list of meshes given idx  """
         try:
-            return self.meshes[idx]
+            return self.shard_meshes[idx]
         except TypeError:
-            return [ self.meshes[i] for i in idx ]
+            return [ self.shard_meshes[i] for i in idx ]
 
-    def getFace(self, midx: list[int]|int, fidx: list[int]|int) -> list[types.Mesh]|types.Mesh:
+    def getFace(self, midx: list[int]|int, fidx: list[int]|int) -> list[types.MeshPolygon]|types.MeshPolygon:
         """ return a face or list of faces given idx  """
         try:
-            return self.meshes[midx].polygons[fidx]
+            return self.shard_meshes[midx].polygons[fidx]
         except TypeError:
-            return [ self.meshes[i].polygons[j] for i,j in zip(midx,fidx) ]
+            return [ self.shard_meshes[i].polygons[j] for i,j in zip(midx,fidx) ]
 
 
 #-------------------------------------------------------------------

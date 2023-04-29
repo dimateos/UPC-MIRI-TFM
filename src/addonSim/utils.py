@@ -97,8 +97,9 @@ def get_faces_4D(obj: types.Object, n_disp = 0.0, worldSpace=False) -> list[Vect
     getStats().logDt(f"calc faces4D: {len(faces4D)} (n_disp {n_disp:.4f})")
     return faces4D
 
-def get_worldMatrix_normalMatrix(obj: types.Object) -> tuple[types.Object, MW_gen_cfg]:
+def get_worldMatrix_normalMatrix(obj: types.Object, update = False) -> tuple[types.Object, MW_gen_cfg]:
     """ Get the object world matrix and normal world matrix """
+    if update: trans_update(obj)
     matrix = obj.matrix_world.copy()
 
     # Normals will need a normal matrix to transform properly
