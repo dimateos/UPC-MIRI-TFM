@@ -63,7 +63,8 @@ class MW_gen_PT(types.Panel):
             col = layout.column()
             col.label(text="Root: " + obj.name_full, icon="INFO")
 
-            col.operator(ops.MW_gen_OT.bl_idname, text="EDIT Fracture", icon="STICKY_UVS_VERT")
+            #col.operator(ops.MW_gen_OT.bl_idname, text="EDIT Fracture", icon="STICKY_UVS_VERT")
+            col.operator(ops.MW_gen_OT.bl_idname, text="DUPLICATE Fracture", icon="STICKY_UVS_VERT")
 
             col_rowSplit = col.row().split(factor=0.66)
             col_rowSplit.operator(ops.MW_util_delete_OT.bl_idname, text="DELETE rec", icon="CANCEL")
@@ -100,12 +101,12 @@ class MW_addon_PT(types.Panel):
 #-------------------------------------------------------------------
 # Blender events
 
-# sort to set default order?
+# sort to set default order
 classes = [
     MW_gen_PT,
-] + util_classes_pt + [
+#] + util_classes_pt + [
     MW_addon_PT,
-]
+] + util_classes_pt
 
 def register():
     for cls in classes:

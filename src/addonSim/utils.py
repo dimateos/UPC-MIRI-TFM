@@ -160,11 +160,10 @@ def trans_printMatrices(obj: types.Object, printName=True):
     print(obj.matrix_basis, "matrix_basis\n")
 
 #-------------------------------------------------------------------
-# TODO:: performance hit with teapot due to REC or scene childen access?
 # XXX:: all access to obj.children take O(n) where n is ALL objects of the scene...
 
-def copy_objectRec(obj: types.Object, context: types.Context, link_mesh = False, keep_mods = True, namePreffix = "", nameSuffix = "") -> types.Object:
-    """ Copy the object along its children """
+def copy_object(obj: types.Object, context: types.Context, link_mesh = False, keep_mods = True, namePreffix = "", nameSuffix = "") -> types.Object:
+    """ Copy the object but not its children """
     obj_copy: types.Object = obj.copy()
     context.scene.collection.objects.link(obj_copy)
 
@@ -180,6 +179,12 @@ def copy_objectRec(obj: types.Object, context: types.Context, link_mesh = False,
     # avoid setting name unless specified, otherwise the copy gets the priority name without .001
     if namePreffix or nameSuffix:
         obj_copy.name = f"{namePreffix}{obj.name}{nameSuffix}"
+
+    return obj_copy
+
+def copy_objectRec(obj: types.Object, context: types.Context, link_mesh = False, keep_mods = True, namePreffix = "", nameSuffix = "") -> types.Object:
+    """ Copy the object along its children """
+    obj_copy = copy_object(**get_kwargs())
 
     # copy rec + set parenting and force them to keep the original world pos
     for child in obj.children:
@@ -204,22 +209,17 @@ def delete_childrenRec(ob_father: types.Object, logAmount=False):
 
 def get_object_fromScene(scene: types.Scene, name: str) -> types.Object|None:
     """ Find an object in the scene by name (starts with to avoid limited exact names). Returns the first found. """
-    # OPT:: improve as in get_child, also not recursive, could try to use the parent name direclty
-    nameSub = name+"."
     for obj in scene.objects:
-        if obj.name == name or obj.name.startswith(nameSub):
-            return obj
+        if obj.name.startswith(name): return obj
     return None
 
-def get_child(obj: types.Object, name: str) -> types.Object|None:
+def get_child(obj: types.Object, name: str, rec=False) -> types.Object|None:
     """ Find child by name (starts with to avoid limited exact names) """
-    # All names are unique, even under children hierarchies. Blender adds .001 etc
-    nameSub = name+"."
+    children = obj.children if not rec else obj.children_recursive
 
-    for child in obj.children:
-        # OPT:: avoid double linear comparison
-        if child.name == name or child.name.startswith(nameSub):
-            return child
+    for child in children:
+        # All names are unique, even under children hierarchies. Blender adds .001 etc
+        if child.name.startswith(name): return child
     return None
 
 #-------------------------------------------------------------------
@@ -234,7 +234,6 @@ def select_unhide(obj: types.Object, context: types.Context, select=True):
         #context.active_object = obj                    # read-only
     else:
         obj.select_set(False)
-        # XXX:: also remove from lists?
 
     #DEV.log_msg(f"{obj.name}: select {select}", {"SELECT"})
 

@@ -17,14 +17,16 @@ from .stats import getStats
 
 
 class CONST_NAMES:
-    original = "Original_"
-    original_bb = original+"bb"
-    original_c = original+"c"
-    original_d = original+"d"
+    original = "original"
+    original_copy = original+"_0_"
+    original_bb = original+"_0_marginBB"
+    original_convex = original+"_1_convex"
+    original_dissolve = original+"_2_dissolve"
 
     shards = "Shards"
     shards_points = "Shards_source"
 
+    # OPT:: too much redundant "shards.."
     links = shards+"_links"
     links_perCell = links+"_perCell"
     links_toWalls = links+"_toWall"
@@ -49,7 +51,7 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
     context.scene.collection.objects.link(obj_empty)
 
     # Duplicate the original object
-    obj_copy = utils.copy_objectRec(obj, context, namePreffix=CONST_NAMES.original)
+    obj_copy = utils.copy_objectRec(obj, context, namePreffix=CONST_NAMES.original_copy)
     utils.cfg_setMetaTypeRec(obj_copy, {"CHILD"})
 
     # Scene viewport
@@ -68,7 +70,7 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
 def gen_copyConvex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, context: types.Context):
     # Duplicate again the copy and set child too
     obj_c = utils.copy_objectRec(obj_copy, context, keep_mods=False)
-    obj_c.name = CONST_NAMES.original_c
+    obj_c.name = CONST_NAMES.original_convex
     utils.cfg_setMetaTypeRec(obj_c, {"CHILD"})
     utils.set_child(obj_c, obj)
 
@@ -88,7 +90,7 @@ def gen_copyConvex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, c
 
     # Second copy with the face dissolve
     obj_d = utils.copy_objectRec(obj_c, context, keep_mods=False)
-    obj_d.name = CONST_NAMES.original_d
+    obj_d.name = CONST_NAMES.original_dissolve
     utils.cfg_setMetaTypeRec(obj_d, {"CHILD"})
     utils.set_child(obj_d, obj)
 

@@ -2,12 +2,14 @@ import bpy
 import bpy.types as types
 import bpy.props as props
 
+#from .mw_links import Links, Link
 from tess import Container, Cell
 
 
 #-------------------------------------------------------------------
 
 class MW_gen_cfg(types.PropertyGroup):
+    #nbl_links: Links = None
     nbl_cont: Container = None
 
     meta_type: props.EnumProperty(

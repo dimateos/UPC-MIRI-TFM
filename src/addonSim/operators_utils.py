@@ -27,7 +27,7 @@ class _StartRefresh_OT(types.Operator):
         # to be configured per class / from outside before execution
         self.invoke_log         = False
         self.refresh_log        = False
-        self.start_resetStats   = True
+        self.start_resetStats   = False
         self.start_logEmptyLine = True
         self.start_log          = True
         self.start_logStats     = False
@@ -350,11 +350,6 @@ class Util_deleteIndices_OT(_StartRefresh_OT):
     # UNDO as part of bl_options will cancel any edit last operation pop up
     bl_options = {'INTERNAL', 'UNDO'}
     _obj:types.Object = None
-
-    def __init__(self) -> None:
-        super().__init__()
-        # config some base class log flags...
-        self.start_resetStats = False
 
     @classmethod
     def poll(cls, context):
