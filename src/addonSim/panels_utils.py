@@ -38,20 +38,27 @@ class Info_Inpect_PT(types.Panel):
                 col.label(text="No object selected...", icon="ERROR")
             else:
                 col.label(text="...")
-            return
 
-        if not context.active_object:
+        elif not context.active_object:
             col = layout.column()
             col.label(text="Selected but removed active?", icon="ERROR")
-            return
 
-        # draw specific mode
-        self._obj = context.active_object
-        if bpy.context.mode == 'OBJECT':
-            self.drawMode_object(context)
-        elif bpy.context.mode == 'EDIT_MESH':
-            self.drawMode_edit(context)
+        else:
+            # draw specific mode
+            self._obj = context.active_object
+            if bpy.context.mode == 'OBJECT':
+                self.drawMode_object(context)
+            elif bpy.context.mode == 'EDIT_MESH':
+                self.drawMode_edit(context)
 
+        # always draw debug
+        prefs = getPrefs()
+        open, box = ui.draw_toggleBox(prefs, "dm_PT_meta_show_tmpDebug", layout)
+        if open:
+            # fix orpha meshes
+            col_rowSplit = box.row().split(factor=0.8)
+            DEV.draw_val(col_rowSplit, "Scene meshes", len(bpy.data.meshes))
+            col_rowSplit.operator(ops_util.Util_deleteMeshes_OT.bl_idname, icon="UNLINKED", text="")
 
     def drawMode_object(self, context):
         layout = self.layout

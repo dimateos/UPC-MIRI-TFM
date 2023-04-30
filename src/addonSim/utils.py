@@ -203,9 +203,19 @@ def delete_childrenRec(ob_father: types.Object, logAmount=False):
     childrenRec = ob_father.children_recursive
 
     if logAmount:
-        DEV.log_msg(f"Deleting {len(childrenRec)} objects", {"DELETE"})
-    for child in childrenRec:
-        bpy.data.objects.remove(child)
+
+def delete_meshesOrphan(logAmount):
+    """ When an object is deleted its mesh may be left over """
+    toDelete = []
+    for mesh in bpy.data.meshes:
+        if not mesh.users: toDelete.append(mesh)
+
+    DEV.log_msg(f"Deleting {len(toDelete)}/{len(bpy.data.meshes)} meshes", {"DELETE"})
+    for mesh in toDelete:
+        bpy.data.meshes.remove(mesh)
+
+
+#-------------------------------------------------------------------
 
 def get_object_fromScene(scene: types.Scene, name: str) -> types.Object|None:
     """ Find an object in the scene by name (starts with to avoid limited exact names). Returns the first found. """
@@ -215,9 +225,9 @@ def get_object_fromScene(scene: types.Scene, name: str) -> types.Object|None:
 
 def get_child(obj: types.Object, name: str, rec=False) -> types.Object|None:
     """ Find child by name (starts with to avoid limited exact names) """
-    children = obj.children if not rec else obj.children_recursive
+    toSearch = obj.children if not rec else obj.children_recursive
 
-    for child in children:
+    for child in toSearch:
         # All names are unique, even under children hierarchies. Blender adds .001 etc
         if child.name.startswith(name): return child
     return None

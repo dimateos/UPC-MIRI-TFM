@@ -341,7 +341,6 @@ class Util_SpawnIndices_OT(_StartRefresh_OT):
 
         return self.end_op()
 
-
 class Util_deleteIndices_OT(_StartRefresh_OT):
     bl_idname = "dm.util_delete_indices"
     bl_label = "del"
@@ -364,6 +363,20 @@ class Util_deleteIndices_OT(_StartRefresh_OT):
         self.start_op()
         obj = Util_deleteIndices_OT._obj
         utils.delete_objectRec(obj, logAmount=True)
+        return self.end_op()
+
+#-------------------------------------------------------------------
+
+class Util_deleteMeshes_OT(_StartRefresh_OT):
+    bl_idname = "dm.util_delete_meshes"
+    bl_label = "Delete unused meshes"
+    bl_description = "Misuse of the API may lead to orphan meshes"
+
+    bl_options = {'INTERNAL'}
+
+    def execute(self, context: types.Context):
+        self.start_op()
+        utils.delete_meshesOrphan(logAmount=True)
         return self.end_op()
 
 #-------------------------------------------------------------------
@@ -425,6 +438,7 @@ class Info_PrintMatrices_OT(types.Operator):
 util_classes_op = [
     Util_SpawnIndices_OT,
     Util_deleteIndices_OT,
+    Util_deleteMeshes_OT,
     Info_PrintData_OT,
     Info_PrintAPI_OT,
     Info_PrintMatrices_OT

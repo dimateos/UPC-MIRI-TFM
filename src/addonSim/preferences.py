@@ -99,6 +99,11 @@ class MW_prefs(bpy.types.AddonPreferences):
     # NOTE:: panels alone cannot store properties... here mixing dm panels with mw stuff, could separate the addons
     # OPT:: quite similar options as the spawn indices OP
 
+    dm_PT_meta_show_tmpDebug: props.BoolProperty(
+        name="Show debug...", description="WIP: Show some debug stuff",
+        default=True,
+    )
+
     dm_PT_edit_showPrecision: props.IntProperty(
         name="decimals", description="Number of decimals shown, will make colum wider.",
         default=2, min=0, max=16,
