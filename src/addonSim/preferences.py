@@ -103,6 +103,10 @@ class MW_prefs(bpy.types.AddonPreferences):
         name="Show debug...", description="WIP: Show some debug stuff",
         default=True,
     )
+    dm_PT_meta_show_info: props.BoolProperty(
+        name="Show inspect...", description="Show the object info",
+        default=True,
+    )
 
     dm_PT_edit_showPrecision: props.IntProperty(
         name="decimals", description="Number of decimals shown, will make colum wider.",

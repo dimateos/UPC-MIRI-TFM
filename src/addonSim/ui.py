@@ -11,11 +11,16 @@ from .utils_dev import DEV
 
 #-------------------------------------------------------------------
 
-def draw_toggleBox(metadata, propToggle_name:str, layout: types.UILayout) -> tuple[bool, types.UILayout]:
+def draw_toggleBox(metadata, propToggle_name:str, layout: types.UILayout, text="") -> tuple[bool, types.UILayout]:
     """ Create a box with a toggle. Return the state of the toggle and the created layout """
     box = layout.box()
-    box.prop(metadata, propToggle_name, toggle=True, icon="DOWNARROW_HLT")
     open = getattr(metadata, propToggle_name)
+    icon = "DOWNARROW_HLT" if open else "RIGHTARROW"
+
+    if text:
+        box.prop(metadata, propToggle_name, toggle=True, icon=icon, text=text)
+    else:
+        box.prop(metadata, propToggle_name, toggle=True, icon=icon)
     return open, box
 
 def draw_props(data, propFilter:str, layout: types.UILayout):

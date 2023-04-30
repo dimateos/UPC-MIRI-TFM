@@ -343,7 +343,7 @@ class Util_SpawnIndices_OT(_StartRefresh_OT):
 
 class Util_deleteIndices_OT(_StartRefresh_OT):
     bl_idname = "dm.util_delete_indices"
-    bl_label = "del"
+    bl_label = "Delete spawned indices"
     bl_description = "Instead of Blender 'delete hierarchy' which seems to fail to delete all recusively..."
 
     # UNDO as part of bl_options will cancel any edit last operation pop up

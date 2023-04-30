@@ -26,33 +26,31 @@ class Info_Inpect_PT(types.Panel):
 
     bl_label = "DM_info"
     bl_options = {'DEFAULT_CLOSED'}
-    NOTIFY_NO_SELECTED = False
 
     def draw(self, context):
+        prefs = getPrefs()
         layout = self.layout
 
-        # Something selected, not last active
-        if not context.selected_objects:
-            col = layout.column()
-            if self.NOTIFY_NO_SELECTED:
+        # inspect panel
+        open, box = ui.draw_toggleBox(prefs, "dm_PT_meta_show_info", layout)
+        if open:
+            # Something selected + check last active
+            if not context.selected_objects:
+                col = box.column()
                 col.label(text="No object selected...", icon="ERROR")
+            elif not context.active_object:
+                col = box.column()
+                col.label(text="Selected but removed active?", icon="ERROR")
+
             else:
-                col.label(text="...")
+                # draw specific mode
+                self._obj = context.active_object
+                if bpy.context.mode == 'OBJECT':
+                    self.drawMode_object(context, box)
+                elif bpy.context.mode == 'EDIT_MESH':
+                    self.drawMode_edit(context, box)
 
-        elif not context.active_object:
-            col = layout.column()
-            col.label(text="Selected but removed active?", icon="ERROR")
-
-        else:
-            # draw specific mode
-            self._obj = context.active_object
-            if bpy.context.mode == 'OBJECT':
-                self.drawMode_object(context)
-            elif bpy.context.mode == 'EDIT_MESH':
-                self.drawMode_edit(context)
-
-        # always draw debug
-        prefs = getPrefs()
+        # debug options
         open, box = ui.draw_toggleBox(prefs, "dm_PT_meta_show_tmpDebug", layout)
         if open:
             # fix orpha meshes
@@ -60,13 +58,12 @@ class Info_Inpect_PT(types.Panel):
             DEV.draw_val(col_rowSplit, "Scene meshes", len(bpy.data.meshes))
             col_rowSplit.operator(ops_util.Util_deleteMeshes_OT.bl_idname, icon="UNLINKED", text="")
 
-    def drawMode_object(self, context):
-        layout = self.layout
-        col = layout.column()
+    def drawMode_object(self, context, layout):
         obj = self._obj
 
         # mesh inspect
-        mainCol, mainBox = self.draw_inspectObject(obj, col)
+        mainCol, mainBox = self.draw_inspectObject(obj, layout)
+
         # get format precision
         fmt = self.draw_precision(mainCol)
 
@@ -84,46 +81,54 @@ class Info_Inpect_PT(types.Panel):
             col.operator(ops_util.Info_PrintData_OT.bl_idname, icon="HELP")
             col.operator(ops_util.Info_PrintAPI_OT.bl_idname, icon="HELP")
 
-    def drawMode_edit(self, context):
+    def drawMode_edit(self, context, layout):
         prefs = getPrefs()
-        layout = self.layout
         #obj = bpy.context.object
         obj = self._obj
 
-        col = layout.column()
-        col.enabled = False
-        col.alignment = 'LEFT'
-        col.scale_y = 0.8
-        col.label(text=f"[toggle Edit/Object]: update", icon="QUESTION")
-        col.label(text=f"[Object Mode]: spawn indices", icon="LIGHT")
-
         # Inspect the mesh and format decimals
         mainCol, mainBox = self.draw_inspectObject(obj, layout)
+
+        col = mainCol.column()
+        col.enabled = False
+        col.alignment = 'LEFT'
+        #col.scale_y = 0.8
+        col.label(text=f"[toggle Edit/Object]: update it", icon="QUESTION")
+        #col.label(text=f"[Object Mode]: spawn indices", icon="LIGHT")
+
         # get format precision
         fmt = self.draw_precision(mainCol)
 
-        self.draw_inspectData(obj, mainCol,)
+        self.draw_inspectData(obj, mainCol, fmt)
 
     #-------------------------------------------------------------------
 
     def draw_inspectObject(self, obj: types.Object, layout: types.UILayout) -> tuple[types.UILayout,types.UILayout]:
-        mainBox = layout.box()
-        mainCol = mainBox.column()
-        mainCol.label(text="Object: " + obj.name),
-        mainCol.scale_y = 0.8
-
-        # OPT:: maybe for vertices too, not just whole objects
-        box = mainCol.box()
-        col = box.column()
-        col.label(text="Type: " + obj.type, icon="MESH_DATA")
-        if obj.type == "MESH":
-            mesh: types.Mesh = obj.data
-            col.label(text=f"V: {len(mesh.vertices)}   E: {len(mesh.edges)}   F: {len(mesh.polygons)}   T: {len(mesh.loop_triangles)}")
+        mainBox = layout
 
         # indices spawn
         col_rowSplit = mainBox.row().split(factor=0.8)
         col_rowSplit.operator(ops_util.Util_SpawnIndices_OT.bl_idname, icon="TRACKER")
         col_rowSplit.operator(ops_util.Util_deleteIndices_OT.bl_idname, icon="CANCEL", text="")
+
+        col = mainBox.column()
+        col.scale_y = 0.8
+
+        # obj name
+        box = col.box()
+        col_rowSplit = box.row().split(factor=0.7)
+        col_rowSplit.label(text=f"{obj.name}", icon="OBJECT_DATAMODE")
+        col_rowSplit.label(text=f"(name)")
+
+        # obj mesh
+        col = box.column()
+        col_rowSplit = col.row().split(factor=0.7)
+        col_rowSplit.label(text=f"{obj.type}", icon="MESH_DATA")
+        col_rowSplit.label(text=f"(type)")
+
+        if obj.type == "MESH":
+            mesh: types.Mesh = obj.data
+            col.label(text=f"V: {len(mesh.vertices)}   E: {len(mesh.edges)}   F: {len(mesh.polygons)}   T: {len(mesh.loop_triangles)}", icon="DOT")
 
         mainCol = mainBox.column()
         mainCol.scale_y = 0.8
@@ -132,8 +137,10 @@ class Info_Inpect_PT(types.Panel):
     def draw_precision(self, layout: types.UILayout):
         prefs = getPrefs()
 
-        row = layout.row()
+        row = layout.row().split(factor=0.45)
         row.alignment= "LEFT"
+        row.scale_y = 0.9
+        row.label(text=f"Precision", icon="TRACKING_FORWARDS_SINGLE")
         row.prop(prefs, "dm_PT_edit_showPrecision")
         return f">5.{prefs.dm_PT_edit_showPrecision}f"
 
