@@ -12,6 +12,7 @@ from .mw_links import Links, Link
 from tess import Container, Cell
 
 from . import utils
+from .utils_cfg import copyProps
 from .utils_dev import DEV
 from .stats import getStats
 
@@ -39,16 +40,17 @@ def get_IdFormated(idx:int):
     """ Pad with a certain amount of zeroes to achieve a correct lexicographic order """
     return f"{{:{CONST_NAMES.child_idFormat}}}".format(idx)
 
+
 # OPT:: more docu on methods
 #-------------------------------------------------------------------
 
-def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
+def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     cfg.meta_type = {"ROOT"}
     cfg.struct_nameOriginal = obj.name
 
     # Empty object to hold all of them set at the original obj trans
-    obj_empty = bpy.data.objects.new(cfg.get_struct_name(), None)
-    context.scene.collection.objects.link(obj_empty)
+    obj_root = bpy.data.objects.new(cfg.get_struct_name(), None)
+    context.scene.collection.objects.link(obj_root)
 
     # Duplicate the original object
     obj_copy = utils.copy_objectRec(obj, context, namePreffix=CONST_NAMES.original_copy)
@@ -60,14 +62,49 @@ def gen_copyOriginal(obj: types.Object, cfg: MW_gen_cfg, context: types.Context)
     obj_copy.show_bounds = True
 
     # Set the transform to the empty and parent keeping the transform of the copy
-    obj_empty.matrix_world = obj.matrix_world.copy()
-    utils.set_child(obj_copy, obj_empty)
+    obj_root.matrix_world = obj.matrix_world.copy()
+    utils.set_child(obj_copy, obj_root)
 
+    # Rename and select the root
+    get_renamed(obj_root, cfg, context)
+    utils.select_unhide(obj_root, context)
+
+    #copyProps(cfg, obj_root.mw_gen)
     getStats().logDt("generated copy object")
-    return obj_empty, obj_copy
+    return obj_root, obj_copy
 
-# NOTE:: not recursive hull not face dissolve
-def gen_copyConvex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, context: types.Context):
+def copy_originalPrev(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
+    # Copy the root objects including its mw_cfg
+    #obj_root = bpy.data.objects.new(cfg.get_struct_name(), None)
+    #context.scene.collection.objects.link(obj_root)
+    obj_root = utils.copy_object(obj, context)
+    utils.select_unhide(obj_root, context)
+
+    # copy the original from the previous root withou suffix
+    obj_original = utils.get_child(obj, CONST_NAMES.original_copy)
+    obj_copy = utils.copy_objectRec(obj_original, context)
+
+    ## Set the transform to the empty and parent keeping the transform of the copy
+    #obj_root.matrix_world = obj.matrix_world.copy()
+    utils.set_child(obj_copy, obj_root)
+
+    getStats().logDt("generated copy object from prev frac")
+    return obj_root, obj_copy
+
+# OPT:: not robust...
+def get_renamed(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
+    # split by first _
+    try:
+        prefix, name = obj.name.split("_",1)
+    except ValueError:
+        prefix, name = "", obj.name
+
+    # use new prefix preserving name
+    obj.name = cfg.get_struct_nameNew(name)
+
+#-------------------------------------------------------------------
+
+def copy_convex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, context: types.Context):
     # Duplicate again the copy and set child too
     obj_c = utils.copy_objectRec(obj_copy, context, keep_mods=False)
     obj_c.name = CONST_NAMES.original_convex
@@ -75,6 +112,7 @@ def gen_copyConvex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, c
     utils.set_child(obj_c, obj)
 
     # XXX:: need to mesh update? + decimate before more perf? but need to change EDIT/OBJ modes?
+    # NOTE:: not recursive hull...
 
     # build convex hull with only verts
     bm = bmesh.new()
@@ -105,16 +143,6 @@ def gen_copyConvex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, c
     bm.free()
     getStats().logDt("generated convex object")
     return obj_d
-
-def gen_renaming(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    # split by first _
-    try:
-        prefix, name = obj.name.split("_",1)
-    except ValueError:
-        prefix, name = "", obj.name
-
-    # use new prefix preserving name
-    obj.name = cfg.get_struct_nameNew(name)
 
 def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     obj_shardsEmpty = utils.gen_childClean(obj, CONST_NAMES.shards, context, None, keepTrans=False, hide=not cfg.struct_showShards)
@@ -232,7 +260,7 @@ def _gen_LEGACY_CONT(obj: types.Object, cont: Container, cfg: MW_gen_cfg, contex
 
 #-------------------------------------------------------------------
 
-def gen_curveData(points: list[Vector], name ="poly-curve", w=0.05, res=0):
+def get_curveData(points: list[Vector], name ="poly-curve", w=0.05, res=0):
     # Create new POLY curve
     curve_data = bpy.data.curves.new(name, 'CURVE')
     curve_data.dimensions = '3D'
@@ -274,7 +302,7 @@ def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: Links
             p2 = l.pos - l.dir*0.1
 
         # Create new curve per link and spawn
-        curve = gen_curveData([p1, p2], name, cfg.links_width, cfg.links_res)
+        curve = get_curveData([p1, p2], name, cfg.links_width, cfg.links_res)
         obj_link = utils.gen_child(obj, name, context, curve, keepTrans=False, hide=not cfg.struct_showLinks)
 
     getStats().logDt("generated links to walls objects")
@@ -320,7 +348,7 @@ def gen_linksCellObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, co
             name= f"s{cell.id}_n{n_id}"
             neigh_centroid = Vector(cont[n_id].centroid())
 
-            curve = gen_curveData([cell_centroid, neigh_centroid], name, cfg.links_width, cfg.links_res)
+            curve = get_curveData([cell_centroid, neigh_centroid], name, cfg.links_width, cfg.links_res)
             obj_link = utils.gen_child(obj_group, name, context, curve, keepTrans=False, hide=not cfg.struct_showLinks)
 
             obj_link.hide_set(key_rep or not cfg.struct_showLinks_perCell)

@@ -78,7 +78,6 @@ class MW_gen_OT(_StartRefresh_OT):
         # OPT:: avoid recursion with pointer to parent instead of search by name
         # IDEA:: decimate before/after convex, test perf?
 
-
         # Retrieve root
         obj, cfg = utils.cfg_getRoot(context.active_object)
         getStats().logDt("retrieved root object")
@@ -86,16 +85,15 @@ class MW_gen_OT(_StartRefresh_OT):
         # Selected object not fractured, fresh execution
         if not cfg:
             DEV.log_msg("cfg NOT found: new frac", {'SETUP'})
-            obj_root, obj_original = mw_setup.gen_copyOriginal(obj, self.cfg, context)
+            obj_root, obj_original = mw_setup.copy_original(obj, self.cfg, context)
+            copyProps(self.cfg, obj_root.mw_gen)
             return self.execute_fresh(context, obj_root, obj_original)
 
-        # fracture the same original object for an alternative result
+        # fracture the same original object, copy props for a duplicate result
         else:
             DEV.log_msg("cfg found: duplicating frac", {'SETUP'})
             copyProps(cfg, self.cfg)
-            obj_original = utils.get_child(obj, mw_setup.CONST_NAMES.original_copy)
-            obj_copu = utils.copy_objectRec(obj_original, context)
-            obj_original.name = cfg.struct_nameOriginal
+            obj_root, obj_original = mw_setup.copy_originalPrev(obj, self.cfg, context)
             return self.execute_fresh(context, obj_root, obj_original)
 
         # NOTE:: no longer supporting edit fracture -> basically always replacing geometry hence being slower
@@ -111,6 +109,7 @@ class MW_gen_OT(_StartRefresh_OT):
         #    else:
         #        return self.execute_edit(context, obj)
 
+
     def execute_fresh(self, context: types.Context, obj_root:types.Object, obj_original:types.Object ):
         cfg: MW_gen_cfg = self.cfg
         prefs = getPrefs()
@@ -121,18 +120,10 @@ class MW_gen_OT(_StartRefresh_OT):
         DEV.log_msg("Initial object setup", {'SETUP'})
         # TODO:: convex hull triangulates the faces... e.g. UV sphere ends with more!
         if cfg.shape_useConvexHull:
-            obj_toFrac = mw_setup.gen_copyConvex(obj_root, obj_original, cfg, context)
+            obj_toFrac = mw_setup.copy_convex(obj_root, obj_original, cfg, context)
         else: obj_toFrac = obj_original
 
-        # Rename and select the root
-        mw_setup.gen_renaming(obj_root, cfg, context)
-        utils.select_unhide(obj_root, context)
-
-        # Add edited cfg to the object
-        copyProps(self.cfg, obj_root.mw_gen)
-        getStats().logDt("copied prop to root object")
         return self.end_op()
-
 
 
         DEV.log_msg("Start calc points", {'CALC'})
