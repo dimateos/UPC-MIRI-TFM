@@ -78,7 +78,7 @@ class MW_gen_cfg(types.PropertyGroup):
         #self.nbl_cont: Container = None
         #self.nbl_links: Links = None
 
-    test_stroi = "yep"
+    #test_stroi = "yep"
 
     #-------------------------------------------------------------------
 
@@ -89,25 +89,25 @@ class MW_gen_cfg(types.PropertyGroup):
             ('VERT_CHILD', "Child Verts", "Use child object vertices"),
             ('PARTICLE_OWN', "Own Particles", "All particle systems of the source object"),
             ('PARTICLE_CHILD', "Child Particles", "All particle systems of the child objects"),
-            ('PENCIL', "Pencil", "Annotation Grease Pencil (only touching/inside the volume)"),
+            #('PENCIL', "Pencil", "Annotation Grease Pencil (only touching/inside the volume)"),
         ]
-        enabled = {
-            'VERT_OWN': True,
-            'VERT_CHILD': True,
-            'PARTICLE_OWN': True,
-            'PARTICLE_CHILD': True,
-            #'PENCIL': False,
-        }
-        all_keys = [ k for k in enabled.keys() ]
+        all_keys = [ k[0] for k in all ]
         default_key = 'PARTICLE_CHILD'
         fallback_key = 'VERT_OWN'
         error_key = 'NONE'
         error_option = [ (error_key, "No point found...", f"Options: {all_keys}") ]
 
+    meta_source_enabled: props.EnumProperty(
+        name="Source all types",
+        items=sourceOptions.all.copy(),
+        default={ sourceOptions.fallback_key },
+        options={'ENUM_FLAG'},
+    )
+
     def source_dynamic(self, context):
         items = [
             t for t in self.sourceOptions.all
-                if self.sourceOptions.enabled.get(t[0], False)
+                if t[0] in self.meta_source_enabled
         ]
         if items: return items
         else: return self.sourceOptions.error_option.copy()
@@ -115,7 +115,6 @@ class MW_gen_cfg(types.PropertyGroup):
     source: props.EnumProperty(
         name="Source", description="Available source from where to retrieve points",
         items=source_dynamic, # default with numberID doesnt seem to work
-        #items=sourceOptions.all, default={'VERT_OWN'},
         options={'ENUM_FLAG'},
     )
 

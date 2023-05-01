@@ -22,8 +22,7 @@ from .stats import getStats
 
 def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
     """ Attempts to retrieve a point per option and disables them when none is found """
-    enabled = cfg.sourceOptions.enabled
-    for key in enabled.keys(): enabled[key] = False
+    cfg.meta_source_enabled = set()
 
     def check_point_from_verts(ob):
         if ob.type == 'MESH':
@@ -38,11 +37,11 @@ def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
                 return False
 
     # geom own
-    enabled["VERT_OWN"] = check_point_from_verts(obj)
+    if check_point_from_verts(obj): cfg.meta_source_enabled|= {"VERT_OWN"}
     # geom children
     for obj_child in obj.children:
         if check_point_from_verts(obj_child):
-            enabled["VERT_CHILD"] = True
+            cfg.meta_source_enabled|= {"VERT_CHILD"}
             break
 
     def check_point_from_particles(ob):
@@ -57,12 +56,12 @@ def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
             return any(sys_particles)
 
     # geom own particles
-    enabled["PARTICLE_OWN"] = check_point_from_particles(obj)
+    if check_point_from_particles(obj): cfg.meta_source_enabled|= {"PARTICLE_OWN"}
 
     # geom children particles
     for obj_child in obj.children:
         if check_point_from_particles(obj_child):
-            enabled["PARTICLE_CHILD"] = True
+            cfg.meta_source_enabled|= {"PARTICLE_CHILD"}
             break
 
     # grease pencil
@@ -75,26 +74,20 @@ def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
                 stroke_points = [stroke.points for stroke in frame.strokes]
                 return any(stroke_points)
 
-        enabled["PENCIL"] = False
         scene = context.scene
         gp = scene.grease_pencil
         if gp:
-            enabled["PENCIL"] = check_points_from_splines(gp)
+            if check_points_from_splines(gp): cfg.meta_source_enabled |= {"PENCIL"}
 
-    getStats().logDt(f"detected points: {enabled}")
+    getStats().logDt(f"detected points: {cfg.meta_source_enabled}")
 
 def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, context):
+    if not cfg.meta_source_enabled:
+        cfg.source = { cfg.sourceOptions.error_key }
+        DEV.log_msg("No points found...", {"SETUP", "ERROR"})
+        return []
+
     points = get_points_from_object(obj, cfg, context)
-
-    # OPT:: wont happen anymore?
-    if not points:
-        DEV.log_msg(f"No points found... changing to fallback ({cfg.sourceOptions.fallback_key})", {"SETUP"})
-        cfg.source = { cfg.sourceOptions.fallback_key }
-        points = get_points_from_object(obj, cfg, context)
-    if not points:
-        DEV.log_msg("No points found either...", {"SETUP"})
-        points = []
-
     getStats().logDt(f"retrieved points: {len(points)}")
     return points
 
@@ -102,12 +95,11 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
     """ Retrieves point using the method selected
         * REF: some get_points from original cell fracture modifier
     """
-    source = cfg.source
-    if not source:
-        if cfg.sourceOptions.enabled[cfg.sourceOptions.default_key]:
-            source = { cfg.sourceOptions.default_key }
-        else: source = { cfg.sourceOptions.fallback_key }
-        cfg.source = source
+    # try set default source or fallback
+    if not cfg.source:
+        if cfg.sourceOptions.default_key in cfg.meta_source_enabled:
+            cfg.source = { cfg.sourceOptions.default_key }
+        else: cfg.source = { cfg.sourceOptions.fallback_key }
 
     # return in local space
     points = []
@@ -140,10 +132,10 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
         points.extend(verts)
 
     # geom own
-    if 'VERT_OWN' in source:
+    if 'VERT_OWN' in cfg.source:
         points_from_verts(obj)
     # geom children
-    if 'VERT_CHILD' in source:
+    if 'VERT_CHILD' in cfg.source:
         for obj_child in obj.children:
             points_from_verts(obj_child, isChild=True)
 
@@ -157,15 +149,15 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
                        for p in psys.particles])
 
     # geom own particles
-    if 'PARTICLE_OWN' in source:
+    if 'PARTICLE_OWN' in cfg.source:
         points_from_particles(obj)
     # geom child particles
-    if 'PARTICLE_CHILD' in source:
+    if 'PARTICLE_CHILD' in cfg.source:
         for obj_child in obj.children:
             points_from_particles(obj_child)
 
     # grease pencil
-    if 'PENCIL' in source:
+    if 'PENCIL' in cfg.source:
         def points_from_stroke(stroke):
             return [world_toLocal @ point.co.copy() for point in stroke.points]
         def points_from_splines(gp):

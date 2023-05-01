@@ -35,6 +35,7 @@ class MW_gen_OT(_StartRefresh_OT):
     def __init__(self) -> None:
         super().__init__()
         # config some base class log flags...
+        self.start_resetStats = True
         self.invoke_log = True
         self.refresh_log = True
         self.end_log = True
@@ -68,6 +69,7 @@ class MW_gen_OT(_StartRefresh_OT):
 
     def execute(self, context: types.Context):
         self.start_op()
+        self.obj_root = None
         cancel = self.checkRefresh_cancel()
         if cancel: return self.end_op_refresh(skipLog=True)
 
@@ -88,7 +90,6 @@ class MW_gen_OT(_StartRefresh_OT):
         if not cfg:
             DEV.log_msg("cfg NOT found: new frac", {'SETUP'})
             obj_root, obj_original = mw_setup.copy_original(obj, self.cfg, context)
-            copyProps(self.cfg, obj_root.mw_gen)
             return self.execute_fresh(context, obj_root, obj_original)
 
         # fracture the same original object, copy props for a duplicate result
@@ -113,9 +114,10 @@ class MW_gen_OT(_StartRefresh_OT):
 
 
     def execute_fresh(self, context: types.Context, obj_root:types.Object, obj_original:types.Object ):
+        self.obj_root = obj_root
         cfg: MW_gen_cfg = self.cfg
-        prefs = getPrefs()
         cfg.rnd_seed = utils.rnd_seed(cfg.rnd_seed)
+        prefs = getPrefs()
 
 
         DEV.log_msg("Initial object setup", {'SETUP'})
@@ -178,10 +180,18 @@ class MW_gen_OT(_StartRefresh_OT):
         obj_root.mw_gen.nbl_links = links
 
 
-        # set the meta type to all objects at once
-        MW_gen_cfg.setMetaTypeRec(obj_root, {"CHILD"}, skipParent=True)
         return self.end_op()
 
+    def end_op(self, msg="", skipLog=False, retPass=False):
+        """ Override end_op to perform stuff at the end """
+
+        if self.obj_root:
+            # copy any cfg that may have changed during execute
+            copyProps(self.cfg, self.obj_root.mw_gen)
+            # set the meta type to all objects at once
+            MW_gen_cfg.setMetaTypeRec(self.obj_root, {"CHILD"}, skipParent=True)
+
+        return super().end_op(msg, skipLog, retPass)
 
 #-------------------------------------------------------------------
 

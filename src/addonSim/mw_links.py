@@ -133,7 +133,7 @@ class Links():
 
         stats.logDt("created link map")
         #return
-
+        # XXX:: found empty key? ()
 
         # SECOND loop to aggregate the links neighbours, only need to iterate keys_perCell
         for idx_cell,keys_perFace in self.keys_perCell.items():
