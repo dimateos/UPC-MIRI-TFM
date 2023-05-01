@@ -170,11 +170,7 @@ def delete_object(obj: types.Object, ignore_data = False):
 
     # NOTE:: meshes/data is leftover otherwise, delete after removing the object user
     if not ignore_data and data and not data.users:
-        #DEV.log_msg(f"Deleting {data.name}", {"DELETE", "DATA"})
-        if type == "MESH":      collection =bpy.data.meshes
-        elif type == "CURVE":   collection =bpy.data.curves
-        else: raise TypeError(f"Unexpected data type from {data.name}")
-        collection.remove(data, do_unlink=False)
+        delete_data(data, type)
 
 def delete_objectRec(obj: types.Object, ignore_data = False, logAmount=False):
     """ Delete the object and children recursively """
@@ -192,22 +188,35 @@ def delete_objectChildren(ob_father: types.Object, ignore_data = False, rec=True
     for child in reversed(toDelete):
         delete_object(child, ignore_data)
 
+def delete_data(data, type:str):
+    #DEV.log_msg(f"Deleting {data.name}", {"DELETE", "DATA"})
+    try:
+        if type == "MESH":      collection=bpy.data.meshes
+        elif type == "CURVE":   collection=bpy.data.curves
+        else: raise TypeError(f"Unimplemented data type {type} from {data.name}")
+        collection.remove(data, do_unlink=False)
+
+    except Exception as e:
+        DEV.log_msg(str(e), {"DELETE", "DATA", "ERROR"})
+
 def delete_orphanData(collectionNames = None, logAmount = True):
     """ When an object is deleted its mesh/data may be left over """
     if collectionNames is None: collectionNames = ["meshes", "curves"]
+    DEV.log_msg(f"Checking collections: {collectionNames}", {"DELETE"})
 
-    try:
-        for colName in collectionNames:
-            collection = getattr(bpy.data, colName)
-            toDelete = []
-            for data in collection:
-                if not data.users: toDelete.append(data)
+    # dynamically check it has the collection
+    for colName in collectionNames:
+        colName = colName.strip()
+        if not hasattr(bpy.data, colName): continue
+        collection = getattr(bpy.data, colName)
 
-            DEV.log_msg(f"Deleting {len(toDelete)}/{len(collection)} {colName}", {"DELETE"})
-            for data in toDelete:
-                collection.remove(data, do_unlink=False)
-    except:
-        DEV.log_msg(f"Collection {colName} excepted", {"DELETE", "ERROR"})
+        toDelete = []
+        for data in collection:
+            if not data.users: toDelete.append(data)
+
+        if logAmount: DEV.log_msg(f"Deleting {len(toDelete)}/{len(collection)} {colName}", {"DELETE"})
+        for data in toDelete:
+            collection.remove(data, do_unlink=False)
 
 #-------------------------------------------------------------------
 

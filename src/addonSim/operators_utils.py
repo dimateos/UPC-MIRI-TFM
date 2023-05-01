@@ -416,7 +416,8 @@ class Util_deleteOrphanData_OT(_StartRefresh_OT):
 
     def execute(self, context: types.Context):
         self.start_op()
-        utils.delete_orphanData(logAmount=True)
+        collections = getPrefs().dm_PT_orphans_collection.split(",")
+        utils.delete_orphanData(collections, logAmount=True)
         return self.end_op()
 
 #-------------------------------------------------------------------

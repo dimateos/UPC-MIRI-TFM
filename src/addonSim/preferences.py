@@ -99,10 +99,6 @@ class MW_prefs(bpy.types.AddonPreferences):
     # NOTE:: panels alone cannot store properties... here mixing dm panels with mw stuff, could separate the addons
     # OPT:: quite similar options as the spawn indices OP
 
-    dm_PT_meta_show_tmpDebug: props.BoolProperty(
-        name="Show debug...", description="WIP: Show some debug stuff",
-        default=True,
-    )
     dm_PT_meta_show_info: props.BoolProperty(
         name="Show inspect...", description="Show the object info",
         default=True,
@@ -126,7 +122,6 @@ class MW_prefs(bpy.types.AddonPreferences):
         default="0_3,-1",
     )
 
-
     # edit options
     dm_PT_edit_showVerts: props.BoolProperty(
         name="Show verts...", description="Show long list of verts with its pos",
@@ -140,9 +135,13 @@ class MW_prefs(bpy.types.AddonPreferences):
         name="Show faces...", description="Show long list of faces with its verts id / center",
         default=True,
     )
+    dm_PT_edit_showFaceCenters: props.BoolProperty(
+        name="show center", description="Show face center position instead of vertex indices",
+        default=False,
+    )
 
     # toggle visual
-    dm_PT_edit_showPrecision: props.IntProperty(
+    dm_PT_info_showPrecision: props.IntProperty(
         name="decimals", description="Number of decimals shown, will make colum wider.",
         default=2, min=0, max=16,
     )
@@ -150,11 +149,17 @@ class MW_prefs(bpy.types.AddonPreferences):
         name="world", description="Show vertices positions in world space",
         default=False,
     )
-    dm_PT_edit_showFaceCenters: props.BoolProperty(
-        name="show center", description="Show face center position instead of vertex indices",
-        default=False,
-    )
 
+    #-------------------------------------------------------------------
+
+    dm_PT_meta_show_tmpDebug: props.BoolProperty(
+        name="Show debug...", description="WIP: Show some debug stuff",
+        default=True,
+    )
+    dm_PT_orphans_collection: props.StringProperty(
+        name="", description="E.g. meshes, curves, etc",
+        default="meshes, curves",
+    )
 
 #-------------------------------------------------------------------
 

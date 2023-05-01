@@ -63,10 +63,15 @@ class Info_inpect_PT(types.Panel):
             col_rowSplit.label(text=f"Scene DATA - orphans", icon="SCENE_DATA")
             col_rowSplit.operator(ops_util.Util_deleteOrphanData_OT.bl_idname, icon="UNLINKED", text="")
 
+            box.prop(prefs, "dm_PT_orphans_collection")
             col = box.column()
-            col.label(text=f"Meshes: {len(bpy.data.meshes)}", icon="MESH_CUBE")
-            col.label(text=f"Curves: {len(bpy.data.curves)}", icon="CURVE_DATA")
 
+            # dynamically check it has the collection
+            for colName in prefs.dm_PT_orphans_collection.split(","):
+                colName = colName.strip()
+                if not hasattr(bpy.data, colName): continue
+                collection = getattr(bpy.data, colName)
+                col.label(text=f"{colName}: {len(collection)}", icon="LIBRARY_DATA_OVERRIDE_NONEDITABLE")
 
     def drawMode_object(self, context, obj, box):
         # draw tranforms with specific precision
@@ -150,8 +155,8 @@ class Info_inpect_PT(types.Panel):
         row.alignment= "LEFT"
         row.scale_y = 0.9
         row.label(text=f"Precision", icon="TRACKING_FORWARDS_SINGLE")
-        row.prop(prefs, "dm_PT_edit_showPrecision")
-        return f">5.{prefs.dm_PT_edit_showPrecision}f"
+        row.prop(prefs, "dm_PT_info_showPrecision")
+        return f">5.{prefs.dm_PT_info_showPrecision}f"
 
     def draw_tranforms(self, obj: types.Object, layout: types.UILayout, fmt = ">6.3f"):
         fmt_vec = f"({{:{fmt}}}, {{:{fmt}}}, {{:{fmt}}})"
