@@ -283,7 +283,7 @@ def gen_childClean(
     obj_child = get_child(obj, name)
     if obj_child:
         delete_objectRec(obj_child)
-    return gen_child(obj, name, context, mesh, keepTrans, noInv, hide)
+    return gen_child(**get_kwargs())
 
 #-------------------------------------------------------------------
 

@@ -150,7 +150,6 @@ class MW_gen_OT(_StartRefresh_OT):
         # Add some reference of the points to the scene
         mw_setup.gen_pointsObject(obj_root, points, self.cfg, context)
         mw_setup.gen_boundsObject(obj_root, bb, self.cfg, context)
-        getStats().logDt("spawned points objs")
 
 
 

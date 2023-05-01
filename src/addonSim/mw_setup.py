@@ -19,12 +19,14 @@ from .stats import getStats
 class CONST_NAMES:
     original = "original"
     original_copy = original+"_0_"
-    original_bb = original+"_0_marginBB"
     original_convex = original+"_1_convex"
     original_dissolve = original+"_2_dissolve"
 
+    source = "source"
+    source_points = source+"_points"
+    source_wallsBB = source+"_wallsBB"
+
     shards = "Shards"
-    shards_points = "Shards_source"
 
     # OPT:: too much redundant "shards.."
     links = shards+"_links"
@@ -138,33 +140,33 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, cont
     return obj_d
 
 def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_shardsEmpty = utils.gen_childClean(obj, CONST_NAMES.shards, context, None, keepTrans=False, hide=not cfg.struct_showShards)
+    obj_shardsEmpty = utils.gen_child(obj, CONST_NAMES.shards, context, None, keepTrans=False, hide=not cfg.struct_showShards)
     return obj_shardsEmpty
 
 def gen_linksEmpties(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_links = utils.gen_childClean(obj, CONST_NAMES.links, context, None, keepTrans=False, hide=not cfg.struct_showLinks)
-    obj_links_toWall = utils.gen_childClean(obj, CONST_NAMES.links_toWalls, context, None, keepTrans=False, hide=not cfg.struct_showLinks_toWalls)
-    obj_links_perCell = utils.gen_childClean(obj, CONST_NAMES.links_perCell, context, None, keepTrans=False, hide=not cfg.struct_showLinks_perCell)
+    obj_links = utils.gen_child(obj, CONST_NAMES.links, context, None, keepTrans=False, hide=not cfg.struct_showLinks)
+    obj_links_toWall = utils.gen_child(obj, CONST_NAMES.links_toWalls, context, None, keepTrans=False, hide=not cfg.struct_showLinks_toWalls)
+    obj_links_perCell = utils.gen_child(obj, CONST_NAMES.links_perCell, context, None, keepTrans=False, hide=not cfg.struct_showLinks_perCell)
     return obj_links, obj_links_toWall, obj_links_perCell
 
 def gen_pointsObject(obj: types.Object, points: list[Vector], cfg: MW_gen_cfg, context: types.Context):
     # Create a new mesh data block and add only verts
-    mesh = bpy.data.meshes.new(CONST_NAMES.shards_points)
+    mesh = bpy.data.meshes.new(CONST_NAMES.source_points)
     mesh.from_pydata(points, [], [])
     #mesh.update()
 
-    obj_points = utils.gen_childClean(obj, CONST_NAMES.shards_points, context, mesh, keepTrans=False, hide=not cfg.struct_showPoints)
+    obj_points = utils.gen_child(obj, CONST_NAMES.source_points, context, mesh, keepTrans=False, hide=not cfg.struct_showPoints)
 
     getStats().logDt("generated points object")
     return obj_points
 
 def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, context: types.Context):
     # Create a new mesh data block and add only verts
-    mesh = bpy.data.meshes.new(CONST_NAMES.original_bb)
+    mesh = bpy.data.meshes.new(CONST_NAMES.source_wallsBB)
     mesh.from_pydata(bb, [], [])
 
     # Generate it taking the transform as it is (points already in local space)
-    obj_bb = utils.gen_childClean(obj, CONST_NAMES.original_bb, context, mesh, keepTrans=False, hide=not cfg.struct_showBB)
+    obj_bb = utils.gen_child(obj, CONST_NAMES.source_wallsBB, context, mesh, keepTrans=False, hide=not cfg.struct_showBB)
     obj_bb.show_bounds = True
 
     getStats().logDt("generated bounds object")
