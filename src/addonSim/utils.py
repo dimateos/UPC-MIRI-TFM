@@ -2,61 +2,9 @@ import bpy
 import bpy.types as types
 from mathutils import Vector, Matrix
 
-from .preferences import getPrefs, ADDON
-from .properties import (
-    MW_gen_cfg,
-)
-
 from .utils_dev import DEV
 from .stats import getStats
 
-
-# OPT:: split some more files? or import less functions
-# OPT:: register this to be called on object selection not on draw
-#-------------------------------------------------------------------
-
-def cfg_hasRoot(obj: types.Object) -> bool:
-    """ Quick check if the object is part of a fracture """
-    #DEV.log_msg(f"cfg_hasRoot check: {obj.name} -> {obj.mw_gen.meta_type}", {"REC", "CFG"})
-    return "NONE" not in obj.mw_gen.meta_type
-
-# OPT:: should really try to acces the parent direclty -> but careful with rna of deleted...
-# OPT:: too much used around in poll functions, performance hit? use a callback to be used on selected object?
-def cfg_getRoot(obj: types.Object) -> tuple[types.Object, MW_gen_cfg]:
-    """ Retrieve the root object holding the config """
-    #DEV.log_msg(f"cfg_getRoot search: {obj.name} -> {obj.mw_gen.meta_type}", {"REC", "CFG"})
-    if "NONE" in obj.mw_gen.meta_type:
-        return obj, None
-
-    try:
-        obj_chain = obj
-        while "CHILD" in obj_chain.mw_gen.meta_type:
-            obj_chain = obj_chain.parent
-
-        # OPT:: check the root is actually root: could happen if an object is copy pasted
-        if "ROOT" not in obj_chain.mw_gen.meta_type: raise ValueError("Chain ended with no root")
-        #DEV.log_msg(f"cfg_getRoot chain end: {obj_chain.name}", {"RET", "CFG"})
-        return obj_chain, obj_chain.mw_gen
-
-    # the parent was removed
-    except AttributeError:
-        DEV.log_msg(f"cfg_getRoot chain broke: {obj.name} -> no rec parent", {"ERROR", "CFG"})
-        return obj, None
-    # the parent was not root
-    except ValueError:
-        DEV.log_msg(f"cfg_getRoot chain broke: {obj_chain.name} -> not root ({obj_chain.mw_gen.meta_type})", {"ERROR", "CFG"})
-        return obj, None
-
-
-def cfg_setMetaTypeRec(obj: types.Object, type: dict, skipParent = False):
-    """ Set the property to the object and all its children (dictionary ies copied, not referenced) """
-    if not skipParent:
-        obj.mw_gen.meta_type = type.copy()
-
-    toSet = obj.children_recursive
-    #DEV.log_msg(f"Setting {type} to {len(toSet)} objects", {"CFG"})
-    for child in toSet:
-        child.mw_gen.meta_type = type.copy()
 
 #-------------------------------------------------------------------
 
@@ -118,7 +66,7 @@ def get_faces_4D(obj: types.Object, n_disp = 0.0, worldSpace=False) -> list[Vect
     getStats().logDt(f"calc faces4D: {len(faces4D)} (n_disp {n_disp:.4f})")
     return faces4D
 
-def get_worldMatrix_normalMatrix(obj: types.Object, update = False) -> tuple[types.Object, MW_gen_cfg]:
+def get_worldMatrix_normalMatrix(obj: types.Object, update = False) -> tuple[Matrix, Matrix]:
     """ Get the object world matrix and normal world matrix """
     if update: trans_update(obj)
     matrix = obj.matrix_world.copy()

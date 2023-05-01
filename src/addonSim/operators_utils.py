@@ -25,6 +25,7 @@ class _StartRefresh_OT(types.Operator):
     """ Op bl_options INTERNAL supposedly hides the operator from search"""
 
     def __init__(self) -> None:
+        """ Seems like is called before invoke """
         super().__init__()
         # to be configured per class / from outside before execution
         self.invoke_log         = False

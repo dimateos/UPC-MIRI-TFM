@@ -39,6 +39,8 @@ class MW_gen_OT(_StartRefresh_OT):
         self.refresh_log = True
         self.end_log = True
 
+        self.cfg.init()
+
     # NOTE:: no poll because the button is removed from ui isntead
 
     def draw(self, context: types.Context):
@@ -53,12 +55,12 @@ class MW_gen_OT(_StartRefresh_OT):
     #-------------------------------------------------------------------
 
     # OPT:: GEN: more error handling of user deletion of intermediate objects?
-    # OPT:: automatically add particles -> most interesting method...
+    # OPT:: automatically add particles/child parts -> most interesting method... -> util OP not part of flow
     # IDEA:: GEN: support for non meshes (e.g. curves)
     # IDEA:: GEN: disabled pencil too, should check points are close enugh/inside
     # IDEA:: GEN: atm only a single selected object + spawning direclty on the scene collection
     # IDEA:: GEN: recursiveness of shards?
-    # NOTE:: GEN: avoid convex hull from voro++
+    # NOTE:: GEN: avoid convex hull from voro++ -> break in convex pieces, or test cells uniformly distrib? aprox or exact?
     # OPT:: RENDER: interior handle for materials
 
     # IDEA:: SIM: shrink here or as part of sim, e.g. smoothing? -> support physics interspace
@@ -79,7 +81,7 @@ class MW_gen_OT(_StartRefresh_OT):
         # IDEA:: decimate before/after convex, test perf?
 
         # Retrieve root
-        obj, cfg = utils.cfg_getRoot(context.active_object)
+        obj, cfg = MW_gen_cfg.getRoot(context.active_object)
         getStats().logDt("retrieved root object")
 
         # Selected object not fractured, fresh execution
@@ -116,16 +118,12 @@ class MW_gen_OT(_StartRefresh_OT):
         cfg.rnd_seed = utils.rnd_seed(cfg.rnd_seed)
 
 
-
         DEV.log_msg("Initial object setup", {'SETUP'})
         # TODO:: convex hull triangulates the faces... e.g. UV sphere ends with more!
         if cfg.shape_useConvexHull:
             obj_toFrac = mw_setup.copy_convex(obj_root, obj_original, cfg, context)
         else: obj_toFrac = obj_original
 
-        # set the meta type to all objects at once
-        utils.cfg_setMetaTypeRec(obj_root, {"CHILD"}, skipParent=True)
-        return self.end_op()
 
 
         DEV.log_msg("Start calc points", {'CALC'})
@@ -148,25 +146,25 @@ class MW_gen_OT(_StartRefresh_OT):
         mw_calc.points_transformCfg(points, cfg, bb_radius)
 
         # Add some reference of the points to the scene
-        mw_setup.gen_pointsObject(obj, points, self.cfg, context)
-        mw_setup.gen_boundsObject(obj, bb, self.cfg, context)
+        mw_setup.gen_pointsObject(obj_root, points, self.cfg, context)
+        mw_setup.gen_boundsObject(obj_root, bb, self.cfg, context)
         getStats().logDt("spawned points objs")
 
 
 
         DEV.log_msg("Start calc cont and links", {'CALC'})
-
         # IDEA:: mesh conecting input points + use single mesh instead of one per link?
         # XXX:: detect meshes with no volume? test basic shape for crashes...
         # XXX:: voro++ has some static constant values that have to be edited in compile time...
         #e.g. max_wall_size, tolerance for vertices,
 
-        cont = mw_calc.cont_fromPoints(points, bb, faces4D, precision=prefs.calc_precisionWalls)
+        cont:Container = mw_calc.cont_fromPoints(points, bb, faces4D, precision=prefs.calc_precisionWalls)
         if not cont:
             return self.end_op_error("found no cont... but could try recalculate!")
+        obj_root.mw_gen.nbl_cont = cont
 
         #cfg.nbl_cont = cont
-        obj_shards = mw_setup.gen_shardsEmpty(obj, cfg, context)
+        obj_shards = mw_setup.gen_shardsEmpty(obj_root, cfg, context)
 
         #test some legacy or statistics cont stuff
         if DEV.LEGACY_CONT:
@@ -174,19 +172,16 @@ class MW_gen_OT(_StartRefresh_OT):
             return self.end_op("DEV.LEGACY_CONT stop...")
         mw_setup.gen_shardsObjects(obj_shards, cont, cfg, context, invertOrientation=prefs.gen_invert_shardNormals)
 
-        links = Links(cont, obj_shards)
+        links:Links = Links(cont, obj_shards)
+        if not links.link_map:
+            return self.end_op_error("found no links... but could try recalculate!")
+        obj_root.mw_gen.nbl_links = links
 
 
-        ## WIP:: links better generated from map isntead of cont? + done in a separate op
-        #obj_links, obj_links_toWall, obj_links_perCell = mw_setup.gen_linksEmpties(obj, cfg, context)
-        #if links.link_map:
-        #    mw_setup.gen_linksObjects(obj_links, obj_links_toWall, links, cfg, context)
-        #else:
-        #    utils.delete_objectRec(obj_links)
-        #    utils.delete_objectRec(obj_links_toWall)
-        #mw_setup.gen_linksCellObjects(obj_links_perCell, cont, cfg, context)
-
+        # set the meta type to all objects at once
+        MW_gen_cfg.setMetaTypeRec(obj_root, {"CHILD"}, skipParent=True)
         return self.end_op()
+
 
 #-------------------------------------------------------------------
 
@@ -202,14 +197,20 @@ class MW_gen_links_OT(_StartRefresh_OT):
     def poll(cls, context):
         # poll execute on ui draw, so only check if has root, dont extract it
         obj = context.active_object
-        return (obj and utils.cfg_hasRoot(obj))
+        return (obj and MW_gen_cfg.hasRoot(obj))
 
     def execute(self, context: types.Context):
         self.start_op()
-        obj, cfg = utils.cfg_getRoot(context.active_object)
-        prefs = getPrefs()
+        #prefs = getPrefs()
+        obj, cfg = MW_gen_cfg.getRoot(context.active_object)
 
-        #todo
+        if not cfg.nbl_cont or not cfg.nbl_links:
+            return self.end_op_error("Incompleted fracture... (not checked in poll atm)")
+
+        # WIP:: links better generated from map isntead of cont? + done in a separate op
+        obj_links, obj_links_toWall, obj_links_perCell = mw_setup.gen_linksEmpties(obj, cfg, context)
+        mw_setup.gen_linksCellObjects(obj_links_perCell, cfg.nbl_cont, cfg, context)
+        #mw_setup.gen_linksObjects(obj_links, obj_links_toWall, cfg.nbl_links, cfg, context)
 
         return self.end_op()
 
@@ -227,11 +228,11 @@ class MW_util_delete_OT(_StartRefresh_OT):
     def poll(cls, context):
         # poll execute on ui draw, so only check if has root, dont extract it
         obj = context.active_object
-        return (obj and utils.cfg_hasRoot(obj))
+        return (obj and MW_gen_cfg.hasRoot(obj))
 
     def execute(self, context: types.Context):
         self.start_op()
-        obj, cfg = utils.cfg_getRoot(context.active_object)
+        obj, cfg = MW_gen_cfg.getRoot(context.active_object)
         prefs = getPrefs()
 
         # optional unhide flag
@@ -252,6 +253,7 @@ class MW_util_delete_OT(_StartRefresh_OT):
 
 classes = [
     MW_gen_OT,
+    MW_gen_links_OT,
     MW_util_delete_OT,
 ] + util_classes_op
 

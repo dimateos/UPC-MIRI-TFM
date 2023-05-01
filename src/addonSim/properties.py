@@ -2,15 +2,16 @@ import bpy
 import bpy.types as types
 import bpy.props as props
 
-#from .mw_links import Links, Link
+from .mw_links import Links, Link
 from tess import Container, Cell
 
+from .utils_dev import DEV
 
+
+# OPT:: comment some sections
 #-------------------------------------------------------------------
 
 class MW_gen_cfg(types.PropertyGroup):
-    #nbl_links: Links = None
-    nbl_cont: Container = None
 
     meta_type: props.EnumProperty(
         name="Type", description="Meta type added to the object to control some logic",
@@ -23,8 +24,65 @@ class MW_gen_cfg(types.PropertyGroup):
         default={'NONE'},
     )
 
+    @staticmethod
+    def hasRoot(obj: types.Object) -> bool:
+        """ Quick check if the object is part of a fracture """
+        #DEV.log_msg(f"hasRoot check: {obj.name} -> {obj.mw_gen.meta_type}", {"REC", "CFG"})
+        return "NONE" not in obj.mw_gen.meta_type
+
+    # OPT:: should really try to acces the parent direclty -> but careful with rna of deleted...
+    # OPT:: too much used around in poll functions, performance hit? use a callback to be used on selected object?
+    @staticmethod
+    def getRoot(obj: types.Object) -> tuple[types.Object, "MW_gen_cfg"]:
+        """ Retrieve the root object holding the config (MW_gen_cfg forward declared)"""
+        #DEV.log_msg(f"getRoot search: {obj.name} -> {obj.mw_gen.meta_type}", {"REC", "CFG"})
+        if "NONE" in obj.mw_gen.meta_type:
+            return obj, None
+
+        try:
+            obj_chain = obj
+            while "CHILD" in obj_chain.mw_gen.meta_type:
+                obj_chain = obj_chain.parent
+
+            # OPT:: check the root is actually root: could happen if an object is copy pasted
+            if "ROOT" not in obj_chain.mw_gen.meta_type: raise ValueError("Chain ended with no root")
+            #DEV.log_msg(f"getRoot chain end: {obj_chain.name}", {"RET", "CFG"})
+            return obj_chain, obj_chain.mw_gen
+
+        # the parent was removed
+        except AttributeError:
+            DEV.log_msg(f"getRoot chain broke: {obj.name} -> no rec parent", {"ERROR", "CFG"})
+            return obj, None
+        # the parent was not root
+        except ValueError:
+            DEV.log_msg(f"getRoot chain broke: {obj_chain.name} -> not root ({obj_chain.mw_gen.meta_type})", {"ERROR", "CFG"})
+            return obj, None
+
+    @staticmethod
+    def setMetaTypeRec(obj: types.Object, type: dict, skipParent = False):
+        """ Set the property to the object and all its children (dictionary ies copied, not referenced) """
+        if not skipParent:
+            obj.mw_gen.meta_type = type.copy()
+
+        toSet = obj.children_recursive
+        #DEV.log_msg(f"Setting {type} to {len(toSet)} objects", {"CFG"})
+        for child in toSet:
+            child.mw_gen.meta_type = type.copy()
+
     #-------------------------------------------------------------------
 
+    def init(self):
+        self.test_str = "yepa"
+
+        # fracture data preserved on the object
+        #self.nbl_cont: Container = None
+        #self.nbl_links: Links = None
+
+    test_stroi = "yep"
+
+    #-------------------------------------------------------------------
+
+    # dynamic source options
     class sourceOptions:
         all=[
             ('VERT_OWN', "Own Verts", "Use own vertices (also set by default when other options are disabled)"),

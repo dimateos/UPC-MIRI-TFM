@@ -7,15 +7,12 @@ from .properties import (
     MW_gen_cfg,
 )
 from . import operators as ops
-from . import operators_utils as ops_util
 from .panels_utils import util_classes_pt
 
 from . import ui
-from . import utils
 from .utils_dev import DEV
 
 
-# OPT:: split panel utils from main
 #-------------------------------------------------------------------
 
 class MW_gen_PT(types.Panel):
@@ -44,7 +41,7 @@ class MW_gen_PT(types.Panel):
             return
 
         # No fracture selected
-        if not utils.cfg_hasRoot(obj):
+        if not MW_gen_cfg.hasRoot(obj):
             col.label(text="Selected: " + obj.name_full, icon="INFO")
 
             # Check that it is a mesh
@@ -59,7 +56,7 @@ class MW_gen_PT(types.Panel):
 
         # Edit/info of selected
         else:
-            obj, cfg = utils.cfg_getRoot(obj)
+            obj, cfg = MW_gen_cfg.getRoot(obj)
             col = layout.column()
             col.label(text="Root: " + obj.name_full, icon="INFO")
 
@@ -72,6 +69,8 @@ class MW_gen_PT(types.Panel):
             col_rowSplit.prop(prefs, "util_delete_OT_unhideSelect")
 
             ui.draw_propsToggle(cfg, prefs, "gen_PT_meta_show_summary", "gen_PT_meta_propFilter", "gen_PT_meta_propEdit", col)
+
+            col.operator(ops.MW_gen_links_OT.bl_idname)
 
 class MW_addon_PT(types.Panel):
     bl_idname = "MW_PT_addon"
