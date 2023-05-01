@@ -171,6 +171,14 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
         edges = "edges_Indices"
         faces = "faces_Indices"
 
+    use_index_filter: props.BoolProperty(
+        name="filter", description="Limit the data spawned with the filter",
+        default=True,
+    )
+    index_filter: props.StringProperty(
+        name="idx", description="Range '2_20' (20 not included). Specifics '2,6,7'. Both '0_10,-1' ('-' for negative indices)",
+        default="0_100,-1",
+    )
     obj_replace: props.BoolProperty(
         name="obj replace", description="Replace existing mesh index indicators",
         default=True,
@@ -209,7 +217,7 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
         f1 = 0.5
         f2 = 0.5
 
-        # type
+        # data
         box = self.layout.box()
         col = box.column()
         row = col.row().split(factor=f1)
@@ -224,6 +232,11 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
         row.prop(self, "faces_gen")
         row.prop(self, "faces_name")
         row.prop(self, "faces_scale")
+
+        # filter
+        row = self.layout.row().split(factor=0.8)
+        row.prop(self, "index_filter")
+        row.prop(self, "use_index_filter")
 
         # shape
         col = self.layout.column()
@@ -283,9 +296,13 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
                 mesh= None
                 mat = None
 
+            # filter input
+            if not self.use_index_filter: verts = obj.data.vertices
+            else: verts = utils.get_filtered(obj.data.vertices, self.index_filter)
+
             # spawn as children
             parent = utils.gen_child(child_empty, self.CONST_NAMES.verts, context, None, keepTrans=False)
-            for v in obj.data.vertices:
+            for v in verts:
                 name = f"{self.namePrefix}.v{v.index}"
                 child = utils.gen_child(parent, name, context, mesh, keepTrans=False)
                 child.location = v.co
@@ -309,9 +326,13 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
                 mesh= None
                 mat = None
 
+            # filter input
+            if not self.use_index_filter: edges = obj.data.edges
+            else: edges = utils.get_filtered(obj.data.edges, self.index_filter)
+
             # spawn as children
             parent = utils.gen_child(child_empty, self.CONST_NAMES.edges, context, None, keepTrans=False)
-            for e in obj.data.edges:
+            for e in edges:
                 name = f"{self.namePrefix}.e{e.index}"
                 child = utils.gen_child(parent, name, context, mesh, keepTrans=False)
                 child.location = utils_geo.edge_center(obj.data, e)
@@ -335,9 +356,13 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
                 mesh= None
                 mat = None
 
+            # filter input
+            if not self.use_index_filter: faces = obj.data.polygons
+            else: faces = utils.get_filtered(obj.data.polygons, self.index_filter)
+
             # spawn as children
             parent = utils.gen_child(child_empty, self.CONST_NAMES.faces, context, None, keepTrans=False)
-            for f in obj.data.polygons:
+            for f in faces:
                 name = f"{self.namePrefix}.f{f.index}"
                 child = utils.gen_child(parent, name, context, mesh, keepTrans=False)
                 child.location = f.center + f.normal*0.1*scaleV[0]
