@@ -11,7 +11,7 @@ from .operators_utils import _StartRefresh_OT, util_classes_op
 
 from . import mw_setup
 from . import mw_calc
-from .mw_links import Links, Link
+from .mw_links import Links, Link, Links_storage
 from tess import Container, Cell
 
 from . import ui
@@ -40,7 +40,7 @@ class MW_gen_OT(_StartRefresh_OT):
         self.refresh_log = True
         self.end_log = True
 
-        self.cfg.init()
+        #self.cfg.init()
 
     # NOTE:: no poll because the button is removed from ui isntead
 
@@ -86,18 +86,23 @@ class MW_gen_OT(_StartRefresh_OT):
         obj, cfg = MW_gen_cfg.getRoot(context.active_object)
         getStats().logDt("retrieved root object")
 
-        # Selected object not fractured, fresh execution
-        if not cfg:
-            DEV.log_msg("cfg NOT found: new frac", {'SETUP'})
-            obj_root, obj_original = mw_setup.copy_original(obj, self.cfg, context)
-            return self.execute_fresh(context, obj_root, obj_original)
+        try:
+            # Selected object not fractured, fresh execution
+            if not cfg:
+                DEV.log_msg("cfg NOT found: new frac", {'SETUP'})
+                obj_root, obj_original = mw_setup.copy_original(obj, self.cfg, context)
+                return self.execute_fresh(context, obj_root, obj_original)
 
-        # fracture the same original object, copy props for a duplicate result
-        else:
-            DEV.log_msg("cfg found: duplicating frac", {'SETUP'})
-            copyProps(cfg, self.cfg)
-            obj_root, obj_original = mw_setup.copy_originalPrev(obj, self.cfg, context)
-            return self.execute_fresh(context, obj_root, obj_original)
+            # fracture the same original object, copy props for a duplicate result
+            else:
+                DEV.log_msg("cfg found: duplicating frac", {'SETUP'})
+                copyProps(cfg, self.cfg)
+                obj_root, obj_original = mw_setup.copy_originalPrev(obj, self.cfg, context)
+                return self.execute_fresh(context, obj_root, obj_original)
+
+        # catch exceptions to at least mark as child and copy props
+        except:
+            return self.end_op_error("unhandled exception...")
 
         # NOTE:: no longer supporting edit fracture -> basically always replacing geometry hence being slower
         ## Config found in the object
@@ -162,9 +167,8 @@ class MW_gen_OT(_StartRefresh_OT):
         cont:Container = mw_calc.cont_fromPoints(points, bb, faces4D, precision=prefs.calc_precisionWalls)
         if not cont:
             return self.end_op_error("found no cont... but could try recalculate!")
-        obj_root.mw_gen.nbl_cont = cont
 
-        #cfg.nbl_cont = cont
+        # shards are always added to the scene
         obj_shards = mw_setup.gen_shardsEmpty(obj_root, cfg, context)
 
         #test some legacy or statistics cont stuff
@@ -173,10 +177,13 @@ class MW_gen_OT(_StartRefresh_OT):
             return self.end_op("DEV.LEGACY_CONT stop...")
         mw_setup.gen_shardsObjects(obj_shards, cont, cfg, context, invertOrientation=prefs.gen_invert_shardNormals)
 
+        # calculate links and store in the external storage
         links:Links = Links(cont, obj_shards)
         if not links.link_map:
             return self.end_op_error("found no links... but could try recalculate!")
-        obj_root.mw_gen.nbl_links = links
+
+        cfg.ptrID_links = self.obj_root.name
+        Links_storage.addLinks(links, cfg.ptrID_links)
 
 
         return self.end_op()
@@ -202,6 +209,11 @@ class MW_gen_links_OT(_StartRefresh_OT):
     # UNDO as part of bl_options will cancel any edit last operation pop up
     bl_options = {'INTERNAL', 'UNDO'}
 
+    def __init__(self) -> None:
+        super().__init__()
+        # config some base class log flags...
+        self.start_resetStats = True
+
     @classmethod
     def poll(cls, context):
         # poll execute on ui draw, so only check if has root, dont extract it
@@ -213,12 +225,13 @@ class MW_gen_links_OT(_StartRefresh_OT):
         #prefs = getPrefs()
         obj, cfg = MW_gen_cfg.getRoot(context.active_object)
 
-        if not cfg.nbl_cont or not cfg.nbl_links:
+        if not cfg.ptrID_links:
             return self.end_op_error("Incompleted fracture... (not checked in poll atm)")
+        links = Links_storage.getLinks(cfg.ptrID_links)
 
-        # WIP:: links better generated from map isntead of cont? + done in a separate op
         obj_links, obj_links_toWall, obj_links_perCell = mw_setup.gen_linksEmpties(obj, cfg, context)
-        mw_setup.gen_linksCellObjects(obj_links_perCell, cfg.nbl_cont, cfg, context)
+
+        mw_setup.gen_linksCellObjects(obj_links_perCell, links.cont, cfg, context)
         #mw_setup.gen_linksObjects(obj_links, obj_links_toWall, cfg.nbl_links, cfg, context)
 
         return self.end_op()

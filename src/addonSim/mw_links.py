@@ -187,15 +187,34 @@ class Links():
             return [ self.shard_meshes[i].polygons[j] for i,j in zip(midx,fidx) ]
 
 
-#-------------------------------------------------------------------
+    #-------------------------------------------------------------------
 
     @staticmethod
-    def getKey_swap(k1,k2):
+    def getKey_swap(k1,k2) -> tuple[Link.keyType,bool]:
         swap = k1 > k2
         key = (k1, k2) if not swap else (k2, k1)
         return key,swap
 
     @staticmethod
-    def getKey(k1,k2, swap):
+    def getKey(k1,k2, swap) -> Link.keyType:
         key = (k1, k2) if not swap else (k2, k1)
         return key
+
+    #-------------------------------------------------------------------
+
+# OPT:: store links between objects -> add json parser to store persistently? or retrieve from recalculated cont?
+class Links_storage:
+    bl_links: dict[str, Links] = dict()
+
+    @staticmethod
+    def addLinks(links, uniqueName):
+        Links_storage.bl_links[uniqueName] = links
+
+    @staticmethod
+    def getLinks(uniqueName):
+        return Links_storage.bl_links[uniqueName]
+
+    @staticmethod
+    def freeLinks(uniqueName):
+        links = Links_storage.bl_links.pop(uniqueName)
+        del links

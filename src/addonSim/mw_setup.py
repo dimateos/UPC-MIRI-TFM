@@ -29,10 +29,10 @@ class CONST_NAMES:
     shards = "Shards"
 
     # OPT:: too much redundant "shards.."
-    links = shards+"_links"
-    links_perCell = links+"_perCell"
+    links = "Links"
     links_toWalls = links+"_toWall"
-    links_group = "Links"
+    links_perCell = links+"_perCell"
+    links_group = "L"
 
     # OPT:: dynamic depending on number of cells
     child_idFormat = "03"
@@ -304,6 +304,7 @@ def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: Links
 
 
 def gen_linksCellObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
+    # WIP:: links better generated from map isntead of cont? + done in a separate op
     # WIP:: atm just hiding reps -> maybe generate using a different map instead of iterating the raw cont
     #   maybe merge shard/link loop
     neigh_set = set()
@@ -349,4 +350,5 @@ def gen_linksCellObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, co
             obj_link.hide_set(key_rep or not cfg.struct_showLinks_perCell)
             #obj_link.location = cell.centroid()
 
+    MW_gen_cfg.setMetaTypeRec(obj, {"CHILD"}, skipParent=False)
     getStats().logDt("generated links per cell objects")

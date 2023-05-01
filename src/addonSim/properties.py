@@ -2,9 +2,6 @@ import bpy
 import bpy.types as types
 import bpy.props as props
 
-from .mw_links import Links, Link
-from tess import Container, Cell
-
 from .utils_dev import DEV
 
 
@@ -31,7 +28,7 @@ class MW_gen_cfg(types.PropertyGroup):
         return "NONE" not in obj.mw_gen.meta_type
 
     # OPT:: should really try to acces the parent direclty -> but careful with rna of deleted...
-    # OPT:: too much used around in poll functions, performance hit? use a callback to be used on selected object?
+    # OPT:: too much used around in poll functions, performance hit? use a callback to be used on selected object? +also show name of selected etc
     @staticmethod
     def getRoot(obj: types.Object) -> tuple[types.Object, "MW_gen_cfg"]:
         """ Retrieve the root object holding the config (MW_gen_cfg forward declared)"""
@@ -71,14 +68,16 @@ class MW_gen_cfg(types.PropertyGroup):
 
     #-------------------------------------------------------------------
 
-    def init(self):
-        self.test_str = "yepa"
+    # XXX:: deferred the links to a static container, cannot add non standard props to the object
+    ptrID_links: props.StringProperty(default="nullptr")
 
-        # fracture data preserved on the object
-        #self.nbl_cont: Container = None
-        #self.nbl_links: Links = None
+    #def init(self):
+    #    self.test_str = "test"
 
-    #test_stroi = "yep"
+    #    # fracture data preserved on the object
+    #    #self.nbl_cont: Container = None
+    #    #self.nbl_links: Links = None
+
 
     #-------------------------------------------------------------------
 
@@ -164,15 +163,15 @@ class MW_gen_cfg(types.PropertyGroup):
 
     struct_showLinks: props.BoolProperty(
         name="WIP: Links", description="Voronoi cells links per face",
-        default=True,
+        default=False,
     )
     struct_showLinks_toWalls: props.BoolProperty(
         name="WIP: Links to walls", description="Voronoi cells links per face to walls",
-        default=True,
+        default=False,
     )
     struct_showLinks_perCell: props.BoolProperty(
         name="Cell links (centroid)", description="Links from centroids to neigh cells",
-        default=False,
+        default=True,
     )
 
     struct_showPoints: props.BoolProperty(
