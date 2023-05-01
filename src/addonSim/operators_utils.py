@@ -30,7 +30,8 @@ class _StartRefresh_OT(types.Operator):
         # to be configured per class / from outside before execution
         self.invoke_log         = False
         self.refresh_log        = False
-        self.start_resetStats   = False
+        self.start_resetStats   = True
+        self.start_resetLog     = False
         self.start_logEmptyLine = True
         self.start_log          = True
         self.start_logStats     = False
@@ -99,7 +100,7 @@ class _StartRefresh_OT(types.Operator):
     def start_op(self, msg=""):
         """ Default exit flow at the start of execution """
         stats = getStats()
-        if self.start_resetStats: stats.reset()
+        if self.start_resetStats: stats.reset(log=self.start_resetLog)
         #stats.testStats()
         if self.start_logEmptyLine: print()
 
@@ -116,7 +117,7 @@ class _StartRefresh_OT(types.Operator):
             DEV.log_msg(f"Op END: {msg} ({self.bl_idname})", {'OP_FLOW'})
 
         if self.end_logStats and not skipLog:
-            getStats().logT(f"finished: ({self.bl_idname})...")
+            getStats().logFull(f"finished: ({self.bl_idname})...")
 
         if self.end_logEmptyLine: print()
         return {"FINISHED"} if not retPass else {'PASS_THROUGH'}
@@ -154,11 +155,6 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
 
     # REGISTER + UNDO pops the edit last op window
     bl_options = {"PRESET", 'REGISTER', 'UNDO'}
-
-    def __init__(self) -> None:
-        super().__init__()
-        # config some base class log flags...
-        self.start_resetStats = True
 
     def draw(self, context: types.Context):
         super().draw(context)

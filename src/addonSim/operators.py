@@ -35,7 +35,6 @@ class MW_gen_OT(_StartRefresh_OT):
     def __init__(self) -> None:
         super().__init__()
         # config some base class log flags...
-        self.start_resetStats = True
         self.invoke_log = True
         self.refresh_log = True
         self.end_log = True
@@ -193,6 +192,7 @@ class MW_gen_OT(_StartRefresh_OT):
 
         if self.obj_root:
             # copy any cfg that may have changed during execute
+            self.cfg.name = self.obj_root.name
             copyProps(self.cfg, self.obj_root.mw_gen)
             # set the meta type to all objects at once
             MW_gen_cfg.setMetaTypeRec(self.obj_root, {"CHILD"}, skipParent=True)
@@ -208,11 +208,6 @@ class MW_gen_links_OT(_StartRefresh_OT):
 
     # UNDO as part of bl_options will cancel any edit last operation pop up
     bl_options = {'INTERNAL', 'UNDO'}
-
-    def __init__(self) -> None:
-        super().__init__()
-        # config some base class log flags...
-        self.start_resetStats = True
 
     @classmethod
     def poll(cls, context):
@@ -257,7 +252,7 @@ class MW_util_delete_OT(_StartRefresh_OT):
         obj, cfg = MW_gen_cfg.getRoot(context.active_object)
         prefs = getPrefs()
 
-        # optional unhide flag
+        # optionally unhide the original object
         if (prefs.util_delete_OT_unhideSelect):
             obj_original = utils.get_object_fromScene(context.scene, cfg.struct_nameOriginal)
             if not obj_original:
@@ -265,8 +260,11 @@ class MW_util_delete_OT(_StartRefresh_OT):
             else:
                 utils.select_unhideRec(obj_original, context, selectChildren=False)
 
-        utils.delete_objectRec(obj, logAmount=True)
+        # free memory from potential links map
+        if cfg.ptrID_links: Links_storage.freeLinks(cfg.ptrID_links)
 
+        # finally delete the fracture object recusively
+        utils.delete_objectRec(obj, logAmount=True)
         return self.end_op()
 
 

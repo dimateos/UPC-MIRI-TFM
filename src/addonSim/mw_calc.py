@@ -52,7 +52,7 @@ def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
             return False
         else:
             sys_particles = [bool(psys.particles) for psys in ob_eval.particle_systems]
-            DEV.log_msg(f"check parts: {ob.name} -> {len(ob_eval.particle_systems[0].particles)} -> {sys_particles}")
+            DEV.log_msg(f"check parts: {ob.name} -> {len(ob_eval.particle_systems[0].particles)} -> {sys_particles}", {"CALC", "SOURCE"})
             return any(sys_particles)
 
     # geom own particles
@@ -84,7 +84,7 @@ def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
 def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, context):
     if not cfg.meta_source_enabled:
         cfg.source = { cfg.sourceOptions.error_key }
-        DEV.log_msg("No points found...", {"SETUP", "ERROR"})
+        DEV.log_msg("No points found...", {"CALC", "SOURCE", "ERROR"})
         return []
 
     points = get_points_from_object(obj, cfg, context)
@@ -212,13 +212,13 @@ def cont_fromPoints(points: list[Vector], bb: list[Vector, 6], faces4D: list[Vec
     #Legacy cont some tests mid operator
     if DEV.LEGACY_CONT:
         cont = Container(points=points, limits=bb_tuples)
-        DEV.log_msg(f"Found {len(cont)} cells (NO walls - {len(faces4D)} faces)", {"CALC-LEGACY"})
+        DEV.log_msg(f"Found {len(cont)} cells (NO walls - {len(faces4D)} faces)", {"CALC", "CONT", "LEGACY"})
         return cont
 
     # Set wall planes precision used
     if precision != Container.custom_walls_precision_default:
         Container.custom_walls_precision = precision
-        DEV.log_msg(f"Set Container.custom_walls_precision: {precision}", {"CALC"})
+        DEV.log_msg(f"Set Container.custom_walls_precision: {precision}", {"CALC", "CONT"})
     else:
         Container.custom_walls_precision = Container.custom_walls_precision_default
 
@@ -229,7 +229,8 @@ def cont_fromPoints(points: list[Vector], bb: list[Vector, 6], faces4D: list[Vec
 
         # Check non empty
         getStats().logDt("calculated cont")
-        logType = {"CALC"} if cont else {"CALC", "ERROR"}
+        logType = {"CALC", "CONT"}
+        if not cont: logType |= {"ERROR"}
         DEV.log_msg(f"Found {len(cont)} cells ({len(cont.walls)} walls from {len(faces4D)} faces)", logType)
         return cont
 
@@ -239,5 +240,5 @@ def cont_fromPoints(points: list[Vector], bb: list[Vector, 6], faces4D: list[Vec
     # XXX:: some tiny intersection between cells might happen due to tolerance -> check or not worth it, we shrink then would not be noticeable
 
     except Exception as e:
-        DEV.log_msg(f"exception cont >> {str(e)}", {"CALC", "ERROR"})
+        DEV.log_msg(f"exception cont >> {str(e)}", {"CALC", "CONT", "ERROR"})
         return []

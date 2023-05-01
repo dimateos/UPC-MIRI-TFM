@@ -73,7 +73,7 @@ class Links():
                 cont_neighs_faces.append(faces)
         except:
             # TODO:: the map could be asymetric! and .index(i) fail -> needs to be handle and maybe breaks later parts...
-            DEV.log_msg(f"NO LINKS: asymetric cell neighs due to cell failed computation or tolerante issues", {"CALC", "ERROR"})
+            DEV.log_msg(f"NO LINKS: asymetric cell neighs due to cell failed computation or tolerante issues", {"CALC", "LINKS", "ERROR"})
             print({"i":i, "faces":faces, "f":f, "neighs":neighs, "n":n, "cont_neighs[n]":cont_neighs[n] })
             return
         stats.logDt("calculated cell neighs faces")
@@ -168,7 +168,8 @@ class Links():
                 l.neighs += c1_neighs + c2_neighs
 
         stats.logDt("aggregated link neighbours")
-        logType = {"CALC"} if self.link_map else {"CALC", "ERROR"}
+        logType = {"CALC", "LINKS"}
+        if not self.link_map: logType |= {"ERROR"}
         DEV.log_msg(f"Found {self.num_toCells} links to cells + {self.num_toWalls} links to walls (total {len(self.link_map)})", logType)
 
 
@@ -203,18 +204,28 @@ class Links():
     #-------------------------------------------------------------------
 
 # OPT:: store links between objects -> add json parser to store persistently? or retrieve from recalculated cont?
+# OPT:: register some calback on object rename? free the map or remap
+# XXX:: this storage is lost on module reload tho
 class Links_storage:
     bl_links: dict[str, Links] = dict()
 
     @staticmethod
     def addLinks(links, uniqueName):
+        if uniqueName in Links_storage.bl_links:
+            DEV.log_msg(f"Replacing: {uniqueName}...", {"STORAGE", "LINKS"})
         Links_storage.bl_links[uniqueName] = links
 
     @staticmethod
     def getLinks(uniqueName):
-        return Links_storage.bl_links[uniqueName]
+        try:
+            return Links_storage.bl_links[uniqueName]
+        except KeyError:
+            DEV.log_msg(f"Get: no {uniqueName}... probably reloaded the module?", {"STORAGE", "LINKS", "ERROR"})
 
     @staticmethod
     def freeLinks(uniqueName):
-        links = Links_storage.bl_links.pop(uniqueName)
-        del links
+        try:
+            links = Links_storage.bl_links.pop(uniqueName)
+            del links
+        except KeyError:
+            DEV.log_msg(f"Del: no {uniqueName}... probably reloaded the module?", {"STORAGE", "LINKS", "ERROR"})

@@ -25,13 +25,13 @@ class Stats:
             self.memstats_available = True
         self.reset()
 
-    def reset(self):
+    def reset(self, log= True):
         self.lasttime = self._gettime()
         self.firsttime = self.lasttime
         self.basemem = self._getmem()
         self.maxmem = self.lastmem = self.diffmem = 0
         self.elapsedtime = 0
-
+        if log: self.logMsg("reset...")
 
     def _gettime(self):
         """return the time in seconds used by the current process."""
@@ -87,34 +87,38 @@ class Stats:
     #-------------------------------------------------------------------
 
     def logMsg(self, msg):
-       print(f"{self.name}//                              - {msg}")
+        print(f"{self.name}//                              - {msg}")
 
-    def logDt(self, msg: str = " "):
+    def logDt(self, msg: str = ""):
         if not DEV.logs_stats: return
         t = self.time()
         dt = self.time_diff()
 
-        #if msg: print(f"{self.name}//  {msg}")
-        #print(f"\t t:{t:>10.6f}   dt:{dt:>10.6f}")
-        if msg: print(f"{self.name}// dt:{dt:>10.6f}s ({t:>10.6f}s) - {msg}")
+        log = f"{self.name}// dt:{dt:>10.6f}s ({t:>10.6f}s)"
+        if msg: log += f" - {msg}"
+        print(log)
 
-    def logT(self, msg: str = " "):
+    def logT(self, msg: str = ""):
         if not DEV.logs_stats: return
         t = self.time()
-        if msg: print(f"{self.name}// total time:    ({t:>10.6f}s) - {msg}")
+
+        log = f"{self.name}// total time:    ({t:>10.6f}s)"
+        if msg: log += f" - {msg}"
+        print(log)
 
     # OPT:: single line or something like log
-    def logMem(self, msg: str = " "):
+    def logMem(self, msg: str = ""):
         if not DEV.logs_stats: return
         m = self.memory_max()
         lm = self.memory_last()
         dm = self.diffmem
 
-        if msg: print(f"{self.name}// {msg}")
-        print(f"\t m:{m:>10}   lm:{lm:>10}   dm:{dm:>10}")
+        log = f"{self.name}// dm:{dm:>9}   ({m:>10}b)"
+        if msg: log += f" - {msg}"
+        print(log)
 
-    def logFull(self, msg: str = " "):
-        self.log(msg)
+    def logFull(self, msg: str = ""):
+        self.logT(msg)
         self.logMem("")
 
 
