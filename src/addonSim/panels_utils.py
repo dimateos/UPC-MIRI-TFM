@@ -44,12 +44,16 @@ class Info_inpect_PT(types.Panel):
                 col.label(text="Selected but removed active?", icon="ERROR")
 
             else:
-                # draw specific mode
-                self._obj = context.active_object
-                if bpy.context.mode == 'OBJECT':
-                    self.drawMode_object(context, box)
-                elif bpy.context.mode == 'EDIT_MESH':
-                    self.drawMode_edit(context, box)
+                obj = context.active_object
+
+                # draw common inspect
+                mainCol, mainBox = self.draw_inspectObject(obj, box)
+
+                # draw specific mode detailed info
+                open, box = ui.draw_toggleBox(prefs, "dm_PT_meta_show_full", mainCol)
+                if open:
+                    if bpy.context.mode == 'OBJECT':        self.drawMode_object(context, obj, box)
+                    elif bpy.context.mode == 'EDIT_MESH':   self.drawMode_edit(context, obj, box)
 
         # debug options
         open, box = ui.draw_toggleBox(prefs, "dm_PT_meta_show_tmpDebug", layout)
@@ -59,18 +63,12 @@ class Info_inpect_PT(types.Panel):
             DEV.draw_val(col_rowSplit, "Scene meshes", len(bpy.data.meshes))
             col_rowSplit.operator(ops_util.Util_deleteMeshes_OT.bl_idname, icon="UNLINKED", text="")
 
-    def drawMode_object(self, context, layout):
-        obj = self._obj
 
-        # mesh inspect
-        mainCol, mainBox = self.draw_inspectObject(obj, layout)
-
-        # get format precision
-        fmt = self.draw_precision(mainCol)
-
+    def drawMode_object(self, context, obj, box):
         # draw tranforms with specific precision
-        self.draw_tranforms(obj, mainCol, fmt)
-        mainBox.operator(ops_util.Info_printMatrices_OT.bl_idname, icon="LATTICE_DATA")
+        fmt = self.draw_precision(box)
+        self.draw_tranforms(obj, box, fmt)
+        box.operator(ops_util.Info_printMatrices_OT.bl_idname, icon="LATTICE_DATA")
 
         # IDEA:: print mesh dicts with input text for type
         # IDEA:: toggle decimal cap + read from print op?
@@ -78,24 +76,19 @@ class Info_inpect_PT(types.Panel):
 
         # some more print info
         if obj.type == 'MESH':
-            col = layout.column()
+            col = box.column()
             col.operator(ops_util.Info_printData_OT.bl_idname, icon="HELP")
             col.operator(ops_util.Info_printAPI_OT.bl_idname, icon="HELP")
 
-    def drawMode_edit(self, context, layout):
+    def drawMode_edit(self, context, obj, box):
         prefs = getPrefs()
-        #obj = bpy.context.object
-        obj = self._obj
-
-        # Inspect the mesh and format decimals
-        mainCol, mainBox = self.draw_inspectObject(obj, layout)
 
         # Use selected data or input it
-        col_rowSplit = mainCol.row().split(factor=0.5)
+        col_rowSplit = box.row().split(factor=0.5)
         col_rowSplit.scale_y = 1.2
         col_rowSplit.prop(prefs, "dm_PT_edit_useSelected")
         col_rowSplit.prop(prefs, "dm_PT_edit_showLimit")
-        col = mainCol.column()
+        col = box.column()
 
         # tip about not updated
         if prefs.dm_PT_edit_useSelected:
@@ -109,9 +102,9 @@ class Info_inpect_PT(types.Panel):
             col.prop(prefs, "dm_PT_edit_indexFilter")
 
         # get format precision
-        fmt = self.draw_precision(mainCol)
+        fmt = self.draw_precision(box)
 
-        self.draw_inspectData(obj, mainCol, fmt)
+        self.draw_inspectData(obj, box, fmt)
 
     #-------------------------------------------------------------------
 

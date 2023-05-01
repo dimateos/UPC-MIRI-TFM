@@ -107,6 +107,10 @@ class MW_prefs(bpy.types.AddonPreferences):
         name="Show inspect...", description="Show the object info",
         default=True,
     )
+    dm_PT_meta_show_full: props.BoolProperty(
+        name="Show full...", description="Show all the info",
+        default=False,
+    )
 
     # filters
     dm_PT_edit_useSelected: props.BoolProperty(
