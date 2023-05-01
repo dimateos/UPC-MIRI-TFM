@@ -58,10 +58,14 @@ class Info_inpect_PT(types.Panel):
         # debug options
         open, box = ui.draw_toggleBox(prefs, "dm_PT_meta_show_tmpDebug", layout)
         if open:
-            # fix orpha meshes
+            # fix orphan meshes
             col_rowSplit = box.row().split(factor=0.8)
-            DEV.draw_val(col_rowSplit, "Scene meshes", len(bpy.data.meshes))
-            col_rowSplit.operator(ops_util.Util_deleteMeshes_OT.bl_idname, icon="UNLINKED", text="")
+            col_rowSplit.label(text=f"Scene DATA - orphans", icon="SCENE_DATA")
+            col_rowSplit.operator(ops_util.Util_deleteOrphanData_OT.bl_idname, icon="UNLINKED", text="")
+
+            col = box.column()
+            col.label(text=f"Meshes: {len(bpy.data.meshes)}", icon="MESH_CUBE")
+            col.label(text=f"Curves: {len(bpy.data.curves)}", icon="CURVE_DATA")
 
 
     def drawMode_object(self, context, obj, box):

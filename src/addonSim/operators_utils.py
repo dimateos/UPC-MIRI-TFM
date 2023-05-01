@@ -407,7 +407,7 @@ class Util_deleteIndices_OT(_StartRefresh_OT):
 
 #-------------------------------------------------------------------
 
-class Util_deleteMeshes_OT(_StartRefresh_OT):
+class Util_deleteOrphanData_OT(_StartRefresh_OT):
     bl_idname = "dm.util_delete_meshes"
     bl_label = "Delete unused meshes"
     bl_description = "Misuse of the API may lead to orphan meshes"
@@ -416,7 +416,7 @@ class Util_deleteMeshes_OT(_StartRefresh_OT):
 
     def execute(self, context: types.Context):
         self.start_op()
-        utils.delete_meshesOrphan(logAmount=True)
+        utils.delete_orphanData(logAmount=True)
         return self.end_op()
 
 #-------------------------------------------------------------------
@@ -479,7 +479,7 @@ util_classes_op = [
     Util_spawnIndices_OT,
     Util_deleteIndices_OT,
 
-    Util_deleteMeshes_OT,
+    Util_deleteOrphanData_OT,
 
     Info_printData_OT,
     Info_printAPI_OT,

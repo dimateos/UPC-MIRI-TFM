@@ -163,22 +163,25 @@ def copy_objectRec(obj: types.Object, context: types.Context, link_mesh = False,
 
 #-------------------------------------------------------------------
 
-def delete_object(obj: types.Object, ignore_mesh = False):
-    me = obj.data
+def delete_object(obj: types.Object, ignore_data = False):
+    data,type = obj.data, obj.type
     #DEV.log_msg(f"Deleting {obj.name}", {"DELETE", "OBJ"})
     bpy.data.objects.remove(obj)
 
-    # NOTE:: meshes are leftover otherwise, delete after removing the object user
-    if not ignore_mesh and me and not me.users:
-        #DEV.log_msg(f"Deleting {me.name}", {"DELETE", "MESH"})
-        bpy.data.meshes.remove(me, do_unlink=False)
+    # NOTE:: meshes/data is leftover otherwise, delete after removing the object user
+    if not ignore_data and data and not data.users:
+        #DEV.log_msg(f"Deleting {data.name}", {"DELETE", "DATA"})
+        if type == "MESH":      collection =bpy.data.meshes
+        elif type == "CURVE":   collection =bpy.data.curves
+        else: raise TypeError(f"Unexpected data type from {data.name}")
+        collection.remove(data, do_unlink=False)
 
-def delete_objectRec(obj: types.Object, ignore_mesh = False, logAmount=False):
+def delete_objectRec(obj: types.Object, ignore_data = False, logAmount=False):
     """ Delete the object and children recursively """
-    delete_objectChildren(obj, ignore_mesh, rec=True, logAmount=logAmount)
-    delete_object(obj, ignore_mesh)
+    delete_objectChildren(obj, ignore_data, rec=True, logAmount=logAmount)
+    delete_object(obj, ignore_data)
 
-def delete_objectChildren(ob_father: types.Object, ignore_mesh = False, rec=True, logAmount=False):
+def delete_objectChildren(ob_father: types.Object, ignore_data = False, rec=True, logAmount=False):
     """ Delete the children objects """
 
     # deleting a parent leads to a deleted children (not its mesh tho)
@@ -187,17 +190,24 @@ def delete_objectChildren(ob_father: types.Object, ignore_mesh = False, rec=True
         DEV.log_msg(f"Deleting {len(toDelete)} objects", {"DELETE"})
 
     for child in reversed(toDelete):
-        delete_object(child, ignore_mesh)
+        delete_object(child, ignore_data)
 
-def delete_meshesOrphan(logAmount):
-    """ When an object is deleted its mesh may be left over """
-    toDelete = []
-    for mesh in bpy.data.meshes:
-        if not mesh.users: toDelete.append(mesh)
+def delete_orphanData(collectionNames = None, logAmount = True):
+    """ When an object is deleted its mesh/data may be left over """
+    if collectionNames is None: collectionNames = ["meshes", "curves"]
 
-    DEV.log_msg(f"Deleting {len(toDelete)}/{len(bpy.data.meshes)} meshes", {"DELETE"})
-    for mesh in toDelete:
-        bpy.data.meshes.remove(mesh, do_unlink=False)
+    try:
+        for colName in collectionNames:
+            collection = getattr(bpy.data, colName)
+            toDelete = []
+            for data in collection:
+                if not data.users: toDelete.append(data)
+
+            DEV.log_msg(f"Deleting {len(toDelete)}/{len(collection)} {colName}", {"DELETE"})
+            for data in toDelete:
+                collection.remove(data, do_unlink=False)
+    except:
+        DEV.log_msg(f"Collection {colName} excepted", {"DELETE", "ERROR"})
 
 #-------------------------------------------------------------------
 
