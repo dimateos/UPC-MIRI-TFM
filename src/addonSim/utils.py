@@ -12,35 +12,51 @@ from .stats import getStats
 
 
 # OPT:: split some more files? or import less functions
+# OPT:: register this to be called on object selection not on draw
 #-------------------------------------------------------------------
 
 def cfg_hasRoot(obj: types.Object) -> bool:
     """ Quick check if the object is part of a fracture """
+    #DEV.log_msg(f"cfg_hasRoot check: {obj.name} -> {obj.mw_gen.meta_type}", {"REC", "CFG"})
     return "NONE" not in obj.mw_gen.meta_type
 
-# TODO:: should really try to acces the parent direclty
-# XXX:: too much used around in poll functions, performance hit?
+# OPT:: should really try to acces the parent direclty -> but careful with rna of deleted...
+# OPT:: too much used around in poll functions, performance hit? use a callback to be used on selected object?
 def cfg_getRoot(obj: types.Object) -> tuple[types.Object, MW_gen_cfg]:
     """ Retrieve the root object holding the config """
+    #DEV.log_msg(f"cfg_getRoot search: {obj.name} -> {obj.mw_gen.meta_type}", {"REC", "CFG"})
     if "NONE" in obj.mw_gen.meta_type:
         return obj, None
 
-    # Maybe the user deleted the root only
     try:
         obj_chain = obj
         while "CHILD" in obj_chain.mw_gen.meta_type:
-            obj_chain = obj.parent
+            obj_chain = obj_chain.parent
+
+        # OPT:: check the root is actually root: could happen if an object is copy pasted
+        if "ROOT" not in obj_chain.mw_gen.meta_type: raise ValueError("Chain ended with no root")
+        #DEV.log_msg(f"cfg_getRoot chain end: {obj_chain.name}", {"RET", "CFG"})
         return obj_chain, obj_chain.mw_gen
-    except:
-        DEV.log_msg(f"cfg_getRoot chain broke ({obj.name})", {"ERROR", "CFG"})
+
+    # the parent was removed
+    except AttributeError:
+        DEV.log_msg(f"cfg_getRoot chain broke: {obj.name} -> no rec parent", {"ERROR", "CFG"})
+        return obj, None
+    # the parent was not root
+    except ValueError:
+        DEV.log_msg(f"cfg_getRoot chain broke: {obj_chain.name} -> not root ({obj_chain.mw_gen.meta_type})", {"ERROR", "CFG"})
         return obj, None
 
 
-def cfg_setMetaTypeRec(obj: types.Object, type: dict):
+def cfg_setMetaTypeRec(obj: types.Object, type: dict, skipParent = False):
     """ Set the property to the object and all its children (dictionary ies copied, not referenced) """
-    obj.mw_gen.meta_type = type.copy()
-    for child in obj.children:
-        cfg_setMetaTypeRec(child, type)
+    if not skipParent:
+        obj.mw_gen.meta_type = type.copy()
+
+    toSet = obj.children_recursive
+    #DEV.log_msg(f"Setting {type} to {len(toSet)} objects", {"CFG"})
+    for child in toSet:
+        child.mw_gen.meta_type = type.copy()
 
 #-------------------------------------------------------------------
 
@@ -200,10 +216,14 @@ def copy_objectRec(obj: types.Object, context: types.Context, link_mesh = False,
 #-------------------------------------------------------------------
 
 def delete_object(obj: types.Object, ignore_mesh = False):
-    # NOTE:: meshes are leftover otherwise
-    if not ignore_mesh and obj.data:
-        bpy.data.meshes.remove(obj.data)
+    me = obj.data
+    #DEV.log_msg(f"Deleting {obj.name}", {"DELETE", "OBJ"})
     bpy.data.objects.remove(obj)
+
+    # NOTE:: meshes are leftover otherwise, delete after removing the object user
+    if not ignore_mesh and me and not me.users:
+        #DEV.log_msg(f"Deleting {me.name}", {"DELETE", "MESH"})
+        bpy.data.meshes.remove(me, do_unlink=False)
 
 def delete_objectRec(obj: types.Object, ignore_mesh = False, logAmount=False):
     """ Delete the object and children recursively """
@@ -212,11 +232,13 @@ def delete_objectRec(obj: types.Object, ignore_mesh = False, logAmount=False):
 
 def delete_objectChildren(ob_father: types.Object, ignore_mesh = False, rec=True, logAmount=False):
     """ Delete the children objects """
+
+    # deleting a parent leads to a deleted children (not its mesh tho)
     toDelete = ob_father.children if not rec else ob_father.children_recursive
     if logAmount:
         DEV.log_msg(f"Deleting {len(toDelete)} objects", {"DELETE"})
 
-    for child in toDelete:
+    for child in reversed(toDelete):
         delete_object(child, ignore_mesh)
 
 def delete_meshesOrphan(logAmount):
@@ -227,7 +249,7 @@ def delete_meshesOrphan(logAmount):
 
     DEV.log_msg(f"Deleting {len(toDelete)}/{len(bpy.data.meshes)} meshes", {"DELETE"})
     for mesh in toDelete:
-        bpy.data.meshes.remove(mesh)
+        bpy.data.meshes.remove(mesh, do_unlink=False)
 
 #-------------------------------------------------------------------
 
@@ -299,7 +321,6 @@ def gen_child(
     ):
     """ Generate a new child with the CHILD meta_type """
     obj_child = bpy.data.objects.new(name, mesh)
-    obj_child.mw_gen.meta_type = {"CHILD"}
     context.scene.collection.objects.link(obj_child)
 
     set_child(obj_child, obj, keepTrans, noInv)

@@ -17,6 +17,7 @@ from .utils_dev import DEV
 from .stats import getStats
 
 
+# OPT:: not recursive + query obj.children a lot
 #-------------------------------------------------------------------
 
 def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
@@ -143,7 +144,6 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
         points_from_verts(obj)
     # geom children
     if 'VERT_CHILD' in source:
-        # NOTE:: not recursive atm
         for obj_child in obj.children:
             points_from_verts(obj_child, isChild=True)
 
@@ -161,7 +161,6 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
         points_from_particles(obj)
     # geom child particles
     if 'PARTICLE_CHILD' in source:
-        # NOTE:: not recursive either
         for obj_child in obj.children:
             points_from_particles(obj_child)
 

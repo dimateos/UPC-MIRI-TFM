@@ -171,6 +171,11 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
         edges = "edges_Indices"
         faces = "faces_Indices"
 
+    obj_replace: props.BoolProperty(
+        name="obj replace", description="Replace existing mesh index indicators",
+        default=True,
+    )
+
     # toggles and scale per data
     _prop_showName = props.BoolProperty(name="name", description="Toggle viewport vis of names", default=False)
     _prop_scale = props.FloatProperty(name="s", default=0.25, min=0.01, max=1.0, step=0.5, precision=3)
@@ -240,6 +245,8 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
         #row = col.row().split(factor=f2)
         row.alignment = "LEFT"
         row.prop(self, "namePrefix")
+        row.prop(self, "obj_replace")
+
 
     #-------------------------------------------------------------------
 
@@ -254,7 +261,9 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
         if cancel: return self.end_op_refresh()
 
         obj = context.active_object
-        child_empty = utils.gen_childClean(obj, self.CONST_NAMES.empty, context, None, keepTrans=False)
+        if self.obj_replace:
+            child_empty = utils.gen_childClean(obj, self.CONST_NAMES.empty, context, None, keepTrans=False)
+        else: child_empty = utils.get_child(obj, self.CONST_NAMES.empty)
 
         # optional grayscale common color mat
         gray3 = utils_render.COLORS.white * self.color_gray
@@ -341,6 +350,7 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
                 child.rotation_mode = "QUATERNION"
                 child.rotation_quaternion = v_rot0.rotation_difference(v_rot1)
 
+        #bpy.ops.dm.util_delete_meshes()
         return self.end_op()
 
 class Util_deleteIndices_OT(_StartRefresh_OT):
@@ -357,7 +367,9 @@ class Util_deleteIndices_OT(_StartRefresh_OT):
         if not context.active_object:
             return False
 
+        # look for the child
         obj = utils.get_child(context.active_object, Util_spawnIndices_OT.CONST_NAMES.empty)
+
         Util_deleteIndices_OT._obj = obj
         return obj
 

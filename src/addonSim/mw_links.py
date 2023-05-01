@@ -52,7 +52,7 @@ class Links():
 
         # XXX:: decouple scene from sim? calculate the FtoF map inside voro isntead of blender mesh...
         self.shard_objs: types.Object = [ shard for shard in obj_shards.children ]
-        self.shard_meshes: types.Mesh= [ shard.data for shard in obj_shards.children ]
+        self.shard_meshes: types.Mesh= [ shard.data for shard in self.shard_objs ]
         # TODO:: the children objects are ordered lexicographically 0 1 10 11 12 13... dynamically add zeroes or sort after?
 
         meshes_dicts = [ utils_geo.get_meshDicts(me) for me in self.shard_meshes ]

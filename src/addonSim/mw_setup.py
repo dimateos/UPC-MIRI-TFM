@@ -54,7 +54,7 @@ def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
 
     # Duplicate the original object
     obj_copy = utils.copy_objectRec(obj, context, namePreffix=CONST_NAMES.original_copy)
-    utils.cfg_setMetaTypeRec(obj_copy, {"CHILD"})
+    #utils.cfg_setMetaTypeRec(obj_copy, {"CHILD"})
 
     # Scene viewport
     utils.hide_objectRec(obj, not cfg.struct_showOrignal_scene)
@@ -69,7 +69,7 @@ def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     get_renamed(obj_root, cfg, context)
     utils.select_unhide(obj_root, context)
 
-    getStats().logDt("generated copy object")
+    getStats().logDt(f"generated copy object ({1+len(obj_copy.children_recursive)} object/s)")
     return obj_root, obj_copy
 
 def copy_originalPrev(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
@@ -102,7 +102,7 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, cont
     # Duplicate again the copy and set child too
     obj_c = utils.copy_objectRec(obj_copy, context, keep_mods=False)
     obj_c.name = CONST_NAMES.original_convex
-    utils.cfg_setMetaTypeRec(obj_c, {"CHILD"})
+    #utils.cfg_setMetaTypeRec(obj_c, {"CHILD"})
     utils.set_child(obj_c, obj)
 
     # XXX:: need to mesh update? + decimate before more perf? but need to change EDIT/OBJ modes?
@@ -123,7 +123,7 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, cont
     # Second copy with the face dissolve
     obj_d = utils.copy_objectRec(obj_c, context, keep_mods=False)
     obj_d.name = CONST_NAMES.original_dissolve
-    utils.cfg_setMetaTypeRec(obj_d, {"CHILD"})
+    #utils.cfg_setMetaTypeRec(obj_d, {"CHILD"})
     utils.set_child(obj_d, obj)
 
     # dissolve faces based on angle limit

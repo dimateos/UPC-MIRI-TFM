@@ -123,6 +123,8 @@ class MW_gen_OT(_StartRefresh_OT):
             obj_toFrac = mw_setup.copy_convex(obj_root, obj_original, cfg, context)
         else: obj_toFrac = obj_original
 
+        # set the meta type to all objects at once
+        utils.cfg_setMetaTypeRec(obj_root, {"CHILD"}, skipParent=True)
         return self.end_op()
 
 
