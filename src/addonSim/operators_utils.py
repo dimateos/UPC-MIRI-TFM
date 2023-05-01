@@ -3,6 +3,8 @@ import bpy.types as types
 import bpy.props as props
 from mathutils import Vector, Matrix
 
+from .preferences import getPrefs, ADDON
+
 from . import ui
 from . import utils
 from . import utils_geo
@@ -144,7 +146,7 @@ class _StartRefresh_OT(types.Operator):
 
 #-------------------------------------------------------------------
 
-class Util_SpawnIndices_OT(_StartRefresh_OT):
+class Util_spawnIndices_OT(_StartRefresh_OT):
     bl_idname = "dm.util_spawn_indices"
     bl_label = "Spawn mesh indices"
     bl_description = "Spawn named objects at mesh data indices positons"
@@ -355,7 +357,7 @@ class Util_deleteIndices_OT(_StartRefresh_OT):
         if not context.active_object:
             return False
 
-        obj = utils.get_child(context.active_object, Util_SpawnIndices_OT.CONST_NAMES.empty)
+        obj = utils.get_child(context.active_object, Util_spawnIndices_OT.CONST_NAMES.empty)
         Util_deleteIndices_OT._obj = obj
         return obj
 
@@ -381,7 +383,7 @@ class Util_deleteMeshes_OT(_StartRefresh_OT):
 
 #-------------------------------------------------------------------
 
-class Info_PrintData_OT(types.Operator):
+class Info_printData_OT(types.Operator):
     bl_idname = "dm.info_print_data"
     bl_label = "Print mesh data"
     bl_description = "DEBUG print in the console some mesh data etc"
@@ -398,7 +400,7 @@ class Info_PrintData_OT(types.Operator):
         info_mesh.desc_mesh_data(obj.data)
         return {'FINISHED'}
 
-class Info_PrintAPI_OT(types.Operator):
+class Info_printAPI_OT(types.Operator):
     bl_idname = "dm.info_print_api"
     bl_label = "Print mesh API"
     bl_description = "DEBUG print in the console some mesh API etc"
@@ -415,7 +417,7 @@ class Info_PrintAPI_OT(types.Operator):
         info_mesh.desc_mesh_inspect(obj.data)
         return {'FINISHED'}
 
-class Info_PrintMatrices_OT(types.Operator):
+class Info_printMatrices_OT(types.Operator):
     bl_idname = "dm.info_print_matrices"
     bl_label = "Print obj matrices"
     bl_description = "DEBUG print in the console the matrices etc"
@@ -436,10 +438,12 @@ class Info_PrintMatrices_OT(types.Operator):
 # Blender events
 
 util_classes_op = [
-    Util_SpawnIndices_OT,
+    Util_spawnIndices_OT,
     Util_deleteIndices_OT,
+
     Util_deleteMeshes_OT,
-    Info_PrintData_OT,
-    Info_PrintAPI_OT,
-    Info_PrintMatrices_OT
+
+    Info_printData_OT,
+    Info_printAPI_OT,
+    Info_printMatrices_OT
 ]

@@ -7,6 +7,7 @@ from .preferences import getPrefs, ADDON
 from . import operators_utils as ops_util
 
 from . import ui
+from . import utils
 from . import utils_geo
 from .utils_dev import DEV
 
@@ -15,7 +16,7 @@ from .utils_dev import DEV
 # OPT:: add deps graph calc check + also for mesh indices spawn
 #-------------------------------------------------------------------
 
-class Info_Inpect_PT(types.Panel):
+class Info_inpect_PT(types.Panel):
     bl_idname = "DM_PT_info_inpect"
     """ PT bl_idname must have _PT_ e.g. TEST_PT_addon"""
 
@@ -69,7 +70,7 @@ class Info_Inpect_PT(types.Panel):
 
         # draw tranforms with specific precision
         self.draw_tranforms(obj, mainCol, fmt)
-        mainBox.operator(ops_util.Info_PrintMatrices_OT.bl_idname, icon="LATTICE_DATA")
+        mainBox.operator(ops_util.Info_printMatrices_OT.bl_idname, icon="LATTICE_DATA")
 
         # IDEA:: print mesh dicts with input text for type
         # IDEA:: toggle decimal cap + read from print op?
@@ -78,8 +79,8 @@ class Info_Inpect_PT(types.Panel):
         # some more print info
         if obj.type == 'MESH':
             col = layout.column()
-            col.operator(ops_util.Info_PrintData_OT.bl_idname, icon="HELP")
-            col.operator(ops_util.Info_PrintAPI_OT.bl_idname, icon="HELP")
+            col.operator(ops_util.Info_printData_OT.bl_idname, icon="HELP")
+            col.operator(ops_util.Info_printAPI_OT.bl_idname, icon="HELP")
 
     def drawMode_edit(self, context, layout):
         prefs = getPrefs()
@@ -89,12 +90,23 @@ class Info_Inpect_PT(types.Panel):
         # Inspect the mesh and format decimals
         mainCol, mainBox = self.draw_inspectObject(obj, layout)
 
+        # Use selected data or input it
+        col_rowSplit = mainCol.row().split(factor=0.5)
+        col_rowSplit.scale_y = 1.2
+        col_rowSplit.prop(prefs, "dm_PT_edit_useSelected")
+        col_rowSplit.prop(prefs, "dm_PT_edit_showLimit")
         col = mainCol.column()
-        col.enabled = False
-        col.alignment = 'LEFT'
-        #col.scale_y = 0.8
-        col.label(text=f"[toggle Edit/Object]: update it", icon="QUESTION")
-        #col.label(text=f"[Object Mode]: spawn indices", icon="LIGHT")
+
+        # tip about not updated
+        if prefs.dm_PT_edit_useSelected:
+            col.enabled = False
+            col.alignment = 'LEFT'
+            #col.scale_y = 0.8
+            col.label(text=f"[toggle Edit/Object] for updates", icon="QUESTION")
+            #col.label(text=f"[Object Mode]: spawn indices", icon="LIGHT")
+        # filter for manual selection
+        else:
+            col.prop(prefs, "dm_PT_edit_indexFilter")
 
         # get format precision
         fmt = self.draw_precision(mainCol)
@@ -108,7 +120,7 @@ class Info_Inpect_PT(types.Panel):
 
         # indices spawn
         col_rowSplit = mainBox.row().split(factor=0.8)
-        col_rowSplit.operator(ops_util.Util_SpawnIndices_OT.bl_idname, icon="TRACKER")
+        col_rowSplit.operator(ops_util.Util_spawnIndices_OT.bl_idname, icon="TRACKER")
         col_rowSplit.operator(ops_util.Util_deleteIndices_OT.bl_idname, icon="CANCEL", text="")
 
         col = mainBox.column()
@@ -128,7 +140,7 @@ class Info_Inpect_PT(types.Panel):
 
         if obj.type == "MESH":
             mesh: types.Mesh = obj.data
-            col.label(text=f"V: {len(mesh.vertices)}   E: {len(mesh.edges)}   F: {len(mesh.polygons)}   T: {len(mesh.loop_triangles)}", icon="DOT")
+            col.label(text=f" V: {len(mesh.vertices)}   E: {len(mesh.edges)}   F: {len(mesh.polygons)}   T: {len(mesh.loop_triangles)}") # icon="DOT"
 
         mainCol = mainBox.column()
         mainCol.scale_y = 0.8
@@ -188,52 +200,60 @@ class Info_Inpect_PT(types.Panel):
     def draw_inspectData(self, obj: types.Object, layout: types.UILayout, fmt = ">6.3f"):
         prefs = getPrefs()
         fmt_vec = f"({{:{fmt}}}, {{:{fmt}}}, {{:{fmt}}})"
-
-        # Mesh selected is not up to date...
+        limit = prefs.dm_PT_edit_showLimit
         mesh = obj.data
-        selected_verts = [v for v in mesh.vertices if v.select]
-        selected_edges = [e for e in mesh.edges if e.select]
-        selected_faces = [f for f in mesh.polygons if f.select]
 
         # verts with optional world space toggle
         open, box = ui.draw_toggleBox(prefs, "dm_PT_edit_showVerts", layout)
         if open:
+            if prefs.dm_PT_edit_useSelected: selected_verts = [v for v in mesh.vertices if v.select]
+            else: selected_verts = utils.get_filtered(mesh.vertices, prefs.dm_PT_edit_indexFilter)
+
             col = box.column()
             row = col.row()
             row.alignment= "LEFT"
             row.label(text=f"verts: {len(selected_verts)}")
             row.prop(prefs, "dm_PT_info_edit_showWorld")
-            for v in selected_verts:
+            for v in selected_verts[:limit]:
                 if prefs.dm_PT_info_edit_showWorld: pos = obj.matrix_world @ v.co
                 else: pos = v.co
                 col.label(text=f"{v.index}: " + f"{fmt_vec}".format(*pos))
+            if len(selected_verts) > limit: col.label(text=f"...")
 
         # edges
         open, box = ui.draw_toggleBox(prefs, "dm_PT_edit_showEdges", layout)
         if open:
+            if prefs.dm_PT_edit_useSelected: selected_edges = [e for e in mesh.edges if e.select]
+            else: selected_edges = utils.get_filtered(mesh.edges, prefs.dm_PT_edit_indexFilter)
+
             col = box.column()
             col.label(text=f"edges: {len(selected_edges)}")
-            for e in selected_edges: col.label(text=f"{e.index}: {e.key}")
+            for e in selected_edges[:limit]: col.label(text=f"{e.index}: {e.key}")
+            if len(selected_edges) > limit: col.label(text=f"...")
 
         # faces with option too
         open, box = ui.draw_toggleBox(prefs, "dm_PT_edit_showFaces", layout)
         if open:
+            if prefs.dm_PT_edit_useSelected: selected_faces = [f for f in mesh.polygons if f.select]
+            else: selected_faces = utils.get_filtered(mesh.polygons, prefs.dm_PT_edit_indexFilter)
+
             col = box.column()
             row = col.row()
             row.alignment= "LEFT"
             row.label(text=f"faces: {len(selected_faces)}")
             row.prop(prefs, "dm_PT_edit_showFaceCenters")
             if (prefs.dm_PT_edit_showFaceCenters):
-                for f in selected_faces:
+                for f in selected_faces[:limit]:
                     if prefs.dm_PT_info_edit_showWorld: pos = obj.matrix_world @ f.center
                     else: pos = f.center
                     col.label(text=f"{f.index}: " + f"{fmt_vec}".format(*pos))
             else:
-                for f in selected_faces: col.label(text=f"{f.index}: {f.vertices[:]}")
+                for f in selected_faces[:limit]: col.label(text=f"{f.index}: {f.vertices[:]}")
+            if len(selected_faces) > limit: col.label(text=f"...")
 
 #-------------------------------------------------------------------
 # Blender events
 
 util_classes_pt = [
-    Info_Inpect_PT,
+    Info_inpect_PT,
 ]

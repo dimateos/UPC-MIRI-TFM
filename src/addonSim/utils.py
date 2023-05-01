@@ -170,6 +170,7 @@ def copy_object(obj: types.Object, context: types.Context, link_mesh = False, ke
     # make a raw copy of leave a linked mesh
     if not link_mesh and obj.data:
         obj_copy.data = obj.data.copy()
+        obj_copy.data.name = f"{namePreffix}{obj.data.name}{nameSuffix}"
 
     # remove mods or not
     if not keep_mods:
@@ -179,6 +180,9 @@ def copy_object(obj: types.Object, context: types.Context, link_mesh = False, ke
     # avoid setting name unless specified, otherwise the copy gets the priority name without .001
     if namePreffix or nameSuffix:
         obj_copy.name = f"{namePreffix}{obj.name}{nameSuffix}"
+
+    # keep original visibility
+    obj_copy.hide_set(obj.hide_get())
 
     return obj_copy
 
@@ -193,16 +197,27 @@ def copy_objectRec(obj: types.Object, context: types.Context, link_mesh = False,
         child_copy.matrix_world = child.matrix_world
     return obj_copy
 
-def delete_objectRec(obj: types.Object, logAmount=False):
-    """ Delete the object and children recursively """
-    delete_childrenRec(obj, logAmount)
+#-------------------------------------------------------------------
+
+def delete_object(obj: types.Object, ignore_mesh = False):
+    # NOTE:: meshes are leftover otherwise
+    if not ignore_mesh and obj.data:
+        bpy.data.meshes.remove(obj.data)
     bpy.data.objects.remove(obj)
 
-def delete_childrenRec(ob_father: types.Object, logAmount=False):
-    """ Delete the children objects recursively """
-    childrenRec = ob_father.children_recursive
+def delete_objectRec(obj: types.Object, ignore_mesh = False, logAmount=False):
+    """ Delete the object and children recursively """
+    delete_objectChildren(obj, ignore_mesh, rec=True, logAmount=logAmount)
+    delete_object(obj, ignore_mesh)
 
+def delete_objectChildren(ob_father: types.Object, ignore_mesh = False, rec=True, logAmount=False):
+    """ Delete the children objects """
+    toDelete = ob_father.children if not rec else ob_father.children_recursive
     if logAmount:
+        DEV.log_msg(f"Deleting {len(toDelete)} objects", {"DELETE"})
+
+    for child in toDelete:
+        delete_object(child, ignore_mesh)
 
 def delete_meshesOrphan(logAmount):
     """ When an object is deleted its mesh may be left over """
@@ -213,7 +228,6 @@ def delete_meshesOrphan(logAmount):
     DEV.log_msg(f"Deleting {len(toDelete)}/{len(bpy.data.meshes)} meshes", {"DELETE"})
     for mesh in toDelete:
         bpy.data.meshes.remove(mesh)
-
 
 #-------------------------------------------------------------------
 
@@ -331,3 +345,22 @@ def get_kwargs(startKey_index = 0):
         if key != 'self':
             kwargs[key] = values[key]
     return kwargs
+
+def get_filtered(listFull:list, filter:str):
+    listFiltered = []
+
+    filters = filter.split(",")
+    for f in filters:
+        f = f.strip()
+
+        # range filter
+        if "_" in f:
+            i1,i2 = f.split("_")
+            listFiltered += listFull[int(i1):int(i2)]
+        # specific item
+        else:
+            try: listFiltered.append(listFull[int(f)])
+            except IndexError: pass
+
+    return listFiltered
+

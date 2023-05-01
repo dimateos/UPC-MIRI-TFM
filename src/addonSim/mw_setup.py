@@ -69,23 +69,17 @@ def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     get_renamed(obj_root, cfg, context)
     utils.select_unhide(obj_root, context)
 
-    #copyProps(cfg, obj_root.mw_gen)
     getStats().logDt("generated copy object")
     return obj_root, obj_copy
 
 def copy_originalPrev(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     # Copy the root objects including its mw_cfg
-    #obj_root = bpy.data.objects.new(cfg.get_struct_name(), None)
-    #context.scene.collection.objects.link(obj_root)
     obj_root = utils.copy_object(obj, context)
     utils.select_unhide(obj_root, context)
 
     # copy the original from the previous root withou suffix
     obj_original = utils.get_child(obj, CONST_NAMES.original_copy)
     obj_copy = utils.copy_objectRec(obj_original, context)
-
-    ## Set the transform to the empty and parent keeping the transform of the copy
-    #obj_root.matrix_world = obj.matrix_world.copy()
     utils.set_child(obj_copy, obj_root)
 
     getStats().logDt("generated copy object from prev frac")

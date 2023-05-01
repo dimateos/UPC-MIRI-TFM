@@ -108,10 +108,20 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=True,
     )
 
-    dm_PT_edit_showPrecision: props.IntProperty(
-        name="decimals", description="Number of decimals shown, will make colum wider.",
-        default=2, min=0, max=16,
+    # filters
+    dm_PT_edit_useSelected: props.BoolProperty(
+        name="Use selected", description="Show the selected mesh data (NOT UPDATED LIVE)",
+        default=True,
     )
+    dm_PT_edit_showLimit: props.IntProperty(
+        name="limit", description="Max number of items shown per type (blender has a limit size of scrollable UI area)",
+        default=20, min=1, max=50,
+    )
+    dm_PT_edit_indexFilter: props.StringProperty(
+        name="Indices", description="Range '2_20' (20 not included). Specifics '2,6,7'. Both '0_10,-1' ('-' for negative indices)",
+        default="0_3,-1",
+    )
+
 
     # edit options
     dm_PT_edit_showVerts: props.BoolProperty(
@@ -128,6 +138,10 @@ class MW_prefs(bpy.types.AddonPreferences):
     )
 
     # toggle visual
+    dm_PT_edit_showPrecision: props.IntProperty(
+        name="decimals", description="Number of decimals shown, will make colum wider.",
+        default=2, min=0, max=16,
+    )
     dm_PT_info_edit_showWorld: props.BoolProperty(
         name="world", description="Show vertices positions in world space",
         default=False,
@@ -136,14 +150,6 @@ class MW_prefs(bpy.types.AddonPreferences):
         name="show center", description="Show face center position instead of vertex indices",
         default=False,
     )
-
-    # filters
-    #dm_PT_edit_showLimit: props.IntProperty(
-    #    name="limit", description="Number of items shown, blender has a limit size of scrollable UI area.",
-    #    default=100, min=1, max=16,
-    #)
-
-
 
 
 #-------------------------------------------------------------------
