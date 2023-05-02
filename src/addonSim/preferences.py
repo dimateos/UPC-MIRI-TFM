@@ -12,6 +12,10 @@ class ADDON:
 
     panel_cat = "Dev"
 
+def getPrefs() -> "MW_prefs":
+    """ Get addon preferences from blender """
+    return bpy.context.preferences.addons[MW_prefs.bl_idname].preferences
+
 
 #-------------------------------------------------------------------
 
@@ -42,6 +46,7 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=True,
     )
 
+    #debug
     prefs_PT_meta_show_tmpDebug: props.BoolProperty(
         name="Show debug...", description="WIP: Show some debug stuff",
         default=True,
@@ -96,7 +101,6 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=True,
     )
 
-
     #-------------------------------------------------------------------
     # XXX:: fix storage problems callbacks?
 
@@ -119,12 +123,14 @@ class MW_prefs(bpy.types.AddonPreferences):
     #callback_undo_actions.append(lambda scene: Links_storage.purgeLinks(scene))
     #callback_undo_actions.append(Links_storage.purgeLinks)
 
+
     #-------------------------------------------------------------------
 
     util_delete_OT_unhideSelect: props.BoolProperty(
         name="unhide", description="Unhide the original object after deletion",
         default=True,
     )
+
 
     #-------------------------------------------------------------------
     # NOTE:: panels alone cannot store properties... here mixing dm panels with mw stuff, could separate the addons
@@ -182,6 +188,7 @@ class MW_prefs(bpy.types.AddonPreferences):
     )
 
     #-------------------------------------------------------------------
+    #debug
 
     dm_PT_meta_show_tmpDebug: props.BoolProperty(
         name="Show debug...", description="WIP: Show some debug stuff",
@@ -191,12 +198,6 @@ class MW_prefs(bpy.types.AddonPreferences):
         name="", description="E.g. meshes, curves, etc",
         default="meshes, curves",
     )
-
-#-------------------------------------------------------------------
-
-def getPrefs() -> MW_prefs:
-    """ Get addon preferences from blender """
-    return bpy.context.preferences.addons[MW_prefs.bl_idname].preferences
 
 
 #-------------------------------------------------------------------
