@@ -83,14 +83,15 @@ class MW_gen_OT(_StartRefresh_OT):
         # OPT:: avoid recursion with pointer to parent instead of search by name
         # IDEA:: decimate before/after convex, test perf?
 
-        # Free existing link memory
-        if self.last_ptrID_links:
+        # Free existing link memory -> now purged on undo callback dynamically
+        prefs = getPrefs()
+        if self.last_ptrID_links and not prefs.prefs_links_undoPurge:
             Links_storage.freeLinks(self.last_ptrID_links)
+
 
         # Retrieve root
         obj, cfg = MW_gen_cfg.getRoot(context.active_object)
         getStats().logDt("retrieved root object")
-
         try:
             # Selected object not fractured, fresh execution
             if not cfg:
@@ -109,6 +110,7 @@ class MW_gen_OT(_StartRefresh_OT):
         except Exception as e:
             if not DEV.HANDLE_GLOBAL_EXCEPT: raise e
             return self.end_op_error("unhandled exception...")
+
 
         # NOTE:: no longer supporting edit fracture -> basically always replacing geometry hence being slower
         ## Config found in the object
@@ -190,7 +192,7 @@ class MW_gen_OT(_StartRefresh_OT):
 
         # use links storage
         self.last_ptrID_links = cfg.ptrID_links = obj_root.name
-        Links_storage.addLinks(links, cfg.ptrID_links)
+        Links_storage.addLinks(links, cfg.ptrID_links, obj_root)
 
 
         return self.end_op()
@@ -287,7 +289,8 @@ class MW_util_delete_OT(_StartRefresh_OT):
                 utils.select_unhideRec(obj_original, context, selectChildren=False)
 
         # free memory from potential links map
-        if cfg.ptrID_links: Links_storage.freeLinks(cfg.ptrID_links)
+        if cfg.ptrID_links and prefs.prefs_links_undoPurge:
+            Links_storage.freeLinks(cfg.ptrID_links)
 
         # finally delete the fracture object recusively
         utils.delete_objectRec(obj, logAmount=True)

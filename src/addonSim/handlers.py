@@ -13,6 +13,12 @@ def callback_undo(scene):
     last_op = bpy.ops.ed.undo_history()
     DEV.log_msg(f"{last_op}", {"CALLBACK", "UNDO"})
 
+    global callback_undo_actions
+    for l in callback_undo_actions: l(scene)
+
+callback_undo_actions = list()
+""" Function actions to be called on callback undo """
+
 #-------------------------------------------------------------------
 # Blender events
 

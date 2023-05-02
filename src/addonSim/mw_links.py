@@ -205,17 +205,19 @@ class Links():
 
 # OPT:: store links between objects -> add json parser to store persistently? or retrieve from recalculated cont?
 # OPT:: register some calback on object rename? free the map or remap
-# XXX:: this storage is lost on module reload tho
-# TODO:: free unused links on undo callback?
+# XXX:: this storage is lost on module reload...
 class Links_storage:
     bl_links: dict[str, Links] = dict()
+    bl_links_users: dict[str, types.Object] = dict()
 
     @staticmethod
-    def addLinks(links, uniqueName):
+    def addLinks(links, uniqueName, user):
         DEV.log_msg(f"Add: {uniqueName}...", {"STORAGE", "LINKS"})
+
         if uniqueName in Links_storage.bl_links:
             DEV.log_msg(f"Replacing found links", {"STORAGE", "LINKS", "ERROR"})
         Links_storage.bl_links[uniqueName] = links
+        Links_storage.bl_links_users[uniqueName] = user
 
     @staticmethod
     def getLinks(uniqueName):
@@ -231,5 +233,19 @@ class Links_storage:
         try:
             links = Links_storage.bl_links.pop(uniqueName)
             del links
+            user = Links_storage.bl_links_users.pop(uniqueName)
         except KeyError:
             DEV.log_msg(f"Not found: probably reloaded the module?", {"STORAGE", "LINKS", "ERROR"})
+
+    @staticmethod
+    def purgeLinks(_scene=None):
+        toPurge = []
+        for name,obj in Links_storage.bl_links_users.items():
+            try:
+                name_obj = obj.name
+            except ReferenceError:
+                toPurge.append(name)
+
+        DEV.log_msg(f"Purging {len(toPurge)}: {toPurge}", {"STORAGE", "LINKS"})
+        for n in toPurge:
+            Links_storage.freeLinks(name)

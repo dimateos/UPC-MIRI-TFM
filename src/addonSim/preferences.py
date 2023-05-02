@@ -96,6 +96,29 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=True,
     )
 
+
+    #-------------------------------------------------------------------
+    # XXX:: fix storage problems callbacks?
+
+    from .mw_links import Links_storage
+    from .handlers import callback_undo_actions
+
+    def prefs_links_undoPurge_update(self, context):
+        if self.prefs_links_undoPurge:
+            MW_prefs.callback_undo_actions.append(MW_prefs.Links_storage.purgeLinks)
+            MW_prefs.Links_storage.purgeLinks()
+        else:
+            MW_prefs.callback_undo_actions.remove(MW_prefs.Links_storage.purgeLinks)
+
+    prefs_links_undoPurge: props.BoolProperty(
+        name="purge", description="Keep purging on undo",
+        default=False,
+        update=prefs_links_undoPurge_update,
+        #update= lambda self, context: MW_prefs.Links_storage.purgeLinks()
+    )
+    #callback_undo_actions.append(lambda scene: Links_storage.purgeLinks(scene))
+    #callback_undo_actions.append(Links_storage.purgeLinks)
+
     #-------------------------------------------------------------------
 
     util_delete_OT_unhideSelect: props.BoolProperty(
