@@ -12,6 +12,7 @@ bl_info = {
     "category": "Development",
 }
 
+from . import handlers
 from . import preferences
 from . import properties
 from . import operators
@@ -26,6 +27,7 @@ preferences.ADDON._bl_name = __name__
 # Blender events
 
 submodules = [
+    handlers,
     preferences,
     properties,
     operators,

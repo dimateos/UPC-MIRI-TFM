@@ -209,16 +209,32 @@ class MW_gen_links_OT(_StartRefresh_OT):
     # UNDO as part of bl_options will cancel any edit last operation pop up
     bl_options = {'INTERNAL', 'UNDO'}
 
+    def __init__(self) -> None:
+        super().__init__()
+        # config some base class log flags...
+        self.invoke_log = True
+
+        self._obj:types.Object = None
+        self._cfg:MW_gen_cfg = None
+
     @classmethod
     def poll(cls, context):
         # poll execute on ui draw, so only check if has root, dont extract it
         obj = context.active_object
         return (obj and MW_gen_cfg.hasRoot(obj))
 
+    # OPT:: query once only in more places? but then no poll disabled button in ui + no need for instance prop for this e.g. dm_deleteIndices
+    def invoke(self, context, event):
+        # query root only once
+        obj, cfg = MW_gen_cfg.getRoot(context.active_object)
+        self._obj = obj
+        self._cfg = cfg
+
+        return super().invoke(context, event)
+
     def execute(self, context: types.Context):
         self.start_op()
-        #prefs = getPrefs()
-        obj, cfg = MW_gen_cfg.getRoot(context.active_object)
+        obj, cfg = self._obj, self._cfg
 
         if not cfg.ptrID_links:
             return self.end_op_error("Incompleted fracture... (not checked in poll atm)")

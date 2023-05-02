@@ -407,7 +407,6 @@ class Util_deleteOrphanData_OT(_StartRefresh_OT):
     bl_idname = "dm.util_delete_meshes"
     bl_label = "Delete unused meshes"
     bl_description = "Misuse of the API may lead to orphan meshes"
-
     bl_options = {'INTERNAL'}
 
     def execute(self, context: types.Context):
