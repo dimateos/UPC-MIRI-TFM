@@ -24,12 +24,13 @@ class _StartRefresh_OT(types.Operator):
     bl_options = {'INTERNAL'}
     """ Op bl_options INTERNAL supposedly hides the operator from search"""
 
-    def __init__(self) -> None:
+    def __init__(self, init_log = False) -> None:
         """ Seems like is called before invoke """
         super().__init__()
         # to be configured per class / from outside before execution
         self.invoke_log         = False
         self.refresh_log        = False
+        self.init_log           = init_log
         self.start_resetStats   = True
         self.start_resetLog     = False
         self.start_logEmptyLine = True
@@ -38,6 +39,9 @@ class _StartRefresh_OT(types.Operator):
         self.end_logEmptyLine   = True
         self.end_log            = False
         self.end_logStats       = True
+
+        if self.init_log:
+            DEV.log_msg(f"init ({self.bl_idname})", {'OP_FLOW'})
 
     #-------------------------------------------------------------------
     # common flow

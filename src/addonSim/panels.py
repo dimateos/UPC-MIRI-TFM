@@ -72,7 +72,22 @@ class MW_gen_PT(types.Panel):
 
             ui.draw_propsToggle(cfg, prefs, "gen_PT_meta_show_summary", "gen_PT_meta_propFilter", "gen_PT_meta_propEdit", "get_PT_meta_propShowId", col)
 
-            col.operator(ops.MW_gen_links_OT.bl_idname)
+        open, box = ui.draw_toggleBox(prefs, "gen_PT_meta_show_tmpDebug", layout)
+        if open:
+            box.operator(ops.MW_gen_links_OT.bl_idname)
+
+            # links storage
+            boxLinks = box.box()
+            col = boxLinks.column()
+            links = Links_storage.bl_links
+            col.label(text=f"Storage links: {len(links)}", icon="FORCE_CURVE")
+            for k,l in links.items():
+                col.label(text=f"{k}: {len(l.link_map)} links {len(l.cont)} cells", icon="THREE_DOTS")
+
+            box.operator(ops.MW_util_delete_all_OT.bl_idname, text="DELETE all Fractures", icon="CANCEL")
+
+
+
 
 class MW_addon_PT(types.Panel):
     bl_idname = "MW_PT_addon"
@@ -97,14 +112,6 @@ class MW_addon_PT(types.Panel):
             col = box.column()
             # check region width
             DEV.draw_val(col, "context.region.width", context.region.width)
-
-            # links storage
-            boxLinks = box.box()
-            col = boxLinks.column()
-            links = Links_storage.bl_links
-            col.label(text=f"Storage links: {len(links)}", icon="FORCE_CURVE")
-            for k,l in links.items():
-                col.label(text=f"{k}: {len(l.link_map)} links {len(l.cont)} cells", icon="THREE_DOTS")
 
 
 #-------------------------------------------------------------------

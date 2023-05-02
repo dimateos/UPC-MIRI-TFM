@@ -143,11 +143,24 @@ class MW_gen_cfg(types.PropertyGroup):
         default=True,
     )
 
+
+    # OPT:: example of having a per instance previous value of a property
+    def struct_nameOriginal_update(self, context):
+        #if self.struct_nameOriginal_prev == self.struct_nameOriginal: return # prev val is also reset on undo tho
+        self.struct_nameOriginal_prev = self.struct_nameOriginal_prevRep
+        self.struct_nameOriginal_prevRep = self.struct_nameOriginal
+        DEV.log_msg(f"struct_nameOriginal: {self.struct_nameOriginal} - prev: {self.struct_nameOriginal_prev}", {"CALLBACK", "CFG", "UPDATE", "PREV"})
+    struct_nameOriginal: props.StringProperty(
+        update= struct_nameOriginal_update
+    )
+    struct_nameOriginal_prevRep: props.StringProperty()
+    struct_nameOriginal_prev: props.StringProperty()
+
     struct_namePrefix: props.StringProperty(
         name="Prefix",
         default="MW",
     )
-    struct_nameOriginal: props.StringProperty()
+
     def get_struct_name(self):
         return f"{self.struct_namePrefix}_{self.struct_nameOriginal}"
     def get_struct_nameNew(self, newName):

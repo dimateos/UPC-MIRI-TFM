@@ -33,13 +33,11 @@ class MW_gen_OT(_StartRefresh_OT):
     cfg: props.PointerProperty(type=MW_gen_cfg)
 
     def __init__(self) -> None:
-        super().__init__()
+        super().__init__(init_log=True)
         # config some base class log flags...
-        self.invoke_log = True
+        self.invoke_log  = True
         self.refresh_log = True
-        self.end_log = True
-
-        #self.cfg.init()
+        self.end_log     = True
 
     # NOTE:: no poll because the button is removed from ui isntead
 
@@ -50,6 +48,8 @@ class MW_gen_OT(_StartRefresh_OT):
     def invoke(self, context, event):
         # avoid last stored operation overide
         self.cfg.meta_type = {"NONE"}
+        # clean memory ptr leftovers
+        self.last_ptrID_links = ""
         return super().invoke(context, event)
 
     #-------------------------------------------------------------------
@@ -69,6 +69,8 @@ class MW_gen_OT(_StartRefresh_OT):
     def execute(self, context: types.Context):
         self.start_op()
         self.obj_root = None
+
+        # handle refresh
         cancel = self.checkRefresh_cancel()
         if cancel: return self.end_op_refresh(skipLog=True)
 
@@ -80,6 +82,10 @@ class MW_gen_OT(_StartRefresh_OT):
 
         # OPT:: avoid recursion with pointer to parent instead of search by name
         # IDEA:: decimate before/after convex, test perf?
+
+        # Free existing link memory
+        if self.last_ptrID_links:
+            Links_storage.freeLinks(self.last_ptrID_links)
 
         # Retrieve root
         obj, cfg = MW_gen_cfg.getRoot(context.active_object)
@@ -100,7 +106,8 @@ class MW_gen_OT(_StartRefresh_OT):
                 return self.execute_fresh(context, obj_root, obj_original)
 
         # catch exceptions to at least mark as child and copy props
-        except:
+        except Exception as e:
+            if not DEV.HANDLE_GLOBAL_EXCEPT: raise e
             return self.end_op_error("unhandled exception...")
 
         # NOTE:: no longer supporting edit fracture -> basically always replacing geometry hence being slower
@@ -181,7 +188,8 @@ class MW_gen_OT(_StartRefresh_OT):
         if not links.link_map:
             return self.end_op_error("found no links... but could try recalculate!")
 
-        cfg.ptrID_links = self.obj_root.name
+        # use links storage
+        self.last_ptrID_links = cfg.ptrID_links = obj_root.name
         Links_storage.addLinks(links, cfg.ptrID_links)
 
 
@@ -239,6 +247,8 @@ class MW_gen_links_OT(_StartRefresh_OT):
         if not cfg.ptrID_links:
             return self.end_op_error("Incompleted fracture... (not checked in poll atm)")
         links = Links_storage.getLinks(cfg.ptrID_links)
+        if not links:
+            return self.end_op_error("No links storage found...")
 
         obj_links, obj_links_toWall, obj_links_perCell = mw_setup.gen_linksEmpties(obj, cfg, context)
 
@@ -283,6 +293,17 @@ class MW_util_delete_OT(_StartRefresh_OT):
         utils.delete_objectRec(obj, logAmount=True)
         return self.end_op()
 
+# OPT:: maybe a global fracture map like for links?
+class MW_util_delete_all_OT(_StartRefresh_OT):
+    bl_idname = "mw.util_delete_all"
+    bl_label = "Delete all fracture objects"
+    bl_description = "Instead of Blender 'delete hierarchy' which seems to fail to delete all recusively..."
+
+    # UNDO as part of bl_options will cancel any edit last operation pop up
+    bl_options = {'INTERNAL', 'UNDO'}
+
+    def execute(self, context: types.Context):
+        return self.end_op_error("Not implemented...")
 
 #-------------------------------------------------------------------
 # Blender events
@@ -291,6 +312,7 @@ classes = [
     MW_gen_OT,
     MW_gen_links_OT,
     MW_util_delete_OT,
+    MW_util_delete_all_OT,
 ] + util_classes_op
 
 register, unregister = bpy.utils.register_classes_factory(classes)

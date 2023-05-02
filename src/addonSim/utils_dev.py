@@ -3,6 +3,7 @@
 
 class DEV:
     DEBUG = True
+    HANDLE_GLOBAL_EXCEPT = False
 
     LEGACY_CONT = False
     """ Checking some stats of legacy cont (could also do for the regular one) """
@@ -22,6 +23,7 @@ class DEV:
 
 #-------------------------------------------------------------------
 
+    # OPT:: use list instead of set to preserve type order
     @staticmethod
     def log_msg(msg, type = {'DEV'}, ui = None):
         """ Log to console if DEV.logs and type not filtered by DEV.logs_skipped """
@@ -32,6 +34,11 @@ class DEV:
         if ui: ui.report(type, msg)
         #ui.report({'INFO'}, "Operation successful!")
         #ui.report({'ERROR'}, "Operation failed!")
+
+        global log_msg_last
+        log_msg_last = msg,type
+
+    log_msg_last = "",{"NONE"}
 
     @staticmethod
     def draw_val(ui, msg, value):

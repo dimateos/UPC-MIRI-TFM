@@ -206,26 +206,30 @@ class Links():
 # OPT:: store links between objects -> add json parser to store persistently? or retrieve from recalculated cont?
 # OPT:: register some calback on object rename? free the map or remap
 # XXX:: this storage is lost on module reload tho
+# TODO:: free unused links on undo callback?
 class Links_storage:
     bl_links: dict[str, Links] = dict()
 
     @staticmethod
     def addLinks(links, uniqueName):
+        DEV.log_msg(f"Add: {uniqueName}...", {"STORAGE", "LINKS"})
         if uniqueName in Links_storage.bl_links:
-            DEV.log_msg(f"Replacing: {uniqueName}...", {"STORAGE", "LINKS"})
+            DEV.log_msg(f"Replacing found links", {"STORAGE", "LINKS", "ERROR"})
         Links_storage.bl_links[uniqueName] = links
 
     @staticmethod
     def getLinks(uniqueName):
+        DEV.log_msg(f"Get: {uniqueName}...", {"STORAGE", "LINKS"})
         try:
             return Links_storage.bl_links[uniqueName]
         except KeyError:
-            DEV.log_msg(f"Get: no {uniqueName}... probably reloaded the module?", {"STORAGE", "LINKS", "ERROR"})
+            DEV.log_msg(f"Not found: probably reloaded the module?", {"STORAGE", "LINKS", "ERROR"})
 
     @staticmethod
     def freeLinks(uniqueName):
+        DEV.log_msg(f"Del: {uniqueName}...", {"STORAGE", "LINKS"})
         try:
             links = Links_storage.bl_links.pop(uniqueName)
             del links
         except KeyError:
-            DEV.log_msg(f"Del: no {uniqueName}... probably reloaded the module?", {"STORAGE", "LINKS", "ERROR"})
+            DEV.log_msg(f"Not found: probably reloaded the module?", {"STORAGE", "LINKS", "ERROR"})
