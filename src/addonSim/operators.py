@@ -163,7 +163,7 @@ class MW_gen_OT(_StartRefresh_OT):
         # XXX:: voro++ has some static constant values that have to be edited in compile time...
         #e.g. max_wall_size, tolerance for vertices,
 
-        cont:Container = mw_calc.cont_fromPoints(points, bb, faces4D, precision=prefs.calc_precisionWalls)
+        cont:Container = mw_calc.cont_fromPoints(points, bb, faces4D, precision=prefs.gen_calc_precisionWalls)
         if not cont:
             return self.end_op_error("found no cont... but could try recalculate!")
 
@@ -174,7 +174,7 @@ class MW_gen_OT(_StartRefresh_OT):
         if DEV.LEGACY_CONT:
             mw_setup._gen_LEGACY_CONT(obj_shards, cont, cfg, context)
             return self.end_op("DEV.LEGACY_CONT stop...")
-        mw_setup.gen_shardsObjects(obj_shards, cont, cfg, context, invertOrientation=prefs.gen_invert_shardNormals)
+        mw_setup.gen_shardsObjects(obj_shards, cont, cfg, context, invertOrientation=prefs.gen_setup_invertShardNormals)
 
         # calculate links and store in the external storage
         links:Links = Links(cont, obj_shards)
@@ -227,7 +227,7 @@ class MW_gen_links_OT(_StartRefresh_OT):
         obj_links, obj_links_toWall, obj_links_perCell = mw_setup.gen_linksEmpties(obj, cfg, context)
 
         mw_setup.gen_linksCellObjects(obj_links_perCell, links.cont, cfg, context)
-        #mw_setup.gen_linksObjects(obj_links, obj_links_toWall, cfg.nbl_links, cfg, context)
+        mw_setup.gen_linksObjects(obj_links, obj_links_toWall, links, cfg, context)
 
         return self.end_op()
 

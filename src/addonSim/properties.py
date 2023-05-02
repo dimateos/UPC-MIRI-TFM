@@ -78,6 +78,8 @@ class MW_gen_cfg(types.PropertyGroup):
     #    #self.nbl_cont: Container = None
     #    #self.nbl_links: Links = None
 
+    #test_str: str = "test"
+    #test_strProp: props.StringProperty(default="testProp")
 
     #-------------------------------------------------------------------
 

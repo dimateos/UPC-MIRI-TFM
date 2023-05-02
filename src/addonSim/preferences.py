@@ -22,7 +22,7 @@ class MW_prefs(bpy.types.AddonPreferences):
     def draw(self, context):
         # Careful with circulare dependecies, maybe split the class with draw and props
         from .ui import draw_propsToggle
-        draw_propsToggle(self, self, "prefs_PT_meta_show_prefs", "prefs_PT_meta_propFilter", "prefs_PT_meta_propEdit", self.layout)
+        draw_propsToggle(self, self, "prefs_PT_meta_show_prefs", "prefs_PT_meta_propFilter", "prefs_PT_meta_propEdit", "prefs_PT_meta_propShowId", self.layout)
 
     # meta filter for addon prefs
     prefs_PT_meta_show_prefs: props.BoolProperty(
@@ -35,6 +35,10 @@ class MW_prefs(bpy.types.AddonPreferences):
     )
     prefs_PT_meta_propEdit: props.BoolProperty(
         name="edit", description="Edit the props",
+        default=True,
+    )
+    prefs_PT_meta_propShowId: props.BoolProperty(
+        name="id", description="Show property id or its name",
         default=True,
     )
 
@@ -58,6 +62,10 @@ class MW_prefs(bpy.types.AddonPreferences):
         name="edit", description="Edit the props",
         default=False,
     )
+    get_PT_meta_propShowId: props.BoolProperty(
+        name="id", description="Show property id or its name",
+        default=True,
+    )
 
     #gen_PT_meta_show_visuals: props.BoolProperty(
     #    name="Show visual toggle...", description="Toggle fracture elements ",
@@ -69,7 +77,7 @@ class MW_prefs(bpy.types.AddonPreferences):
     )
 
     #-------------------------------------------------------------------
-    # TODO:: what to store per object and what in prefs?
+    # TODO:: what to store per object and what in prefs? could be in object but edit from panel
 
     ## IDEA:: global rnd needed?
     #calc_defaultSeed: props.IntProperty(
@@ -77,13 +85,13 @@ class MW_prefs(bpy.types.AddonPreferences):
     #    default=64, min=-1,
     #)
 
-    calc_precisionWalls: props.IntProperty(
+    gen_calc_precisionWalls: props.IntProperty(
         # OPT:: read voro++ config from python? API/file system
         name="Wall precision", description="Number of decimals used to round and cluster wall planes",
         default=4, min=0, max=10,
     )
 
-    gen_invert_shardNormals: props.BoolProperty(
+    gen_setup_invertShardNormals: props.BoolProperty(
         name="Invert final shards face normals", description="Seems like they end up reversed due to voro face ordering.",
         default=True,
     )

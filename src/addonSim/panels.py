@@ -9,6 +9,8 @@ from .properties import (
 from . import operators as ops
 from .panels_utils import util_classes_pt
 
+from .mw_links import Links_storage
+
 from . import ui
 from .utils_dev import DEV
 
@@ -68,7 +70,7 @@ class MW_gen_PT(types.Panel):
             prefs = getPrefs()
             col_rowSplit.prop(prefs, "util_delete_OT_unhideSelect")
 
-            ui.draw_propsToggle(cfg, prefs, "gen_PT_meta_show_summary", "gen_PT_meta_propFilter", "gen_PT_meta_propEdit", col)
+            ui.draw_propsToggle(cfg, prefs, "gen_PT_meta_show_summary", "gen_PT_meta_propFilter", "gen_PT_meta_propEdit", "get_PT_meta_propShowId", col)
 
             col.operator(ops.MW_gen_links_OT.bl_idname)
 
@@ -88,13 +90,21 @@ class MW_addon_PT(types.Panel):
         layout = self.layout
         col = layout.column()
 
-        ui.draw_propsToggle(prefs, prefs, "prefs_PT_meta_show_prefs", "prefs_PT_meta_propFilter", "prefs_PT_meta_propEdit", col)
+        ui.draw_propsToggle(prefs, prefs, "prefs_PT_meta_show_prefs", "prefs_PT_meta_propFilter", "prefs_PT_meta_propEdit", "get_PT_meta_propShowId", col)
 
         open, box = ui.draw_toggleBox(prefs, "prefs_PT_meta_show_tmpDebug", layout)
         if open:
             col = box.column()
             # check region width
             DEV.draw_val(col, "context.region.width", context.region.width)
+
+            # links storage
+            boxLinks = box.box()
+            col = boxLinks.column()
+            links = Links_storage.bl_links
+            col.label(text=f"Storage links: {len(links)}", icon="FORCE_CURVE")
+            for k,l in links.items():
+                col.label(text=f"{k}: {len(l.link_map)} links {len(l.cont)} cells", icon="THREE_DOTS")
 
 
 #-------------------------------------------------------------------

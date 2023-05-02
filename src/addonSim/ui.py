@@ -1,6 +1,7 @@
 import bpy
 import bpy.types as types
 
+from .preferences import getPrefs
 from .properties import (
     MW_gen_cfg,
 )
@@ -23,26 +24,31 @@ def draw_toggleBox(metadata, propToggle_name:str, layout: types.UILayout, text="
         box.prop(metadata, propToggle_name, toggle=True, icon=icon)
     return open, box
 
-def draw_props(data, propFilter:str, layout: types.UILayout):
+def draw_props(data, propFilter:str, layout: types.UILayout, showId=False):
     """ Draw all properties of an object in a sub layout. """
     # get the props filtered without the non prop ones
     prop_names = getProps_namesFiltered(data, propFilter, exc_nonBlProp=True)
 
     # all should be bl props
     for prop_name in prop_names:
-        layout.row().prop(data, prop_name, text=prop_name)
+        if showId: layout.row().prop(data, prop_name, text=prop_name)
+        else: layout.row().prop(data, prop_name)
 
-def draw_propsToggle(data, metadata, propToggle_name:str, propFilter_name:str, propEdit_name:str, layout: types.UILayout):
+def draw_propsToggle(data, metadata, propToggle_name:str, propFilter_name:str, propEdit_name:str, propShowId_name:str, layout: types.UILayout):
     """ Draw all properties of an object under a toggleable layout. """
     open, box = draw_toggleBox(metadata, propToggle_name, layout)
     if open:
-        split = box.split(factor=0.75)
-        split.prop(metadata, propFilter_name)
+        split = box.split(factor=0.6)
+        split.scale_y = 0.8
+        split.prop(metadata, propFilter_name, text="")
         split.prop(metadata, propEdit_name)
+        split.prop(metadata, propShowId_name)
+
         col = box.column()
         col.enabled = getattr(metadata, propEdit_name)
         propFilter = getattr(metadata, propFilter_name)
-        draw_props(data, propFilter, col)
+        showId = getattr(metadata, propShowId_name)
+        draw_props(data, propFilter, col, showId)
 
 #-------------------------------------------------------------------
 
@@ -106,6 +112,15 @@ def draw_gen_cfg(cfg: MW_gen_cfg, layout: types.UILayout, context: types.Context
     rowsub.prop(cfg, "links_res")
 
     draw_gen_cfgDebug(cfg, layout)
+
+    box = layout.box()
+    col = box.column()
+    col.label(text="Prefs:  (edit in addon panel)")
+    prefs = getPrefs()
+    col.enabled = False
+    col.prop(prefs, "gen_calc_precisionWalls")
+    col.prop(prefs, "gen_setup_invertShardNormals")
+
 
 def draw_gen_cfgDebug(cfg: MW_gen_cfg, layout: types.UILayout):
     # OPT:: not all debug etc... sensible ui in the end
