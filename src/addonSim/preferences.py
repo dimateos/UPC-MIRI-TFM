@@ -5,10 +5,13 @@ import bpy.props as props
 from . import handlers
 from .mw_links import Links_storage
 
+from .utils_dev import DEV
+
 # Access from other modules to constants
 class ADDON:
     _bl_info = None
     _bl_name = None
+    _bl_loaded = False
     mod_name = __name__
     mod_name_prefs = mod_name.split(".")[0]
 
@@ -108,15 +111,14 @@ class MW_prefs(bpy.types.AddonPreferences):
 
     def prefs_links_undoPurge_update(self, context):
         if self.prefs_links_undoPurge:
-            handlers.callback_undo_actions.append(Links_storage.purgeLinks_callback)
+            handlers.callback_undo_actions.appendCheck(Links_storage.purgeLinks_callback)
             Links_storage.purgeLinks()
         else:
             handlers.callback_undo_actions.remove(Links_storage.purgeLinks_callback)
 
-    prefs_links_undoPurge_default = False
     prefs_links_undoPurge: props.BoolProperty(
         name="purge", description="Keep purging on undo",
-        default=prefs_links_undoPurge_default,
+        default=False,
         update=prefs_links_undoPurge_update,
         #update= lambda self, context: MW_prefs.Links_storage.purgeLinks()
     )
@@ -203,21 +205,28 @@ class MW_prefs(bpy.types.AddonPreferences):
 classes = [
     MW_prefs,
 ]
+_name = f"{__name__[14:]}" #\t(...{__file__[-32:]})"
 
 def register():
+    DEV.log_msg(f"{_name}", {"ADDON", "INIT", "REG"})
+
     # Class declaration cannot be dynamic, so could assert afterwards
     #assert(MW_prefs.bl_idname == ADDON._bl_info["name"])
     assert(MW_prefs.bl_idname == ADDON._bl_name)
 
-    # sync with default state?
-    if MW_prefs.prefs_links_undoPurge_default:
-        handlers.callback_undo_actions.append(Links_storage.purgeLinks_callback)
+    # NOTE:: sync with default state? cannot add static attrs to the addonprefs?
+    handlers.callback_undo_actions.appendCheck(Links_storage.purgeLinks_callback)
 
     for cls in classes:
         bpy.utils.register_class(cls)
 
 def unregister():
+    DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})
+
+    # might end up set or not -> could access prefs and check
     handlers.callback_undo_actions.removeCheck(Links_storage.purgeLinks_callback)
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
+
+DEV.log_msg(f"{_name}", {"ADDON", "PARSED"})

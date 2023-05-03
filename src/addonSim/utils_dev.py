@@ -4,15 +4,18 @@
 class DEV:
     DEBUG = True
     HANDLE_GLOBAL_EXCEPT = False
+    CALLBACK_REGISTER_ALL = False
 
     LEGACY_CONT = False
     """ Checking some stats of legacy cont (could also do for the regular one) """
 
     # IDEA:: some access from UI to toggle dynamically?
+    # IDEA:: better list of sets to use combinations
     logs = True
     logs_skipped = {
-        'NONE',
+        'NONE', #except when empty, parsed as dict?
         'UPDATE',
+        'INIT', "PARSED"
         #'OP_FLOW',
         #'CALLBACK',
     }

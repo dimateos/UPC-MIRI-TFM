@@ -71,6 +71,7 @@ class MW_gen_cfg(types.PropertyGroup):
     #-------------------------------------------------------------------
     #callbacks
 
+    # OPT:: unset on reload, could have a flag and let the panel update it -> cannot be done from addon register
     selectedRoot_currentCFG = None
     selectedRoot_currentOBJ = None
 
@@ -280,8 +281,11 @@ classes = [
     #MW_sim_cfg,
     #MW_vis_cfg,
 ]
+_name = f"{__name__[14:]}" #\t(...{__file__[-32:]})"
 
 def register():
+    DEV.log_msg(f"{_name}", {"ADDON", "INIT", "REG"})
+
     handlers.callback_selectionChange_actions.append(MW_gen_cfg.setSelectedRoot_callback)
 
     for cls in classes:
@@ -302,8 +306,11 @@ def register():
     #    name="MW_Visualization", description="MW visualization properties")
 
 def unregister():
+    DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})
+
     handlers.callback_selectionChange_actions.remove(MW_gen_cfg.setSelectedRoot_callback)
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 
+DEV.log_msg(f"{_name}", {"ADDON", "PARSED"})

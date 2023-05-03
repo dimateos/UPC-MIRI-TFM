@@ -18,7 +18,7 @@ from . import properties
 from . import operators
 from . import panels
 
-
+from .utils_dev import DEV
 preferences.ADDON._bl_info = bl_info.copy()
 preferences.ADDON._bl_name = __name__
 
@@ -33,13 +33,22 @@ submodules = [
     operators,
     panels,
 ]
+_name = f"{__name__} \t(...{__file__[-50:]})"
 
 def register():
+    DEV.log_msg(f"{_name}", {"ADDON", "INIT", "REG"})
     for m in submodules:
         m.register()
+    DEV.log_msg(f"{_name}... complete", {"ADDON", "COMPLETE", "REG"})
 
 def unregister():
-    for m in submodules[::-1]:
+    print("\n\n")
+    DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})
+    for m in reversed(submodules):
         m.unregister()
+    DEV.log_msg(f"{_name}... complete", {"ADDON", "COMPLETE", "UN-REG"})
+
 
 loaded = True
+preferences.ADDON._bl_loaded = True
+DEV.log_msg(f"{_name}", {"ADDON", "PARSED"})

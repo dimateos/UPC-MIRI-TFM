@@ -92,6 +92,7 @@ class MW_gen_PT(types.Panel):
 
 
 
+
 class MW_addon_PT(types.Panel):
     bl_idname = "MW_PT_addon"
 

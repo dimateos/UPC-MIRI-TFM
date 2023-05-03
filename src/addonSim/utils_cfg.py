@@ -1,5 +1,6 @@
 # Avoiding circular imports around properties and preferences management
 #-------------------------------------------------------------------
+# IDEA:: rename to utils attrs or something
 
 class CONST_CFG:
     filter_readOnly = [
@@ -28,7 +29,7 @@ def getProps_names(data):
         props_names.append(prop_name)
     return props_names
 
-def getProps_namesFiltered(data, propFilter:str, exc_nonBlProp=False):
+def getProps_namesFiltered(data, propFilter:str=None, exc_nonBlProp=False):
     """ Get all properties names filtered """
     # build dynamic filter prop
     prop_names = getProps_names(data)

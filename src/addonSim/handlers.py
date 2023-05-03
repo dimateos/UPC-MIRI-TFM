@@ -1,7 +1,10 @@
 import bpy
 from bpy.app.handlers import persistent
 
+from . import utils_cfg
 from .utils_dev import DEV
+
+# IDEA:: probably save_post to store some json for some sim
 
 # OPT:: probably lists are unloaded on new files? @persistent is only for functions
 #-------------------------------------------------------------------
@@ -17,10 +20,25 @@ class Actions(list):
         try: self.remove(c)
         except ValueError: DEV.log_msg(f"Remove: {c} not found", {"CALLBACK", "ACTIONS", "ERROR"})
 
+def registerAllHandlers():
+    """ Check whenever they are called etc"""
+    handler_names = utils_cfg.getProps_namesFiltered(bpy.app.handlers, "-n_")
+    DEV.log_msg(f"Registering {len(handler_names)}: {handler_names}", {"CALLBACK", "TEST-HANDLERS", "DEV"})
+
+    for hn in handler_names:
+        f = lambda scene: DEV.log_msg(f"handler: {hn}", {"CALLBACK", "TEST-HANDLERS", "DEV"})
+        getattr(bpy.app.handlers, hn).append(f)
+
+def unregisterAllHandlers():
+    handler_names = utils_cfg.getProps_namesFiltered(bpy.app.handlers, "-n_")
+    DEV.log_msg(f"Unregistering {len(handler_names)}: {handler_names}", {"CALLBACK", "TEST-HANDLERS", "DEV"})
+    for hn in handler_names: getattr(bpy.app.handlers, hn).clear()
+
+
 #-------------------------------------------------------------------
 
 @persistent
-def callback_updatePost(scene):
+def callback_updatePost(scene=None):
     """ Called AFTER each scene update """
     DEV.log_msg(f"callback_updatePost: depsgraph_update_post", {"CALLBACK", "UPDATE"})
 
@@ -50,7 +68,7 @@ callback_selectionChange_prev_valid = []
 #-------------------------------------------------------------------
 
 @persistent
-def callback_undo(scene):
+def callback_undo(scene=None):
     """ Undo called, including all the time in the edit last op panel """
     # Seems like there is no way to read info about the stack from python...
     last_op = bpy.ops.ed.undo_history()
@@ -65,11 +83,20 @@ callback_undo_actions = Actions()
 
 #-------------------------------------------------------------------
 # Blender events
+_name = f"{__name__[14:]}" #\t(...{__file__[-32:]})"
 
 def register():
+    DEV.log_msg(f"{_name}", {"ADDON", "INIT", "REG"})
+    if DEV.CALLBACK_REGISTER_ALL: registerAllHandlers()
+
     bpy.app.handlers.depsgraph_update_post.append(callback_updatePost)
     bpy.app.handlers.undo_post.append(callback_undo)
 
 def unregister():
+    DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})
+
     bpy.app.handlers.depsgraph_update_post.remove(callback_updatePost)
     bpy.app.handlers.undo_post.remove(callback_undo)
+
+    if DEV.CALLBACK_REGISTER_ALL: unregisterAllHandlers()
+    DEV.log_msg(f"{_name}", {"ADDON", "PARSED"})
