@@ -2,6 +2,8 @@ import bpy
 import bpy.types as types
 import bpy.props as props
 
+from .mw_links import Links_storage
+from .handlers import callback_undo_actions
 
 # Access from other modules to constants
 class ADDON:
@@ -104,25 +106,20 @@ class MW_prefs(bpy.types.AddonPreferences):
     #-------------------------------------------------------------------
     # XXX:: fix storage problems callbacks?
 
-    from .mw_links import Links_storage
-    from .handlers import callback_undo_actions
-
     def prefs_links_undoPurge_update(self, context):
         if self.prefs_links_undoPurge:
-            MW_prefs.callback_undo_actions.append(MW_prefs.Links_storage.purgeLinks)
-            MW_prefs.Links_storage.purgeLinks()
+            callback_undo_actions.append(Links_storage.purgeLinks_callback)
+            Links_storage.purgeLinks()
         else:
-            MW_prefs.callback_undo_actions.remove(MW_prefs.Links_storage.purgeLinks)
+            callback_undo_actions.remove(Links_storage.purgeLinks_callback)
 
+    prefs_links_undoPurge_default = False
     prefs_links_undoPurge: props.BoolProperty(
         name="purge", description="Keep purging on undo",
-        default=False,
+        default=prefs_links_undoPurge_default,
         update=prefs_links_undoPurge_update,
         #update= lambda self, context: MW_prefs.Links_storage.purgeLinks()
     )
-    #callback_undo_actions.append(lambda scene: Links_storage.purgeLinks(scene))
-    #callback_undo_actions.append(Links_storage.purgeLinks)
-
 
     #-------------------------------------------------------------------
 
@@ -212,9 +209,15 @@ def register():
     #assert(MW_prefs.bl_idname == ADDON._bl_info["name"])
     assert(MW_prefs.bl_idname == ADDON._bl_name)
 
+    # sync with default state?
+    if MW_prefs.prefs_links_undoPurge_default:
+        callback_undo_actions.append(Links_storage.purgeLinks_callback)
+
     for cls in classes:
         bpy.utils.register_class(cls)
 
 def unregister():
+    callback_undo_actions.removeCheck(Links_storage.purgeLinks_callback)
+
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

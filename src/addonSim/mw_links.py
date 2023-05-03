@@ -238,7 +238,7 @@ class Links_storage:
             DEV.log_msg(f"Not found: probably reloaded the module?", {"STORAGE", "LINKS", "ERROR"})
 
     @staticmethod
-    def purgeLinks(_scene=None):
+    def purgeLinks():
         toPurge = []
         for name,obj in Links_storage.bl_links_users.items():
             try:
@@ -249,3 +249,7 @@ class Links_storage:
         DEV.log_msg(f"Purging {len(toPurge)}: {toPurge}", {"STORAGE", "LINKS"})
         for n in toPurge:
             Links_storage.freeLinks(name)
+
+    @staticmethod
+    def purgeLinks_callback(_scene_=None, _undo_=None):
+        Links_storage.purgeLinks()

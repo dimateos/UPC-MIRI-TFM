@@ -10,9 +10,10 @@ class DEV:
 
     # IDEA:: some access from UI to toggle dynamically?
     logs = True
-    logs_skipped = [
-        #{'OP_FLOW'}
-    ]
+    logs_skipped = {
+        #'OP_FLOW'
+        'CALLBACK'
+    }
     ui_vals = True
 
     # IDEA:: profiling levels instead of just bool, or stats log uisng log_msg with tags
@@ -28,7 +29,7 @@ class DEV:
     def log_msg(msg, type = {'DEV'}, ui = None):
         """ Log to console if DEV.logs and type not filtered by DEV.logs_skipped """
         if not DEV.logs: return
-        if type in DEV.logs_skipped: return
+        if type & DEV.logs_skipped: return
 
         print(type, msg)
         if ui: ui.report(type, msg)

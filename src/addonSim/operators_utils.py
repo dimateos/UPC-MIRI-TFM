@@ -282,7 +282,7 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
         # optional grayscale common color mat
         gray3 = utils_render.COLORS.white * self.color_gray
         if self.color_useGray:
-            mat_gray = utils_render.get_colorMat(gray3, self.color_alpha)
+            mat_gray = utils_render.get_colorMat(gray3, self.color_alpha, "spawnIndices_shared")
 
         # IDEA:: add more info as suffix + rename after delete so no .001 + also applied to some setup
 
@@ -292,7 +292,7 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
             if self.mesh_useShape:
                 mesh = utils_render.SHAPES.get_octahedron(f"{self.namePrefix}.vert")
                 if self.color_useGray: mat = mat_gray
-                else: mat = utils_render.get_colorMat(utils_render.COLORS.red+gray3, self.color_alpha)
+                else: mat = utils_render.get_colorMat(utils_render.COLORS.red+gray3, self.color_alpha, "spawnIndices_VERT")
             else:
                 mesh= None
                 mat = None
@@ -322,7 +322,7 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
             if self.mesh_useShape:
                 mesh = utils_render.SHAPES.get_cuboid(f"{self.namePrefix}.edge")
                 if self.color_useGray: mat = mat_gray
-                else: mat = utils_render.get_colorMat(utils_render.COLORS.green+gray3, self.color_alpha)
+                else: mat = utils_render.get_colorMat(utils_render.COLORS.green+gray3, self.color_alpha, "spawnIndices_EDGE")
             else:
                 mesh= None
                 mat = None
@@ -352,7 +352,7 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
             if self.mesh_useShape:
                 mesh = utils_render.SHAPES.get_tetrahedron(f"{self.namePrefix}.face")
                 if self.color_useGray: mat = mat_gray
-                else: mat = utils_render.get_colorMat(utils_render.COLORS.blue+gray3, self.color_alpha)
+                else: mat = utils_render.get_colorMat(utils_render.COLORS.blue+gray3, self.color_alpha, "spawnIndices_FACE")
             else:
                 mesh= None
                 mat = None
