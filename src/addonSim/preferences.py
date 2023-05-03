@@ -2,8 +2,8 @@ import bpy
 import bpy.types as types
 import bpy.props as props
 
+from . import handlers
 from .mw_links import Links_storage
-from .handlers import callback_undo_actions
 
 # Access from other modules to constants
 class ADDON:
@@ -108,10 +108,10 @@ class MW_prefs(bpy.types.AddonPreferences):
 
     def prefs_links_undoPurge_update(self, context):
         if self.prefs_links_undoPurge:
-            callback_undo_actions.append(Links_storage.purgeLinks_callback)
+            handlers.callback_undo_actions.append(Links_storage.purgeLinks_callback)
             Links_storage.purgeLinks()
         else:
-            callback_undo_actions.remove(Links_storage.purgeLinks_callback)
+            handlers.callback_undo_actions.remove(Links_storage.purgeLinks_callback)
 
     prefs_links_undoPurge_default = False
     prefs_links_undoPurge: props.BoolProperty(
@@ -211,13 +211,13 @@ def register():
 
     # sync with default state?
     if MW_prefs.prefs_links_undoPurge_default:
-        callback_undo_actions.append(Links_storage.purgeLinks_callback)
+        handlers.callback_undo_actions.append(Links_storage.purgeLinks_callback)
 
     for cls in classes:
         bpy.utils.register_class(cls)
 
 def unregister():
-    callback_undo_actions.removeCheck(Links_storage.purgeLinks_callback)
+    handlers.callback_undo_actions.removeCheck(Links_storage.purgeLinks_callback)
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

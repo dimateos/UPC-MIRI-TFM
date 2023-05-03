@@ -59,7 +59,7 @@ class MW_gen_OT(_StartRefresh_OT):
     # IDEA:: GEN: support for non meshes (e.g. curves)
     # IDEA:: GEN: disabled pencil too, should check points are close enugh/inside
     # IDEA:: GEN: atm only a single selected object + spawning direclty on the scene collection
-    # IDEA:: GEN: recursiveness of shards?
+    # IDEA:: GEN: recursiveness of shards? at least fracture existing fract obj instead of root -> bake button?
     # NOTE:: GEN: avoid convex hull from voro++ -> break in convex pieces, or test cells uniformly distrib? aprox or exact?
     # OPT:: RENDER: interior handle for materials
 
@@ -69,6 +69,7 @@ class MW_gen_OT(_StartRefresh_OT):
     def execute(self, context: types.Context):
         self.start_op()
         self.obj_root = None
+        self.ctx = context
 
         # handle refresh
         cancel = self.checkRefresh_cancel()
@@ -97,14 +98,15 @@ class MW_gen_OT(_StartRefresh_OT):
             if not cfg:
                 DEV.log_msg("cfg NOT found: new frac", {'SETUP'})
                 obj_root, obj_original = mw_setup.copy_original(obj, self.cfg, context)
-                return self.execute_fresh(context, obj_root, obj_original)
+                return self.execute_fresh(obj_root, obj_original)
 
+            # TODO:: props cannot be edited atm -> use old trick
             # fracture the same original object, copy props for a duplicate result
             else:
                 DEV.log_msg("cfg found: duplicating frac", {'SETUP'})
                 copyProps(cfg, self.cfg)
                 obj_root, obj_original = mw_setup.copy_originalPrev(obj, self.cfg, context)
-                return self.execute_fresh(context, obj_root, obj_original)
+                return self.execute_fresh(obj_root, obj_original)
 
         # catch exceptions to at least mark as child and copy props
         except Exception as e:
@@ -126,7 +128,7 @@ class MW_gen_OT(_StartRefresh_OT):
         #        return self.execute_edit(context, obj)
 
 
-    def execute_fresh(self, context: types.Context, obj_root:types.Object, obj_original:types.Object ):
+    def execute_fresh(self, obj_root:types.Object, obj_original:types.Object ):
         self.obj_root = obj_root
         cfg: MW_gen_cfg = self.cfg
         cfg.rnd_seed = utils.rnd_seed(cfg.rnd_seed)
@@ -136,15 +138,17 @@ class MW_gen_OT(_StartRefresh_OT):
         DEV.log_msg("Initial object setup", {'SETUP'})
         # TODO:: convex hull triangulates the faces... e.g. UV sphere ends with more!
         if cfg.shape_useConvexHull:
-            obj_toFrac = mw_setup.copy_convex(obj_root, obj_original, cfg, context)
+            obj_toFrac = mw_setup.copy_convex(obj_root, obj_original, cfg, self.ctx)
         else: obj_toFrac = obj_original
 
-
+        # TODO:: visual panel impro
+        # TODO:: scale shards to see links better + add material random color with alpha + ui callback?
+        # this callbacks to shard maps seem to need a global map access -> links.cont / links.objs? check non valid root
 
         DEV.log_msg("Start calc points", {'CALC'})
         # Get the points and transform to local space when needed
-        mw_calc.detect_points_from_object(obj_original, cfg, context)
-        points = mw_calc.get_points_from_object_fallback(obj_original, cfg, context)
+        mw_calc.detect_points_from_object(obj_original, cfg, self.ctx)
+        points = mw_calc.get_points_from_object_fallback(obj_original, cfg, self.ctx)
         if not points:
             return self.end_op_error("found no points...")
 
@@ -161,8 +165,8 @@ class MW_gen_OT(_StartRefresh_OT):
         mw_calc.points_transformCfg(points, cfg, bb_radius)
 
         # Add some reference of the points to the scene
-        mw_setup.gen_pointsObject(obj_root, points, self.cfg, context)
-        mw_setup.gen_boundsObject(obj_root, bb, self.cfg, context)
+        mw_setup.gen_pointsObject(obj_root, points, self.cfg, self.ctx)
+        mw_setup.gen_boundsObject(obj_root, bb, self.cfg, self.ctx)
 
 
 
@@ -177,13 +181,13 @@ class MW_gen_OT(_StartRefresh_OT):
             return self.end_op_error("found no cont... but could try recalculate!")
 
         # shards are always added to the scene
-        obj_shards = mw_setup.gen_shardsEmpty(obj_root, cfg, context)
+        obj_shards = mw_setup.gen_shardsEmpty(obj_root, cfg, self.ctx)
 
         #test some legacy or statistics cont stuff
         if DEV.LEGACY_CONT:
-            mw_setup._gen_LEGACY_CONT(obj_shards, cont, cfg, context)
+            mw_setup.gen_LEGACY_CONT(obj_shards, cont, cfg, self.ctx)
             return self.end_op("DEV.LEGACY_CONT stop...")
-        mw_setup.gen_shardsObjects(obj_shards, cont, cfg, context, invertOrientation=prefs.gen_setup_invertShardNormals)
+        mw_setup.gen_shardsObjects(obj_shards, cont, cfg, self.ctx, invertOrientation=prefs.gen_setup_invertShardNormals)
 
         # calculate links and store in the external storage
         links:Links = Links(cont, obj_shards)
@@ -201,6 +205,8 @@ class MW_gen_OT(_StartRefresh_OT):
         """ Override end_op to perform stuff at the end """
 
         if self.obj_root:
+            utils.select_unhide(self.obj_root, self.ctx)
+
             # copy any cfg that may have changed during execute
             self.cfg.name = self.obj_root.name
             copyProps(self.cfg, self.obj_root.mw_gen)

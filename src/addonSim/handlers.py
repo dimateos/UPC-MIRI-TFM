@@ -15,7 +15,7 @@ class Actions(list):
 
     def removeCheck(self, c):
         try: self.remove(c)
-        except IndexError: DEV.log_msg(f"Remove: {c} not found", {"CALLBACK", "ACTIONS", "ERROR"})
+        except ValueError: DEV.log_msg(f"Remove: {c} not found", {"CALLBACK", "ACTIONS", "ERROR"})
 
 #-------------------------------------------------------------------
 
@@ -27,8 +27,15 @@ def callback_updatePost(scene):
     # check change in selection
     global callback_selectionChange_current
     if bpy.context.selected_objects != callback_selectionChange_current:
+        # support prev selections check?
+        global callback_selectionChange_prev, callback_selectionChange_prev_valid
+        callback_selectionChange_prev = callback_selectionChange_current
+        if callback_selectionChange_current: callback_selectionChange_prev_valid = callback_selectionChange_current
+
         callback_selectionChange_current = bpy.context.selected_objects
-        DEV.log_msg(f"Selection change: {callback_selectionChange_current}", {"CALLBACK", "SELECTION"})
+        activeName = bpy.context.active_object.name if bpy.context.active_object else "None"
+        selectedNames = [ s.name for s in callback_selectionChange_current ]
+        DEV.log_msg(f"Selection change: (active: {activeName}) \t{selectedNames}", {"CALLBACK", "SELECTION"})
 
         global callback_selectionChange_actions
         for c in callback_selectionChange_actions: c(scene, callback_selectionChange_current)
@@ -36,6 +43,8 @@ def callback_updatePost(scene):
 callback_selectionChange_actions = Actions()
 """ Function actions to be called on selection change: c(scene, last_op) """
 callback_selectionChange_current = []
+callback_selectionChange_prev = []
+callback_selectionChange_prev_valid = []
 #callback_updatePost_action = list()
 
 #-------------------------------------------------------------------

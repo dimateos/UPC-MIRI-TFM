@@ -11,8 +11,10 @@ class DEV:
     # IDEA:: some access from UI to toggle dynamically?
     logs = True
     logs_skipped = {
-        #'OP_FLOW'
-        'CALLBACK'
+        'NONE',
+        'UPDATE',
+        #'OP_FLOW',
+        #'CALLBACK',
     }
     ui_vals = True
 
@@ -26,18 +28,18 @@ class DEV:
 
     # OPT:: use list instead of set to preserve type order
     @staticmethod
-    def log_msg(msg, type = {'DEV'}, ui = None):
+    def log_msg(msg, msgType = {'DEV'}, ui = None):
         """ Log to console if DEV.logs and type not filtered by DEV.logs_skipped """
         if not DEV.logs: return
-        if type & DEV.logs_skipped: return
+        if msgType & DEV.logs_skipped: return
 
-        print(type, msg)
-        if ui: ui.report(type, msg)
+        print(msgType, msg)
+        if ui: ui.report(msgType, msg)
         #ui.report({'INFO'}, "Operation successful!")
         #ui.report({'ERROR'}, "Operation failed!")
 
         global log_msg_last
-        log_msg_last = msg,type
+        log_msg_last = msg,msgType
 
     log_msg_last = "",{"NONE"}
 

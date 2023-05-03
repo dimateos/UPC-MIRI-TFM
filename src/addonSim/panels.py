@@ -52,19 +52,16 @@ class MW_gen_PT(types.Panel):
 
     def draw_onSelected(self, context, layout):
         prefs = getPrefs()
+        obj, cfg = MW_gen_cfg.getSelectedRoot()
         col = layout.column()
-        obj = context.active_object
 
         # Something selected, not last active
-        if not context.selected_objects:
+        if not obj:
             col.label(text="No object selected...", icon="ERROR")
-            return
-        if not context.active_object:
-            col.label(text="Selected but removed active?", icon="ERROR")
             return
 
         # No fracture selected
-        if not MW_gen_cfg.hasRoot(obj):
+        if not cfg:
             col.label(text="Selected: " + obj.name_full, icon="INFO")
 
             # Check that it is a mesh
@@ -79,7 +76,6 @@ class MW_gen_PT(types.Panel):
 
         # Edit/info of selected
         else:
-            obj, cfg = MW_gen_cfg.getRoot(obj)
             col = layout.column()
             col.label(text="Root: " + obj.name_full, icon="INFO")
 

@@ -2,6 +2,8 @@ import bpy
 import bpy.types as types
 import bpy.props as props
 
+from . import handlers
+
 from .utils_dev import DEV
 
 
@@ -65,6 +67,30 @@ class MW_gen_cfg(types.PropertyGroup):
         #DEV.log_msg(f"Setting {type} to {len(toSet)} objects", {"CFG"})
         for child in toSet:
             child.mw_gen.meta_type = type.copy()
+
+    #-------------------------------------------------------------------
+    #callbacks
+
+    selectedRoot_currentCFG = None
+    selectedRoot_currentOBJ = None
+
+    @staticmethod
+    def hasSelectedRoot() -> bool:
+        return MW_gen_cfg.selectedRoot_currentCFG and MW_gen_cfg.selectedRoot_currentOBJ
+
+    @staticmethod
+    def getSelectedRoot() -> tuple[types.Object, "MW_gen_cfg"]:
+        return MW_gen_cfg.selectedRoot_currentCFG, MW_gen_cfg.selectedRoot_currentOBJ
+
+    @staticmethod
+    def setSelectedRoot(selected):
+        # OPT:: multi-selection / root?
+        if selected: MW_gen_cfg.selectedRoot_currentCFG, MW_gen_cfg.selectedRoot_currentOBJ = MW_gen_cfg.getRoot(selected[-1])
+        else: MW_gen_cfg.selectedRoot_currentCFG, MW_gen_cfg.selectedRoot_currentOBJ = None,None
+
+    @staticmethod
+    def setSelectedRoot_callback(_scene_=None, _selected_=None):
+        MW_gen_cfg.setSelectedRoot(_selected_)
 
     #-------------------------------------------------------------------
 
@@ -149,7 +175,7 @@ class MW_gen_cfg(types.PropertyGroup):
         #if self.struct_nameOriginal_prev == self.struct_nameOriginal: return # prev val is also reset on undo tho
         self.struct_nameOriginal_prev = self.struct_nameOriginal_prevRep
         self.struct_nameOriginal_prevRep = self.struct_nameOriginal
-        DEV.log_msg(f"struct_nameOriginal: {self.struct_nameOriginal} - prev: {self.struct_nameOriginal_prev}", {"CALLBACK", "CFG", "UPDATE", "PREV"})
+        DEV.log_msg(f"struct_nameOriginal: {self.struct_nameOriginal} - prev: {self.struct_nameOriginal_prev}", {"CALLBACK", "CFG", "PREV"})
     struct_nameOriginal: props.StringProperty(
         update= struct_nameOriginal_update
     )
@@ -256,9 +282,12 @@ classes = [
 ]
 
 def register():
+    handlers.callback_selectionChange_actions.append(MW_gen_cfg.setSelectedRoot_callback)
+
     for cls in classes:
         bpy.utils.register_class(cls)
 
+    # appear as part of default object props
     bpy.types.Object.mw_gen = props.PointerProperty(
         type=MW_gen_cfg,
         name="MW_Generation", description="MW generation properties")
@@ -273,6 +302,8 @@ def register():
     #    name="MW_Visualization", description="MW visualization properties")
 
 def unregister():
+    handlers.callback_selectionChange_actions.remove(MW_gen_cfg.setSelectedRoot_callback)
+
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 

@@ -66,9 +66,8 @@ def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     obj_root.matrix_world = obj.matrix_world.copy()
     utils.set_child(obj_copy, obj_root)
 
-    # Rename and select the root
+    # Rename with prefix?
     get_renamed(obj_root, cfg, context)
-    utils.select_unhide(obj_root, context)
 
     getStats().logDt(f"generated copy object ({1+len(obj_copy.children_recursive)} object/s)")
     return obj_root, obj_copy
@@ -76,7 +75,6 @@ def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
 def copy_originalPrev(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     # Copy the root objects including its mw_cfg
     obj_root = utils.copy_object(obj, context)
-    utils.select_unhide(obj_root, context)
 
     # copy the original from the previous root withou suffix
     obj_original = utils.get_child(obj, CONST_NAMES.original_copy)
@@ -207,10 +205,11 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
         mesh.from_pydata(vertices=verts, edges=[], faces=faces_blender)
         obj_shard = utils.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showShards)
         obj_shard.location = pos
+        obj_shard.scale = [0.9]*3
 
     getStats().logDt("generated shards objects")
 
-def _gen_LEGACY_CONT(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
+def gen_LEGACY_CONT(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
     centroids = []
     vertices = []
     volume = []
