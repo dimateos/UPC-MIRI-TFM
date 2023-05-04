@@ -10,7 +10,7 @@ from .properties import (
 from .operators_utils import _StartRefresh_OT, util_classes_op
 
 from . import mw_setup
-from . import mw_calc
+from . import mw_cont
 from .mw_links import Links, Link, Links_storage
 from tess import Container, Cell
 
@@ -91,7 +91,7 @@ class MW_gen_OT(_StartRefresh_OT):
 
 
         # Retrieve root
-        obj, cfg = MW_gen_cfg.getRoot(context.active_object)
+        obj, cfg = MW_gen_cfg.getSelectedRoot()
         getStats().logDt("retrieved root object")
         try:
             # Selected object not fractured, fresh execution
@@ -147,8 +147,8 @@ class MW_gen_OT(_StartRefresh_OT):
 
         DEV.log_msg("Start calc points", {'CALC'})
         # Get the points and transform to local space when needed
-        mw_calc.detect_points_from_object(obj_original, cfg, self.ctx)
-        points = mw_calc.get_points_from_object_fallback(obj_original, cfg, self.ctx)
+        mw_cont.detect_points_from_object(obj_original, cfg, self.ctx)
+        points = mw_cont.get_points_from_object_fallback(obj_original, cfg, self.ctx)
         if not points:
             return self.end_op_error("found no points...")
 
@@ -162,7 +162,7 @@ class MW_gen_OT(_StartRefresh_OT):
         # XXX:: child verts / partilces should be checked inside?
 
         # Limit and rnd a bit the points
-        mw_calc.points_transformCfg(points, cfg, bb_radius)
+        mw_cont.points_transformCfg(points, cfg, bb_radius)
 
         # Add some reference of the points to the scene
         mw_setup.gen_pointsObject(obj_root, points, self.cfg, self.ctx)
@@ -176,7 +176,7 @@ class MW_gen_OT(_StartRefresh_OT):
         # XXX:: voro++ has some static constant values that have to be edited in compile time...
         #e.g. max_wall_size, tolerance for vertices,
 
-        cont:Container = mw_calc.cont_fromPoints(points, bb, faces4D, precision=prefs.gen_calc_precisionWalls)
+        cont:Container = mw_cont.cont_fromPoints(points, bb, faces4D, precision=prefs.gen_calc_precisionWalls)
         if not cont:
             return self.end_op_error("found no cont... but could try recalculate!")
 
@@ -230,27 +230,13 @@ class MW_gen_links_OT(_StartRefresh_OT):
         # config some base class log flags...
         self.invoke_log = True
 
-        self._obj:types.Object = None
-        self._cfg:MW_gen_cfg = None
-
     @classmethod
     def poll(cls, context):
-        # poll execute on ui draw, so only check if has root, dont extract it
-        obj = context.active_object
-        return (obj and MW_gen_cfg.hasRoot(obj))
-
-    # OPT:: query once only in more places? but then no poll disabled button in ui + no need for instance prop for this e.g. dm_deleteIndices
-    def invoke(self, context, event):
-        # query root only once
-        obj, cfg = MW_gen_cfg.getRoot(context.active_object)
-        self._obj = obj
-        self._cfg = cfg
-
-        return super().invoke(context, event)
+        return MW_gen_cfg.hasSelectedRoot()
 
     def execute(self, context: types.Context):
         self.start_op()
-        obj, cfg = self._obj, self._cfg
+        obj, cfg = MW_gen_cfg.getSelectedRoot()
 
         if not cfg.ptrID_links:
             return self.end_op_error("Incompleted fracture... (not checked in poll atm)")
@@ -277,13 +263,11 @@ class MW_util_delete_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        # poll execute on ui draw, so only check if has root, dont extract it
-        obj = context.active_object
-        return (obj and MW_gen_cfg.hasRoot(obj))
+        return MW_gen_cfg.hasSelectedRoot()
 
     def execute(self, context: types.Context):
         self.start_op()
-        obj, cfg = MW_gen_cfg.getRoot(context.active_object)
+        obj, cfg = MW_gen_cfg.getSelectedRoot()
         prefs = getPrefs()
 
         # optionally unhide the original object
