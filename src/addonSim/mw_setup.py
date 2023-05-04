@@ -32,7 +32,7 @@ def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
 
     # Duplicate the original object
     obj_copy = utils.copy_objectRec(obj, context, namePreffix=getPrefs().names.original_copy)
-    #MW_gen_cfg.setMetaTypeRec(obj_copy, {"CHILD"})
+    #MW_gen_cfg.setMetaType(obj_copy, {"CHILD"})
 
     # Scene viewport
     utils.hide_objectRec(obj, not cfg.struct_showOrignal_scene)
@@ -78,7 +78,7 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, cont
     # Duplicate again the copy and set child too
     obj_c = utils.copy_objectRec(obj_copy, context, keep_mods=False)
     obj_c.name = getPrefs().names.original_convex
-    #MW_gen_cfg.setMetaTypeRec(obj_c, {"CHILD"})
+    #MW_gen_cfg.setMetaType(obj_c, {"CHILD"})
     utils.set_child(obj_c, obj)
 
     # XXX:: need to mesh update? + decimate before more perf? but need to change EDIT/OBJ modes?
@@ -99,7 +99,7 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, cont
     # Second copy with the face dissolve
     obj_d = utils.copy_objectRec(obj_c, context, keep_mods=False)
     obj_d.name = getPrefs().names.original_dissolve
-    #MW_gen_cfg.setMetaTypeRec(obj_d, {"CHILD"})
+    #MW_gen_cfg.setMetaType(obj_d, {"CHILD"})
     utils.set_child(obj_d, obj)
 
     # dissolve faces based on angle limit
@@ -119,9 +119,9 @@ def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     return obj_shardsEmpty
 
 def gen_linksEmpties(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_links = utils.gen_child(obj, getPrefs().names.links, context, None, keepTrans=False, hide=not cfg.struct_showLinks)
-    obj_links_toWall = utils.gen_child(obj, getPrefs().names.links_toWalls, context, None, keepTrans=False, hide=not cfg.struct_showLinks_toWalls)
-    obj_links_perCell = utils.gen_child(obj, getPrefs().names.links_perCell, context, None, keepTrans=False, hide=not cfg.struct_showLinks_perCell)
+    obj_links = utils.gen_childClean(obj, getPrefs().names.links, context, None, keepTrans=False, hide=not cfg.struct_showLinks)
+    obj_links_toWall = utils.gen_childClean(obj, getPrefs().names.links_toWalls, context, None, keepTrans=False, hide=not cfg.struct_showLinks_toWalls)
+    obj_links_perCell = utils.gen_childClean(obj, getPrefs().names.links_perCell, context, None, keepTrans=False, hide=not cfg.struct_showLinks_perCell)
     return obj_links, obj_links_toWall, obj_links_perCell
 
 def gen_pointsObject(obj: types.Object, points: list[Vector], cfg: MW_gen_cfg, context: types.Context):
@@ -326,5 +326,5 @@ def gen_linksCellObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, co
             obj_link.hide_set(key_rep or not cfg.struct_showLinks_perCell)
             #obj_link.location = cell.centroid()
 
-    MW_gen_cfg.setMetaTypeRec(obj, {"CHILD"}, skipParent=False)
+    MW_gen_cfg.setMetaType(obj, {"CHILD"}, skipParent=False)
     getStats().logDt("generated links per cell objects")

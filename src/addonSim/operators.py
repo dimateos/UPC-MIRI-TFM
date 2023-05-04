@@ -156,7 +156,7 @@ class MW_gen_OT(_StartRefresh_OT):
             return self.end_op_error("found no points...")
 
         # Get more data from the points
-        bb, bb_radius = utils.get_bb_radius(obj_toFrac, cfg.margin_box_bounds)
+        bb, bb_center, bb_radius = utils.get_bb_data(obj_toFrac, cfg.margin_box_bounds)
         if cfg.shape_useWalls:
             faces4D = utils.get_faces_4D(obj_toFrac, cfg.margin_face_bounds)
         else: faces4D = []
@@ -214,7 +214,7 @@ class MW_gen_OT(_StartRefresh_OT):
             self.cfg.name = self.obj_root.name
             copyProps(self.cfg, self.obj_root.mw_gen)
             # set the meta type to all objects at once
-            MW_gen_cfg.setMetaTypeRec(self.obj_root, {"CHILD"}, skipParent=True)
+            MW_gen_cfg.setMetaType(self.obj_root, {"CHILD"}, skipParent=True)
 
         return super().end_op(msg, skipLog, retPass)
 
@@ -252,6 +252,7 @@ class MW_gen_links_OT(_StartRefresh_OT):
         mw_setup.gen_linksCellObjects(obj_links_perCell, links.cont, cfg, context)
         mw_setup.gen_linksObjects(obj_links, obj_links_toWall, links, cfg, context)
 
+        MW_gen_cfg.setMetaType(obj, {"CHILD"}, skipParent=True)
         return self.end_op()
 
 #-------------------------------------------------------------------

@@ -92,11 +92,13 @@ class Links():
             idx_cell = cell.id
             obj = self.shard_objs[idx_cell]
             me = self.shard_meshes[idx_cell]
-            m_toWorld, mn_toWorld = utils.get_worldMatrix_normalMatrix(obj, update=True)
+            m_toWorld = utils.get_worldMatrix_unscaled(obj, update=True)
+            mn_toWorld = utils.get_normalMatrix(m_toWorld)
 
             for idx_face, idx_neighCell in enumerate(cont_neighs[idx_cell]):
                 # get world props
                 face = me.polygons[idx_face]
+                # XXX:: need to normalize normals after tranformation?
                 pos = m_toWorld @ face.center
                 normal = mn_toWorld @ face.normal
 

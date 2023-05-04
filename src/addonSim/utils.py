@@ -1,6 +1,6 @@
 import bpy
 import bpy.types as types
-from mathutils import Vector, Matrix
+from mathutils import Vector, Matrix, Quaternion
 
 from .utils_dev import DEV
 from .stats import getStats
@@ -25,7 +25,7 @@ def get_verts(obj: types.Object, worldSpace=False) -> list[Vector, 6]:
         verts = [v.co for v in mesh.vertices]
     return verts
 
-def get_bb_radius(obj: types.Object, margin_disp = 0.0, worldSpace=False) -> tuple[list[Vector, 6], float]:
+def get_bb_data(obj: types.Object, margin_disp = 0.0, worldSpace=False) -> tuple[list[Vector, 6], float, Vector]:
     """ Get the object bounding box MIN/MAX Vector pair in world space """
     disp = Vector()
     disp.xyz = margin_disp
@@ -37,11 +37,14 @@ def get_bb_radius(obj: types.Object, margin_disp = 0.0, worldSpace=False) -> tup
         bb_full = [Vector(v) for v in obj.bound_box]
 
     bb = (bb_full[0]- disp, bb_full[6] + disp)
-    bb_radius = ((bb[0] - bb[1]).length / 2.0)
+    bb_center = (bb[0] + bb[1]) / 2.0
+    bb_radius = (bb_center - bb[0]).length
+    #bb_diag = (bb[0] - bb[1])
+    #bb_radius = (bb_diag.length / 2.0)
 
     # NOTE:: atm limited to mesh, otherwise check and use depsgraph
-    getStats().logDt(f"calc bb: r {bb_radius:.3f} (margin {margin_disp:.4f})")
-    return bb, bb_radius
+    getStats().logDt(f"calc bb: [{bb_center[:]}] r {bb_radius:.3f} (margin {margin_disp:.4f})")
+    return bb, bb_center, bb_radius
 
 def get_faces_4D(obj: types.Object, n_disp = 0.0, worldSpace=False) -> list[Vector, Vector]:
     """ Get the object faces as 4D vectors in world space """
@@ -77,33 +80,39 @@ def get_worldMatrix_normalMatrix(obj: types.Object, update = False) -> tuple[Mat
 
 #-------------------------------------------------------------------
 
-def trans_update(obj: types.Object):
+# XXX:: parent matrix not updated rec tho
+# OPT:: move log flag to dev
+def trans_update(obj: types.Object, log=False):
     """ Updates the world matrix of the object, better than updating the whole scene with context.view_layer.update()
         * But this does not take into account constraints, only parenting.
     """
-    #trans_printMatrices(obj)
-    #print("^ BEFORE update")
+    if log:
+        trans_printMatrices(obj)
+        print("^ BEFORE update")
 
     if obj.parent is None:
         obj.matrix_world = obj.matrix_basis
     else:
         obj.matrix_world = obj.parent.matrix_world @ obj.matrix_parent_inverse @ obj.matrix_basis
 
-    #trans_printMatrices(obj)
-    #print("^ AFTER update")
+    if log:
+        trans_printMatrices(obj)
+        print("^ AFTER update")
 
-def trans_reset(obj: types.Object, locally = True, updateTrans = True):
+def trans_reset(obj: types.Object, locally = True, log=False):
     """ Reset all transformations of the object (does reset all matrices too) """
-    #trans_printMatrices(obj)
-    #print("^ BEFORE reset")
+    if log:
+        trans_printMatrices(obj)
+        print("^ BEFORE reset")
 
     if locally:
         obj.matrix_basis = Matrix.Identity(4)
     else:
         obj.matrix_world = Matrix.Identity(4)
 
-    #trans_printMatrices(obj)
-    #print("^ AFTER reset")
+    if log:
+        trans_printMatrices(obj)
+        print("^ AFTER reset")
 
 def trans_printMatrices(obj: types.Object, printName=True):
     """ Print all transform matrices, read the code for behavior description! """
@@ -235,6 +244,22 @@ def get_child(obj: types.Object, name: str, rec=False) -> types.Object|None:
         # All names are unique, even under children hierarchies. Blender adds .001 etc
         if child.name.startswith(name): return child
     return None
+
+# IDEA:: maybe all children search based methods should return the explored objs
+def get_child_search(obj: types.Object, name: str, rec=False) -> tuple[types.Object|None, list[types.Object]]:
+    """ Find child by name and return also search field """
+    toSearch = obj.children if not rec else obj.children_recursive
+
+    for child in toSearch:
+        # All names are unique, even under children hierarchies. Blender adds .001 etc
+        if child.name.startswith(name): return child, toSearch
+    return None, toSearch
+
+# IDEA:: or define both functions but make one use the other, e.g. probably just return tuple to remember .children cost
+def get_child_WIP(obj: types.Object, name: str, rec=False) -> types.Object|None:
+    """ Find child by name (starts with to avoid limited exact names) """
+    child, toSearch = get_child_search(**get_kwargs())
+    return child
 
 #-------------------------------------------------------------------
 

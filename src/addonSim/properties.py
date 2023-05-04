@@ -60,12 +60,14 @@ class MW_gen_cfg(types.PropertyGroup):
             return obj, None
 
     @staticmethod
-    def setMetaTypeRec(obj: types.Object, type: dict, skipParent = False):
-        """ Set the property to the object and all its children (dictionary ies copied, not referenced) """
+    def setMetaType(obj: types.Object, type: dict, skipParent = False, childrenRec = True):
+        """ Set the property to the object and all its children (dictionary ies copied, not referenced)
+            # NOTE:: acessing obj children is O(len(bpy.data.objects)), so just call it on the root again
+        """
         if not skipParent:
             obj.mw_gen.meta_type = type.copy()
 
-        toSet = obj.children_recursive
+        toSet = obj.children_recursive if childrenRec else obj.children
         #DEV.log_msg(f"Setting {type} to {len(toSet)} objects", {"CFG"})
         for child in toSet:
             child.mw_gen.meta_type = type.copy()
