@@ -88,10 +88,34 @@ class MW_gen_PT(types.Panel):
             col_rowSplit.prop(prefs, "util_delete_OT_unhideSelect")
 
             ui.draw_propsToggle(cfg, prefs, "gen_PT_meta_show_summary", "gen_PT_meta_propFilter", "gen_PT_meta_propEdit", "get_PT_meta_propShowId", col)
+
+            # WIP:: testing
             col.operator(ops.MW_gen_links_OT.bl_idname)
+            col.prop(cfg, "struct_shardScale")
+            col.prop(cfg, "struct_linksScale")
+
+#-------------------------------------------------------------------
+
+class MW_sim_PT(types.Panel):
+    bl_idname = "MW_PT_sim"
+
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_context = "objectmode"
+    bl_category = ADDON.panel_cat
+
+    bl_label = "MW_sim"
+    bl_options = {'HEADER_LAYOUT_EXPAND'}
+
+    def draw(self, context):
+        prefs = getPrefs()
+        obj, cfg = MW_gen_cfg.getSelectedRoot()
+        col = self.layout.column()
+
+        col.label(text=f"...")
 
 
-
+#-------------------------------------------------------------------
 
 class MW_addon_PT(types.Panel):
     bl_idname = "MW_PT_addon"
@@ -124,6 +148,7 @@ class MW_addon_PT(types.Panel):
 # sort to set default order
 classes = [
     MW_gen_PT,
+    MW_sim_PT,
 #] + util_classes_pt + [
     MW_addon_PT,
 ] + util_classes_pt
