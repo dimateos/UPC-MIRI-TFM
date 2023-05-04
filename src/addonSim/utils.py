@@ -172,6 +172,7 @@ def delete_object(obj: types.Object, ignore_data = False):
     if not ignore_data and data and not data.users:
         delete_data(data, type)
 
+# OPT:: logamount as flag in dev not here
 def delete_objectRec(obj: types.Object, ignore_data = False, logAmount=False):
     """ Delete the object and children recursively """
     delete_objectChildren(obj, ignore_data, rec=True, logAmount=logAmount)
@@ -261,6 +262,20 @@ def hide_objectRec(obj: types.Object, hide=True):
     for child in obj.children_recursive:
         hide_objectRec(child, hide)
     obj.hide_set(hide)
+
+#-------------------------------------------------------------------
+
+def scale_objectChildren(ob_father: types.Object, s:float|Vector, replace_s = True, ignore_empty=True, rec=True):
+    """ Scale an object children """
+    toScale = ob_father.children if not rec else ob_father.children_recursive
+    try: sv = Vector([s]*3)
+    except TypeError: sv = s
+
+    for child in toScale:
+        if ignore_empty and child.type == "EMPTY": continue
+
+        if replace_s: child.scale = sv
+        else: child.scale *= sv
 
 #-------------------------------------------------------------------
 

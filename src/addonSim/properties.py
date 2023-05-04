@@ -2,8 +2,10 @@ import bpy
 import bpy.types as types
 import bpy.props as props
 
-from . import handlers
+from .preferences import getPrefs
 
+from . import handlers
+from . import utils
 from .utils_dev import DEV
 
 
@@ -77,17 +79,23 @@ class MW_gen_cfg(types.PropertyGroup):
 
     @staticmethod
     def hasSelectedRoot() -> bool:
-        return MW_gen_cfg.selectedRoot_currentCFG and MW_gen_cfg.selectedRoot_currentOBJ
+        return MW_gen_cfg.selectedRoot_currentOBJ and MW_gen_cfg.selectedRoot_currentCFG
 
     @staticmethod
     def getSelectedRoot() -> tuple[types.Object, "MW_gen_cfg"]:
-        return MW_gen_cfg.selectedRoot_currentCFG, MW_gen_cfg.selectedRoot_currentOBJ
+        return MW_gen_cfg.selectedRoot_currentOBJ, MW_gen_cfg.selectedRoot_currentCFG
+    @staticmethod
+    def getSelectedRoot_obj() -> types.Object:
+        return MW_gen_cfg.selectedRoot_currentOBJ
+    @staticmethod
+    def getSelectedRoot_cfg() -> "MW_gen_cfg":
+        return MW_gen_cfg.selectedRoot_currentCFG
 
     @staticmethod
     def setSelectedRoot(selected):
         # OPT:: multi-selection / root?
-        if selected: MW_gen_cfg.selectedRoot_currentCFG, MW_gen_cfg.selectedRoot_currentOBJ = MW_gen_cfg.getRoot(selected[-1])
-        else: MW_gen_cfg.selectedRoot_currentCFG, MW_gen_cfg.selectedRoot_currentOBJ = None,None
+        if selected: MW_gen_cfg.selectedRoot_currentOBJ, MW_gen_cfg.selectedRoot_currentCFG = MW_gen_cfg.getRoot(selected[-1])
+        else: MW_gen_cfg.selectedRoot_currentOBJ, MW_gen_cfg.selectedRoot_currentCFG = None,None
 
     @staticmethod
     def setSelectedRoot_callback(_scene_=None, _selected_=None):
@@ -205,15 +213,15 @@ class MW_gen_cfg(types.PropertyGroup):
 
     struct_showLinks: props.BoolProperty(
         name="WIP: Links", description="Voronoi cells links per face",
-        default=False,
+        default=True,
     )
     struct_showLinks_toWalls: props.BoolProperty(
         name="WIP: Links to walls", description="Voronoi cells links per face to walls",
-        default=False,
+        default=True,
     )
     struct_showLinks_perCell: props.BoolProperty(
         name="Cell links (centroid)", description="Links from centroids to neigh cells",
-        default=True,
+        default=False,
     )
 
     struct_showPoints: props.BoolProperty(
@@ -243,6 +251,21 @@ class MW_gen_cfg(types.PropertyGroup):
     )
 
     #-------------------------------------------------------------------
+    # IDEA:: update to direclty modify the scene
+
+    def struct_shardScale_update(self, context):
+        obj = MW_gen_cfg.getSelectedRoot_obj()
+        if not obj: return
+        shards = utils.get_child(obj, getPrefs().names.shards)
+        utils.scale_objectChildren(shards, self.struct_shardScale)
+
+    struct_shardScale: props.FloatProperty(
+        name="Shard scale", description="Reduce some bits to be able to see the links better",
+        default=0.9, min=0.25, max=1,
+        update=struct_shardScale_update
+    )
+
+    #-------------------------------------------------------------------
 
     # NOTE:: inter-spacing for physics is not possible atm
     # IDEA:: could allow negative margins, but then handle 0 when points are on the wall?
@@ -265,12 +288,25 @@ class MW_gen_cfg(types.PropertyGroup):
     )
 
 #-------------------------------------------------------------------
+# OPT:: maybe split files + some go to prefs + new propGroup to add to scene props_utils instead of prefs
+# IDEA:: vis cfg part of each gen and sim, or subpart with another group?
+# IDEA:: using animation frame handler to see the simulaion play?
 
 class MW_sim_cfg(types.PropertyGroup):
+
+    substeps: props.IntProperty(
+        name="Link res", description="WIP: ",
+        default=1, min=-1,
+    )
+    steps: props.IntProperty(
+        name="Link res", description="WIP: ",
+        default=0, min=0, max=8,
+    )
+
     pass
 
-class MW_vis_cfg(types.PropertyGroup):
-    pass
+#class MW_vis_cfg(types.PropertyGroup):
+#    pass
 
 
 #-------------------------------------------------------------------
@@ -278,7 +314,7 @@ class MW_vis_cfg(types.PropertyGroup):
 
 classes = [
     MW_gen_cfg,
-    #MW_sim_cfg,
+    MW_sim_cfg,
     #MW_vis_cfg,
 ]
 _name = f"{__name__[14:]}" #\t(...{__file__[-32:]})"
@@ -296,9 +332,9 @@ def register():
         type=MW_gen_cfg,
         name="MW_Generation", description="MW generation properties")
 
-    #bpy.types.Object.mw_sim = props.PointerProperty(
-    #    type=MW_sim_cfg,
-    #    name="MW_Simulation", description="MW simulation properties")
+    bpy.types.Object.mw_sim = props.PointerProperty(
+        type=MW_sim_cfg,
+        name="MW_Simulation", description="MW simulation properties")
 
     ## WIP maybe visualization stored in scene?
     #bpy.types.Object.mw_vis = props.PointerProperty(
