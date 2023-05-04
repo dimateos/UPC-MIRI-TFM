@@ -4,6 +4,9 @@ import bmesh
 from mathutils import Vector, Matrix
 from math import radians
 
+# IDEA:: global prefs might not be so good
+#from .preferences import prefs
+from .preferences import getPrefs
 from .properties import (
     MW_gen_cfg,
 )
@@ -14,32 +17,6 @@ from tess import Container, Cell
 from . import utils
 from .utils_dev import DEV
 from .stats import getStats
-
-
-class CONST_NAMES:
-    original = "original"
-    original_copy = original+"_0_"
-    original_convex = original+"_1_convex"
-    original_dissolve = original+"_2_dissolve"
-
-    source = "source"
-    source_points = source+"_points"
-    source_wallsBB = source+"_wallsBB"
-
-    shards = "Shards"
-
-    # OPT:: too much redundant "shards.."
-    links = "Links"
-    links_toWalls = links+"_toWall"
-    links_perCell = links+"_perCell"
-    links_group = "L"
-
-    # OPT:: dynamic depending on number of cells
-    child_idFormat = "03"
-
-def get_IdFormated(idx:int):
-    """ Pad with a certain amount of zeroes to achieve a correct lexicographic order """
-    return f"{{:{CONST_NAMES.child_idFormat}}}".format(idx)
 
 
 # OPT:: more docu on methods
@@ -54,7 +31,7 @@ def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     context.scene.collection.objects.link(obj_root)
 
     # Duplicate the original object
-    obj_copy = utils.copy_objectRec(obj, context, namePreffix=CONST_NAMES.original_copy)
+    obj_copy = utils.copy_objectRec(obj, context, namePreffix=getPrefs().names.original_copy)
     #MW_gen_cfg.setMetaTypeRec(obj_copy, {"CHILD"})
 
     # Scene viewport
@@ -77,7 +54,7 @@ def copy_originalPrev(obj: types.Object, cfg: MW_gen_cfg, context: types.Context
     obj_root = utils.copy_object(obj, context)
 
     # copy the original from the previous root withou suffix
-    obj_original = utils.get_child(obj, CONST_NAMES.original_copy)
+    obj_original = utils.get_child(obj, getPrefs().names.original_copy)
     obj_copy = utils.copy_objectRec(obj_original, context)
     utils.set_child(obj_copy, obj_root)
 
@@ -100,7 +77,7 @@ def get_renamed(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
 def copy_convex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, context: types.Context):
     # Duplicate again the copy and set child too
     obj_c = utils.copy_objectRec(obj_copy, context, keep_mods=False)
-    obj_c.name = CONST_NAMES.original_convex
+    obj_c.name = getPrefs().names.original_convex
     #MW_gen_cfg.setMetaTypeRec(obj_c, {"CHILD"})
     utils.set_child(obj_c, obj)
 
@@ -121,7 +98,7 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, cont
 
     # Second copy with the face dissolve
     obj_d = utils.copy_objectRec(obj_c, context, keep_mods=False)
-    obj_d.name = CONST_NAMES.original_dissolve
+    obj_d.name = getPrefs().names.original_dissolve
     #MW_gen_cfg.setMetaTypeRec(obj_d, {"CHILD"})
     utils.set_child(obj_d, obj)
 
@@ -138,33 +115,33 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, cont
     return obj_d
 
 def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_shardsEmpty = utils.gen_child(obj, CONST_NAMES.shards, context, None, keepTrans=False, hide=not cfg.struct_showShards)
+    obj_shardsEmpty = utils.gen_child(obj, getPrefs().names.shards, context, None, keepTrans=False, hide=not cfg.struct_showShards)
     return obj_shardsEmpty
 
 def gen_linksEmpties(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_links = utils.gen_child(obj, CONST_NAMES.links, context, None, keepTrans=False, hide=not cfg.struct_showLinks)
-    obj_links_toWall = utils.gen_child(obj, CONST_NAMES.links_toWalls, context, None, keepTrans=False, hide=not cfg.struct_showLinks_toWalls)
-    obj_links_perCell = utils.gen_child(obj, CONST_NAMES.links_perCell, context, None, keepTrans=False, hide=not cfg.struct_showLinks_perCell)
+    obj_links = utils.gen_child(obj, getPrefs().names.links, context, None, keepTrans=False, hide=not cfg.struct_showLinks)
+    obj_links_toWall = utils.gen_child(obj, getPrefs().names.links_toWalls, context, None, keepTrans=False, hide=not cfg.struct_showLinks_toWalls)
+    obj_links_perCell = utils.gen_child(obj, getPrefs().names.links_perCell, context, None, keepTrans=False, hide=not cfg.struct_showLinks_perCell)
     return obj_links, obj_links_toWall, obj_links_perCell
 
 def gen_pointsObject(obj: types.Object, points: list[Vector], cfg: MW_gen_cfg, context: types.Context):
     # Create a new mesh data block and add only verts
-    mesh = bpy.data.meshes.new(CONST_NAMES.source_points)
+    mesh = bpy.data.meshes.new(getPrefs().names.source_points)
     mesh.from_pydata(points, [], [])
     #mesh.update()
 
-    obj_points = utils.gen_child(obj, CONST_NAMES.source_points, context, mesh, keepTrans=False, hide=not cfg.struct_showPoints)
+    obj_points = utils.gen_child(obj, getPrefs().names.source_points, context, mesh, keepTrans=False, hide=not cfg.struct_showPoints)
 
     getStats().logDt("generated points object")
     return obj_points
 
 def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, context: types.Context):
     # Create a new mesh data block and add only verts
-    mesh = bpy.data.meshes.new(CONST_NAMES.source_wallsBB)
+    mesh = bpy.data.meshes.new(getPrefs().names.source_wallsBB)
     mesh.from_pydata(bb, [], [])
 
     # Generate it taking the transform as it is (points already in local space)
-    obj_bb = utils.gen_child(obj, CONST_NAMES.source_wallsBB, context, mesh, keepTrans=False, hide=not cfg.struct_showBB)
+    obj_bb = utils.gen_child(obj, getPrefs().names.source_wallsBB, context, mesh, keepTrans=False, hide=not cfg.struct_showBB)
     obj_bb.show_bounds = True
 
     getStats().logDt("generated bounds object")
@@ -176,7 +153,7 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
     for cell in cont:
         if cell is None: continue
         source_id = cont.source_idx[cell.id]
-        name= f"{CONST_NAMES.shards}_{get_IdFormated(source_id)}"
+        name= f"{getPrefs().names.shards}_{getPrefs().names.get_IdFormated(source_id)}"
 
         # assert some voro properties, the more varied test cases the better: center of mass at the center of volume
         if DEV.assert_voro_posW:
@@ -237,7 +214,7 @@ def gen_LEGACY_CONT(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context
         neighbors += [ns]
 
         # build the static mesh and child object just at the origin
-        name= f"{CONST_NAMES.shards}_{cell.id}"
+        name= f"{getPrefs().names.shards}_{cell.id}"
         mesh = bpy.data.meshes.new(name)
         mesh.from_pydata(vertices=vs, edges=[], faces=f)
         obj_shard = utils.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showShards)
@@ -313,7 +290,7 @@ def gen_linksCellObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, co
         if cell is None: continue
 
         # group the links by cell using a parent
-        nameGroup= f"{CONST_NAMES.links_group}_{get_IdFormated(cell.id)}"
+        nameGroup= f"{getPrefs().names.links_group}_{getPrefs().names.get_IdFormated(cell.id)}"
         obj_group = utils.gen_child(obj, nameGroup, context, None, keepTrans=False, hide=False)
         #obj_group.matrix_world = Matrix.Identity(4)
         #obj_group.location = cell.centroid()

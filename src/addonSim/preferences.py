@@ -3,6 +3,8 @@ import bpy.types as types
 import bpy.props as props
 
 from . import handlers
+
+# OPT:: seems bad to reference this here tho
 from .mw_links import Links_storage
 
 from .utils_dev import DEV
@@ -21,6 +23,8 @@ def getPrefs() -> "MW_prefs":
     """ Get addon preferences from blender """
     return bpy.context.preferences.addons[MW_prefs.bl_idname].preferences
 
+# OPT:: maybe direclty an access to it instead of getter? need some setup per module to avoid parsing before register
+prefs = None
 
 #-------------------------------------------------------------------
 
@@ -56,6 +60,36 @@ class MW_prefs(bpy.types.AddonPreferences):
         name="Show debug...", description="WIP: Show some debug stuff",
         default=True,
     )
+
+    #-------------------------------------------------------------------
+
+    # TODO:: move to common place + also properties utils -> use a sub property group?
+    # IDEA:: add .to filter or something to idicate match only the beginning
+    class names:
+        original = "original"
+        original_copy = original+"_0_"
+        original_convex = original+"_1_convex"
+        original_dissolve = original+"_2_dissolve"
+
+        source = "source"
+        source_points = source+"_points"
+        source_wallsBB = source+"_wallsBB"
+
+        shards = "shards"
+
+        # OPT:: too much redundant "shards.."
+        links = "Links"
+        links_toWalls = links+"_toWall"
+        links_perCell = links+"_perCell"
+        links_group = "L"
+
+        # OPT:: dynamic depending on number of cells
+        child_idFormat = "03"
+
+        @staticmethod
+        def get_IdFormated(idx:int):
+            """ Pad with a certain amount of zeroes to achieve a correct lexicographic order """
+            return f"{{:{MW_prefs.names.child_idFormat}}}".format(idx)
 
     #-------------------------------------------------------------------
 
@@ -219,6 +253,10 @@ def register():
 
     for cls in classes:
         bpy.utils.register_class(cls)
+
+    # OPT:: some global init that has acess to bpy context after reloading extensions? e.g. open draw debug panel? not
+    global prefs
+    prefs = getPrefs()
 
 def unregister():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})

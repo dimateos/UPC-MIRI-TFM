@@ -66,6 +66,9 @@ class MW_gen_OT(_StartRefresh_OT):
     # IDEA:: SIM: shrink here or as part of sim, e.g. smoothing? -> support physics interspace
     # IDEA:: SIM: add mass add rigid body proportional to volume? from voro++?
 
+    # IDEA:: op to only apply decimation + convex etc
+    # IDEA:: recalculate cont after reload from cfg exact params -> precision used stored? all props stored but some in side panel? e.g. visual and precision
+
     def execute(self, context: types.Context):
         self.start_op()
         self.obj_root = None
