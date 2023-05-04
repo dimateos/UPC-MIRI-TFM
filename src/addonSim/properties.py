@@ -267,6 +267,22 @@ class MW_gen_cfg(types.PropertyGroup):
         update=struct_shardScale_update
     )
 
+    # IDEA:: maybe keep attached to faces by having and ID or something? atm momment cannot scale like this need another pivot
+    def struct_linksScale_update(self, context):
+        obj = MW_gen_cfg.getSelectedRoot_obj()
+        if not obj: return
+        links = utils.get_child(obj, getPrefs().names.links)
+        if links: utils.scale_objectChildren(links, self.struct_linksScale)
+        links_toWall = utils.get_child(obj, getPrefs().names.links_toWalls)
+        if links_toWall: utils.scale_objectChildren(links_toWall, self.struct_linksScale)
+
+
+    struct_linksScale: props.FloatProperty(
+        name="Shard scale", description="Reduce some bits to be able to see the links better",
+        default=1, min=0.25, max=3,
+        update=struct_linksScale_update
+    )
+
     #-------------------------------------------------------------------
 
     # NOTE:: inter-spacing for physics is not possible atm

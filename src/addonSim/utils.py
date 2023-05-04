@@ -3,7 +3,7 @@ import bpy.types as types
 from mathutils import Vector, Matrix, Quaternion
 
 from .utils_dev import DEV
-from .stats import getStats
+from .stats import getStats, timeit
 
 
 #-------------------------------------------------------------------
@@ -43,7 +43,6 @@ def get_bb_data(obj: types.Object, margin_disp = 0.0, worldSpace=False) -> tuple
     #bb_radius = (bb_diag.length / 2.0)
 
     # NOTE:: atm limited to mesh, otherwise check and use depsgraph
-    getStats().logDt(f"calc bb: [{bb_center[:]}] r {bb_radius:.3f} (margin {margin_disp:.4f})")
     return bb, bb_center, bb_radius
 
 def get_faces_4D(obj: types.Object, n_disp = 0.0, worldSpace=False) -> list[Vector, Vector]:
@@ -65,18 +64,35 @@ def get_faces_4D(obj: types.Object, n_disp = 0.0, worldSpace=False) -> list[Vect
             Vector( [fn.x, fn.y, fn.z, fn.dot(fc)] )
         for (fc,fn) in zip(face_centers, face_normals)
     ]
-
-    getStats().logDt(f"calc faces4D: {len(faces4D)} (n_disp {n_disp:.4f})")
     return faces4D
+
+#-------------------------------------------------------------------
+
+def get_composedMatrix(loc:Vector, rot:Quaternion, scale:Vector) -> Matrix:
+    T = Matrix.Translation(loc)
+    R = rot.to_matrix().to_4x4()
+    S = Matrix.Diagonal(scale.to_4d())
+    #I = Matrix()
+
+    #assert(obj.matrix_basis == T @ R @ S)
+    return T @ R @ S
+
+def get_normalMatrix(matrix_world: Matrix) -> Matrix:
+    # Normals will need a normal matrix to transform properly
+    return matrix_world.inverted_safe().transposed().to_3x3()
 
 def get_worldMatrix_normalMatrix(obj: types.Object, update = False) -> tuple[Matrix, Matrix]:
     """ Get the object world matrix and normal world matrix """
     if update: trans_update(obj)
-    matrix = obj.matrix_world.copy()
+    matrix:Matrix = obj.matrix_world.copy()
 
-    # Normals will need a normal matrix to transform properly
-    matrix_normal = matrix.inverted_safe().transposed().to_3x3()
-    return matrix, matrix_normal
+    return matrix, get_normalMatrix(matrix)
+
+def get_worldMatrix_unscaled(obj: types.Object, update = False) -> Matrix:
+    """ Get the object world matrix without scale """
+    if update: trans_update(obj)
+    loc, rot, scale = obj.matrix_world.decompose()
+    return get_composedMatrix(loc, rot, Vector([1.0]*3))
 
 #-------------------------------------------------------------------
 
@@ -230,10 +246,14 @@ def delete_orphanData(collectionNames = None, logAmount = True):
 
 #-------------------------------------------------------------------
 
+# OPT:: not robust due to starts with etc + the same logic
 def get_object_fromScene(scene: types.Scene, name: str) -> types.Object|None:
     """ Find an object in the scene by name (starts with to avoid limited exact names). Returns the first found. """
     for obj in scene.objects:
-        if obj.name.startswith(name): return obj
+        #if obj.name.startswith(name): return obj
+        # All names are unique, even under children hierarchies. Blender adds .001 etc
+        cname = obj.name if obj.name[-4] != "." else obj.name[:-4]
+        if cname == name: return obj
     return None
 
 def get_child(obj: types.Object, name: str, rec=False) -> types.Object|None:
@@ -241,8 +261,10 @@ def get_child(obj: types.Object, name: str, rec=False) -> types.Object|None:
     toSearch = obj.children if not rec else obj.children_recursive
 
     for child in toSearch:
+        #if child.name.startswith(name): return child
         # All names are unique, even under children hierarchies. Blender adds .001 etc
-        if child.name.startswith(name): return child
+        cname = child.name if child.name[-4] != "." else child.name[:-4]
+        if cname == name: return child
     return None
 
 # IDEA:: maybe all children search based methods should return the explored objs
@@ -290,17 +312,48 @@ def hide_objectRec(obj: types.Object, hide=True):
 
 #-------------------------------------------------------------------
 
-def scale_objectChildren(ob_father: types.Object, s:float|Vector, replace_s = True, ignore_empty=True, rec=True):
-    """ Scale an object children """
-    toScale = ob_father.children if not rec else ob_father.children_recursive
+def scale_objectBB(obj: types.Object, s:float|Vector, replace_s = True):
+    """ Scale an object aroung its BB center """
+    bb, bb_center, bb_radius = get_bb_data(obj, worldSpace=True)
+    scale_object(**get_kwargs(), pivot = bb_center)
+
+# WIP:: pivots space world/local etc break + hard to replace s too -> move center of curves to its center?
+def scale_object(obj: types.Object, s:float|Vector, replace_s = True, pivot:Vector = None):
+    """ Scale an object optionally around a pivot point """
+    try: sv = Vector([s]*3)
+    except TypeError: sv = s
+    if not replace_s: sv *= obj.scale
+
+    if not pivot:
+        obj.scale = sv
+
+    # pivot requires a change of basis
+    else:
+        M = (
+            Matrix.Translation(pivot) @
+            Matrix.Diagonal(sv).to_4x4() @
+            #Matrix.Rotation(angle, 4, axis) @
+            Matrix.Translation(-pivot)
+            )
+
+        #trans_printMatrices(obj)
+        obj.matrix_world = M @ get_worldMatrix_unscaled(obj)
+        #trans_update(obj,log=True)
+
+
+def scale_objectChildren(obj_father: types.Object, s:float|Vector, replace_s=True, pivotBB=False, ignore_empty=True, rec=True):
+    """ Scale an object children optionally ignoring empty """
+    toScale = obj_father.children if not rec else obj_father.children_recursive
     try: sv = Vector([s]*3)
     except TypeError: sv = s
 
     for child in toScale:
         if ignore_empty and child.type == "EMPTY": continue
 
-        if replace_s: child.scale = sv
-        else: child.scale *= sv
+        #trans_update(child)
+        if pivotBB: scale_objectBB(child, sv, replace_s)
+        #if pivotBB: scale_object(child, sv, replace_s, pivot=Vector([1,0,0]))
+        else: scale_object(child, sv, replace_s)
 
 #-------------------------------------------------------------------
 
@@ -364,6 +417,7 @@ def rnd_seed(s: int = None) -> int:
     bl_rnd.seed_set(s)
     return s
 
+# OPT:: test perf? timeit(lambda: dict(**get_kwargs()))
 def get_kwargs(startKey_index = 0):
     from inspect import currentframe, getargvalues
     frame = currentframe().f_back

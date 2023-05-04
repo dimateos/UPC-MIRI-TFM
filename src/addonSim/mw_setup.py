@@ -260,8 +260,8 @@ def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: Links
             obj = objWall
 
             # start at the face outward
-            p1 = l.pos
-            p2 = l.pos + l.dir*0.1
+            p1 = Vector()
+            p2 = l.dir*0.1
 
         # regular links
         else:
@@ -269,12 +269,13 @@ def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: Links
             obj = objLinks
 
             # two points around the face
-            p1 = l.pos + l.dir*0.1
-            p2 = l.pos - l.dir*0.1
+            p1 = +l.dir*0.1
+            p2 = -l.dir*0.1
 
         # Create new curve per link and spawn
         curve = get_curveData([p1, p2], name, cfg.links_width, cfg.links_res)
         obj_link = utils.gen_child(obj, name, context, curve, keepTrans=False, hide=not cfg.struct_showLinks)
+        obj_link.location = l.pos
 
     getStats().logDt("generated links to walls objects")
 

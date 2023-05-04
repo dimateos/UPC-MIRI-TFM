@@ -157,9 +157,12 @@ class MW_gen_OT(_StartRefresh_OT):
 
         # Get more data from the points
         bb, bb_center, bb_radius = utils.get_bb_data(obj_toFrac, cfg.margin_box_bounds)
+        getStats().logDt(f"calc bb: [{bb_center[:]}] r {bb_radius:.3f} (margin {cfg.margin_box_bounds:.4f})")
         if cfg.shape_useWalls:
             faces4D = utils.get_faces_4D(obj_toFrac, cfg.margin_face_bounds)
         else: faces4D = []
+        getStats().logDt(f"calc faces4D: {len(faces4D)} (n_disp {cfg.margin_face_bounds:.4f})")
+
         # XXX:: 2D objects should use the boundary? limits walls per axis
         # XXX:: limit particles axis too?
         # XXX:: child verts / partilces should be checked inside?

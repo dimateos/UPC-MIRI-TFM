@@ -132,11 +132,10 @@ def getStats() -> Stats:
         gStats = Stats()
     return gStats
 
-
-def testStats(log = False):
+def testStats(new= True, log= True):
     # sample operations
     import numpy as np
-    stats = getStats()
+    stats = Stats() if new else getStats()
     stats.logFull()
 
     a = np.zeros(10000000)
@@ -158,3 +157,13 @@ def testStats(log = False):
     if log:
         print("\n>> a = np.cos(a) ** 2 + np.sin(a) ** 2")
         stats.logFull()
+
+
+#-------------------------------------------------------------------
+
+def timeit(flambda, n=1000, msg: str = ""):
+    import timeit
+    t = timeit.timeit(flambda, number=n)
+    log = f"Timed// total time:    ({t:>10.6f}s)"
+    if msg: log += f" - {msg}"
+    print(log)
