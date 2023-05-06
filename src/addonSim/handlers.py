@@ -72,13 +72,30 @@ def callback_undo(scene=None):
     """ Undo called, including all the time in the edit last op panel """
     # Seems like there is no way to read info about the stack from python...
     last_op = bpy.ops.ed.undo_history()
-    DEV.log_msg(f"{last_op}", {"CALLBACK", "UNDO"})
+    DEV.log_msg(f"callback_undo: {last_op}", {"CALLBACK", "UNDO"})
 
     global callback_undo_actions
     for c in callback_undo_actions: c(scene, last_op)
 
 callback_undo_actions = Actions()
 """ Function actions to be called on callback undo: c(scene, last_op) """
+
+#-------------------------------------------------------------------
+
+@persistent
+def callback_loadFile(scene=None):
+    """ Post loaded a new file """
+    name = bpy.data.filepath
+    #import os
+    #file_name = os.path.basename(blend_file_name)
+
+    DEV.log_msg(f"callback_loadFile: {name}", {"CALLBACK", "LOAD"})
+
+    global callback_loadFile_actions
+    for c in callback_loadFile_actions: c(scene, name)
+
+callback_loadFile_actions = Actions()
+""" Function actions to be called on callback undo: c(scene, fileName) """
 
 
 #-------------------------------------------------------------------
@@ -91,12 +108,14 @@ def register():
 
     bpy.app.handlers.depsgraph_update_post.append(callback_updatePost)
     bpy.app.handlers.undo_post.append(callback_undo)
+    bpy.app.handlers.load_post.append(callback_loadFile)
 
 def unregister():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})
 
     bpy.app.handlers.depsgraph_update_post.remove(callback_updatePost)
     bpy.app.handlers.undo_post.remove(callback_undo)
+    bpy.app.handlers.load_post.remove(callback_loadFile)
 
     if DEV.CALLBACK_REGISTER_ALL: unregisterAllHandlers()
     DEV.log_msg(f"{_name}", {"ADDON", "PARSED"})

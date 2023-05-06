@@ -217,6 +217,7 @@ class LinkStorage:
     def addLinks(links, uniqueName, user):
         DEV.log_msg(f"Add: {uniqueName}...", {"STORAGE", "LINKS"})
 
+        # add the links and the user to the storage
         if uniqueName in LinkStorage.bl_links:
             DEV.log_msg(f"Replacing found links", {"STORAGE", "LINKS", "ERROR"})
         LinkStorage.bl_links[uniqueName] = links
@@ -234,6 +235,7 @@ class LinkStorage:
     def freeLinks(uniqueName):
         DEV.log_msg(f"Del: {uniqueName}...", {"STORAGE", "LINKS"})
         try:
+            # delete the links and only pop the user
             links = LinkStorage.bl_links.pop(uniqueName)
             del links
             user = LinkStorage.bl_links_users.pop(uniqueName)
@@ -243,10 +245,10 @@ class LinkStorage:
     @staticmethod
     def purgeLinks():
         toPurge = []
+
+        # detect broken object references
         for name,obj in LinkStorage.bl_links_users.items():
-            try:
-                name_obj = obj.name
-            except ReferenceError:
+            if utils.needsSanitize_object(obj):
                 toPurge.append(name)
 
         DEV.log_msg(f"Purging {len(toPurge)}: {toPurge}", {"STORAGE", "LINKS"})

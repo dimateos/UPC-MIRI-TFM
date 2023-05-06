@@ -416,6 +416,23 @@ def gen_childClean(
 
 #-------------------------------------------------------------------
 
+def needsSanitize_object(obj):
+    """ Check broken reference to bl object """
+    try:
+        name_obj = obj.name
+        return False
+    except ReferenceError:
+        return True
+
+def returnSanitized_object(obj):
+    """ Change object to none in case of broken bl object """
+    if needsSanitize_object(obj):
+        return None
+    else:
+        return obj
+
+#-------------------------------------------------------------------
+
 def get_timestamp() -> int:
     """ Get current timestamp as int """
     from datetime import datetime

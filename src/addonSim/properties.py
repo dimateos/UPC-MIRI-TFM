@@ -93,15 +93,32 @@ class MW_gen_cfg(types.PropertyGroup):
     def getSelectedRoot_cfg() -> "MW_gen_cfg":
         return MW_gen_cfg.selectedRoot_currentCFG
 
+
     @staticmethod
     def setSelectedRoot(selected):
         # OPT:: multi-selection / root?
         if selected: MW_gen_cfg.selectedRoot_currentOBJ, MW_gen_cfg.selectedRoot_currentCFG = MW_gen_cfg.getRoot(selected[-1])
         else: MW_gen_cfg.selectedRoot_currentOBJ, MW_gen_cfg.selectedRoot_currentCFG = None,None
 
+    # trigger new root on selection
     @staticmethod
     def setSelectedRoot_callback(_scene_=None, _selected_=None):
         MW_gen_cfg.setSelectedRoot(_selected_)
+
+    @staticmethod
+    def resetSelectedRoot():
+        MW_gen_cfg.selectedRoot_currentOBJ, MW_gen_cfg.selectedRoot_currentCFG = None, None
+
+
+    @staticmethod
+    def sanitizeSelectedRoot():
+        if utils.needsSanitize_object(MW_gen_cfg.selectedRoot_currentOBJ):
+            MW_gen_cfg.resetSelectedRoot()
+
+    # XXX:: trigger sanitize root on new file + also on undo?
+    @staticmethod
+    def sanitizeSelectedRoot_callback(_scene_=None, _name_selected_=None):
+        MW_gen_cfg.sanitizeSelectedRoot()
 
     #-------------------------------------------------------------------
 
@@ -341,6 +358,7 @@ def register():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "REG"})
 
     handlers.callback_selectionChange_actions.append(MW_gen_cfg.setSelectedRoot_callback)
+    handlers.callback_loadFile_actions.append(MW_gen_cfg.sanitizeSelectedRoot_callback)
 
     for cls in classes:
         bpy.utils.register_class(cls)
@@ -363,6 +381,7 @@ def unregister():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})
 
     handlers.callback_selectionChange_actions.remove(MW_gen_cfg.setSelectedRoot_callback)
+    handlers.callback_loadFile_actions.remove(MW_gen_cfg.sanitizeSelectedRoot_callback)
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
