@@ -66,6 +66,23 @@ def get_faces_4D(obj: types.Object, n_disp = 0.0, worldSpace=False) -> list[Vect
     ]
     return faces4D
 
+def get_curveData(points: list[Vector], name ="poly-curve", w=0.05, res=0):
+    # Create new POLY curve
+    curve_data = bpy.data.curves.new(name, 'CURVE')
+    curve_data.dimensions = '3D'
+    line = curve_data.splines.new('POLY')
+
+    # Add the points to the spline
+    for i,p in enumerate(points):
+        if i!=0: line.points.add(1)
+        line.points[i].co = p.to_4d()
+
+    # Set the visuals
+    curve_data.bevel_depth = w
+    curve_data.bevel_resolution = res
+    curve_data.fill_mode = "FULL" #'FULL', 'HALF', 'FRONT', 'BACK'
+    return curve_data
+
 #-------------------------------------------------------------------
 
 def get_composedMatrix(loc:Vector, rot:Quaternion, scale:Vector) -> Matrix:
@@ -246,14 +263,17 @@ def delete_orphanData(collectionNames = None, logAmount = True):
 
 #-------------------------------------------------------------------
 
+# OPT:: not robuts... All names are unique, even under children hierarchies. Blender adds .001 etc
+def get_nameClean(name):
+    try: return name if name[-4] != "." else name[:-4]
+    except IndexError: return name
+
 # OPT:: not robust due to starts with etc + the same logic
 def get_object_fromScene(scene: types.Scene, name: str) -> types.Object|None:
     """ Find an object in the scene by name (starts with to avoid limited exact names). Returns the first found. """
+
     for obj in scene.objects:
-        #if obj.name.startswith(name): return obj
-        # All names are unique, even under children hierarchies. Blender adds .001 etc
-        cname = obj.name if obj.name[-4] != "." else obj.name[:-4]
-        if cname == name: return obj
+        if get_nameClean(obj.name) == name: return obj
     return None
 
 def get_child(obj: types.Object, name: str, rec=False) -> types.Object|None:
@@ -261,10 +281,7 @@ def get_child(obj: types.Object, name: str, rec=False) -> types.Object|None:
     toSearch = obj.children if not rec else obj.children_recursive
 
     for child in toSearch:
-        #if child.name.startswith(name): return child
-        # All names are unique, even under children hierarchies. Blender adds .001 etc
-        cname = child.name if child.name[-4] != "." else child.name[:-4]
-        if cname == name: return child
+        if get_nameClean(child.name) == name: return child
     return None
 
 # IDEA:: maybe all children search based methods should return the explored objs

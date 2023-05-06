@@ -114,15 +114,7 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, cont
     getStats().logDt("generated convex object")
     return obj_d
 
-def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_shardsEmpty = utils.gen_child(obj, getPrefs().names.shards, context, None, keepTrans=False, hide=not cfg.struct_showShards)
-    return obj_shardsEmpty
-
-def gen_linksEmpties(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_links = utils.gen_childClean(obj, getPrefs().names.links, context, None, keepTrans=False, hide=not cfg.struct_showLinks)
-    obj_links_toWall = utils.gen_childClean(obj, getPrefs().names.links_toWalls, context, None, keepTrans=False, hide=not cfg.struct_showLinks_toWalls)
-    obj_links_perCell = utils.gen_childClean(obj, getPrefs().names.links_perCell, context, None, keepTrans=False, hide=not cfg.struct_showLinks_perCell)
-    return obj_links, obj_links_toWall, obj_links_perCell
+#-------------------------------------------------------------------
 
 def gen_pointsObject(obj: types.Object, points: list[Vector], cfg: MW_gen_cfg, context: types.Context):
     # Create a new mesh data block and add only verts
@@ -148,6 +140,10 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, co
     return obj_bb
 
 #-------------------------------------------------------------------
+
+def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
+    obj_shardsEmpty = utils.gen_child(obj, getPrefs().names.shards, context, None, keepTrans=False, hide=not cfg.struct_showShards)
+    return obj_shardsEmpty
 
 def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context, invertOrientation = False):
     for cell in cont:
@@ -231,22 +227,15 @@ def gen_LEGACY_CONT(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context
 
 #-------------------------------------------------------------------
 
-def get_curveData(points: list[Vector], name ="poly-curve", w=0.05, res=0):
-    # Create new POLY curve
-    curve_data = bpy.data.curves.new(name, 'CURVE')
-    curve_data.dimensions = '3D'
-    line = curve_data.splines.new('POLY')
+# WIP:: links empties,..
+def gen_linksEmpties(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
+    obj_links = utils.gen_childClean(obj, getPrefs().names.links, context, None, keepTrans=False, hide=not cfg.struct_showLinks)
+    obj_links_toWall = utils.gen_childClean(obj, getPrefs().names.links_toWalls, context, None, keepTrans=False, hide=not cfg.struct_showLinks_toWalls)
+    return obj_links, obj_links_toWall
 
-    # Add the points to the spline
-    for i,p in enumerate(points):
-        if i!=0: line.points.add(1)
-        line.points[i].co = p.to_4d()
-
-    # Set the visuals
-    curve_data.bevel_depth = w
-    curve_data.bevel_resolution = res
-    curve_data.fill_mode = "FULL" #'FULL', 'HALF', 'FRONT', 'BACK'
-    return curve_data
+def gen_linksEmptiesPerCell(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
+    obj_links_perCell = utils.gen_childClean(obj, getPrefs().names.links_perCell, context, None, keepTrans=False, hide=not cfg.struct_showLinks_perCell)
+    return obj_links_perCell
 
 def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: Links, cfg: MW_gen_cfg, context: types.Context):
     # iterate the global map
@@ -273,8 +262,8 @@ def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: Links
             p2 = -l.dir*0.1
 
         # Create new curve per link and spawn
-        curve = get_curveData([p1, p2], name, cfg.links_width, cfg.links_res)
-        obj_link = utils.gen_child(obj, name, context, curve, keepTrans=False, hide=not cfg.struct_showLinks)
+        curve = utils.get_curveData([p1, p2], name, cfg.links_width, cfg.links_res)
+        obj_link = utils.gen_child(obj, name, context, curve, keepTrans=True, hide=not cfg.struct_showLinks)
         obj_link.location = l.pos
 
     getStats().logDt("generated links to walls objects")
@@ -321,7 +310,7 @@ def gen_linksCellObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, co
             name= f"s{cell.id}_n{n_id}"
             neigh_centroid = Vector(cont[n_id].centroid())
 
-            curve = get_curveData([cell_centroid, neigh_centroid], name, cfg.links_width, cfg.links_res)
+            curve = utils.get_curveData([cell_centroid, neigh_centroid], name, cfg.links_width, cfg.links_res)
             obj_link = utils.gen_child(obj_group, name, context, curve, keepTrans=False, hide=not cfg.struct_showLinks)
 
             obj_link.hide_set(key_rep or not cfg.struct_showLinks_perCell)

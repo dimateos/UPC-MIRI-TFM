@@ -76,6 +76,7 @@ class MW_gen_PT(types.Panel):
 
         # Edit/info of selected
         else:
+            # XXX:: some crashes on UNDO...
             col = layout.column()
             col.label(text="Root: " + obj.name_full, icon="INFO")
 

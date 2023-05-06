@@ -195,6 +195,9 @@ class MW_gen_OT(_StartRefresh_OT):
             return self.end_op("DEV.LEGACY_CONT stop...")
         mw_setup.gen_shardsObjects(obj_shards, cont, cfg, self.ctx, invertOrientation=prefs.gen_setup_invertShardNormals)
 
+        obj_links_perCell = mw_setup.gen_linksEmptiesPerCell(obj_root, cfg, self.ctx)
+        mw_setup.gen_linksCellObjects(obj_links_perCell, cont, cfg, self.ctx)
+
         # calculate links and store in the external storage
         links:Links = Links(cont, obj_shards)
         if not links.link_map:
@@ -208,7 +211,7 @@ class MW_gen_OT(_StartRefresh_OT):
         return self.end_op()
 
     def end_op(self, msg="", skipLog=False, retPass=False):
-        """ Override end_op to perform stuff at the end """
+        """ OVERRIDE:: end_op to perform stuff at the end """
 
         if self.obj_root:
             utils.select_unhide(self.obj_root, self.ctx)
@@ -244,19 +247,27 @@ class MW_gen_links_OT(_StartRefresh_OT):
         self.start_op()
         obj, cfg = MW_gen_cfg.getSelectedRoot()
 
+        ## WIP:: per cell no need but atm cont ref is inside Links structure
+        #obj_links_perCell = mw_setup.gen_linksEmptiesPerCell(obj, cfg, context)
+        #mw_setup.gen_linksCellObjects(obj_links_perCell, links.cont, cfg, context)
+
+        # per links require the structure
         if not cfg.ptrID_links:
             return self.end_op_error("Incompleted fracture... (not checked in poll atm)")
         links = Links_storage.getLinks(cfg.ptrID_links)
         if not links:
             return self.end_op_error("No links storage found...")
 
-        obj_links, obj_links_toWall, obj_links_perCell = mw_setup.gen_linksEmpties(obj, cfg, context)
-
-        mw_setup.gen_linksCellObjects(obj_links_perCell, links.cont, cfg, context)
+        obj_links, obj_links_toWall = mw_setup.gen_linksEmpties(obj, cfg, context)
         mw_setup.gen_linksObjects(obj_links, obj_links_toWall, links, cfg, context)
 
-        MW_gen_cfg.setMetaType(obj, {"CHILD"}, skipParent=True)
         return self.end_op()
+
+    def end_op(self, msg="", skipLog=False, retPass=False):
+        """ OVERRIDE:: end_op to perform assign child to all """
+        obj, cfg = MW_gen_cfg.getSelectedRoot()
+        if obj: MW_gen_cfg.setMetaType(obj, {"CHILD"}, skipParent=True)
+        return super().end_op(msg, skipLog, retPass)
 
 #-------------------------------------------------------------------
 
