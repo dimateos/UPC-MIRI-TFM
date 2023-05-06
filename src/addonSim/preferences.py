@@ -250,6 +250,7 @@ def register():
 
     # NOTE:: sync with default state? cannot add static attrs to the addonprefs?
     handlers.callback_undo_actions.appendCheck(LinkStorage.purgeLinks_callback)
+    handlers.callback_loadFile_actions.append(LinkStorage.purgeLinks_callback)
 
     for cls in classes:
         bpy.utils.register_class(cls)
@@ -263,6 +264,7 @@ def unregister():
 
     # might end up set or not -> could access prefs and check
     handlers.callback_undo_actions.removeCheck(LinkStorage.purgeLinks_callback)
+    handlers.callback_loadFile_actions.remove(LinkStorage.purgeLinks_callback)
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

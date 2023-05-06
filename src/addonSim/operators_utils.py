@@ -144,10 +144,10 @@ class _StartRefresh_OT(types.Operator):
             DEV.log_msg(f"{msg} (report-FAIL)", rtype)
 
         else:
-            # regular log too
-            DEV.log_msg(f"{msg} (report)", rtype)
             # blender pop up that shows the message
             self.report(rtype, f"{msg}")
+            # regular log no need as report also shows up in terminal
+            #DEV.log_msg(f"{msg} (report)", rtype)
 
 
 #-------------------------------------------------------------------

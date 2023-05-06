@@ -418,6 +418,7 @@ def gen_childClean(
 
 def needsSanitize_object(obj):
     """ Check broken reference to bl object """
+    if obj is None: return False
     try:
         name_obj = obj.name
         return False

@@ -15,98 +15,135 @@ from .stats import getStats
 class Link():
     keyType = tuple[int, int]
 
-    def __init__(self, web: "LinkCollection", key_cells: tuple[int, int], key_faces: tuple[int, int], pos_world:Vector, dir_world:Vector, toWall=False):
+    def __init__(self, col: "LinkCollection", key_cells: tuple[int, int], key_faces: tuple[int, int], pos_world:Vector, dir_world:Vector, toWall=False):
+        self.reset()
+        # XXX:: to out?
+        self.toWall = toWall
 
-        # no directionality
-        self.key_cells: Link.keyType = key_cells
-        self.key_faces: Link.keyType = key_faces
-
-        # properties in world space
+        # properties in world space?
         self.pos = pos_world
         self.dir = dir_world
 
-        # WIP:: arg? position of the key being first?
-        self.toWall = toWall
+
+        # no directionality but tuple key instead of set
+        self.collection: "LinkCollection" = col
+        self.key_cells: Link.keyType = key_cells
+        self.key_faces: Link.keyType = key_faces
 
         # neighs populated afterwards
         self.neighs: list[Link.keyType] = list()
+        self.neighs_dead: list[Link.keyType] = list()
+
+
+    def reset(self):
+        """ Reset simulation parameters """
+        self.life = 1.0
 
 
 #-------------------------------------------------------------------
 
 class LinkCollection():
 
+    class CONST_ERROR_IDX:
+        """ Use leftover indices between cont boundaries and custom walls for filler error idx """
+        asymmetry = -7
+        e2 = -8
+        e3 = -9
+
     def __init__(self, cont: Container, obj_shards: types.Object):
         stats = getStats()
         self.initialized = False
 
+        # retrieve objs, meshes -> dicts per shard
         self.obj_shards = obj_shards
+        self.shard_objs: list[types.Object]= [ shard for shard in obj_shards.children ]
+        self.shard_meshes: list[types.Mesh]= [ shard.data for shard in self.shard_objs ]
+
+        # NOTE:: store the dicts?
+        meshes_dicts: list[dict] = [ utils_geo.get_meshDicts(me) for me in self.shard_meshes ]
+        stats.logDt("calculated shards mesh dicts")
+
+
+        # calculate missing cells and query neighs -> shard_objs match the missing ones
+        self.cont = cont
+        self.cont_foundId: list[int] = []
+        self.cont_missingId: list[int] = []
+        self.cont_neighs_found: list[list[int]] = []
+        for i,cell in enumerate(cont):
+            if cell is None:
+                self.cont_missingId.append(i)
+            else:
+                self.cont_foundId.append(i)
+                self.cont_neighs_found.append(cell.neighbors())
+
+        stats.logDt(f"calculated voro cell neighs: {len(self.cont_foundId)} / {len(self.cont)} ({len(self.cont_missingId)} missing)")
+
+        # build symmetric face map of the found cells
+        self.cont_neighs_faces: list[list[int]] = []
+        self.keys_asymmetry: list[Link.keyType] = []
+        for i,neighs in zip(self.cont_foundId, self.cont_neighs_found):
+            faces: list[int] = []
+            for f,n in enumerate(neighs):
+                # wall simply add its index
+                if n < 0: faces.append(n)
+
+                # otherwise check symmetry at the other end
+                else:
+                    try: faces.append(self.cont_neighs_found[n].index(i))
+                    except ValueError:
+                        # replace with error idx in the structures but preserve the rest
+                        self.keys_asymmetry.append((i,n))
+                        neighs[f] = self.CONST_ERROR_IDX.asymmetry
+                        faces.append(self.CONST_ERROR_IDX.asymmetry)
+
+            self.cont_neighs_faces.append(faces)
+
+        stats.logDt(f"calculated cell neighs faces: {len(self.keys_asymmetry)} asymmetries"
+                    f" {str(self.keys_asymmetry[:8])}..." if self.keys_asymmetry else "")
+
+
+        # init cell dict with lists of its faces size (later index by face)
+        self.keys_perCell: dict[int, list[Link.keyType]] = {
+            id: list([Link.keyType()]* len(faces)) for id,faces in enumerate(self.cont_neighs_faces)
+        }
+        self.num_toCells = 0
+
+        # init wall dict with just empty lists (some will remain empty)
+        self.keys_perWall: dict[int, list[Link.keyType]] = {
+            id: list() for id in cont.get_conainerId_limitWalls()+cont.walls_cont_idx
+        }
+        self.num_toWalls = 0
 
         # TODO:: unionfind joined components + manually delete links
         # IDEA:: dynamic lists of broken?
         self.link_map: dict[Link.keyType, Link] = dict()
-        self.num_toCells = 0
-        self.num_toWalls = 0
-        #return
-
-
-        # XXX:: decouple scene from sim? calculate the FtoF map inside voro isntead of blender mesh...
-        self.shard_objs: types.Object = [ shard for shard in obj_shards.children ]
-        self.shard_meshes: types.Mesh= [ shard.data for shard in self.shard_objs ]
-        # TODO:: the children objects are ordered lexicographically 0 1 10 11 12 13... dynamically add zeroes or sort after?
-
-        meshes_dicts = [ utils_geo.get_meshDicts(me) for me in self.shard_meshes ]
-        stats.logDt("calculated shards mesh dicts")
-
-        # XXX:: could be calculated in voro++, also avoid checking twice...
-        # XXX:: using lists or maps to support non linear cell.id?
-        cont_neighs = [ cell.neighbors() for cell in cont if cell is not None ] # None cell will probably lead to asymmetry tho
-        stats.logDt("calculated voro cell neighs")
-
-        cont_neighs_faces = []
-        try:
-            for i,neighs in enumerate(cont_neighs):
-                #faces = [ n if n<0 else cont_neighs[n].index(i) for n in neighs ]
-                faces = [None] *len(neighs)
-                for f,n in enumerate(neighs):
-                    faces[f] = n if n<0 else cont_neighs[n].index(i)
-                cont_neighs_faces.append(faces)
-        except:
-            # TODO:: the map could be asymetric! and .index(i) fail -> needs to be handle and maybe breaks later parts...
-            DEV.log_msg(f"NO LINKS: asymetric cell neighs due to cell failed computation or tolerante issues", {"CALC", "LINKS", "ERROR"})
-            print({"i":i, "faces":faces, "f":f, "neighs":neighs, "n":n, "cont_neighs[n]":cont_neighs[n] })
-            return
-        stats.logDt("calculated cell neighs faces")
-
-
-        # IDEA:: keys to global map or direclty the links?
-        # init cell dict with lists of its faces size (later index by face)
-        self.keys_perCell: dict[int, list[Link.keyType]] = {cell.id: list([Link.keyType()]* len(cont_neighs[cell.id])) for cell in cont } # if cell is not None
-        # init wall dict with just empty lists (some will remain empty)
-        self.keys_perWall: dict[int, list[Link.keyType]] = {id: list() for id in cont.get_conainerId_limitWalls()+cont.walls_cont_idx}
 
 
         # FIRST loop to build the global dictionaries
-        for cell in cont:
-            #if cell is None: continue
-            idx_cell = cell.id
+        for idx_cell in self.cont_foundId:
             obj = self.shard_objs[idx_cell]
             me = self.shard_meshes[idx_cell]
+
             m_toWorld = utils.get_worldMatrix_unscaled(obj, update=True)
             mn_toWorld = utils.get_normalMatrix(m_toWorld)
 
-            for idx_face, idx_neighCell in enumerate(cont_neighs[idx_cell]):
+            for idx_face, idx_neighCell in enumerate(self.cont_neighs_found[idx_cell]):
+                # skip asymmetries
+                if idx_neighCell == self.CONST_ERROR_IDX.asymmetry:
+                    continue
+
                 # get world props
+                # XXX:: calculated here or per link with ability to recalc?
                 face = me.polygons[idx_face]
-                # XXX:: need to normalize normals after tranformation?
                 pos = m_toWorld @ face.center
                 normal = mn_toWorld @ face.normal
+                # XXX:: need to normalize normals after tranformation? in theory only rotates so no
 
                 # link to a wall, wont be repeated
                 if idx_neighCell < 0:
                     key = (idx_neighCell, idx_cell)
                     key_faces = (idx_neighCell, idx_face)
-                    l = Link(key, key_faces, pos, normal, toWall=True)
+                    l = Link(self, key, key_faces, pos, normal, toWall=True)
 
                     # add to mappings per wall and cell
                     self.num_toWalls += 1
@@ -116,16 +153,16 @@ class LinkCollection():
                     continue
 
                 # check unique links between cells
-                # NOTE:: key does not include faces, expected only one face conected between cells
-                key,swap = Links.getKey_swap(idx_cell, idx_neighCell)
+                # XXX:: key does not include faces, convex cells so expected only one face conected between cells
+                key,swap = LinkCollection.getKey_swap(idx_cell, idx_neighCell)
                 key_rep = key in self.link_map
                 if key_rep:
                     continue
 
                 # build the link
-                idx_neighFace = cont_neighs_faces[idx_cell][idx_face]
+                idx_neighFace = self.cont_neighs_faces[idx_cell][idx_face]
                 key_faces = LinkCollection.getKey(idx_face, idx_neighFace, swap)
-                l = Link(key, key_faces, pos, normal)
+                l = Link(self, key, key_faces, pos, normal)
 
                 # add to mappings for both per cells
                 self.num_toCells += 1
@@ -133,9 +170,9 @@ class LinkCollection():
                 self.keys_perCell[idx_cell][idx_face] = key
                 self.keys_perCell[idx_neighCell][idx_neighFace] = key
 
-        stats.logDt("created link map")
-        #return
+        stats.logDt(f"created link map: {self.num_toCells} links to cells + {self.num_toWalls} links to walls (total {len(self.link_map)})")
         # XXX:: found empty key? ()
+
 
         # SECOND loop to aggregate the links neighbours, only need to iterate keys_perCell
         for idx_cell,keys_perFace in self.keys_perCell.items():
@@ -175,6 +212,8 @@ class LinkCollection():
         DEV.log_msg(f"Found {self.num_toCells} links to cells + {self.num_toWalls} links to walls (total {len(self.link_map)})", logType)
         self.initialized = True
 
+    #-------------------------------------------------------------------
+    # IDEA:: not sure about what to give access to
 
     def getMesh(self, idx: list[int]|int) -> list[types.Mesh]|types.Mesh:
         """ return a mesh or list of meshes given idx  """
@@ -190,7 +229,6 @@ class LinkCollection():
         except TypeError:
             return [ self.shard_meshes[i].polygons[j] for i,j in zip(midx,fidx) ]
 
-
     #-------------------------------------------------------------------
 
     @staticmethod
@@ -205,6 +243,7 @@ class LinkCollection():
         return key
 
     #-------------------------------------------------------------------
+
 
 # OPT:: store links between objects -> add json parser to store persistently? or retrieve from recalculated cont?
 # OPT:: register some calback on object rename? free the map or remap
@@ -242,6 +281,8 @@ class LinkStorage:
         except KeyError:
             DEV.log_msg(f"Not found: probably reloaded the module?", {"STORAGE", "LINKS", "ERROR"})
 
+    #-------------------------------------------------------------------
+
     @staticmethod
     def purgeLinks():
         toPurge = []
@@ -256,5 +297,5 @@ class LinkStorage:
             LinkStorage.freeLinks(name)
 
     @staticmethod
-    def purgeLinks_callback(_scene_=None, _undo_=None):
+    def purgeLinks_callback(_scene_=None, _undo_name_=None):
         LinkStorage.purgeLinks()
