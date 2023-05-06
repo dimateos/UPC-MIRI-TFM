@@ -15,8 +15,7 @@ from .stats import getStats
 class Link():
     keyType = tuple[int, int]
 
-    def __init__(self, key_cells: tuple[int, int], key_faces: tuple[int, int], pos_world:Vector, dir_world:Vector, toWall=False):
-        self.life = 1.0
+    def __init__(self, web: "LinkCollection", key_cells: tuple[int, int], key_faces: tuple[int, int], pos_world:Vector, dir_world:Vector, toWall=False):
 
         # no directionality
         self.key_cells: Link.keyType = key_cells
@@ -35,11 +34,12 @@ class Link():
 
 #-------------------------------------------------------------------
 
-class Links():
+class LinkCollection():
 
     def __init__(self, cont: Container, obj_shards: types.Object):
         stats = getStats()
-        self.cont = cont
+        self.initialized = False
+
         self.obj_shards = obj_shards
 
         # TODO:: unionfind joined components + manually delete links
@@ -124,7 +124,7 @@ class Links():
 
                 # build the link
                 idx_neighFace = cont_neighs_faces[idx_cell][idx_face]
-                key_faces = Links.getKey(idx_face, idx_neighFace, swap)
+                key_faces = LinkCollection.getKey(idx_face, idx_neighFace, swap)
                 l = Link(key, key_faces, pos, normal)
 
                 # add to mappings for both per cells
@@ -173,6 +173,7 @@ class Links():
         logType = {"CALC", "LINKS"}
         if not self.link_map: logType |= {"ERROR"}
         DEV.log_msg(f"Found {self.num_toCells} links to cells + {self.num_toWalls} links to walls (total {len(self.link_map)})", logType)
+        self.initialized = True
 
 
     def getMesh(self, idx: list[int]|int) -> list[types.Mesh]|types.Mesh:
@@ -208,24 +209,24 @@ class Links():
 # OPT:: store links between objects -> add json parser to store persistently? or retrieve from recalculated cont?
 # OPT:: register some calback on object rename? free the map or remap
 # XXX:: this storage is lost on module reload...
-class Links_storage:
-    bl_links: dict[str, Links] = dict()
+class LinkStorage:
+    bl_links: dict[str, LinkCollection] = dict()
     bl_links_users: dict[str, types.Object] = dict()
 
     @staticmethod
     def addLinks(links, uniqueName, user):
         DEV.log_msg(f"Add: {uniqueName}...", {"STORAGE", "LINKS"})
 
-        if uniqueName in Links_storage.bl_links:
+        if uniqueName in LinkStorage.bl_links:
             DEV.log_msg(f"Replacing found links", {"STORAGE", "LINKS", "ERROR"})
-        Links_storage.bl_links[uniqueName] = links
-        Links_storage.bl_links_users[uniqueName] = user
+        LinkStorage.bl_links[uniqueName] = links
+        LinkStorage.bl_links_users[uniqueName] = user
 
     @staticmethod
     def getLinks(uniqueName):
         DEV.log_msg(f"Get: {uniqueName}...", {"STORAGE", "LINKS"})
         try:
-            return Links_storage.bl_links[uniqueName]
+            return LinkStorage.bl_links[uniqueName]
         except KeyError:
             DEV.log_msg(f"Not found: probably reloaded the module?", {"STORAGE", "LINKS", "ERROR"})
 
@@ -233,16 +234,16 @@ class Links_storage:
     def freeLinks(uniqueName):
         DEV.log_msg(f"Del: {uniqueName}...", {"STORAGE", "LINKS"})
         try:
-            links = Links_storage.bl_links.pop(uniqueName)
+            links = LinkStorage.bl_links.pop(uniqueName)
             del links
-            user = Links_storage.bl_links_users.pop(uniqueName)
+            user = LinkStorage.bl_links_users.pop(uniqueName)
         except KeyError:
             DEV.log_msg(f"Not found: probably reloaded the module?", {"STORAGE", "LINKS", "ERROR"})
 
     @staticmethod
     def purgeLinks():
         toPurge = []
-        for name,obj in Links_storage.bl_links_users.items():
+        for name,obj in LinkStorage.bl_links_users.items():
             try:
                 name_obj = obj.name
             except ReferenceError:
@@ -250,8 +251,8 @@ class Links_storage:
 
         DEV.log_msg(f"Purging {len(toPurge)}: {toPurge}", {"STORAGE", "LINKS"})
         for n in toPurge:
-            Links_storage.freeLinks(name)
+            LinkStorage.freeLinks(name)
 
     @staticmethod
     def purgeLinks_callback(_scene_=None, _undo_=None):
-        Links_storage.purgeLinks()
+        LinkStorage.purgeLinks()

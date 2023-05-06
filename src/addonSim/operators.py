@@ -1,7 +1,6 @@
 import bpy
 import bpy.types as types
 import bpy.props as props
-from mathutils import Vector, Matrix
 
 from .preferences import getPrefs
 from .properties import (
@@ -11,8 +10,8 @@ from .operators_utils import _StartRefresh_OT, util_classes_op
 
 from . import mw_setup
 from . import mw_cont
-from .mw_links import Links, Link, Links_storage
-from tess import Container, Cell
+from .mw_links import LinkCollection, LinkStorage
+from tess import Container
 
 from . import ui
 from . import utils
@@ -90,7 +89,7 @@ class MW_gen_OT(_StartRefresh_OT):
         # Free existing link memory -> now purged on undo callback dynamically
         prefs = getPrefs()
         if self.last_ptrID_links and not prefs.prefs_links_undoPurge:
-            Links_storage.freeLinks(self.last_ptrID_links)
+            LinkStorage.freeLinks(self.last_ptrID_links)
 
 
         # Retrieve root
@@ -199,13 +198,13 @@ class MW_gen_OT(_StartRefresh_OT):
         mw_setup.gen_linksCellObjects(obj_links_perCell, cont, cfg, self.ctx)
 
         # calculate links and store in the external storage
-        links:Links = Links(cont, obj_shards)
-        if not links.link_map:
+        links:LinkCollection = LinkCollection(cont, obj_shards)
+        if not links.initialized:
             return self.end_op_error("found no links... but could try recalculate!")
 
         # use links storage
         self.last_ptrID_links = cfg.ptrID_links = obj_root.name
-        Links_storage.addLinks(links, cfg.ptrID_links, obj_root)
+        LinkStorage.addLinks(links, cfg.ptrID_links, obj_root)
 
 
         return self.end_op()
@@ -247,14 +246,14 @@ class MW_gen_links_OT(_StartRefresh_OT):
         self.start_op()
         obj, cfg = MW_gen_cfg.getSelectedRoot()
 
-        ## WIP:: per cell no need but atm cont ref is inside Links structure
+        ## WIP:: per cell no need but atm cont ref is inside LinkCollection structure
         #obj_links_perCell = mw_setup.gen_linksEmptiesPerCell(obj, cfg, context)
         #mw_setup.gen_linksCellObjects(obj_links_perCell, links.cont, cfg, context)
 
         # per links require the structure
         if not cfg.ptrID_links:
             return self.end_op_error("Incompleted fracture... (not checked in poll atm)")
-        links = Links_storage.getLinks(cfg.ptrID_links)
+        links = LinkStorage.getLinks(cfg.ptrID_links)
         if not links:
             return self.end_op_error("No links storage found...")
 
@@ -298,7 +297,7 @@ class MW_util_delete_OT(_StartRefresh_OT):
 
         # free memory from potential links map
         if cfg.ptrID_links and prefs.prefs_links_undoPurge:
-            Links_storage.freeLinks(cfg.ptrID_links)
+            LinkStorage.freeLinks(cfg.ptrID_links)
 
         # finally delete the fracture object recusively
         utils.delete_objectRec(obj, logAmount=True)

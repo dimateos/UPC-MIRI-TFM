@@ -9,7 +9,7 @@ from .properties import (
 from . import operators as ops
 from .panels_utils import util_classes_pt
 
-from .mw_links import Links_storage
+from .mw_links import LinkStorage
 
 from . import ui
 from .utils_dev import DEV
@@ -40,7 +40,7 @@ class MW_gen_PT(types.Panel):
             # links storage
             boxLinks = box.box()
             col_rowSplit = boxLinks.row().split(factor=0.66)
-            links = Links_storage.bl_links
+            links = LinkStorage.bl_links
             col_rowSplit.label(text=f"Storage links: {len(links)}", icon="FORCE_CURVE")
             col_rowSplit.prop(prefs, "prefs_links_undoPurge")
 

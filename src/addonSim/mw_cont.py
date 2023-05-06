@@ -222,6 +222,10 @@ def cont_fromPoints(points: list[Vector], bb: list[Vector, 6], faces4D: list[Vec
     else:
         Container.custom_walls_precision = Container.custom_walls_precision_default
 
+    # XXX:: container creation might fail do to some voro++ config params... hard to tweak for all?
+    # XXX:: also seems that if the mesh vertices/partilces are further appart if behaves better? clustered by tolerance?
+    # XXX:: some tiny intersection between cells might happen due to tolerance -> check or not worth it, we shrink then would not be noticeable
+
     try:
         # Build the container and cells
         cont = Container(points=points, limits=bb_tuples, walls=faces4D)
@@ -233,11 +237,6 @@ def cont_fromPoints(points: list[Vector], bb: list[Vector, 6], faces4D: list[Vec
         if not cont: logType |= {"ERROR"}
         DEV.log_msg(f"Found {len(cont)} cells ({len(cont.walls)} walls from {len(faces4D)} faces)", logType)
         return cont
-
-    # XXX:: container creation might fail do to some voro++ config params... hard to tweak for all?
-    # XXX:: also seems that if the mesh vertices/partilces are further appart if behaves better? clustered by tolerance?
-    # TODO:: allow for missing cells but handle correclty None insdie the cont
-    # XXX:: some tiny intersection between cells might happen due to tolerance -> check or not worth it, we shrink then would not be noticeable
 
     except Exception as e:
         DEV.log_msg(f"exception cont >> {str(e)}", {"CALC", "CONT", "ERROR"})

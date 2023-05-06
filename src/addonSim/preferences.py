@@ -5,7 +5,7 @@ import bpy.props as props
 from . import handlers
 
 # OPT:: seems bad to reference this here tho
-from .mw_links import Links_storage
+from .mw_links import LinkStorage
 
 from .utils_dev import DEV
 
@@ -145,16 +145,16 @@ class MW_prefs(bpy.types.AddonPreferences):
 
     def prefs_links_undoPurge_update(self, context):
         if self.prefs_links_undoPurge:
-            handlers.callback_undo_actions.appendCheck(Links_storage.purgeLinks_callback)
-            Links_storage.purgeLinks()
+            handlers.callback_undo_actions.appendCheck(LinkStorage.purgeLinks_callback)
+            LinkStorage.purgeLinks()
         else:
-            handlers.callback_undo_actions.remove(Links_storage.purgeLinks_callback)
+            handlers.callback_undo_actions.remove(LinkStorage.purgeLinks_callback)
 
     prefs_links_undoPurge: props.BoolProperty(
         name="purge", description="Keep purging on undo",
         default=False,
         update=prefs_links_undoPurge_update,
-        #update= lambda self, context: MW_prefs.Links_storage.purgeLinks()
+        #update= lambda self, context: MW_prefs.LinkStorage.purgeLinks()
     )
 
     #-------------------------------------------------------------------
@@ -249,7 +249,7 @@ def register():
     assert(MW_prefs.bl_idname == ADDON._bl_name)
 
     # NOTE:: sync with default state? cannot add static attrs to the addonprefs?
-    handlers.callback_undo_actions.appendCheck(Links_storage.purgeLinks_callback)
+    handlers.callback_undo_actions.appendCheck(LinkStorage.purgeLinks_callback)
 
     for cls in classes:
         bpy.utils.register_class(cls)
@@ -262,7 +262,7 @@ def unregister():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})
 
     # might end up set or not -> could access prefs and check
-    handlers.callback_undo_actions.removeCheck(Links_storage.purgeLinks_callback)
+    handlers.callback_undo_actions.removeCheck(LinkStorage.purgeLinks_callback)
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

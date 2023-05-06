@@ -11,8 +11,8 @@ from .properties import (
     MW_gen_cfg,
 )
 
-from .mw_links import Links, Link
-from tess import Container, Cell
+from .mw_links import LinkCollection
+from tess import Container
 
 from . import utils
 from .utils_dev import DEV
@@ -147,6 +147,7 @@ def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
 
 def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context, invertOrientation = False):
     for cell in cont:
+        # skip none cells (computation error)
         if cell is None: continue
         source_id = cont.source_idx[cell.id]
         name= f"{getPrefs().names.shards}_{getPrefs().names.get_IdFormated(source_id)}"
@@ -178,7 +179,7 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
         mesh.from_pydata(vertices=verts, edges=[], faces=faces_blender)
         obj_shard = utils.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showShards)
         obj_shard.location = pos
-        obj_shard.scale = [0.9]*3
+        obj_shard.scale = [cfg.struct_shardScale]*3
 
     getStats().logDt("generated shards objects")
 
@@ -237,7 +238,7 @@ def gen_linksEmptiesPerCell(obj: types.Object, cfg: MW_gen_cfg, context: types.C
     obj_links_perCell = utils.gen_childClean(obj, getPrefs().names.links_perCell, context, None, keepTrans=False, hide=not cfg.struct_showLinks_perCell)
     return obj_links_perCell
 
-def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: Links, cfg: MW_gen_cfg, context: types.Context):
+def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: LinkCollection, cfg: MW_gen_cfg, context: types.Context):
     # iterate the global map
     for key,l in links.link_map.items():
         c1, c2 = l.key_cells
