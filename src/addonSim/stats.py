@@ -87,7 +87,8 @@ class Stats:
     #-------------------------------------------------------------------
 
     def logMsg(self, msg):
-        print(f"{self.name}//                              - {msg}")
+        left = DEV.log_justifyMsg(f"{self.name}//")
+        print(f"{left}{DEV.logs_stats_sep}{msg}")
 
     def logDt(self, msg: str = ""):
         if not DEV.logs_stats: return
@@ -95,7 +96,9 @@ class Stats:
         dt = self.time_diff()
 
         log = f"{self.name}// dt:{dt:>10.6f}s ({t:>10.6f}s)"
-        if msg: log += f" - {msg}"
+        if msg:
+            log = DEV.log_justifyMsg(log)
+            log += f"{DEV.logs_stats_sep}{msg}"
         print(log)
 
     def logT(self, msg: str = ""):
@@ -103,7 +106,9 @@ class Stats:
         t = self.time()
 
         log = f"{self.name}// total time:    ({t:>10.6f}s)"
-        if msg: log += f" - {msg}"
+        if msg:
+            log = DEV.log_justifyMsg(log)
+            log += f"{DEV.logs_stats_sep}{msg}"
         print(log)
 
     # OPT:: single line or something like log
@@ -114,7 +119,9 @@ class Stats:
         dm = self.diffmem
 
         log = f"{self.name}// dm:{dm:>9}   ({m:>10}b)"
-        if msg: log += f" - {msg}"
+        if msg:
+            log = DEV.log_justifyMsg(log)
+            log += f"{DEV.logs_stats_sep}{msg}"
         print(log)
 
     def logFull(self, msg: str = ""):

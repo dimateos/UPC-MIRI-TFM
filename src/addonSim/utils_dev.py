@@ -11,8 +11,9 @@ class DEV:
 
     # IDEA:: some access from UI to toggle dynamically?
     # IDEA:: better list of sets to use combinations
+    # OPT:: use list instead of set to preserve type order
     logs = True
-    logs_skipped = {
+    logs_type_skipped = {
         'NONE', #except when empty, parsed as dict?
         'UPDATE',
         'INIT', "PARSED"
@@ -21,22 +22,34 @@ class DEV:
     }
     ui_vals = True
 
+    logs_cutcol = 40
+    logs_type_sep = ":: "
+
     # IDEA:: profiling levels instead of just bool, or stats log uisng log_msg with tags
     logs_stats = True
+    logs_stats_sep = "   - "
 
     assert_voro_posW = True
 
 
 #-------------------------------------------------------------------
 
-    # OPT:: use list instead of set to preserve type order
+    @staticmethod
+    def log_justifyMsg(s):
+        if len(s) > DEV.logs_cutcol:
+            return s[:DEV.logs_cutcol-4]+"...}"
+        else:
+            return s.ljust(DEV.logs_cutcol)
+
     @staticmethod
     def log_msg(msg, msgType = {'DEV'}, ui = None):
-        """ Log to console if DEV.logs and type not filtered by DEV.logs_skipped """
+        """ Log to console if DEV.logs and type not filtered by DEV.logs_type_skipped """
         if not DEV.logs: return
-        if msgType & DEV.logs_skipped: return
+        if msgType & DEV.logs_type_skipped: return
 
-        print(msgType, msg)
+        print(f"{DEV.log_justifyMsg(str(msgType))}{DEV.logs_type_sep}{msg}")
+
+        # blender ui report?
         if ui: ui.report(msgType, msg)
         #ui.report({'INFO'}, "Operation successful!")
         #ui.report({'ERROR'}, "Operation failed!")
