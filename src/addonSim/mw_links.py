@@ -56,62 +56,9 @@ class LinkCollection():
         """ Set to true only at the end of a complete LinkCollection initialization """
 
 
-        # calculate missing cells and query neighs
-        self.cont = cont
-        self.cont_foundId: list[int] = []
-        self.cont_missingId: list[int] = []
-        self.cont_neighs: list[list[int]] = [LinkCollection.CONST_ERROR_IDX.missing]*len(cont)
-        """ NOTE:: missing cells are filled with a placeholder id to preserve original position idx """
-
-        for i,cell in enumerate(cont):
-            if cell is None:
-                self.cont_missingId.append(i)
-                self.cont_neighs.append(LinkCollection.CONST_ERROR_IDX.missing)
-            else:
-                self.cont_foundId.append(i)
-                self.cont_neighs.append(cell.neighbors())
-
-        stats.logDt(f"calculated voro cell neighs: {len(self.cont_foundId)} / {len(cont)} ({len(self.cont_missingId)} missing)")
-
-
-        # build symmetric face map of the found cells
-        self.keys_asymmetry: list[Link.keyType] = []
-        self.cont_neighs_faces: list[list[int]] = []
-        """ NOTE:: missing cells and neigh asymmetries are filled with a placeholder id too """
-
-        for idx_cell,neighs in enumerate(self.cont_neighs):
-            # check missing cell
-            if neighs == LinkCollection.CONST_ERROR_IDX.missing:
-                self.cont_neighs_faces.append(LinkCollection.CONST_ERROR_IDX.missing)
-                continue
-
-            faces: list[int] = []
-            for idx_face,idx_neigh in enumerate(neighs):
-                # wall simply add its index
-                if idx_neigh < 0: faces.append(idx_neigh)
-
-                # otherwise check symmetry at the other end
-                else:
-                    try: faces.append(self.cont_neighs[idx_neigh].index(i))
-                    except ValueError:
-                        # replace with error idx in the structures but preserve the rest
-                        key = (i,idx_neigh)
-                        self.keys_asymmetry.append(key)
-                        faces.append(self.CONST_ERROR_IDX.asymmetry)
-                        neighs[idx_face] = self.CONST_ERROR_IDX.asymmetry
-
-            self.cont_neighs_faces.append(faces)
-
-        msg = f"calculated cell neighs faces: {len(self.keys_asymmetry)} asymmetries"
-        if self.keys_asymmetry: msg = f" {str(self.keys_asymmetry[:10])}"
-        stats.logDt(msg) # uncut=True
-
-
-        # init cell dict with lists of its faces size (later index by face)
-        self.keys_perCell: dict[int, list[Link.keyType]] = {
-            id: list([Link.keyType()]* len(faces)) for id,faces in enumerate(self.cont_neighs_faces)
-        }
-        self.num_toCells = 0
+        # TODO:: unionfind joined components + manually delete links
+        # IDEA:: dynamic lists of broken?
+        self.link_map: dict[Link.keyType, Link] = dict()
 
         # init wall dict with just empty lists (some will remain empty)
         self.keys_perWall: dict[int, list[Link.keyType]] = {
@@ -119,49 +66,117 @@ class LinkCollection():
         }
         self.num_toWalls = 0
 
-        # TODO:: unionfind joined components + manually delete links
-        # IDEA:: dynamic lists of broken?
-        self.link_map: dict[Link.keyType, Link] = dict()
+        # OPT:: raw int error substutiting lists or put in a list with just the errorring int?
+        # cell dict lists will have the same size of neighs/faces so fill in the following loop while checking for missing ones
+        self.keys_perCell: dict[int, list[Link.keyType] | int] = dict()
+        """ NOTE:: missing cells are filled with a placeholder id to preserve original position idx """
+        self.num_toCells = 0
+
+
+        # calculate missing cells and query neighs
+        self.cont = cont
+        self.cont_foundId   : list[int]           = []
+        self.cont_missingId : list[int]           = []
+        self.cont_neighs    : list[list[int]|int] = [LinkCollection.CONST_ERROR_IDX.missing]*len(cont)
+        """ NOTE:: missing cells are filled with a placeholder id to preserve original position idx """
+
+        for idx_cell,cell in enumerate(cont):
+            if cell is None:
+                self.cont_missingId.append(idx_cell)
+                self.keys_perCell[idx_cell] = LinkCollection.CONST_ERROR_IDX.missing
+            else:
+                self.cont_foundId.append(idx_cell)
+                neighs = cell.neighbors()
+                self.cont_neighs[idx_cell] = neighs
+                # prefill with asymmetry keys too
+                key = (LinkCollection.CONST_ERROR_IDX.asymmetry, idx_cell)
+                self.keys_perCell[idx_cell] = [key]*len(neighs)
+
+        msg = f"calculated voro cell neighs: {len(self.cont_missingId)} / {len(cont)} missing"
+        if self.cont_missingId: msg += f" {str(self.cont_missingId[:20])}"
+        stats.logDt(msg) # uncut=True
+
+
+        # build symmetric face map of the found cells
+        self.keys_asymmetry    : list[Link.keyType]  = []
+        self.cont_neighs_faces : list[list[int]|int] = [LinkCollection.CONST_ERROR_IDX.missing]*len(cont)
+        """ NOTE:: missing cells and neigh asymmetries are filled with a placeholder id too """
+
+        for idx_cell,neighs in enumerate(self.cont_neighs):
+            # skip missing cell
+            if neighs == LinkCollection.CONST_ERROR_IDX.missing:
+                continue
+
+            faces: list[int] = [LinkCollection.CONST_ERROR_IDX.asymmetry] * len(neighs)
+            for idx_face,idx_neigh in enumerate(neighs):
+                # wall connection always ok, so simply add its index
+                if idx_neigh < 0: faces.append(idx_neigh)
+
+                # general cases try retrieving other end respective face
+                else:
+                    neigh_idx_face = -1
+                    neighsOther = self.cont_neighs[idx_neigh]
+
+                    # possibly a whole missing cell at the other side
+                    if neighsOther != LinkCollection.CONST_ERROR_IDX.missing:
+                        # symmetry checked with .index exception
+                        try: neigh_idx_face = neighsOther.index(idx_cell)
+                        except ValueError: pass
+
+                    # correclty found face
+                    if neigh_idx_face != -1:
+                        faces[idx_face] = neigh_idx_face
+
+                    # otherwise replace with error idx in the structures
+                    else:
+                        key = (idx_cell,idx_neigh)
+                        self.keys_asymmetry.append(key)
+                        neighs[idx_face] = LinkCollection.CONST_ERROR_IDX.asymmetry
+
+            self.cont_neighs_faces[idx_cell] = faces
+
+        msg = f"calculated cell neighs faces: {len(self.keys_asymmetry)} asymmetries"
+        if self.keys_asymmetry: msg += f" {str(self.keys_asymmetry[:10])}"
+        stats.logDt(msg) # uncut=True
 
 
         # retrieve objs, meshes -> dicts per shard
-        self.obj_shards = obj_shards
-        self.shard_objs: list[types.Object] = [LinkCollection.CONST_ERROR_IDX.missing]* len(cont)
-        self.shard_meshes: list[types.Mesh] = [LinkCollection.CONST_ERROR_IDX.missing]* len(cont)
-        for shard in obj_shards.children:
+        self.shards_parent = obj_shards
+        self.shards_objs     : list[types.Object|int] = [LinkCollection.CONST_ERROR_IDX.missing]* len(cont)
+        self.shards_meshes   : list[types.Mesh|int]   = [LinkCollection.CONST_ERROR_IDX.missing]* len(cont)
+        self.shards_meshMaps : list[dict|int]         = [LinkCollection.CONST_ERROR_IDX.missing]* len(cont)
 
+        for idx_found,shard in enumerate(obj_shards.children):
+            idx_cell = self.cont_foundId[idx_found]
+            self.shards_objs[idx_cell] = shard
+            mesh = shard.data
+            self.shards_meshes[idx_cell] = mesh
+            self.shards_meshMaps[idx_cell] = utils_geo.get_meshDicts(mesh)
 
-        self.shard_objs: list[types.Object]= [ shard for shard in obj_shards.children ]
-        self.shard_meshes: list[types.Mesh]= [ shard.data for shard in self.shard_objs if shard != LinkCollection.CONST_ERROR_IDX.missing ]
-
-        # NOTE:: store the dicts?
-        meshes_dicts: list[dict] = [ utils_geo.get_meshDicts(me) for me in self.shard_meshes ]
-        stats.logDt("calculated shards mesh dicts")
-
-
+        stats.logDt("calculated shards mesh dicts (interleaved missing cells)")
 
         # FIRST loop to build the global dictionaries
         for idx_cell in self.cont_foundId:
-            obj = self.shard_objs[idx_cell]
-            me = self.shard_meshes[idx_cell]
 
-            m_toWorld = utils.get_worldMatrix_unscaled(obj, update=True)
+            # XXX:: data to calculate global pos here or leave for links to do?
+            obj        = self.shards_objs[idx_cell]
+            me         = self.shards_meshes[idx_cell]
+            m_toWorld  = utils.get_worldMatrix_unscaled(obj, update=True)
             mn_toWorld = utils.get_normalMatrix(m_toWorld)
 
+            # iterate all faces including asymmetry placeholders (missing cells already ignored with cont_foundId)
             for idx_face, idx_neighCell in enumerate(self.cont_neighs[idx_cell]):
 
-                # add asymmetries to keys per cell at least
+                # skip asymmetric (already prefilled keys_perCell)
                 if idx_neighCell == self.CONST_ERROR_IDX.asymmetry:
-                    key = (idx_neighCell, idx_cell)
-                    self.keys_perCell[idx_cell][idx_face] = key
                     continue
 
                 # get world props
-                # XXX:: calculated here or per link with ability to recalc?
-                face = me.polygons[idx_face]
+                face: types.MeshPolygon = me.polygons[idx_face]
                 pos = m_toWorld @ face.center
                 normal = mn_toWorld @ face.normal
-                # XXX:: need to normalize normals after tranformation? in theory only rotates so no
+                # NOTE:: potentially rotated normals may have a length of 1.0 +- 1e-8 but not worth normalizing
+                #DEV.log_msg(f"face.normal {face.normal} (l: {face.normal.length}) -> world {normal} (l: {normal.length})", cut=False)
 
                 # link to a wall, wont be repeated
                 if idx_neighCell < 0:
@@ -195,11 +210,11 @@ class LinkCollection():
                 self.keys_perCell[idx_neighCell][idx_neighFace] = key
 
         stats.logDt(f"created link map")
-        # XXX:: found empty key? () still with the particles inside cube inside ico
 
 
         # SECOND loop to aggregate the links neighbours, only need to iterate keys_perCell
-        for idx_cell,keys_perFace in self.keys_perCell.items():
+        for idx_cell in self.cont_foundId:
+            keys_perFace = self.keys_perCell[idx_cell]
             for idx_face,key in enumerate(keys_perFace):
                 # skip possible asymmetries
                 if key[0] == self.CONST_ERROR_IDX.asymmetry:
@@ -215,7 +230,7 @@ class LinkCollection():
 
                 # walls only add local faces from the same cell
                 if l.toWall:
-                    w_neighs = meshes_dicts[idx_cell]["FtoF"][idx_face]
+                    w_neighs = self.shards_meshMaps[idx_cell]["FtoF"][idx_face]
                     w_neighs = [ keys_perFace[f] for f in w_neighs ]
                     l.neighs += w_neighs
                     continue
@@ -223,8 +238,8 @@ class LinkCollection():
                 # extract idx and geometry faces neighs
                 c1, c2 = l.key_cells
                 f1, f2 = l.key_faces
-                m1_neighs = meshes_dicts[c1]["FtoF"]
-                m2_neighs = meshes_dicts[c2]["FtoF"]
+                m1_neighs = self.shards_meshMaps[c1]["FtoF"]
+                m2_neighs = self.shards_meshMaps[c2]["FtoF"]
                 f1_neighs = m1_neighs[f1]
                 f2_neighs = m2_neighs[f2]
 
