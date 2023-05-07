@@ -86,47 +86,40 @@ class Stats:
 
     #-------------------------------------------------------------------
 
-    def logMsg(self, msg):
-        left = DEV.log_justifyMsg(f"{self.name}//")
-        print(f"{left}{DEV.logs_stats_sep}{msg}")
+    logType = { "STATS" }
 
-    def logDt(self, msg: str = ""):
+    def logMsg(self, msg, uncut=False):
+        msgStart = f"{self.name}//"
+        DEV.log_msg(msg, Stats.logType, msgStart, DEV.logs_stats_sep, cut=not uncut)
+
+    def logDt(self, msg: str = "", uncut=False):
         if not DEV.logs_stats: return
         t = self.time()
         dt = self.time_diff()
 
-        log = f"{self.name}// dt:{dt:>10.6f}s ({t:>10.6f}s)"
-        if msg:
-            log = DEV.log_justifyMsg(log)
-            log += f"{DEV.logs_stats_sep}{msg}"
-        print(log)
+        msgStart = f"{self.name}// dt:{dt:>10.6f}s ({t:>10.6f}s)"
+        DEV.log_msg(msg, Stats.logType, msgStart, DEV.logs_stats_sep, cut=not uncut)
 
-    def logT(self, msg: str = ""):
+    def logT(self, msg: str = "", uncut=False):
         if not DEV.logs_stats: return
         t = self.time()
 
-        log = f"{self.name}// total time:    ({t:>10.6f}s)"
-        if msg:
-            log = DEV.log_justifyMsg(log)
-            log += f"{DEV.logs_stats_sep}{msg}"
-        print(log)
+        msgStart = f"{self.name}// total time:    ({t:>10.6f}s)"
+        DEV.log_msg(msg, Stats.logType, msgStart, DEV.logs_stats_sep, cut=not uncut)
 
     # OPT:: single line or something like log
-    def logMem(self, msg: str = ""):
+    def logMem(self, msg: str = "", uncut=False):
         if not DEV.logs_stats: return
         m = self.memory_max()
         lm = self.memory_last()
         dm = self.diffmem
 
-        log = f"{self.name}// dm:{dm:>9}   ({m:>10}b)"
-        if msg:
-            log = DEV.log_justifyMsg(log)
-            log += f"{DEV.logs_stats_sep}{msg}"
-        print(log)
+        msgStart = f"{self.name}// dm:{dm:>9}   ({m:>10}b)"
+        DEV.log_msg(msg, Stats.logType, msgStart, DEV.logs_stats_sep, cut=not uncut)
 
-    def logFull(self, msg: str = ""):
-        self.logT(msg)
-        self.logMem("")
+    def logFull(self, msg: str = "", uncut=False):
+        self.logT(msg, uncut=uncut)
+        self.logMem("", uncut=uncut)
 
 
 #-------------------------------------------------------------------

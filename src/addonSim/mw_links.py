@@ -301,7 +301,7 @@ class LinkStorage:
                 toPurge.append(name)
 
         DEV.log_msg(f"Purging {len(toPurge)}: {toPurge}", {"STORAGE", "LINKS"})
-        for n in toPurge:
+        for name in toPurge:
             LinkStorage.freeLinks(name)
 
     @staticmethod

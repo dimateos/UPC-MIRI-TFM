@@ -153,7 +153,7 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
         name= f"{getPrefs().names.shards}_{getPrefs().names.get_IdFormated(source_id)}"
 
         # assert some voro properties, the more varied test cases the better: center of mass at the center of volume
-        if DEV.assert_voro_posW:
+        if DEV.ASSERT_CELL_POS:
             posC = cell.centroid()
             posCL = cell.centroid_local()
             vertsCL = cell.vertices_local_centroid()
