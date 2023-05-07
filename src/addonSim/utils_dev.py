@@ -23,6 +23,7 @@ class DEV:
     ui_vals = True
 
     logs_cutcol = 40
+    logs_cutpath = 30
     logs_type_sep = ":: "
 
     # IDEA:: profiling levels instead of just bool, or stats log uisng log_msg with tags

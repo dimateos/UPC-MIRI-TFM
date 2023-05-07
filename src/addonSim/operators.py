@@ -194,8 +194,8 @@ class MW_gen_OT(_StartRefresh_OT):
             return self.end_op("DEV.LEGACY_CONT stop...")
         mw_setup.gen_shardsObjects(obj_shards, cont, cfg, self.ctx, invertOrientation=prefs.gen_setup_invertShardNormals)
 
-        obj_links_perCell = mw_setup.gen_linksEmptiesPerCell(obj_root, cfg, self.ctx)
-        mw_setup.gen_linksCellObjects(obj_links_perCell, cont, cfg, self.ctx)
+        #obj_links_perCell = mw_setup.gen_linksEmptiesPerCell(obj_root, cfg, self.ctx)
+        #mw_setup.gen_linksCellObjects(obj_links_perCell, cont, cfg, self.ctx)
 
         # calculate links and store in the external storage
         links:LinkCollection = LinkCollection(cont, obj_shards)

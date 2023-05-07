@@ -33,7 +33,7 @@ submodules = [
     operators,
     panels,
 ]
-_name = f"{__name__} \t(...{__file__[-50:]})"
+_name = f"{__name__}  (...{__file__[-DEV.logs_cutpath:]})"
 
 def register():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "REG"})

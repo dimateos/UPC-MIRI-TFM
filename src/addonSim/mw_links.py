@@ -47,7 +47,7 @@ class LinkCollection():
     class CONST_ERROR_IDX:
         """ Use leftover indices between cont boundaries and custom walls for filler error idx """
         asymmetry = -7
-        e2 = -8
+        missing = -8
         e3 = -9
 
     def __init__(self, cont: Container, obj_shards: types.Object):
@@ -128,8 +128,11 @@ class LinkCollection():
             mn_toWorld = utils.get_normalMatrix(m_toWorld)
 
             for idx_face, idx_neighCell in enumerate(self.cont_neighs_found[idx_cell]):
-                # skip asymmetries
+
+                # add asymmetries to keys per cell at least
                 if idx_neighCell == self.CONST_ERROR_IDX.asymmetry:
+                    key = (idx_neighCell, idx_cell)
+                    self.keys_perCell[idx_cell][idx_face] = key
                     continue
 
                 # get world props
@@ -170,13 +173,18 @@ class LinkCollection():
                 self.keys_perCell[idx_cell][idx_face] = key
                 self.keys_perCell[idx_neighCell][idx_neighFace] = key
 
-        stats.logDt(f"created link map: {self.num_toCells} links to cells + {self.num_toWalls} links to walls (total {len(self.link_map)})")
-        # XXX:: found empty key? ()
+        stats.logDt(f"created link map")
+        # XXX:: found empty key? () still with the particles inside cube inside ico
 
 
         # SECOND loop to aggregate the links neighbours, only need to iterate keys_perCell
         for idx_cell,keys_perFace in self.keys_perCell.items():
             for idx_face,key in enumerate(keys_perFace):
+                # skip possible asymmetries
+                if key[0] == self.CONST_ERROR_IDX.asymmetry:
+                    continue
+
+                # retrieve valid link
                 l = self.link_map[key]
                 #DEV.log_msg(f"l {l.key_cells} {l.key_cells}")
 
