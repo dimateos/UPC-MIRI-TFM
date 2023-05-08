@@ -26,6 +26,10 @@ class MW_gen_cfg(types.PropertyGroup):
     )
 
     @staticmethod
+    def isRoot(obj: types.Object) -> bool:
+        return "ROOT" in obj.mw_gen.meta_type
+
+    @staticmethod
     def hasRoot(obj: types.Object) -> bool:
         """ Quick check if the object is part of a fracture """
         #DEV.log_msg(f"hasRoot check: {obj.name} -> {obj.mw_gen.meta_type}", {"REC", "CFG"})
@@ -58,6 +62,11 @@ class MW_gen_cfg(types.PropertyGroup):
         except ValueError:
             DEV.log_msg(f"getRoot chain broke: {obj_chain.name} -> not root ({obj_chain.mw_gen.meta_type})", {"ERROR", "CFG"})
             return obj, None
+
+    @staticmethod
+    def getSceneRoots() -> list[types.Object]:
+        roots = [ obj for obj in bpy.data.objects if MW_gen_cfg.isRoot(obj) ]
+        return roots
 
     @staticmethod
     def setMetaType(obj: types.Object, type: dict, skipParent = False, childrenRec = True):
@@ -115,14 +124,12 @@ class MW_gen_cfg(types.PropertyGroup):
         if utils.needsSanitize_object(MW_gen_cfg.nbl_selectedRoot_currentOBJ):
             MW_gen_cfg.resetSelectedRoot()
 
-    # XXX:: trigger sanitize root on new file + also on undo? worth a pointer to root cfg object?
     @staticmethod
     def sanitizeSelectedRoot_callback(_scene_=None, _name_selected_=None):
         MW_gen_cfg.sanitizeSelectedRoot()
 
     #-------------------------------------------------------------------
 
-    # XXX:: deferred the links to a static container, cannot add non standard props to the object
     ptrID_links: props.StringProperty(default="nullptr")
 
     #def init(self):

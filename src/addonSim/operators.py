@@ -175,7 +175,6 @@ class MW_gen_OT(_StartRefresh_OT):
         mw_setup.gen_boundsObject(obj_root, bb, self.cfg, self.ctx)
 
 
-
         DEV.log_msg("Start calc cont and links", {'CALC'})
         # IDEA:: mesh conecting input points + use single mesh instead of one per link?
         # XXX:: detect meshes with no volume? test basic shape for crashes...
@@ -376,13 +375,23 @@ class MW_util_delete_all_OT(_StartRefresh_OT):
     bl_options = {'INTERNAL', 'UNDO'}
 
     def execute(self, context: types.Context):
-        return self.end_op_error("Not implemented...")
+        self.start_op()
+
+        # iterate and delete roots
+        roots = MW_gen_cfg.getSceneRoots()
+        for obj_root in roots:
+            MW_gen_cfg.setSelectedRoot([obj_root])
+            bpy.ops.mw.util_delete()
+
+        MW_gen_cfg.resetSelectedRoot()
+        return self.end_op()
 
 #-------------------------------------------------------------------
 # Blender events
 
 classes = [
     MW_gen_OT,
+    MW_gen_recalc_OT,
     MW_gen_links_OT,
     MW_util_delete_OT,
     MW_util_delete_all_OT,
