@@ -54,7 +54,7 @@ def copy_originalPrev(obj: types.Object, cfg: MW_gen_cfg, context: types.Context
     obj_root = utils.copy_object(obj, context)
 
     # copy the original from the previous root withou suffix
-    obj_original = utils.get_child(obj, getPrefs().names.original_copy)
+    obj_original = utils.get_child(obj, getPrefs().names.original_copy+cfg.struct_nameOriginal)
     obj_copy = utils.copy_objectRec(obj_original, context)
     utils.set_child(obj_copy, obj_root)
 

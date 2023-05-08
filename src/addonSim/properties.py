@@ -76,29 +76,29 @@ class MW_gen_cfg(types.PropertyGroup):
     #callbacks
 
     # OPT:: unset on reload, could have a flag and let the panel update it -> cannot be done from addon register
-    selectedRoot_currentCFG = None
-    selectedRoot_currentOBJ = None
+    nbl_selectedRoot_currentCFG = None
+    nbl_selectedRoot_currentOBJ = None
 
     @staticmethod
     def hasSelectedRoot() -> bool:
-        return MW_gen_cfg.selectedRoot_currentOBJ and MW_gen_cfg.selectedRoot_currentCFG
+        return MW_gen_cfg.nbl_selectedRoot_currentOBJ and MW_gen_cfg.nbl_selectedRoot_currentCFG
 
     @staticmethod
     def getSelectedRoot() -> tuple[types.Object, "MW_gen_cfg"]:
-        return MW_gen_cfg.selectedRoot_currentOBJ, MW_gen_cfg.selectedRoot_currentCFG
+        return MW_gen_cfg.nbl_selectedRoot_currentOBJ, MW_gen_cfg.nbl_selectedRoot_currentCFG
     @staticmethod
     def getSelectedRoot_obj() -> types.Object:
-        return MW_gen_cfg.selectedRoot_currentOBJ
+        return MW_gen_cfg.nbl_selectedRoot_currentOBJ
     @staticmethod
     def getSelectedRoot_cfg() -> "MW_gen_cfg":
-        return MW_gen_cfg.selectedRoot_currentCFG
+        return MW_gen_cfg.nbl_selectedRoot_currentCFG
 
 
     @staticmethod
     def setSelectedRoot(selected):
         # OPT:: multi-selection / root?
-        if selected: MW_gen_cfg.selectedRoot_currentOBJ, MW_gen_cfg.selectedRoot_currentCFG = MW_gen_cfg.getRoot(selected[-1])
-        else: MW_gen_cfg.selectedRoot_currentOBJ, MW_gen_cfg.selectedRoot_currentCFG = None,None
+        if selected: MW_gen_cfg.nbl_selectedRoot_currentOBJ, MW_gen_cfg.nbl_selectedRoot_currentCFG = MW_gen_cfg.getRoot(selected[-1])
+        else: MW_gen_cfg.nbl_selectedRoot_currentOBJ, MW_gen_cfg.nbl_selectedRoot_currentCFG = None,None
 
     # trigger new root on selection
     @staticmethod
@@ -107,15 +107,15 @@ class MW_gen_cfg(types.PropertyGroup):
 
     @staticmethod
     def resetSelectedRoot():
-        MW_gen_cfg.selectedRoot_currentOBJ, MW_gen_cfg.selectedRoot_currentCFG = None, None
+        MW_gen_cfg.nbl_selectedRoot_currentOBJ, MW_gen_cfg.nbl_selectedRoot_currentCFG = None, None
 
 
     @staticmethod
     def sanitizeSelectedRoot():
-        if utils.needsSanitize_object(MW_gen_cfg.selectedRoot_currentOBJ):
+        if utils.needsSanitize_object(MW_gen_cfg.nbl_selectedRoot_currentOBJ):
             MW_gen_cfg.resetSelectedRoot()
 
-    # XXX:: trigger sanitize root on new file + also on undo?
+    # XXX:: trigger sanitize root on new file + also on undo? worth a pointer to root cfg object?
     @staticmethod
     def sanitizeSelectedRoot_callback(_scene_=None, _name_selected_=None):
         MW_gen_cfg.sanitizeSelectedRoot()

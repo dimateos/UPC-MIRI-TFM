@@ -64,8 +64,6 @@ class MW_gen_OT(_StartRefresh_OT):
 
     # IDEA:: SIM: shrink here or as part of sim, e.g. smoothing? -> support physics interspace
     # IDEA:: SIM: add mass add rigid body proportional to volume? from voro++?
-
-    # IDEA:: op to only apply decimation + convex etc
     # IDEA:: recalculate cont after reload from cfg exact params -> precision used stored? all props stored but some in side panel? e.g. visual and precision
 
     def execute(self, context: types.Context):
@@ -77,14 +75,10 @@ class MW_gen_OT(_StartRefresh_OT):
         cancel = self.checkRefresh_cancel()
         if cancel: return self.end_op_refresh(skipLog=True)
 
-        # TODO:: store cont across simulations in the object or info from it
         # TODO:: run again more smartly, like detect no need for changes (e.g. name change or prefs debug show) -> compare both props, or use prop update func self ref? also for spawn indices
         # IDEA:: move all visual toggles to the side panel to avoid recalculations...
         # OPT:: separate simulation and scene generation: option to no store inter meshes
-        # IDEA:: divide execute in function? sim/vis
-
-        # OPT:: avoid recursion with pointer to parent instead of search by name
-        # IDEA:: decimate before/after convex, test perf?
+        # IDEA:: decimate before/after convex, test perf? sep operator?
 
         # Free existing link memory -> now purged on undo callback dynamically
         prefs = getPrefs()
@@ -102,11 +96,19 @@ class MW_gen_OT(_StartRefresh_OT):
                 obj_root, obj_original = mw_setup.copy_original(obj, self.cfg, context)
                 return self.execute_fresh(obj_root, obj_original)
 
-            # TODO:: props cannot be edited atm -> use old trick
-            # fracture the same original object, copy props for a duplicate result
+            # Fracture the same original object, copy props for a duplicated result to tweak parameters
+            # NOTE:: no longer supporting edit fracture -> basically always replaces all objects in the scene which is slower than a fresh one
             else:
+                # Copy the config to the op only once to allow the user to edit it afterwards
+                if "NONE" in self.cfg.meta_type:
+                    DEV.log_msg("cfg found once: copying props to OP", {'SETUP'})
+                    copyProps(cfg, self.cfg)
+
+                # optionally unhide the original fracture object
+                if (prefs.gen_duplicate_OT_hidePrev):
+                    utils.hide_objectRec(obj)
+
                 DEV.log_msg("cfg found: duplicating frac", {'SETUP'})
-                copyProps(cfg, self.cfg)
                 obj_root, obj_original = mw_setup.copy_originalPrev(obj, self.cfg, context)
                 return self.execute_fresh(obj_root, obj_original)
 
@@ -116,7 +118,6 @@ class MW_gen_OT(_StartRefresh_OT):
             return self.end_op_error("unhandled exception...")
 
 
-        # NOTE:: no longer supporting edit fracture -> basically always replacing geometry hence being slower
         ## Config found in the object
         #else:
         #    # First execute just copy the cfg
@@ -222,6 +223,18 @@ class MW_gen_OT(_StartRefresh_OT):
             MW_gen_cfg.setMetaType(self.obj_root, {"CHILD"}, skipParent=True)
 
         return super().end_op(msg, skipLog, retPass)
+
+# OPT:: maybe a global fracture map like for links?
+class MW_gen_recalc_contlinks_OT(_StartRefresh_OT):
+    bl_idname = "mw.gen_recalc"
+    bl_label = "Recalculate links"
+    bl_description = "Instead of Blender 'delete hierarchy' which seems to fail to delete all recusively..."
+
+    # UNDO as part of bl_options will cancel any edit last operation pop up
+    bl_options = {'INTERNAL', 'UNDO'}
+
+    def execute(self, context: types.Context):
+        return self.end_op_error("Not implemented...")
 
 #-------------------------------------------------------------------
 

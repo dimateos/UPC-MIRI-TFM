@@ -150,15 +150,20 @@ class MW_prefs(bpy.types.AddonPreferences):
         else:
             handlers.callback_undo_actions.remove(LinkStorage.purgeLinks_callback)
 
-    prefs_links_undoPurge_default = False
+    nbl_prefs_links_undoPurge_default = False
     prefs_links_undoPurge: props.BoolProperty(
         name="purge", description="Keep purging on undo",
-        default=prefs_links_undoPurge_default,
+        default=nbl_prefs_links_undoPurge_default,
         update=prefs_links_undoPurge_update,
         #update= lambda self, context: MW_prefs.LinkStorage.purgeLinks()
     )
 
     #-------------------------------------------------------------------
+
+    gen_duplicate_OT_hidePrev: props.BoolProperty(
+        name="hide", description="Hide the original fractured object after duplication",
+        default=True,
+    )
 
     util_delete_OT_unhideSelect: props.BoolProperty(
         name="unhide", description="Unhide the original object after deletion",
@@ -250,7 +255,7 @@ def register():
     assert(MW_prefs.bl_idname == ADDON._bl_name)
 
     # NOTE:: sync with default state? cannot add static attrs to the addonprefs?
-    if MW_prefs.prefs_links_undoPurge_default:
+    if MW_prefs.nbl_prefs_links_undoPurge_default:
         handlers.callback_undo_actions.append(LinkStorage.purgeLinks_callback)
     handlers.callback_loadFile_actions.append(LinkStorage.purgeLinks_callback)
 
