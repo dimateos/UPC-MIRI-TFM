@@ -224,17 +224,67 @@ class MW_gen_OT(_StartRefresh_OT):
 
         return super().end_op(msg, skipLog, retPass)
 
-# OPT:: maybe a global fracture map like for links?
-class MW_gen_recalc_contlinks_OT(_StartRefresh_OT):
+
+class MW_gen_recalc_OT(_StartRefresh_OT):
     bl_idname = "mw.gen_recalc"
-    bl_label = "Recalculate links"
-    bl_description = "Instead of Blender 'delete hierarchy' which seems to fail to delete all recusively..."
+    bl_label = "Recalculate selected links"
+    bl_description = "Useful after a module reload etc..."
 
     # UNDO as part of bl_options will cancel any edit last operation pop up
     bl_options = {'INTERNAL', 'UNDO'}
 
+    @classmethod
+    def poll(cls, context):
+        return MW_gen_cfg.hasSelectedRoot()
+
     def execute(self, context: types.Context):
-        return self.end_op_error("Not implemented...")
+        self.start_op()
+        prefs = getPrefs()
+        obj_root, cfg = MW_gen_cfg.getSelectedRoot()
+
+        # delete current cont when found
+        if cfg.ptrID_links:
+            LinkStorage.freeLinks(cfg.ptrID_links)
+
+
+        DEV.log_msg("Retrieving fracture data (objects and points)", {'SETUP'})
+        if cfg.shape_useConvexHull:
+            obj_toFrac = utils.get_child(obj_root, prefs.names.original_dissolve)
+        else: obj_toFrac = utils.get_child(obj_root, prefs.names.original_copy)
+
+        points = mw_cont.get_points_from_fracture(obj_root, cfg)
+        if not points:
+            return self.end_op_error("found no points...")
+
+        obj_shards = utils.get_child(obj_root, prefs.names.shards)
+        if not obj_shards:
+            return self.end_op_error("found no shards...")
+
+        # Get more data from the points
+        bb, bb_center, bb_radius = utils.get_bb_data(obj_toFrac, cfg.margin_box_bounds)
+        getStats().logDt(f"calc bb: [{bb_center[:]}] r {bb_radius:.3f} (margin {cfg.margin_box_bounds:.4f})")
+        if cfg.shape_useWalls:
+            faces4D = utils.get_faces_4D(obj_toFrac, cfg.margin_face_bounds)
+        else: faces4D = []
+        getStats().logDt(f"calc faces4D: {len(faces4D)} (n_disp {cfg.margin_face_bounds:.4f})")
+
+
+        DEV.log_msg("Calc cont and links (shards not regenerated!)", {'CALC'})
+        cont:Container = mw_cont.cont_fromPoints(points, bb, faces4D, precision=prefs.gen_calc_precisionWalls)
+        if not cont:
+            return self.end_op_error("found no cont... but could try recalculate!")
+
+        # calculate links and store in the external storage
+        links:LinkCollection = LinkCollection(cont, obj_shards)
+        if not links.initialized:
+            return self.end_op_error("found no links... but could try recalculate!")
+
+        # use links storage
+        self.last_ptrID_links = cfg.ptrID_links = obj_root.name
+        LinkStorage.addLinks(links, cfg.ptrID_links, obj_root)
+
+
+        return self.end_op()
 
 #-------------------------------------------------------------------
 

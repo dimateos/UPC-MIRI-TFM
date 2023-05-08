@@ -5,6 +5,7 @@ import mathutils.noise as bl_rnd
 import random as rnd
 INF_FLOAT = float("inf")
 
+from .preferences import getPrefs
 from .properties import (
     MW_gen_cfg,
 )
@@ -173,6 +174,14 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
         if gp:
             points.extend([p for spline in points_from_splines(gp) for p in spline])
 
+    return points
+
+def get_points_from_fracture(obj_root: types.Object, cfg: MW_gen_cfg):
+    prefs = getPrefs()
+    obj_points = utils.get_child(obj_root, prefs.names.source_points)
+
+    points = utils.get_verts(obj_points, worldSpace=False)
+    getStats().logDt(f"retrieved points: {len(points)} (from {obj_points.name})")
     return points
 
 #-------------------------------------------------------------------

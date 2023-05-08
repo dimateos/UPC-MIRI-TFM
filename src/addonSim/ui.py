@@ -9,6 +9,10 @@ from .properties import (
 from .utils_cfg import getProps_namesFiltered
 from .utils_dev import DEV
 
+class CONST_ICONS:
+    section_closed = "RIGHTARROW" # "RIGHTARROW" "DISCLOSURE_TRI_RIGHT"
+    section_opened = "DOWNARROW_HLT" # "DOWNARROW_HLT" "DISCLOSURE_TRI_DOWN"
+
 
 #-------------------------------------------------------------------
 
@@ -16,7 +20,7 @@ def draw_toggleBox(metadata, propToggle_name:str, layout: types.UILayout, text="
     """ Create a box with a toggle. Return the state of the toggle and the created layout """
     box = layout.box()
     open = getattr(metadata, propToggle_name)
-    icon = "DOWNARROW_HLT" if open else "RIGHTARROW"
+    icon = CONST_ICONS.section_opened if open else CONST_ICONS.section_closed
 
     if text:
         box.prop(metadata, propToggle_name, toggle=True, icon=icon, text=text)
