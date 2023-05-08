@@ -56,7 +56,7 @@ class MW_gen_PT(types.Panel):
             for k,l in links.items():
                 col.label(text=f"{k}: {len(l.link_map)} links {len(l.cont)} cells", icon="THREE_DOTS")
 
-    def draw_onSelected(self, context, layout):
+    def draw_onSelected(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
         obj, cfg = MW_gen_cfg.getSelectedRoot()
         col = layout.column()
@@ -68,7 +68,7 @@ class MW_gen_PT(types.Panel):
 
         # No fracture selected
         if not cfg:
-            col.label(text="Selected: " + obj.name_full, icon="INFO")
+            col.label(text="Selected: " + obj.name, icon="INFO")
 
             # Check that it is a mesh
             if obj.type != 'MESH':
@@ -80,16 +80,31 @@ class MW_gen_PT(types.Panel):
             col = layout.column()
             col.operator(ops.MW_gen_OT.bl_idname, text="GEN Fracture", icon="STICKY_UVS_DISABLE")
 
+            ## inspect props
+            #cfg = obj.mw_gen
+            #ui.draw_propsToggle(cfg, prefs, "gen_PT_meta_show_summary", "gen_PT_meta_propFilter", "gen_PT_meta_propEdit", "get_PT_meta_propShowId", layout)
+
         # Edit/info of selected
         else:
-            col.label(text="Root: " + obj.name_full, icon="INFO")
+            # show info of root + selected
+            msg = f"Root: {obj.name}"
+            selected = context.selected_objects[-1]
+            if selected.name != obj.name:
+                msg += f" - {selected.name}"
 
+            # button to bake the shard
+            col_rowSplit = col.row().split(factor=0.90)
+            col_rowSplit.label(text=msg, icon="INFO")
+            col_rowSplit.operator(ops.MW_util_bake_OT.bl_idname, text="", icon="UNLINKED")
+
+            # delete
             mainCol = layout.column()
             col_rowSplit = mainCol.row().split(factor=0.70)
             col_rowSplit.operator(ops.MW_util_delete_OT.bl_idname, text="DELETE rec", icon="CANCEL")
             prefs = getPrefs()
             col_rowSplit.prop(prefs, "util_delete_OT_unhideSelect")
 
+            # dupe
             col_rowSplit = mainCol.row().split(factor=0.70)
             col_rowSplit.operator(ops.MW_gen_OT.bl_idname, text="DUPLICATE Fracture", icon="DUPLICATE")
             col_rowSplit.prop(prefs, "gen_duplicate_OT_hidePrev")
@@ -105,7 +120,12 @@ class MW_gen_PT(types.Panel):
                 col.prop(cfg, "struct_linksScale")
 
             # inspect props
-            ui.draw_propsToggle(cfg, prefs, "gen_PT_meta_show_summary", "gen_PT_meta_propFilter", "gen_PT_meta_propEdit", "get_PT_meta_propShowId", layout)
+            if not prefs.gen_PT_meta_show_root: cfg = selected.mw_gen
+            open, box = ui.draw_propsToggle(cfg, prefs, "gen_PT_meta_show_summary", "gen_PT_meta_propFilter", "gen_PT_meta_propEdit", "get_PT_meta_propShowId", layout)
+            col_rowSplit = box.row().split()
+            if open:
+                col_rowSplit.prop(prefs, "gen_PT_meta_show_root")
+                col_rowSplit.label(text=obj.name if prefs.gen_PT_meta_show_root else selected.name)
 
 #-------------------------------------------------------------------
 

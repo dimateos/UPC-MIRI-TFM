@@ -44,7 +44,7 @@ class Info_inpect_PT(types.Panel):
                 col.label(text="Selected but removed active?", icon="ERROR")
 
             else:
-                obj = context.active_object
+                obj = context.selected_objects[-1]
 
                 # draw common inspect
                 mainCol, mainBox = self.draw_inspectObject(obj, box)

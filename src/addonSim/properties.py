@@ -28,6 +28,9 @@ class MW_gen_cfg(types.PropertyGroup):
     @staticmethod
     def isRoot(obj: types.Object) -> bool:
         return "ROOT" in obj.mw_gen.meta_type
+    @staticmethod
+    def isChild(obj: types.Object) -> bool:
+        return "CHILD" in obj.mw_gen.meta_type
 
     @staticmethod
     def hasRoot(obj: types.Object) -> bool:

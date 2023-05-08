@@ -101,14 +101,15 @@ class _StartRefresh_OT(types.Operator):
     #-------------------------------------------------------------------
     # common log+stats
 
-    def start_op(self, msg=""):
+    def start_op(self, msg="", skipLog=False, skipStats=False):
         """ Default exit flow at the start of execution """
         stats = getStats()
-        if self.start_resetStats: stats.reset(log=self.start_resetLog)
+        if self.start_resetStats and not skipStats:
+            stats.reset(log=self.start_resetLog)
         #stats.testStats()
         if self.start_logEmptyLine: print()
 
-        if self.start_log:
+        if self.start_log and not skipLog:
             if not msg: msg= f"{self.bl_label}"
             DEV.log_msg(f"Op START: {msg} ({self.bl_idname})", {'OP_FLOW'})
 

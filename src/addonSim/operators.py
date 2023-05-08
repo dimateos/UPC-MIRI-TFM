@@ -353,7 +353,6 @@ class MW_util_delete_OT(_StartRefresh_OT):
         utils.delete_objectRec(obj, logAmount=True)
         return self.end_op()
 
-# OPT:: maybe a global fracture map like for links?
 class MW_util_delete_all_OT(_StartRefresh_OT):
     bl_idname = "mw.util_delete_all"
     bl_label = "Delete all fracture objects"
@@ -376,6 +375,28 @@ class MW_util_delete_all_OT(_StartRefresh_OT):
         return self.end_op()
 
 #-------------------------------------------------------------------
+
+class MW_util_bake_OT(_StartRefresh_OT):
+    bl_idname = "mw.util_bake"
+    bl_label = "Bake"
+    bl_description = "Unlink the shard from the fracture, e.g. to recursive fracture it"
+
+    # UNDO as part of bl_options will cancel any edit last operation pop up
+    bl_options = {'INTERNAL', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.selected_objects and MW_gen_cfg.isChild(context.selected_objects[-1])
+
+    def execute(self, context: types.Context):
+        self.start_op(skipStats=True)
+        obj = context.selected_objects[-1]
+        obj.parent = None
+        MW_gen_cfg.setMetaType(obj, {"NONE"})
+        MW_gen_cfg.setSelectedRoot(context.selected_objects)
+        return self.end_op(skipLog=True)
+
+#-------------------------------------------------------------------
 # Blender events
 
 classes = [
@@ -384,6 +405,7 @@ classes = [
     MW_gen_links_OT,
     MW_util_delete_OT,
     MW_util_delete_all_OT,
+    MW_util_bake_OT,
 ] + util_classes_op
 
 register, unregister = bpy.utils.register_classes_factory(classes)

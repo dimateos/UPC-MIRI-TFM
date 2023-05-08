@@ -38,7 +38,7 @@ def draw_props(data, propFilter:str, layout: types.UILayout, showId=False):
         if showId: layout.row().prop(data, prop_name, text=prop_name)
         else: layout.row().prop(data, prop_name)
 
-def draw_propsToggle(data, metadata, propToggle_name:str, propFilter_name:str, propEdit_name:str, propShowId_name:str, layout: types.UILayout):
+def draw_propsToggle(data, metadata, propToggle_name:str, propFilter_name:str, propEdit_name:str, propShowId_name:str, layout: types.UILayout) -> tuple[bool, types.UILayout]:
     """ Draw all properties of an object under a toggleable layout. """
     open, box = draw_toggleBox(metadata, propToggle_name, layout)
     if open:
@@ -53,6 +53,8 @@ def draw_propsToggle(data, metadata, propToggle_name:str, propFilter_name:str, p
         propFilter = getattr(metadata, propFilter_name)
         showId = getattr(metadata, propShowId_name)
         draw_props(data, propFilter, col, showId)
+
+    return open, box
 
 #-------------------------------------------------------------------
 

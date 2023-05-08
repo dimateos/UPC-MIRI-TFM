@@ -110,6 +110,10 @@ class MW_prefs(bpy.types.AddonPreferences):
         name="id", description="Show property id or its name",
         default=True,
     )
+    gen_PT_meta_show_root: props.BoolProperty(
+        name="Inspect root cfg", description="Root object cfg or the selected one?",
+        default=True,
+    )
 
     gen_PT_meta_show_visuals: props.BoolProperty(
         name="Show visuals...", description="Tweak visual elements",
