@@ -268,37 +268,30 @@ def get_nameClean(name):
     try: return name if name[-4] != "." else name[:-4]
     except IndexError: return name
 
-# OPT:: not robust due to starts with etc + the same logic
-def get_object_fromScene(scene: types.Scene, name: str) -> types.Object|None:
-    """ Find an object in the scene by name (starts with to avoid limited exact names). Returns the first found. """
-
-    for obj in scene.objects:
-        if get_nameClean(obj.name) == name: return obj
-    return None
-
-def get_child(obj: types.Object, name: str, rec=False) -> types.Object|None:
-    """ Find child by name (starts with to avoid limited exact names) """
-    toSearch = obj.children if not rec else obj.children_recursive
-
-    for child in toSearch:
-        if get_nameClean(child.name) == name: return child
-    return None
-
 # IDEA:: maybe all children search based methods should return the explored objs
-def get_child_search(obj: types.Object, name: str, rec=False) -> tuple[types.Object|None, list[types.Object]]:
-    """ Find child by name and return also search field """
-    toSearch = obj.children if not rec else obj.children_recursive
+def get_object_fromList(objects: list[types.Object], name: str, exactMatch = True) -> types.Object|None:
+    """ Find an object by name inside the list provided """
+    if exactMatch:
+        for obj in objects:
+            if obj.name == name: return obj
 
-    for child in toSearch:
-        # All names are unique, even under children hierarchies. Blender adds .001 etc
-        if child.name.startswith(name): return child, toSearch
-    return None, toSearch
+    # cleaning the suffix instead of direclty comparing the names
+    else:
+        name = get_nameClean(name)
+        for obj in objects:
+            cleanName = get_nameClean(obj.name)
+            if cleanName == name: return obj
 
-# IDEA:: or define both functions but make one use the other, e.g. probably just return tuple to remember .children cost
-def get_child_WIP(obj: types.Object, name: str, rec=False) -> types.Object|None:
+    return None
+
+def get_object_fromScene(scene: types.Scene, name: str, exactMatch = True) -> types.Object|None:
+    """ Find an object in the scene by name (starts with to avoid limited exact names). Returns the first found. """
+    return get_object_fromList(scene.objects, name, exactMatch)
+
+def get_child(obj: types.Object, name: str, rec=False, exactMatch = False) -> types.Object|None:
     """ Find child by name (starts with to avoid limited exact names) """
-    child, toSearch = get_child_search(**get_kwargs())
-    return child
+    toSearch = obj.children if not rec else obj.children_recursive
+    return get_object_fromList(toSearch, name, exactMatch)
 
 #-------------------------------------------------------------------
 

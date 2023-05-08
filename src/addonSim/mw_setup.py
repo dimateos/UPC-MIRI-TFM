@@ -35,6 +35,7 @@ def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     #MW_gen_cfg.setMetaType(obj_copy, {"CHILD"})
 
     # Scene viewport
+    obj.select_set(False)
     utils.hide_objectRec(obj, not cfg.struct_showOrignal_scene)
     utils.hide_objectRec(obj_copy, not cfg.struct_showOrignal)
     obj_copy.show_bounds = True

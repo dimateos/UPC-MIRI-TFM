@@ -111,10 +111,10 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=True,
     )
 
-    #gen_PT_meta_show_visuals: props.BoolProperty(
-    #    name="Show visual toggle...", description="Toggle fracture elements ",
-    #    default=True,
-    #)
+    gen_PT_meta_show_visuals: props.BoolProperty(
+        name="Show visuals...", description="Tweak visual elements",
+        default=True,
+    )
     gen_PT_meta_show_tmpDebug: props.BoolProperty(
         name="Show DEBUG...", description="WIP: Show some debug stuff",
         default=True,

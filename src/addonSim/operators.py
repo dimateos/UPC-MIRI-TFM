@@ -104,7 +104,8 @@ class MW_gen_OT(_StartRefresh_OT):
                     DEV.log_msg("cfg found once: copying props to OP", {'SETUP'})
                     copyProps(cfg, self.cfg)
 
-                # optionally unhide the original fracture object
+                # optionally unhide the original fracture object but always unselect
+                obj.select_set(False)
                 if (prefs.gen_duplicate_OT_hidePrev):
                     utils.hide_objectRec(obj)
 
@@ -116,19 +117,6 @@ class MW_gen_OT(_StartRefresh_OT):
         except Exception as e:
             if not DEV.HANDLE_GLOBAL_EXCEPT: raise e
             return self.end_op_error("unhandled exception...")
-
-
-        ## Config found in the object
-        #else:
-        #    # First execute just copy the cfg
-        #    if "NONE" in self.cfg.meta_type:
-        #        DEV.log_msg("cfg found: copying props to OP", {'SETUP'})
-        #        copyProps(cfg, self.cfg)
-        #        return self.end_op("PASS_THROUGH init copy of props")
-
-        #    # Later runs edit optimized
-        #    else:
-        #        return self.execute_edit(context, obj)
 
 
     def execute_fresh(self, obj_root:types.Object, obj_original:types.Object ):
@@ -378,12 +366,13 @@ class MW_util_delete_all_OT(_StartRefresh_OT):
         self.start_op()
 
         # iterate and delete roots
-        roots = MW_gen_cfg.getSceneRoots()
+        roots = MW_gen_cfg.getSceneRoots(context.scene)
         for obj_root in roots:
             MW_gen_cfg.setSelectedRoot([obj_root])
             bpy.ops.mw.util_delete()
 
-        MW_gen_cfg.resetSelectedRoot()
+        #MW_gen_cfg.resetSelectedRoot()
+        MW_gen_cfg.setSelectedRoot(context.selected_objects)
         return self.end_op()
 
 #-------------------------------------------------------------------

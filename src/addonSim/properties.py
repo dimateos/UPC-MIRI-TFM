@@ -64,8 +64,8 @@ class MW_gen_cfg(types.PropertyGroup):
             return obj, None
 
     @staticmethod
-    def getSceneRoots() -> list[types.Object]:
-        roots = [ obj for obj in bpy.data.objects if MW_gen_cfg.isRoot(obj) ]
+    def getSceneRoots(scene: types.Scene) -> list[types.Object]:
+        roots = [ obj for obj in scene.objects if MW_gen_cfg.isRoot(obj) ]
         return roots
 
     @staticmethod

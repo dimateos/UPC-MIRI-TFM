@@ -37,8 +37,16 @@ class MW_gen_PT(types.Panel):
 
         open, box = ui.draw_toggleBox(prefs, "gen_PT_meta_show_tmpDebug", layout)
         if open:
-            # links storage
+            # delete all fractures
+            col_rowSplit = box.row().split(factor=0.66)
+            col_rowSplit.operator(ops.MW_util_delete_all_OT.bl_idname, text="DELETE all", icon="CANCEL")
+            col_rowSplit.prop(prefs, "util_delete_OT_unhideSelect")
+
+            # recalculate fracture
             boxLinks = box.box()
+            boxLinks.operator(ops.MW_gen_recalc_OT.bl_idname, icon="ZOOM_PREVIOUS")
+
+            # links storage
             col_rowSplit = boxLinks.row().split(factor=0.66)
             links = LinkStorage.bl_links
             col_rowSplit.label(text=f"Storage links: {len(links)}", icon="FORCE_CURVE")
@@ -47,8 +55,6 @@ class MW_gen_PT(types.Panel):
             col = boxLinks.column()
             for k,l in links.items():
                 col.label(text=f"{k}: {len(l.link_map)} links {len(l.cont)} cells", icon="THREE_DOTS")
-
-            box.operator(ops.MW_util_delete_all_OT.bl_idname, text="DELETE all Fractures", icon="CANCEL")
 
     def draw_onSelected(self, context, layout):
         prefs = getPrefs()
@@ -76,24 +82,30 @@ class MW_gen_PT(types.Panel):
 
         # Edit/info of selected
         else:
-            # XXX:: some crashes on UNDO...
-            col = layout.column()
             col.label(text="Root: " + obj.name_full, icon="INFO")
 
-            #col.operator(ops.MW_gen_OT.bl_idname, text="EDIT Fracture", icon="STICKY_UVS_VERT")
-            col.operator(ops.MW_gen_OT.bl_idname, text="DUPLICATE Fracture", icon="STICKY_UVS_VERT")
-
-            col_rowSplit = col.row().split(factor=0.66)
+            mainCol = layout.column()
+            col_rowSplit = mainCol.row().split(factor=0.70)
             col_rowSplit.operator(ops.MW_util_delete_OT.bl_idname, text="DELETE rec", icon="CANCEL")
             prefs = getPrefs()
             col_rowSplit.prop(prefs, "util_delete_OT_unhideSelect")
 
-            ui.draw_propsToggle(cfg, prefs, "gen_PT_meta_show_summary", "gen_PT_meta_propFilter", "gen_PT_meta_propEdit", "get_PT_meta_propShowId", col)
+            col_rowSplit = mainCol.row().split(factor=0.70)
+            col_rowSplit.operator(ops.MW_gen_OT.bl_idname, text="DUPLICATE Fracture", icon="DUPLICATE")
+            col_rowSplit.prop(prefs, "gen_duplicate_OT_hidePrev")
 
             # WIP:: testing
-            col.operator(ops.MW_gen_links_OT.bl_idname)
-            col.prop(cfg, "struct_shardScale")
-            col.prop(cfg, "struct_linksScale")
+            layout.operator(ops.MW_gen_links_OT.bl_idname, icon="OUTLINER_DATA_GREASEPENCIL")
+
+            # visuals
+            open, box = ui.draw_toggleBox(prefs, "gen_PT_meta_show_visuals", layout)
+            if open:
+                col = box.column()
+                col.prop(cfg, "struct_shardScale")
+                col.prop(cfg, "struct_linksScale")
+
+            # inspect props
+            ui.draw_propsToggle(cfg, prefs, "gen_PT_meta_show_summary", "gen_PT_meta_propFilter", "gen_PT_meta_propEdit", "get_PT_meta_propShowId", layout)
 
 #-------------------------------------------------------------------
 
