@@ -186,13 +186,22 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
         obj_shard.location = pos
         obj_shard.scale = [cfg.struct_shardScale]*3
 
-        # set visuals
-        #obj_shard.active_material = utils_render.get_randomMat(alpha=0.5, matName=name)
-        utils_render.set_randomUV(mesh)
-        utils_render.set_randomVC_legacy(mesh)
-        utils_render.set_randomVC(mesh)
-        utils_render.set_randomAC(mesh)
-        utils_render.set_randomAttr(mesh)
+        # IDEA:: test visuals alternatives -> add to dm utils
+        if DEV.VISUAL_TESTS:
+            uv = utils_render.gen_meshUV(mesh, [Vector([0.66, 0.66]), Vector([0.33, 0.33])])
+            utils_render.set_meshUV_rnd(mesh, uv.name)
+
+            vc_old = utils_render.gen_meshVC_legacy(mesh, utils_render.COLORS.pink)
+            utils_render.set_meshVC_legacy(mesh, vc_old, utils_render.COLORS.list_gray)
+            vc = utils_render.gen_meshVC(mesh, utils_render.COLORS.list_rgb )
+            vcFace = utils_render.gen_meshVC(mesh, utils_render.COLORS.list_rgb, adomain="CORNER")
+
+            ac = utils_render.gen_meshAC(mesh, utils_render.COLORS.list_fade , adomain="CORNER", name="ACtestcolor")
+            ac2 = utils_render.gen_meshAC(mesh, adomain="FACE")
+            ac3 = utils_render.gen_meshAC(mesh, utils_render.COLORS.red, adomain="EDGE")
+
+            #utils_render.gen_meshAttr(mesh)
+            #obj_shard.active_material = utils_render.get_randomMat(alpha=0.5, matName=name)
 
     getStats().logDt("generated shards objects")
 

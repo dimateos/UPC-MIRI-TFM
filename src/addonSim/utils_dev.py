@@ -10,6 +10,7 @@ class DEV:
 
     ASSERT_CELL_POS = True
     LEGACY_CONT = False
+    VISUAL_TESTS = True
     """ Checking some stats of legacy cont (could also do for the regular one) """
 
     # IDEA:: profiling levels instead of just bool, or stats log uisng log_msg with tags
