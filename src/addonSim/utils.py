@@ -66,23 +66,6 @@ def get_faces_4D(obj: types.Object, n_disp = 0.0, worldSpace=False) -> list[Vect
     ]
     return faces4D
 
-def get_curveData(points: list[Vector], name ="poly-curve", w=0.05, res=0):
-    # Create new POLY curve
-    curve_data = bpy.data.curves.new(name, 'CURVE')
-    curve_data.dimensions = '3D'
-    line = curve_data.splines.new('POLY')
-
-    # Add the points to the spline
-    for i,p in enumerate(points):
-        if i!=0: line.points.add(1)
-        line.points[i].co = p.to_4d()
-
-    # Set the visuals
-    curve_data.bevel_depth = w
-    curve_data.bevel_resolution = res
-    curve_data.fill_mode = "FULL" #'FULL', 'HALF', 'FRONT', 'BACK'
-    return curve_data
-
 #-------------------------------------------------------------------
 
 def get_composedMatrix(loc:Vector, rot:Quaternion, scale:Vector) -> Matrix:
@@ -205,14 +188,16 @@ def copy_objectRec(obj: types.Object, context: types.Context, link_mesh = False,
 
 #-------------------------------------------------------------------
 
-def delete_object(obj: types.Object, ignore_data = False):
-    data,type = obj.data, obj.type
+def delete_object(obj: types.Object, ignore_data = False, ignore_mat = False):
+    data,type,mat = obj.data, obj.type, obj.active_material
     #DEV.log_msg(f"Deleting {obj.name}", {"DELETE", "OBJ"})
     bpy.data.objects.remove(obj)
 
     # NOTE:: meshes/data is leftover otherwise, delete after removing the object user
-    if not ignore_data and data and not data.users:
+    if not ignore_data and data:
         delete_data(data, type)
+    if not ignore_mat and mat:
+        delete_mat(mat)
 
 # OPT:: logamount as flag in dev not here
 def delete_objectRec(obj: types.Object, ignore_data = False, logAmount=False):
@@ -231,16 +216,21 @@ def delete_objectChildren(ob_father: types.Object, ignore_data = False, rec=True
     for child in reversed(toDelete):
         delete_object(child, ignore_data)
 
-def delete_data(data, type:str):
+def delete_data(data, type:str, do_unlink=False):
+    if not do_unlink and data.users: return
     #DEV.log_msg(f"Deleting {data.name}", {"DELETE", "DATA"})
     try:
         if type == "MESH":      collection=bpy.data.meshes
         elif type == "CURVE":   collection=bpy.data.curves
         else: raise TypeError(f"Unimplemented data type {type} from {data.name}")
-        collection.remove(data, do_unlink=False)
+        collection.remove(data, do_unlink=do_unlink)
 
     except Exception as e:
         DEV.log_msg(str(e), {"DELETE", "DATA", "ERROR"})
+
+def delete_mat(mat, do_unlink=False):
+    if not do_unlink and mat.users: return
+    bpy.data.materials.remove(mat, do_unlink=do_unlink)
 
 def delete_orphanData(collectionNames = None, logAmount = True):
     """ When an object is deleted its mesh/data may be left over """
@@ -445,6 +435,13 @@ def rnd_seed(s: int = None) -> int:
     bl_rnd.seed_set(s)
     return s
 
+def rnd_string(length):
+    """Generates a random string of specified length"""
+    import string
+    import random as rnd
+    letters = string.ascii_letters
+    return ''.join(rnd.choice(letters) for _ in range(length))
+
 # OPT:: test perf? timeit(lambda: dict(**get_kwargs()))
 def get_kwargs(startKey_index = 0):
     from inspect import currentframe, getargvalues
@@ -474,3 +471,9 @@ def get_filtered(listFull:list, filter:str):
 
     return listFiltered
 
+#def get_rounded(v: Vector|float, precision=2) -> Vector|float:
+#    #if isinstance(v, Vector): # faster to check, or just have two methods
+#    try:
+#        return Vector( [ round(co, precision) for co in v ] )
+#    except IndexError:
+#        return round(v, precision)

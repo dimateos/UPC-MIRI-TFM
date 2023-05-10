@@ -238,8 +238,8 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=True,
     )
     dm_PT_orphans_collection: props.StringProperty(
-        name="", description="E.g. meshes, curves, etc",
-        default="meshes, curves",
+        name="", description="E.g. meshes, mats, curves, etc",
+        default="meshes, materials, curves",
     )
 
 

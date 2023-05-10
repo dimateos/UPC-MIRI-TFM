@@ -15,6 +15,7 @@ from .mw_links import LinkCollection
 from tess import Container
 
 from . import utils
+from . import utils_render
 from .utils_dev import DEV
 from .stats import getStats
 
@@ -147,11 +148,14 @@ def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     return obj_shardsEmpty
 
 def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context, invertOrientation = False):
+    prefs = getPrefs()
+    #mat = utils_render.get_randomMat(prefs.names.shards+"Mat")
+
     for cell in cont:
         # skip none cells (computation error)
         if cell is None: continue
         source_id = cont.source_idx[cell.id]
-        name= f"{getPrefs().names.shards}_{getPrefs().names.get_IdFormated(source_id)}"
+        name= f"{prefs.names.shards}_{prefs.names.get_IdFormated(source_id)}"
 
         # assert some voro properties, the more varied test cases the better: center of mass at the center of volume
         if DEV.ASSERT_CELL_POS:
@@ -181,6 +185,14 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
         obj_shard = utils.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showShards)
         obj_shard.location = pos
         obj_shard.scale = [cfg.struct_shardScale]*3
+
+        # set visuals
+        #obj_shard.active_material = utils_render.get_randomMat(alpha=0.5, matName=name)
+        utils_render.set_randomUV(mesh)
+        utils_render.set_randomVC_legacy(mesh)
+        utils_render.set_randomVC(mesh)
+        utils_render.set_randomAC(mesh)
+        utils_render.set_randomAttr(mesh)
 
     getStats().logDt("generated shards objects")
 
@@ -240,6 +252,9 @@ def gen_linksEmptiesPerCell(obj: types.Object, cfg: MW_gen_cfg, context: types.C
     return obj_links_perCell
 
 def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: LinkCollection, cfg: MW_gen_cfg, context: types.Context):
+    prefs = getPrefs()
+    #mat = utils_render.get_randomMat(prefs.names.links+"CurveMat")
+
     # iterate the global map
     for key,l in links.link_map.items():
         c1, c2 = l.key_cells
@@ -264,9 +279,10 @@ def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: LinkC
             p2 = -l.dir*0.1
 
         # Create new curve per link and spawn
-        curve = utils.get_curveData([p1, p2], name, cfg.links_width, cfg.links_res)
+        curve = utils_render.get_curveData([p1, p2], name, cfg.links_width, cfg.links_res)
         obj_link = utils.gen_child(obj, name, context, curve, keepTrans=True, hide=not cfg.struct_showLinks)
         obj_link.location = l.pos
+        #obj_link.active_material = mat
 
     getStats().logDt("generated links to walls objects")
 
@@ -312,7 +328,7 @@ def gen_linksCellObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, co
             name= f"s{cell.id}_n{n_id}"
             neigh_centroid = Vector(cont[n_id].centroid())
 
-            curve = utils.get_curveData([cell_centroid, neigh_centroid], name, cfg.links_width, cfg.links_res)
+            curve = utils_render.get_curveData([cell_centroid, neigh_centroid], name, cfg.links_width, cfg.links_res)
             obj_link = utils.gen_child(obj_group, name, context, curve, keepTrans=False, hide=not cfg.struct_showLinks)
 
             obj_link.hide_set(key_rep or not cfg.struct_showLinks_perCell)
