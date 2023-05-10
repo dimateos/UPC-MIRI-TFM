@@ -320,8 +320,7 @@ def scale_objectBB(obj: types.Object, s:float|Vector, replace_s = True):
 # WIP:: pivots space world/local etc break + hard to replace s too -> move center of curves to its center?
 def scale_object(obj: types.Object, s:float|Vector, replace_s = True, pivot:Vector = None):
     """ Scale an object optionally around a pivot point """
-    try: sv = Vector([s]*3)
-    except TypeError: sv = s
+    sv = assure_vector3(s)
     if not replace_s: sv *= obj.scale
 
     if not pivot:
@@ -344,8 +343,7 @@ def scale_object(obj: types.Object, s:float|Vector, replace_s = True, pivot:Vect
 def scale_objectChildren(obj_father: types.Object, s:float|Vector, replace_s=True, pivotBB=False, ignore_empty=True, rec=True):
     """ Scale an object children optionally ignoring empty """
     toScale = obj_father.children if not rec else obj_father.children_recursive
-    try: sv = Vector([s]*3)
-    except TypeError: sv = s
+    sv = assure_vector3(s)
 
     for child in toScale:
         if ignore_empty and child.type == "EMPTY": continue
@@ -416,6 +414,7 @@ def returnSanitized_object(obj):
         return obj
 
 #-------------------------------------------------------------------
+# NOTE:: a bit misc utils...
 
 def get_timestamp() -> int:
     """ Get current timestamp as int """
@@ -435,12 +434,18 @@ def rnd_seed(s: int = None) -> int:
     bl_rnd.seed_set(s)
     return s
 
-def rnd_string(length):
+def rnd_string(length=16):
     """Generates a random string of specified length"""
     import string
     import random as rnd
     letters = string.ascii_letters
     return ''.join(rnd.choice(letters) for _ in range(length))
+
+uuidxLast = -1
+def get_uuidx():
+    global uuidxLast
+    uuidxLast +=1
+    return uuidxLast
 
 # OPT:: test perf? timeit(lambda: dict(**get_kwargs()))
 def get_kwargs(startKey_index = 0):
@@ -471,9 +476,13 @@ def get_filtered(listFull:list, filter:str):
 
     return listFiltered
 
-#def get_rounded(v: Vector|float, precision=2) -> Vector|float:
-#    #if isinstance(v, Vector): # faster to check, or just have two methods
-#    try:
-#        return Vector( [ round(co, precision) for co in v ] )
-#    except IndexError:
-#        return round(v, precision)
+def assure_vector3(val_v3):
+    if not isinstance(val_v3, Vector):
+        return Vector([val_v3]*3)
+    # NOTE:: also check to_3d?
+    return val_v3
+
+def assure_list(val_list):
+    if not isinstance(val_list, list):
+        return [val_list]
+    return val_list

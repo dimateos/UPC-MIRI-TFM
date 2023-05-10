@@ -12,26 +12,41 @@ class COLORS:
     red   = Vector([1.0, 0.0, 0.0])
     green = Vector([0.0, 1.0, 0.0])
     blue  = Vector([0.0, 0.0, 1.0])
+    list_rgb = [red, green, blue]
 
-    pink    = (red+blue) * 0.5
     yellow  = (red+green) * 0.5
     orange  = (red+yellow) * 0.5
+    pink    = (red+blue) * 0.5
+    aqua    = (green+blue) * 0.5
+    list_fade = [red, orange, yellow, green, aqua, blue, pink]
 
+    black   = Vector([0.0, 0.0, 0.0])
     white   = Vector([1.0, 1.0, 1.0])
     gray   = white * 0.5
-    black   = Vector([0.0, 0.0, 0.0])
+    list_gray = [black, gray, white]
 
     default_name = "colorMat"
     default_precision = 1
-    def roundColor(c: Vector, precision=default_precision):
-        c.x = round(c.x, precision)
-        c.y = round(c.y, precision)
-        c.z = round(c.z, precision)
+    def rounded(c: Vector, precision=default_precision, alphaToo = False):
+        cc = Vector()
+        cc.x = round(c.x, precision)
+        cc.y = round(c.y, precision)
+        cc.z = round(c.z, precision)
+        if len(c) > 3: cc.w = round(c.w, precision) if alphaToo else c.w
+        return cc
 
-    def randomColor(minC=0.0, maxC=1.0) -> Vector:
-        return Vector( [uniform(minC,maxC), uniform(minC,maxC), uniform(minC,maxC)] )
+    def assure_4d_alpha(c: Vector, a=1.0):
+        if len(c) > 3: return c
+        c = c.to_4d()
+        c.w = a
+        return c
 
-    def rampColors(start = 0.1, stop = 0.9, step = 0.2) -> list[Vector]:
+    def get_random(minC=0.0, maxC=1.0, alpha=0.0) -> Vector:
+        c = Vector( [uniform(minC,maxC), uniform(minC,maxC), uniform(minC,maxC)] )
+        if alpha: c = COLORS.toColor4D(c, alpha)
+        return c
+
+    def get_ramp(start = 0.1, stop = 0.9, step = 0.2, alpha=0.0) -> list[Vector]:
         startV = Vector( [start]*3 )
         stepV = Vector( [step]*3 )
 
@@ -39,19 +54,40 @@ class COLORS:
         for x in range(int((stop - start) / step) + 1):
             for y in range(int((stop - start) / step) + 1):
                 for z in range(int((stop - start) / step) + 1):
-                    v = Vector( [x,y,z] )
-                    colors.append( startV + v*stepV )
+                    c = startV + Vector( [x,y,z] ) *stepV
+                    if alpha: c = COLORS.toColor4D(c, alpha)
+                    colors.append(c)
         return colors
+
+def get_colorMat(color3=COLORS.red, alpha=1.0, matName: str=None):
+    if not matName: matName = COLORS.default_name
+    mat = bpy.data.materials.new(matName)
+    mat.use_nodes = False
+
+    color3 = COLORS.rounded(color3)
+    mat.diffuse_color[0] = color3[0]
+    mat.diffuse_color[1] = color3[1]
+    mat.diffuse_color[2] = color3[2]
+    mat.diffuse_color[3] = alpha
+    return mat
+
+def get_randomMat(minC=0.0, maxC=1.0, alpha=1.0, matName: str=None):
+    # OPT:: could do a single mat that shows a random color per object ID using a ramp
+    if not matName: matName = "randomMat"
+    color = COLORS.randomColor(minC, maxC)
+    mat = get_colorMat(color, alpha, matName)
+    return mat
+
+#-------------------------------------------------------------------
 
 class ATTRS:
     """ Common mesh attributes """
-
     attrs_atype = [ 'FLOAT', 'FLOAT_COLOR', 'FLOAT2', 'FLOAT_VECTOR', 'BYTE_COLOR', 'BOOLEAN', 'INT', 'INT8', 'STRING' ]
     attrs_adomain = [ 'POINT', 'CORNER', 'EDGE', 'FACE', 'CURVE' ] # INSTANCE too
     attrsColor_atype = [ "FLOAT_COLOR", "BYTE_COLOR" ]
     attrsColor_adomain = [ "POINT", "CORNER" ]
 
-    def get_src_inDomain(mesh, adomain):
+    def get_src_inDomain(mesh: types.Mesh, adomain:str):
         """ Map the str to the mesh data """
         if adomain == "POINT": return mesh.vertices
         elif adomain == "EDGE": return mesh.edges
@@ -59,13 +95,13 @@ class ATTRS:
         elif adomain == "CORNER": return mesh.loops
         return []
 
-    def get_value_inType(atype, v):
+    def get_value_inType(atype:str, v):
         """ Get a value of the type aprox """
         if   atype == "FLOAT"       : val= v
-        elif atype == "FLOAT_COLOR" : val= Vector((v,v,v,1))
+        elif atype == "FLOAT_COLOR" : val= Vector((v,v,v, 1.0))
         elif atype == "FLOAT2"      : val= Vector((v,v))
         elif atype == "FLOAT_VECTOR": val= Vector((v,v,v))
-        elif atype == "BYTE_COLOR"  : val= Vector((v,v,v,1)) * 256
+        elif atype == "BYTE_COLOR"  : val= Vector((v,v,v, 1.0)) * 256
         elif atype == "BOOL"        : val= bool(v)
         elif atype == "INT"         : val= round(v)
         elif atype == "INT8"        : val= round(v * 256)
@@ -73,13 +109,13 @@ class ATTRS:
         else                        : raise TypeError(f"{atype} not in {ATTRS.attrs_atype}")
         return val
 
-    def get_rnd_inType(atype, minC, maxC):
-        """ Get a random value of the type """
+    def get_rnd_inType(atype:str, minC = 0.0, maxC = 1.0):
+        """ Get a random value of the type aprox """
         if   atype == "FLOAT"       : rnd= uniform(minC, maxC)
-        elif atype == "FLOAT_COLOR" : rnd= COLORS.randomColor(minC, maxC).to_4d()
+        elif atype == "FLOAT_COLOR" : rnd= COLORS.get_random(minC, maxC, 1.0)
         elif atype == "FLOAT2"      : rnd= Vector((uniform(minC, maxC), uniform(minC, maxC)))
-        elif atype == "FLOAT_VECTOR": rnd= COLORS.randomColor(minC, maxC)
-        elif atype == "BYTE_COLOR"  : rnd= COLORS.randomColor(minC, maxC).to_4d() * 256
+        elif atype == "FLOAT_VECTOR": rnd= COLORS.get_random(minC, maxC)
+        elif atype == "BYTE_COLOR"  : rnd= COLORS.get_random(minC, maxC, 1.0) * 256
         elif atype == "BOOL"        : rnd= round(uniform(minC,maxC))
         elif atype == "INT"         : rnd= round(minC + uniform(0,1) * maxC)
         elif atype == "INT8"        : rnd= round(uniform(0,1) * 256)
@@ -87,10 +123,17 @@ class ATTRS:
         else                        : raise TypeError(f"{atype} not in {ATTRS.attrs_atype}")
         return rnd
 
+    def get_periodic_inType(atype:str, minC = 0.0, maxC = 1.0, period_id:int = None, period = 2):
+        """ Get periodic value in the type (building a ramp from 0-1 in period)"""
+        step = int((period_id % period) / period) + 1
+        stepVal = minC + step * maxC
+        val = ATTRS.get_value_inType(atype, stepVal)
+        return val
+
     rndRep_vals = { atype: list() for atype in attrs_atype }
     rndRep_count = { atype: 0 for atype in attrs_atype }
-    def get_rnd_periodic_inType(atype, minC, maxC, period = 2):
-        """ WIP: Get a random value of the type with certain periodicity """
+    def get_rnd_periodic_inType(atype:str, minC = 0.0, maxC = 1.0, period = 2):
+        """ Get a random value of the type with certain periodicity (limit rnd values) """
         if len(ATTRS.rndRep_vals[atype]) < period:
             ATTRS.rndRep_vals[atype].append(ATTRS.get_rnd_inType(atype, minC, maxC))
 
@@ -99,17 +142,11 @@ class ATTRS:
         ATTRS.rndRep_count[atype] +=1
         return rndRep
 
-    def get_periodic_inType(atype, minC, maxC, period_id, period = 2):
-        """ WIP: Get periodic value in the type"""
-        step = int((period_id % period) / period) + 1
-        stepVal = minC + step * maxC
-        val = ATTRS.get_value_inType(atype, stepVal)
-        return val
-
-    def get_deferred_inType(atype, minC, maxC, period_id, period = 2):
-        #return ATTRS.get_rnd_inType(atype, minC, maxC)
+    def get_deferred_inType(atype:str, minC = 0.0, maxC = 1.0, period_id:int = None, period = 2):
+        """ Proxy function to pick the random method used in other functions"""
+        return ATTRS.get_rnd_inType(atype, minC, maxC)
+        #return ATTRS.get_periodic_inType(atype, minC, maxC, period_id, period)
         #return ATTRS.get_rnd_periodic_inType(atype, minC, maxC, period)
-        return ATTRS.get_periodic_inType(atype, minC, maxC, period_id, period)
 
 #-------------------------------------------------------------------
 
