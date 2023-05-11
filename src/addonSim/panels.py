@@ -117,7 +117,13 @@ class MW_gen_PT(types.Panel):
             if open:
                 col = box.column()
                 col.prop(cfg, "struct_shardScale")
+                col.prop(prefs, "gen_setup_matColors")
+                col.prop(prefs, "gen_setup_matAlpha")
                 col.prop(cfg, "struct_linksScale")
+                col.prop(prefs, "links_width")
+                col.prop(prefs, "links_widthDead")
+                col.prop(prefs, "links_res")
+
 
             # inspect props
             if not prefs.gen_PT_meta_show_root: cfg = selected.mw_gen

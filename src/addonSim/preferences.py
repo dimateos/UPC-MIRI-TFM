@@ -144,6 +144,28 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=True,
     )
 
+    gen_setup_matColors: props.BoolProperty(
+        name="WIP: Add shard color mats", description="Materials aded on generation",
+        default=False,
+    )
+    gen_setup_matAlpha: props.FloatProperty(
+        name="WIP: Shard mat alpha", description="See the links through",
+        default=0.66, min=0.1, max=1
+    )
+
+    links_width: props.FloatProperty(
+        name="WIP: Link width", description="Max link w",
+        default=0.05, min=0.01, max=0.2, step=0.05, precision=4
+    )
+    links_widthDead: props.FloatProperty(
+        name="WIP: Dead link width", description="Min link w",
+        default=0.005, min=0.001, max=0.01, step=0.05, precision=4
+    )
+    links_res: props.IntProperty(
+        name="WIP: Link res", description="WIP: ",
+        default=0, min=0, max=8,
+    )
+
     #-------------------------------------------------------------------
     # XXX:: fix storage problems callbacks?
 

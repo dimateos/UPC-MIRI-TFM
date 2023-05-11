@@ -109,14 +109,6 @@ def draw_gen_cfg(cfg: MW_gen_cfg, layout: types.UILayout, context: types.Context
     rowsub.prop(cfg, "margin_box_bounds")
     rowsub.prop(cfg, "margin_face_bounds")
 
-
-    box = layout.box()
-    col = box.column()
-    col.label(text="Link:")
-    rowsub = col.row(align=True)
-    rowsub.prop(cfg, "links_width")
-    rowsub.prop(cfg, "links_res")
-
     draw_gen_cfgDebug(cfg, layout)
 
     box = layout.box()

@@ -149,7 +149,8 @@ def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
 
 def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context, invertOrientation = False):
     prefs = getPrefs()
-    #mat = utils_render.get_randomMat(prefs.names.shards+"Mat")
+    if not prefs.gen_setup_matColors:
+        matShards = utils_render.get_colorMat(utils_render.COLORS.gray, alpha=prefs.gen_setup_matAlpha, matName=prefs.names.shards+"Mat")
 
     for cell in cont:
         # skip none cells (computation error)
@@ -187,7 +188,8 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
         obj_shard.scale = [cfg.struct_shardScale]*3
 
         # IDEA:: test visuals alternatives -> add to dm utils
-        if DEV.VISUAL_TESTS:
+        #if DEV.VISUAL_TESTS:
+        if prefs.gen_setup_matColors:
             uv = utils_render.gen_meshUV(mesh, [Vector([0.66, 0.66]), Vector([0.33, 0.33])])
             utils_render.set_meshUV_rnd(mesh, uv.name)
 
@@ -206,7 +208,11 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
             atc = utils_render.gen_meshAttr(mesh, utils_render.COLORS.blue.to_4d(), adomain="CORNER", atype="FLOAT_COLOR", name="ATtestcolor")
             utils_render.set_meshAttr_rnd(mesh, atc)
 
-            obj_shard.active_material = utils_render.get_randomMat(alpha=0.5, matName=name)
+            # NOTE:: materials can also by aded to the object instead of the data?
+            obj_shard.active_material = utils_render.get_randomMat(alpha=prefs.gen_setup_matAlpha, matName=name)
+
+        else:
+            obj_shard.active_material = matShards
 
     getStats().logDt("generated shards objects")
 
@@ -267,7 +273,7 @@ def gen_linksEmptiesPerCell(obj: types.Object, cfg: MW_gen_cfg, context: types.C
 
 def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: LinkCollection, cfg: MW_gen_cfg, context: types.Context):
     prefs = getPrefs()
-    #mat = utils_render.get_randomMat(prefs.names.links+"CurveMat")
+    wallsMat = utils_render.get_colorMat(utils_render.COLORS.blue+utils_render.COLORS.white * 0.33, 1.0, "linkWallsMat")
 
     # iterate the global map
     for key,l in links.link_map.items():
@@ -283,6 +289,11 @@ def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: LinkC
             p1 = Vector()
             p2 = l.dir*0.1
 
+            # vary curve props
+            res = (prefs.links_res+1) +2
+            width = prefs.links_width * 1.5
+            mat = wallsMat
+
         # regular links
         else:
             name= f"c{c1}_c{c2}-f{f1}_f{f2}"
@@ -292,11 +303,16 @@ def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: LinkC
             p1 = +l.dir*0.1
             p2 = -l.dir*0.1
 
+            # vary curve props
+            res = prefs.links_res
+            width = prefs.links_widthDead * (1-l.life) + prefs.links_width * l.life
+            mat = utils_render.get_colorMat(utils_render.COLORS.red*l.life, l.life+0.1, name)
+
         # Create new curve per link and spawn
-        curve = utils_render.get_curveData([p1, p2], name, cfg.links_width, cfg.links_res)
+        curve = utils_render.get_curveData([p1, p2], name, width, res)
         obj_link = utils.gen_child(obj, name, context, curve, keepTrans=True, hide=not cfg.struct_showLinks)
         obj_link.location = l.pos
-        #obj_link.active_material = mat
+        obj_link.active_material = mat
 
     getStats().logDt("generated links to walls objects")
 

@@ -320,6 +320,51 @@ class MW_gen_links_OT(_StartRefresh_OT):
 
 #-------------------------------------------------------------------
 
+class MW_sim_step_OT(_StartRefresh_OT):
+    bl_idname = "mw.gen_links"
+    bl_label = "Generate links object"
+    bl_description = "Generate a visual representation of the links of a fracture object"
+
+    # UNDO as part of bl_options will cancel any edit last operation pop up
+    bl_options = {'INTERNAL', 'UNDO'}
+
+    def __init__(self) -> None:
+        super().__init__()
+        # config some base class log flags...
+        self.invoke_log = True
+
+    @classmethod
+    def poll(cls, context):
+        return MW_gen_cfg.hasSelectedRoot()
+
+    def execute(self, context: types.Context):
+        self.start_op()
+        obj, cfg = MW_gen_cfg.getSelectedRoot()
+
+        ## WIP:: per cell no need but atm cont ref is inside LinkCollection structure
+        #obj_links_perCell = mw_setup.gen_linksEmptiesPerCell(obj, cfg, context)
+        #mw_setup.gen_linksCellObjects(obj_links_perCell, links.cont, cfg, context)
+
+        # per links require the structure
+        if not cfg.ptrID_links:
+            return self.end_op_error("Incompleted fracture... (not checked in poll atm)")
+        links = LinkStorage.getLinks(cfg.ptrID_links)
+        if not links:
+            return self.end_op_error("No links storage found...")
+
+        obj_links, obj_links_toWall = mw_setup.gen_linksEmpties(obj, cfg, context)
+        mw_setup.gen_linksObjects(obj_links, obj_links_toWall, links, cfg, context)
+
+        return self.end_op()
+
+    def end_op(self, msg="", skipLog=False, retPass=False):
+        """ OVERRIDE:: end_op to perform assign child to all """
+        obj, cfg = MW_gen_cfg.getSelectedRoot()
+        if obj: MW_gen_cfg.setMetaType(obj, {"CHILD"}, skipParent=True)
+        return super().end_op(msg, skipLog, retPass)
+
+#-------------------------------------------------------------------
+
 class MW_util_delete_OT(_StartRefresh_OT):
     bl_idname = "mw.util_delete"
     bl_label = "Delete fracture object"
@@ -403,6 +448,7 @@ classes = [
     MW_gen_OT,
     MW_gen_recalc_OT,
     MW_gen_links_OT,
+    #MW_sim_step_OT,
     MW_util_delete_OT,
     MW_util_delete_all_OT,
     MW_util_bake_OT,

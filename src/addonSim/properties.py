@@ -305,7 +305,7 @@ class MW_gen_cfg(types.PropertyGroup):
 
 
     struct_linksScale: props.FloatProperty(
-        name="Shard scale", description="Reduce some bits to be able to see the links better",
+        name="Links scale", description="Reduce some bits to be able to see the links better",
         default=1, min=0.25, max=3,
         update=struct_linksScale_update
     )
@@ -321,15 +321,6 @@ class MW_gen_cfg(types.PropertyGroup):
     margin_face_bounds: props.FloatProperty(
         name="Margin faces", description="Additional displacement of the face normal planes",
         default=0.025, min=0.001, max=1.0, step=1, precision=3
-    )
-
-    links_width: props.FloatProperty(
-        name="Link width", description="WIP: how wide the base link is",
-        default=0.02, min=0.005, max=0.1, step=0.05, precision=4
-    )
-    links_res: props.IntProperty(
-        name="Link res", description="WIP: ",
-        default=0, min=0, max=8,
     )
 
 #-------------------------------------------------------------------
