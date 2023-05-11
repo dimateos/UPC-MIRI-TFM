@@ -20,21 +20,28 @@ class Simulation:
         self.life = 1.0
 
 
+_rndState = None
+def storeRnd():
+    global _rndState
+    _rndState = rnd.getstate()
+def restoreRnd():
+    global _rndState
+    rnd.setstate(_rndState)
+
 #-------------------------------------------------------------------
 # WIP:: atm just a static method
 
 def setAll(links: LinkCollection, life= 1.0):
     # iterate the global map
     for key,l in links.link_map.items():
-        l.life = max(0, life)
-        l.life = min(1, life)
+        l.reset(life)
 
 def stepAll(links: LinkCollection, deg = 0.01):
     # iterate the global map
     for key,l in links.link_map.items():
-        l.life = max(0, l.life-deg)
+        l.degrade(deg)
 
-def step(links: LinkCollection, subSteps = 10, deg = 0.01):
+def step(links: LinkCollection, deg = 0.01, subSteps = 10):
     # get entry links should be calculated
     entryKeys = [ id
                   for ids_perWall in links.keys_perWall.values() if ids_perWall
@@ -46,6 +53,16 @@ def step(links: LinkCollection, subSteps = 10, deg = 0.01):
 
     rootKey = rnd.choice(entryKeys)
     rootLink = links.link_map[rootKey]
-    #DEV.log_msg(f"Root link {rootKey} from {len(entryKeys)} options", {"SIM", "STEP"})
+    linkKey = rnd.choice(rootLink.neighs)
+    link = links.link_map[linkKey]
+    #DEV.log_msg(f"Root link {rootKey} from {len(entryKeys)} -> first {linkKey} from {len(rootLink.neighs)}", {"SIM", "STEP"})
 
-    return # WIP::
+    for i in range(subSteps):
+        link.degrade(deg)
+
+        # IDEA:: break condition
+        if False: break
+
+        # choose link to propagate
+        linkKey = rnd.choice(link.neighs)
+        link = links.link_map[linkKey]

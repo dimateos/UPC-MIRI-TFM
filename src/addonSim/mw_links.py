@@ -10,14 +10,17 @@ from .stats import getStats
 
 
 class LINK_ERROR_IDX:
-    """ Use leftover indices between cont boundaries and custom walls for filler error idx """
+    """ Use leftover indices between cont boundaries and custom walls for filler error idx?
+        IDEA:: could just multiply id by a lot to keep track of original?
+    """
+    _zerosForHighlight = 1000000
 
-    missing = -7
+    missing = -7 *_zerosForHighlight
     """ Missing a whole cell / object"""
-    asymmetry = -8
+    asymmetry = -8 *_zerosForHighlight
     """ Missing connection at in the supposed neighbour """
 
-    e3 = -9
+    e3 = -9 *_zerosForHighlight
     all = [ missing, asymmetry ]
 
 #-------------------------------------------------------------------
@@ -60,6 +63,16 @@ class Link():
 
     #-------------------------------------------------------------------
 
+    def setNeighsValid(self, newNeighs:list[keyType]):
+        """ Set links checking errors """
+        self.neighs = []
+        self.addNeighsValid(newNeighs)
+
+    def addNeighsValid(self, newNeighs:list[keyType]):
+        """ Add links checking errors
+            IDEA:: do here or outside?
+        """
+        self.neighs += [ key for key in newNeighs if key[0] not in LINK_ERROR_IDX.all ]
 
 
 #-------------------------------------------------------------------
@@ -115,44 +128,45 @@ class LinkCollection():
 
         # build symmetric face map of the found cells
         self.keys_asymmetry    : list[Link.keyType]  = []
+        self.keys_missing      : list[Link.keyType]  = []
         self.cont_neighs_faces : list[list[int]|int] = [LINK_ERROR_IDX.missing]*len(cont)
         """ NOTE:: missing cells and neigh asymmetries are filled with a placeholder id too """
 
-        for idx_cell,neighs in enumerate(self.cont_neighs):
-            # skip missing cell
-            if neighs == LinkCollection.CONST_ERROR_IDX.missing:
-                continue
+        for idx_cell in self.cont_foundId:
+            neighs = self.cont_neighs[idx_cell]
 
             faces: list[int] = [LINK_ERROR_IDX.asymmetry] * len(neighs)
             for idx_face,idx_neigh in enumerate(neighs):
                 # wall connection always ok, so simply add its index
                 if idx_neigh < 0: faces.append(idx_neigh)
 
-                # general cases try retrieving other end respective face
+                # general cases try retrieving the respective face at the neighbour end
                 else:
-                    neigh_idx_face = -1
                     neighsOther = self.cont_neighs[idx_neigh]
 
-                    # possibly a whole missing cell at the other side
-                    if neighsOther != LINK_ERROR_IDX.missing:
-                        # symmetry checked with .index exception
-                        try: neigh_idx_face = neighsOther.index(idx_cell)
-                        except ValueError: pass
+                    # check missing whole cell -> alter neighs acording to found error
+                    if neighsOther == LINK_ERROR_IDX.missing:
+                        self.keys_missing.append((idx_cell,idx_neigh))
+                        neighs[idx_face] = LINK_ERROR_IDX.missing
+                        # also reasign the exact error code in the keys_perCell structure too (started as asymmetry)
+                        self.keys_perCell[idx_cell][idx_face] = (LINK_ERROR_IDX.missing, idx_cell)
 
-                    # correclty found face
-                    if neigh_idx_face != -1:
-                        faces[idx_face] = neigh_idx_face
-
-                    # otherwise replace with error idx in the structures
+                    # try to find valid face matching index
                     else:
-                        key = (idx_cell,idx_neigh)
-                        self.keys_asymmetry.append(key)
-                        neighs[idx_face] = LINK_ERROR_IDX.asymmetry
+                        try:
+                            neigh_idx_face = neighsOther.index(idx_cell)
+                            faces[idx_face] = neigh_idx_face
+
+                        # symmetry checked with .index exception -> also alter neighs
+                        except ValueError:
+                            self.keys_asymmetry.append((idx_cell,idx_neigh))
+                            neighs[idx_face] = LINK_ERROR_IDX.asymmetry
 
             self.cont_neighs_faces[idx_cell] = faces
 
-        msg = f"calculated cell neighs faces: {len(self.keys_asymmetry)} asymmetries"
-        if self.keys_asymmetry: msg += f" {str(self.keys_asymmetry[:10])}"
+        stats.logDt(f"calculated cell neighs faces: {len(self.keys_missing)} broken due missing")
+        msg =       f"      ...found {len(self.keys_asymmetry)} asymmetries"
+        if self.keys_asymmetry: msg += f": {str(self.keys_asymmetry[:10])}"
         stats.logDt(msg) # uncut=True
 
 
@@ -184,7 +198,7 @@ class LinkCollection():
             for idx_face, idx_neighCell in enumerate(self.cont_neighs[idx_cell]):
 
                 # skip asymmetric (already prefilled keys_perCell)
-                if idx_neighCell == LINK_ERROR_IDX.asymmetry:
+                if idx_neighCell in LINK_ERROR_IDX.all:
                     continue
 
                 # get world props
@@ -248,7 +262,7 @@ class LinkCollection():
                 if l.toWall:
                     w_neighs = self.shards_meshMaps[idx_cell]["FtoF"][idx_face]
                     w_neighs = [ keys_perFace[f] for f in w_neighs ]
-                    l.neighs += w_neighs
+                    l.addNeighsValid(w_neighs)
                     continue
 
                 # extract idx and geometry faces neighs
@@ -264,7 +278,7 @@ class LinkCollection():
                 c2_keys = self.keys_perCell[c2]
                 c1_neighs = [ c1_keys[f] for f in f1_neighs ]
                 c2_neighs = [ c2_keys[f] for f in f2_neighs ]
-                l.neighs += c1_neighs + c2_neighs
+                l.setNeighsValid(c1_neighs + c2_neighs)
 
         stats.logDt("aggregated link neighbours")
         logType = {"CALC", "LINKS"}

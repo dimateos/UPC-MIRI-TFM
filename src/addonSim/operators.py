@@ -355,6 +355,9 @@ class MW_sim_step_OT(_StartRefresh_OT):
         if not self.links:
             return self.cancel_op("No links storage found...")
 
+        # store the random generator
+        mw_sim.storeRnd()
+
         return super().invoke(context, event)
 
     def execute(self, context: types.Context):
@@ -362,12 +365,15 @@ class MW_sim_step_OT(_StartRefresh_OT):
         cfg : MW_sim_cfg= self.cfg
         obj, cfgGen = MW_gen_cfg.getSelectedRoot()
 
+        # achieve constructive results
+        mw_sim.restoreRnd()
+
         # TODO:: bl undo does not undo changes in the links tho
         if cfg.steps_reset: mw_sim.setAll(self.links, 1.0)
 
         for step in range(cfg.steps):
             if cfg.steps_uniformDeg: mw_sim.stepAll(self.links, cfg.deg)
-            else: mw_sim.step(self.links, self.cfg.deg)
+            else: mw_sim.step(self.links, cfg.deg, cfg.subSteps)
 
         # IDEA:: store copy or original or button to recalc links from start? -> set all life to 1 but handle any dynamic list
         obj_links, obj_links_toWall = mw_setup.gen_linksEmpties(obj, cfgGen, context)
