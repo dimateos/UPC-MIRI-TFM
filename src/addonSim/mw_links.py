@@ -9,7 +9,19 @@ from .utils_dev import DEV
 from .stats import getStats
 
 
+class LINK_ERROR_IDX:
+    """ Use leftover indices between cont boundaries and custom walls for filler error idx """
+
+    missing = -7
+    """ Missing a whole cell / object"""
+    asymmetry = -8
+    """ Missing connection at in the supposed neighbour """
+
+    e3 = -9
+    all = [ missing, asymmetry ]
+
 #-------------------------------------------------------------------
+
 
 # OPT:: could use a class or an array of props? pyhton already slow so ok class?
 class Link():
@@ -34,21 +46,25 @@ class Link():
         self.neighs: list[Link.keyType] = list()
         self.neighs_dead: list[Link.keyType] = list()
 
+    #-------------------------------------------------------------------
 
-    def reset(self):
+    def degrade(self, deg):
+        """ Degrade link preserving life [0,1] """
+        self.life -= deg
+        self.life = max(0, self.life)
+        self.life = min(1, self.life)
+
+    def reset(self, life=1.0):
         """ Reset simulation parameters """
-        self.life = 1.0
+        self.life = life
+
+    #-------------------------------------------------------------------
+
 
 
 #-------------------------------------------------------------------
 
 class LinkCollection():
-
-    class CONST_ERROR_IDX:
-        """ Use leftover indices between cont boundaries and custom walls for filler error idx """
-        missing = -7
-        asymmetry = -8
-        e3 = -9
 
     def __init__(self, cont: Container, obj_shards: types.Object):
         stats = getStats()
@@ -77,19 +93,19 @@ class LinkCollection():
         self.cont = cont
         self.cont_foundId   : list[int]           = []
         self.cont_missingId : list[int]           = []
-        self.cont_neighs    : list[list[int]|int] = [LinkCollection.CONST_ERROR_IDX.missing]*len(cont)
+        self.cont_neighs    : list[list[int]|int] = [LINK_ERROR_IDX.missing]*len(cont)
         """ NOTE:: missing cells are filled with a placeholder id to preserve original position idx """
 
         for idx_cell,cell in enumerate(cont):
             if cell is None:
                 self.cont_missingId.append(idx_cell)
-                self.keys_perCell[idx_cell] = LinkCollection.CONST_ERROR_IDX.missing
+                self.keys_perCell[idx_cell] = LINK_ERROR_IDX.missing
             else:
                 self.cont_foundId.append(idx_cell)
                 neighs = cell.neighbors()
                 self.cont_neighs[idx_cell] = neighs
                 # prefill with asymmetry keys too
-                key = (LinkCollection.CONST_ERROR_IDX.asymmetry, idx_cell)
+                key = (LINK_ERROR_IDX.asymmetry, idx_cell)
                 self.keys_perCell[idx_cell] = [key]*len(neighs)
 
         msg = f"calculated voro cell neighs: {len(self.cont_missingId)} / {len(cont)} missing"
@@ -99,7 +115,7 @@ class LinkCollection():
 
         # build symmetric face map of the found cells
         self.keys_asymmetry    : list[Link.keyType]  = []
-        self.cont_neighs_faces : list[list[int]|int] = [LinkCollection.CONST_ERROR_IDX.missing]*len(cont)
+        self.cont_neighs_faces : list[list[int]|int] = [LINK_ERROR_IDX.missing]*len(cont)
         """ NOTE:: missing cells and neigh asymmetries are filled with a placeholder id too """
 
         for idx_cell,neighs in enumerate(self.cont_neighs):
@@ -107,7 +123,7 @@ class LinkCollection():
             if neighs == LinkCollection.CONST_ERROR_IDX.missing:
                 continue
 
-            faces: list[int] = [LinkCollection.CONST_ERROR_IDX.asymmetry] * len(neighs)
+            faces: list[int] = [LINK_ERROR_IDX.asymmetry] * len(neighs)
             for idx_face,idx_neigh in enumerate(neighs):
                 # wall connection always ok, so simply add its index
                 if idx_neigh < 0: faces.append(idx_neigh)
@@ -118,7 +134,7 @@ class LinkCollection():
                     neighsOther = self.cont_neighs[idx_neigh]
 
                     # possibly a whole missing cell at the other side
-                    if neighsOther != LinkCollection.CONST_ERROR_IDX.missing:
+                    if neighsOther != LINK_ERROR_IDX.missing:
                         # symmetry checked with .index exception
                         try: neigh_idx_face = neighsOther.index(idx_cell)
                         except ValueError: pass
@@ -131,7 +147,7 @@ class LinkCollection():
                     else:
                         key = (idx_cell,idx_neigh)
                         self.keys_asymmetry.append(key)
-                        neighs[idx_face] = LinkCollection.CONST_ERROR_IDX.asymmetry
+                        neighs[idx_face] = LINK_ERROR_IDX.asymmetry
 
             self.cont_neighs_faces[idx_cell] = faces
 
@@ -142,9 +158,9 @@ class LinkCollection():
 
         # retrieve objs, meshes -> dicts per shard
         self.shards_parent = obj_shards
-        self.shards_objs     : list[types.Object|int] = [LinkCollection.CONST_ERROR_IDX.missing]* len(cont)
-        self.shards_meshes   : list[types.Mesh|int]   = [LinkCollection.CONST_ERROR_IDX.missing]* len(cont)
-        self.shards_meshMaps : list[dict|int]         = [LinkCollection.CONST_ERROR_IDX.missing]* len(cont)
+        self.shards_objs     : list[types.Object|int] = [LINK_ERROR_IDX.missing]* len(cont)
+        self.shards_meshes   : list[types.Mesh|int]   = [LINK_ERROR_IDX.missing]* len(cont)
+        self.shards_meshMaps : list[dict|int]         = [LINK_ERROR_IDX.missing]* len(cont)
 
         for idx_found,shard in enumerate(obj_shards.children):
             idx_cell = self.cont_foundId[idx_found]
@@ -168,7 +184,7 @@ class LinkCollection():
             for idx_face, idx_neighCell in enumerate(self.cont_neighs[idx_cell]):
 
                 # skip asymmetric (already prefilled keys_perCell)
-                if idx_neighCell == self.CONST_ERROR_IDX.asymmetry:
+                if idx_neighCell == LINK_ERROR_IDX.asymmetry:
                     continue
 
                 # get world props
@@ -217,7 +233,7 @@ class LinkCollection():
             keys_perFace = self.keys_perCell[idx_cell]
             for idx_face,key in enumerate(keys_perFace):
                 # skip possible asymmetries
-                if key[0] == self.CONST_ERROR_IDX.asymmetry:
+                if key[0] in LINK_ERROR_IDX.all:
                     continue
 
                 # retrieve valid link
@@ -286,7 +302,7 @@ class LinkCollection():
         key = (k1, k2) if not swap else (k2, k1)
         return key
 
-    #-------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 
 # OPT:: store links between objects -> add json parser to store persistently? or retrieve from recalculated cont?
