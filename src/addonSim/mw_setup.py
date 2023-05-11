@@ -193,14 +193,18 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
 
             vc_old = utils_render.gen_meshVC_legacy(mesh, utils_render.COLORS.pink)
             utils_render.set_meshVC_legacy(mesh, vc_old, utils_render.COLORS.list_gray)
+            utils_render.set_meshVC_legacy_rnd(mesh, vc_old)
             vc = utils_render.gen_meshVC(mesh, utils_render.COLORS.list_rgb )
             vcFace = utils_render.gen_meshVC(mesh, utils_render.COLORS.list_rgb, adomain="CORNER")
 
-            ac = utils_render.gen_meshAC(mesh, utils_render.COLORS.list_fade , adomain="CORNER", name="ACtestcolor")
+            ac = utils_render.gen_meshAC(mesh, utils_render.COLORS.list_fade, adomain="CORNER", name="ACtestcolor")
             ac2 = utils_render.gen_meshAC(mesh, adomain="FACE")
             ac3 = utils_render.gen_meshAC(mesh, utils_render.COLORS.red, adomain="EDGE")
 
-            #utils_render.gen_meshAttr(mesh)
+            at = utils_render.gen_meshAttr(mesh, adomain="FACE")
+            utils_render.set_meshAttr_rnd(mesh, at)
+            atc = utils_render.gen_meshAttr(mesh, utils_render.COLORS.blue.to_4d(), adomain="CORNER", atype="FLOAT_COLOR", name="ATtestcolor")
+            utils_render.set_meshAttr_rnd(mesh, atc)
             #obj_shard.active_material = utils_render.get_randomMat(alpha=0.5, matName=name)
 
     getStats().logDt("generated shards objects")

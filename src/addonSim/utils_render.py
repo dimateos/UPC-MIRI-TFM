@@ -43,7 +43,7 @@ class COLORS:
 
     def get_random(minC=0.0, maxC=1.0, alpha=0.0) -> Vector:
         c = Vector( [uniform(minC,maxC), uniform(minC,maxC), uniform(minC,maxC)] )
-        if alpha: c = COLORS.toColor4D(c, alpha)
+        if alpha: c = COLORS.assure_4d_alpha(c, alpha)
         return c
 
     def get_ramp(start = 0.1, stop = 0.9, step = 0.2, alpha=0.0) -> list[Vector]:
@@ -86,6 +86,7 @@ class ATTRS:
     attrs_adomain = [ 'POINT', 'CORNER', 'EDGE', 'FACE', 'CURVE' ] # INSTANCE too
     attrsColor_atype = [ "FLOAT_COLOR", "BYTE_COLOR" ]
     attrsColor_adomain = [ "POINT", "CORNER" ]
+    attrs_adomain_sortCorners = True
 
     def get_src_inDomain(mesh: types.Mesh, adomain:str):
         """ Map the str to the mesh data """
@@ -172,27 +173,31 @@ def set_meshUV_rnd(mesh: types.Mesh, uv: types.MeshUVLoopLayer|str, minC=0.0, ma
 
 #-------------------------------------------------------------------
 
-def gen_meshVC_legacy(mesh: types.Mesh, color_base:Vector|list[Vector] = None, name="VC_legacy") -> types.MeshLoopColorLayer:
+def gen_meshVC_legacy(mesh: types.Mesh, color_base:Vector|list[Vector] = None, orderCorners=True, name="VC_legacy") -> types.MeshLoopColorLayer:
     """ Add a legacy vertex color layer to the mesh: 4D float PER loop corner
     # NOTE:: internally uses the same feature as color attributes, but limited to loops
     """
     vc = mesh.vertex_colors.new(name=name)
-    if color_base: set_meshVC_legacy(mesh, vc, color_base)
+    if color_base: set_meshVC_legacy(mesh, vc, color_base, orderCorners)
     return vc
 
-def set_meshVC_legacy(mesh: types.Mesh, vc: types.MeshLoopColorLayer|str, color_base:Vector|list[Vector]):
+def set_meshVC_legacy(mesh: types.Mesh, vc: types.MeshLoopColorLayer|str, color_base:Vector|list[Vector], orderCorners=True):
     if isinstance(vc, str): vc = mesh.vertex_colors[vc]
     color_base = utils.assure_list(color_base)
-    for i, faceL in enumerate(mesh.loops):
-        c = color_base[i % len(color_base)]
-        vc.data[i].color = COLORS.assure_4d_alpha(c)
+    if orderCorners:
+        for i, face in enumerate(mesh.polygons):
+            c = color_base[i % len(color_base)]
+            for j, loop in enumerate(face.loop_indices):
+                vc.data[loop].color = COLORS.assure_4d_alpha(c)
+    else:
+        for i, faceL in enumerate(mesh.loops):
+            c = color_base[i % len(color_base)]
+            vc.data[i].color = COLORS.assure_4d_alpha(c)
 
-def set_meshVC_legacy_rnd(mesh: types.Mesh, vc: types.MeshLoopColorLayer|str, minC=0.0, maxC=1.0, alpha=1.0):
-    if isinstance(vc, str): vc = mesh.vertex_colors[vc]
-    for i, faceL in enumerate(mesh.loops):
-        c = ATTRS.get_deferred_inType("FLOAT_COLOR", minC, maxC, i)
-        c.w = alpha
-        vc.data[i].color = c
+def set_meshVC_legacy_rnd(mesh: types.Mesh, vc: types.MeshLoopColorLayer|str, minC=0.0, maxC=1.0, alpha=1.0, orderCorners=True):
+    rndValues = [ COLORS.assure_4d_alpha(ATTRS.get_deferred_inType("FLOAT_COLOR", minC, maxC, i), alpha)
+                 for i, faceL in enumerate(mesh.loops) ]
+    set_meshVC_legacy(mesh, vc, rndValues, orderCorners)
 
 #-------------------------------------------------------------------
 
@@ -252,9 +257,9 @@ def set_meshAC_rnd(mesh: types.Mesh, ac: types.Attribute|str, minC=0.0, maxC=1.0
 
 #-------------------------------------------------------------------
 
-def gen_meshAttr(mesh: types.Mesh, val_base = None, atype="FLOAT", adomain="EDGE", name="AC") -> types.Attribute:
+def gen_meshAttr(mesh: types.Mesh, val_base = None, atype="FLOAT", adomain="EDGE", name="AT") -> types.Attribute:
     """ Add a custom attribute layer to the mesh: vector, float, string, etc PER loop, face, edge, vertex, etc
-    # NOTE:: when using colors and POINT/CORNER will also be added as a color_attribute
+    # NOTE:: when using colors and POINT/CORNER will also be added as a color_attribute PLUS the access attribute changes
     """
     assert(atype in ATTRS.attrs_atype)
     assert(adomain in ATTRS.attrs_adomain)
@@ -266,16 +271,20 @@ def set_meshAttr(mesh: types.Mesh, attr: types.Attribute|str, val_base):
     if isinstance(attr, str): attr = mesh.attributes[attr]
     val_base = utils.assure_list(val_base)
     source = ATTRS.get_src_inDomain(mesh, attr.domain)
+    # data attribute access depends on the type...
+    dataAttrName = "color" if attr.data_type in ATTRS.attrsColor_atype else "value"
     for i, datum in enumerate(source):
-        c = val_base[i % len(val_base)]
-        attr.data[i].value = c
+        val = val_base[i % len(val_base)]
+        attr.data[i].__setattr__(dataAttrName, val)
 
 def set_meshAttr_rnd(mesh: types.Mesh, attr: types.Attribute|str, minC=0.0, maxC=1.0):
     if isinstance(attr, str): attr = mesh.attributes[attr]
     source = ATTRS.get_src_inDomain(mesh, attr.domain)
+    # data attribute access depends on the type...
+    dataAttrName = "color" if attr.data_type in ATTRS.attrsColor_atype else "value"
     for i, datum in enumerate(source):
         val = ATTRS.get_deferred_inType(attr.data_type, minC, maxC, i)
-        attr.data[i].value = val
+        attr.data[i].__setattr__(dataAttrName, val)
 
 #-------------------------------------------------------------------
 
