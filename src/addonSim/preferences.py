@@ -153,6 +153,10 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=0.66, min=0.1, max=1
     )
 
+    links_matAlpha: props.BoolProperty(
+        name="WIP: Link alpha mod", description="Degrade alpha with life",
+        default=False,
+    )
     links_width: props.FloatProperty(
         name="WIP: Link width", description="Max link w",
         default=0.05, min=0.01, max=0.2, step=0.05, precision=4

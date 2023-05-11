@@ -13,6 +13,7 @@ from . import mw_setup
 from . import mw_cont
 from .mw_links import LinkCollection, LinkStorage
 from tess import Container
+from . import mw_sim
 
 from . import ui
 from . import utils
@@ -345,12 +346,12 @@ class MW_sim_step_OT(_StartRefresh_OT):
         return MW_gen_cfg.hasSelectedRoot()
 
     def invoke(self, context, event):
-        obj, cfg = MW_gen_cfg.getSelectedRoot()
+        obj, cfgGen = MW_gen_cfg.getSelectedRoot()
 
         # per links require the structure
-        if not cfg.ptrID_links:
+        if not cfgGen.ptrID_links:
             return self.cancel_op("Incompleted fracture... (not checked in poll atm)")
-        self.links = LinkStorage.getLinks(cfg.ptrID_links)
+        self.links = LinkStorage.getLinks(cfgGen.ptrID_links)
         if not self.links:
             return self.cancel_op("No links storage found...")
 
@@ -358,14 +359,21 @@ class MW_sim_step_OT(_StartRefresh_OT):
 
     def execute(self, context: types.Context):
         self.start_op()
-        obj, cfg = MW_gen_cfg.getSelectedRoot()
+        cfg : MW_sim_cfg= self.cfg
+        obj, cfgGen = MW_gen_cfg.getSelectedRoot()
 
+        # TODO:: bl undo does not undo changes in the links tho
+        if cfg.steps_reset: mw_sim.setAll(self.links, 1.0)
 
+        for step in range(cfg.steps):
+            if cfg.steps_uniformDeg: mw_sim.stepAll(self.links, cfg.deg)
+            else: mw_sim.step(self.links, self.cfg.deg)
 
         # IDEA:: store copy or original or button to recalc links from start? -> set all life to 1 but handle any dynamic list
-        obj_links, obj_links_toWall = mw_setup.gen_linksEmpties(obj, cfg, context)
-        mw_setup.gen_linksObjects(obj_links, obj_links_toWall, self.links, cfg, context)
+        obj_links, obj_links_toWall = mw_setup.gen_linksEmpties(obj, cfgGen, context)
+        mw_setup.gen_linksObjects(obj_links, obj_links_toWall, self.links, cfgGen, context)
         if obj: MW_gen_cfg.setMetaType(obj, {"CHILD"}, skipParent=True)
+        utils.select_unhide(obj, context)
 
         return self.end_op()
 

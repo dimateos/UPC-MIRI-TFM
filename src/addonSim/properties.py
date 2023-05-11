@@ -331,7 +331,21 @@ class MW_gen_cfg(types.PropertyGroup):
 class MW_sim_cfg(types.PropertyGroup):
     steps: props.IntProperty(
         name="Number of steps", description="WIP: atm redo each modification",
-        default=1, min=1, max=100,
+        default=1, min=1, max=1000,
+    )
+
+    steps_uniformDeg: props.BoolProperty(
+        name="Uniform reduction",
+        default=False,
+    )
+    steps_reset: props.BoolProperty(
+        name="Reset at start",
+        default=True,
+    )
+
+    deg: props.FloatProperty(
+        name="Degradation", description="WIP: flat reduction",
+        default=0.025, min=0.001, max=0.1, step=1, precision=3
     )
 
 #class MW_vis_cfg(types.PropertyGroup):

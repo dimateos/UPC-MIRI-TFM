@@ -306,7 +306,8 @@ def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: LinkC
             # vary curve props
             res = prefs.links_res
             width = prefs.links_widthDead * (1-l.life) + prefs.links_width * l.life
-            mat = utils_render.get_colorMat(utils_render.COLORS.red*l.life, l.life+0.1, name)
+            alpha = l.life+0.1 if prefs.links_matAlpha else 1.0
+            mat = utils_render.get_colorMat(utils_render.COLORS.red*l.life, alpha, name)
 
         # Create new curve per link and spawn
         curve = utils_render.get_curveData([p1, p2], name, width, res)
