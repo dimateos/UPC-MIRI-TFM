@@ -117,7 +117,7 @@ class MW_prefs(bpy.types.AddonPreferences):
 
     gen_PT_meta_show_visuals: props.BoolProperty(
         name="Show visuals...", description="Tweak visual elements",
-        default=True,
+        default=False,
     )
     gen_PT_meta_show_tmpDebug: props.BoolProperty(
         name="Show DEBUG...", description="WIP: Show some debug stuff",

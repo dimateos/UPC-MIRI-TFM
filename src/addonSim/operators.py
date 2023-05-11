@@ -5,6 +5,7 @@ import bpy.props as props
 from .preferences import getPrefs
 from .properties import (
     MW_gen_cfg,
+    MW_sim_cfg,
 )
 from .operators_utils import _StartRefresh_OT, util_classes_op
 
@@ -321,47 +322,52 @@ class MW_gen_links_OT(_StartRefresh_OT):
 #-------------------------------------------------------------------
 
 class MW_sim_step_OT(_StartRefresh_OT):
-    bl_idname = "mw.gen_links"
-    bl_label = "Generate links object"
-    bl_description = "Generate a visual representation of the links of a fracture object"
+    bl_idname = "mw.sim_step"
+    bl_label = "sim step"
+    bl_description = "WIP: sim steps"
 
-    # UNDO as part of bl_options will cancel any edit last operation pop up
-    bl_options = {'INTERNAL', 'UNDO'}
+    bl_options = {'PRESET', 'REGISTER', 'UNDO'}
+    cfg: props.PointerProperty(type=MW_sim_cfg)
 
     def __init__(self) -> None:
         super().__init__()
         # config some base class log flags...
-        self.invoke_log = True
+        self.invoke_log  = True
+        self.refresh_log = True
+        self.end_log     = True
+
+    def draw(self, context: types.Context):
+        super().draw(context)
+        ui.draw_props(self.cfg, "", self.layout.box(), True)
 
     @classmethod
     def poll(cls, context):
         return MW_gen_cfg.hasSelectedRoot()
 
+    def invoke(self, context, event):
+        obj, cfg = MW_gen_cfg.getSelectedRoot()
+
+        # per links require the structure
+        if not cfg.ptrID_links:
+            return self.cancel_op("Incompleted fracture... (not checked in poll atm)")
+        self.links = LinkStorage.getLinks(cfg.ptrID_links)
+        if not self.links:
+            return self.cancel_op("No links storage found...")
+
+        return super().invoke(context, event)
+
     def execute(self, context: types.Context):
         self.start_op()
         obj, cfg = MW_gen_cfg.getSelectedRoot()
 
-        ## WIP:: per cell no need but atm cont ref is inside LinkCollection structure
-        #obj_links_perCell = mw_setup.gen_linksEmptiesPerCell(obj, cfg, context)
-        #mw_setup.gen_linksCellObjects(obj_links_perCell, links.cont, cfg, context)
 
-        # per links require the structure
-        if not cfg.ptrID_links:
-            return self.end_op_error("Incompleted fracture... (not checked in poll atm)")
-        links = LinkStorage.getLinks(cfg.ptrID_links)
-        if not links:
-            return self.end_op_error("No links storage found...")
 
+        # IDEA:: store copy or original or button to recalc links from start? -> set all life to 1 but handle any dynamic list
         obj_links, obj_links_toWall = mw_setup.gen_linksEmpties(obj, cfg, context)
-        mw_setup.gen_linksObjects(obj_links, obj_links_toWall, links, cfg, context)
+        mw_setup.gen_linksObjects(obj_links, obj_links_toWall, self.links, cfg, context)
+        if obj: MW_gen_cfg.setMetaType(obj, {"CHILD"}, skipParent=True)
 
         return self.end_op()
-
-    def end_op(self, msg="", skipLog=False, retPass=False):
-        """ OVERRIDE:: end_op to perform assign child to all """
-        obj, cfg = MW_gen_cfg.getSelectedRoot()
-        if obj: MW_gen_cfg.setMetaType(obj, {"CHILD"}, skipParent=True)
-        return super().end_op(msg, skipLog, retPass)
 
 #-------------------------------------------------------------------
 
@@ -448,7 +454,7 @@ classes = [
     MW_gen_OT,
     MW_gen_recalc_OT,
     MW_gen_links_OT,
-    #MW_sim_step_OT,
+    MW_sim_step_OT,
     MW_util_delete_OT,
     MW_util_delete_all_OT,
     MW_util_bake_OT,

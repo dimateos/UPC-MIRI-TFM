@@ -115,7 +115,7 @@ class _StartRefresh_OT(types.Operator):
 
         if self.start_logStats: stats.logDt(f"timing: ({self.bl_idname})...")
 
-    def end_op(self, msg="", skipLog=False, retPass=False):
+    def end_op(self, msg="", skipLog=False, retPass=False, cancel= False):
         """ Default exit flow at the end of execution """
         if self.end_log:
             if not msg: msg= f"{self.bl_label}"
@@ -125,6 +125,7 @@ class _StartRefresh_OT(types.Operator):
             getStats().logFull(f"finished: ({self.bl_idname})...")
 
         if self.end_logEmptyLine: print()
+        if cancel: return {"CANCELLED"}
         return {"FINISHED"} if not retPass else {'PASS_THROUGH'}
 
     def end_op_error(self, msg = "", skipLog=False, retPass=False):
@@ -137,6 +138,12 @@ class _StartRefresh_OT(types.Operator):
         """ Default exit flow after a cancelled refresh """
         if not msg: msg= f"cancel execution (refresh)"
         return self.end_op(msg, skipLog, retPass)
+
+    def cancel_op(self, msg = "", skipLog=False):
+        """ Cancel operator, quit the edit last op window """
+        self.logReport(f"Op CANCELLED: {msg}", {'ERROR'})
+        if not msg: msg= f"cancel execution"
+        return self.end_op(msg, skipLog, cancel=True)
 
     def logReport(self, msg, rtype = {'WARNING'}):
         """ blender rtype of kind INFO, WARNING or ERROR"""

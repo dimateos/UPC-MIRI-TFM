@@ -9,6 +9,11 @@ class CONST_CFG:
     ]
     """ Avoid doc attrs and read-only RNA types, no need to trim or lowercase etc """
 
+    filterExact_readOnly = [
+        "name",            # blender adds name to everything?
+    ]
+    # IDEA:: add some prefix to mark as exact match e.g. *, make optional etc
+
     filter_nonBlProp = [
         "nbl_"             # mw meta non props
     ]
@@ -24,6 +29,9 @@ def getProps_names(data):
 
         # minumun filter of read only props
         filterMask = [ prop_name.startswith(f) for f in CONST_CFG.filter_readOnly]
+        if any(filterMask): continue
+
+        filterMask = [ prop_name == f for f in CONST_CFG.filterExact_readOnly]
         if any(filterMask): continue
 
         props_names.append(prop_name)

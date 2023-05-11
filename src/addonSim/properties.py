@@ -329,17 +329,10 @@ class MW_gen_cfg(types.PropertyGroup):
 # IDEA:: using animation frame handler to see the simulaion play?
 
 class MW_sim_cfg(types.PropertyGroup):
-
-    substeps: props.IntProperty(
-        name="Link res", description="WIP: ",
-        default=1, min=-1,
-    )
     steps: props.IntProperty(
-        name="Link res", description="WIP: ",
-        default=0, min=0, max=8,
+        name="Number of steps", description="WIP: atm redo each modification",
+        default=1, min=1, max=100,
     )
-
-    pass
 
 #class MW_vis_cfg(types.PropertyGroup):
 #    pass

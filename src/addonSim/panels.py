@@ -151,7 +151,8 @@ class MW_sim_PT(types.Panel):
         obj, cfg = MW_gen_cfg.getSelectedRoot()
         col = self.layout.column()
 
-        col.label(text=f"...")
+        #col.label(text=f"...")
+        self.layout.operator(ops.MW_sim_step_OT.bl_idname)
 
 
 #-------------------------------------------------------------------
