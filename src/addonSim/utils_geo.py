@@ -5,48 +5,7 @@ from mathutils import Vector, Matrix
 from .unionfind import UnionFind
 
 
-#-------------------------------------------------------------------
-#-UTILS
 
-def r(a):
-    return int(a*1000+0.5)/1000.0
-
-# ref: fracture mod
-def edge_center(mesh, edge):
-    v1, v2 = edge.vertices
-    return (mesh.vertices[v1].co + mesh.vertices[v2].co) / 2.0
-def edge_dir(mesh, edge):
-    v1, v2 = edge.vertices
-    return (mesh.vertices[v2].co - mesh.vertices[v1].co).normalized()
-
-def poly_center(mesh, poly):
-    co = Vector()
-    tot = 0
-    for i in poly.loop_indices:
-        co += mesh.vertices[mesh.loops[i].vertex_index].co
-        tot += 1.0
-    return co / tot
-
-def centroid(vertices_id, vertices):
-    """ Calculate average of 3D vectors given list of indices and container """
-    c = Vector((0.0, 0.0, 0.0))
-    for v in vertices_id: c += vertices[v]
-    c /= len(vertices_id)
-    return c
-def centroid_weighted(vertices_id, vertices, weights=None):
-    """ Calculate average of 3D vectors given list of indices and container """
-    c = Vector((0.0, 0.0, 0.0))
-    for i,v in enumerate(vertices_id):
-        c += vertices[v] * weights[i] if weights else vertices[v]
-    if not weights: c /= len(vertices_id)
-    return c
-def centroid_verts(coords, weights=None):
-    """ Calculate average of 3D vectors given list of indices and container """
-    c = Vector((0.0, 0.0, 0.0))
-    for i,co in enumerate(coords):
-        c += co * weights[i] if weights else co
-    if not weights: c /= len(coords)
-    return c
 
 #-------------------------------------------------------------------
 #-MAPPINGS
@@ -114,53 +73,78 @@ def get_meshDicts(me, queries_dict=None, queries_default=False):
              "EtoF": edge_faces, "FtoE": face_edges, "FtoF": face_faces,
              "EktoE": edgeKey_edge if queries_dict["EktoE"] else None }
 
-def map_EtoF(me):
-    """ Returns the dictionary from Edge to Faces"""
+def map_EtoF(me: types.Mesh):
+    """ Returns the dictionary from Edge to Faces """
     # build the dictionary from edge "key" to edge id
     edgeKey_edge = dict()
     for i,e in enumerate(me.edges):
-        edgeKey_edge[str(e.key)] = i
+        edgeKey_edge[e.key] = i
 
-    # build edge to face relation using a list of sets (to remove repetitions)
+    # build edge to face relation using a list of sets (there is no repetition but a set is more appropiate)
     edge_faces = [set() for v in me.edges]
     for face in me.polygons:
         for e_key in face.edge_keys:
             # use pair as the string key to retieve index
-            e_index = edgeKey_edge[str(e_key)]
+            e_index = edgeKey_edge[e_key]
             # store based on index instead of key
             edge_faces[e_index].add(face.index)
 
     return edge_faces
 
-def map_VtoF_EtoF_VtoE(me):
+def map_VtoF_EtoF_VtoE(me: types.Mesh):
     """ Returns multiple mappings of the mesh (that complement blenders) """
-    # build vertex to face relation using a list of sets (to remove repetitions)
-    vertex_faces = [set() for v in me.vertices]
+    EKtoE: dict[tuple[int,int],int] = dict()
+    VtoE: dict[int, set[int]] = dict()
 
-    # build the dictionary from edge "key" to edge id
-    edgeKey_edge = dict()
-    for i,e in enumerate(me.edges): edgeKey_edge[str(e.key)] = i
-    # build edge to face relation using a list of sets (to remove repetitions)
-    edge_faces = [set() for v in me.edges]
+    # use the same face iteration to build both maps
+    for e in me.edges:
+        EKtoE[e.key] = e.index
 
+        for v in e.vertices:
+            try: VtoE[v].add(e.index)
+            except KeyError: VtoE[v] = {e.index}
+
+    VtoF: dict[int, set[int]] = dict()
+    EtoF: dict[int, set[int]] = dict()
+
+    # use the same face iteration to build both maps
     for face in me.polygons:
         for v in face.vertices:
-            vertex_faces[v].add(face.index)
+            try: VtoF[v].add(face.index)
+            except KeyError: VtoF[v] = {face.index}
 
+        # same as in map_EtoF but reuse the same loop
+        for e_key in face.edge_keys:
+            e_index = EKtoE[e_key]
+            try: EtoF[e_index].add(face.index)
+            except KeyError: EtoF[e_index] = {face.index}
+
+    return VtoF, EtoF, VtoE
+
+def map_EtoF(me: types.Mesh):
+    """ Returns the dictionary from Edge to Faces """
+    EKtoE = map_EKtoE(me)
+
+    # dictionary size should be len(me.edges) but using a map skips initial memory alloc
+    # there is no face repetition, using it directly as more appropiate
+    EtoF: dict[int, set[int]] = dict()
+
+    for face in me.polygons:
         for e_key in face.edge_keys:
             # use pair as the string key to retieve index
-            e_index = edgeKey_edge[str(e_key)]
+            e_index = EKtoE[e_key]
             # store based on index instead of key
-            edge_faces[e_index].add(face.index)
+            try: EtoF[e_index].add(face.index)
+            except KeyError: EtoF[e_index] = {face.index}
 
-    # build the dictionary from vertex to edge too
-    vertex_edges = [set() for v in me.vertices]
-    for e in me.edges:
-        for v in e.vertices:
-            vertex_edges[v].add(e.index)
+    return EtoF
 
-    return vertex_faces, edge_faces, vertex_edges
-
+def map_EKtoE(me: types.Mesh) -> dict[tuple[int,int],int]:
+    """ Returns the dictionary from Edge "key" to Edge id """
+    #EKtoE: dict[tuple[int,int],int] = dict()
+    #for i,e in enumerate(me.edges): EKtoE[e.key] = i
+    EKtoE = { e.key: e.index for e in me.edges }
+    return EKtoE
 
 #-------------------------------------------------------------------
 ## QUERIES geo
@@ -259,13 +243,13 @@ def valences_mesh(me: types.Mesh, log=True):
 ## EXERCISE 4
 def manifold_types_mesh(me: types.Mesh, log=True):
     # build edge to face relation using a dict of sets
-    edge_faces = map_EtoF(me)
+    EtoF = map_EtoF(me)
 
     # clasify the vertices based on amount of faces
     num_boundary = 0
     num_manifold = 0
     num_nomanifold = 0
-    for faces in edge_faces:
+    for e, faces in EtoF.items():
         if len(faces) == 1: num_boundary+=1
         elif len(faces) == 2: num_manifold+=1
         else: num_nomanifold+=1
