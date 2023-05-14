@@ -33,25 +33,58 @@ def desc(me: types.Mesh, i=0):
 
 fixLocalEnv()
 import importlib
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 
+from addonSim.stats import getStats, testStats
+#importlib.reload(getStats.__module__)
+stats = getStats()
 
-from addonSim import utils
-importlib.reload(utils)
+from addonSim import info_mesh
+importlib.reload(info_mesh)
 
 def main():
     ob = bpy.context.active_object
     me = ob.data
     if me: v,e,f,l = desc(me)
-    print(ob.name)
+    #print(ob.name)
+    info_mesh.desc_mesh(me)
 
-    print([v.co for v in me.vertices])
-    print(utils.get_worldVerts(ob))
+    #testStats()
+    stats.reset()
+
+    bench_meshMaps(me)
+
+#-------------------------------------------------------------------
+
+from addonSim import utils
+importlib.reload(utils)
+from addonSim import utils_geo
+importlib.reload(utils_geo)
+
+def bench_meshMaps(me):
+    stats.reset()
+
+    # query mesh props
+    utils_geo.queryLogAll_mesh(me)
+    stats.logFull("queries")
+    print()
+
+    # mesh maps prev implementation
+    stats.reset()
+    for n in range(100):
+        ret = utils_geo.map_VtoF_EtoF_VtoE_prev(me)
+    stats.logFull("maps prev")
+    del ret
+
+    # mesh maps
+    stats.reset()
+    for n in range(100):
+        ret = utils_geo.map_VtoF_EtoF_VtoE(me)
+    stats.logFull("maps")
+    del ret
 
 
-
-
-# -------------------------------------------------------------------
+#-------------------------------------------------------------------
 # When executed from vscode extension __name__ gets overwritten
 # if __name__ == "__main__": runner(main)
 #printEnv()

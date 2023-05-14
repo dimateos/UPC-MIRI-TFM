@@ -23,7 +23,7 @@ class Stats:
         if psutil_available:
             self.process = psutil.Process()
             self.memstats_available = True
-        self.reset()
+        self.reset(False)
 
     def reset(self, log= True):
         self.lasttime = self._gettime()
@@ -31,7 +31,7 @@ class Stats:
         self.basemem = self._getmem()
         self.maxmem = self.lastmem = self.diffmem = 0
         self.elapsedtime = 0
-        if log: self.logMsg("reset...")
+        if log: self.logMsg(f"reset... (base mem: {self.basemem})")
 
     def _gettime(self):
         """return the time in seconds used by the current process."""
@@ -136,7 +136,7 @@ def testStats(new= True, log= True):
     # sample operations
     import numpy as np
     stats = Stats() if new else getStats()
-    stats.logFull()
+    stats.reset()
 
     a = np.zeros(10000000)
     if log:

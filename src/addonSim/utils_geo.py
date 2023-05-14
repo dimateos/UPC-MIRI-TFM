@@ -121,9 +121,38 @@ def map_VtoF_EtoF_VtoE(me: types.Mesh):
 
     return VtoF, EtoF, VtoE
 
-def map_EtoF(me: types.Mesh):
+def map_VtoF_EtoF_VtoE_prev(me):
+    """ Returns multiple mappings of the mesh (that complement blenders) """
+    # build vertex to face relation using a list of sets (to remove repetitions)
+    vertex_faces = [set() for v in me.vertices]
+
+    # build the dictionary from edge "key" to edge id
+    edgeKey_edge = dict()
+    for i,e in enumerate(me.edges): edgeKey_edge[str(e.key)] = i
+    # build edge to face relation using a list of sets (to remove repetitions)
+    edge_faces = [set() for v in me.edges]
+
+    for face in me.polygons:
+        for v in face.vertices:
+            vertex_faces[v].add(face.index)
+
+        for e_key in face.edge_keys:
+            # use pair as the string key to retieve index
+            e_index = edgeKey_edge[str(e_key)]
+            # store based on index instead of key
+            edge_faces[e_index].add(face.index)
+
+    # build the dictionary from vertex to edge too
+    vertex_edges = [set() for v in me.vertices]
+    for e in me.edges:
+        for v in e.vertices:
+            vertex_edges[v].add(e.index)
+
+    return vertex_faces, edge_faces, vertex_edges
+
+def map_EtoF(me: types.Mesh, EKtoE=None):
     """ Returns the dictionary from Edge to Faces """
-    EKtoE = map_EKtoE(me)
+    EKtoE = map_EKtoE(me) if not EKtoE else EKtoE
 
     # dictionary size should be len(me.edges) but using a map skips initial memory alloc
     # there is no face repetition, using it directly as more appropiate
@@ -281,7 +310,7 @@ def get_vertex_shells(me: types.Mesh):
 
     return uf.retrieve_components()
 
-def get_face_shells_manifold(vertex_shells: list[list[int]], VtoF:list[int], EtoF:list[int], VtoE:list[int]):
+def get_face_shells_manifold(vertex_shells: list[list[int]], VtoF:dict[int, set[int]], EtoF:dict[int, set[int]], VtoE:dict[int, set[int]]):
     """ Returns a list of lists containing the faces (index) for each separate shell """
     # use the dicts to get the face_shells (list of lists of faces per shell)
     # at the same time check that all the edges related are 2-manifold
