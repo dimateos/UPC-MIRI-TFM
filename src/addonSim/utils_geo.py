@@ -1,10 +1,6 @@
-# MIRI-A3DM
-# Diego Mateos (UPC)
-""" Different blender mesh queries\n
-    OPT:: not many used atm + added some more geometry utils\n
-    OPT:: in the end optimize the critical ones that end up being used...
-"""
+# ref: Diego Mateos (UPC) - MIRI-A3DM
 
+import bpy.types as types
 from mathutils import Vector, Matrix
 from .unionfind import UnionFind
 
@@ -165,11 +161,72 @@ def map_VtoF_EtoF_VtoE(me):
 
     return vertex_faces, edge_faces, vertex_edges
 
+
 #-------------------------------------------------------------------
-#-QUERIES
+## QUERIES geo
+
+def r(a:float):
+    return int(a*1000+0.5)/1000.0
+
+def edge_center(mesh: types.Mesh, edge: types.MeshEdge):
+    v1, v2 = edge.vertices
+    return (mesh.vertices[v1].co + mesh.vertices[v2].co) / 2.0
+def edge_dir(mesh: types.Mesh, edge: types.MeshEdge):
+    v1, v2 = edge.vertices
+    return (mesh.vertices[v2].co - mesh.vertices[v1].co).normalized()
+
+def poly_center(mesh: types.Mesh, poly: types.MeshPolygon):
+    co = Vector()
+    tot = 0
+    for i in poly.loop_indices:
+        co += mesh.vertices[mesh.loops[i].vertex_index].co
+        tot += 1.0
+    return co / tot
+
+def centroid(vertices_id: list[int], vertices: types.MeshVertices):
+    """ Calculate average of 3D vectors given list of indices and container """
+    c = Vector((0.0, 0.0, 0.0))
+    for v in vertices_id: c += vertices[v]
+    c /= len(vertices_id)
+    return c
+def centroid_weighted(vertices_id: list[int], vertices: types.MeshVertices, weights: list[float]):
+    """ Calculate weighted average of 3D vectors given list of indices and container """
+    assert(len(vertices_id) == len(weights))
+    c = Vector((0.0, 0.0, 0.0))
+    for i,v in enumerate(vertices_id):
+        c += vertices[v] * weights[i]
+    return c
+def centroid_verts(coords: list[Vector]):
+    """ Calculate average of 3D vectors """
+    c = Vector((0.0, 0.0, 0.0))
+    for i,co in enumerate(coords):
+        c += co
+    c /= len(coords)
+    return c
+def centroid_verts_weighted(coords: list[Vector], weights: list[float]):
+    """ Calculate weighted average of 3D vectors """
+    c = Vector((0.0, 0.0, 0.0))
+    for i,co in enumerate(coords):
+        c += co * weights[i]
+    return c
+
+
+#-------------------------------------------------------------------
+## QUERIES mesh
+
+def queryLogAll_mesh(me: types.Mesh):
+    print(f"Query all mesh {me.name}")
+
+    centroid_mesh(me, log=True)
+    valences_mesh(me, log=True)
+    manifold_types_mesh(me, log=True)
+    shells_mesh(me, log=True)
+    genus_mesh(me, log=True)
+    calc_area_mesh(me, log=True)
+    calc_volume_centerMass(me, log=True)
 
 ## EXERCISE 1
-def centroid_mesh(me, log=True):
+def centroid_mesh(me: types.Mesh, log=True):
     """ Calculate average of mesh vertices in local coordinates """
     c = Vector((0.0, 0.0, 0.0))
     for v in me.vertices:
@@ -179,7 +236,7 @@ def centroid_mesh(me, log=True):
     return c
 
 ## EXERCISE 3
-def valences_mesh(me, log=True):
+def valences_mesh(me: types.Mesh, log=True):
     # Number of edges conected to the vertices
     valences = [ 0 for v in me.vertices ]
 
@@ -200,7 +257,7 @@ def valences_mesh(me, log=True):
     return val_min, val_max, val_sum / len(valences)
 
 ## EXERCISE 4
-def manifold_types_mesh(me, log=True):
+def manifold_types_mesh(me: types.Mesh, log=True):
     # build edge to face relation using a dict of sets
     edge_faces = map_EtoF(me)
 
@@ -220,7 +277,7 @@ def manifold_types_mesh(me, log=True):
     return num_boundary, num_manifold, num_nomanifold
 
 ## EXERCISE 6
-def shells_mesh(me, log=True):
+def shells_mesh(me: types.Mesh, log=True):
     # build union-find object and join using all edges
     vertex_union = UnionFind(len(me.vertices))
     for e in me.edges:
@@ -231,16 +288,16 @@ def shells_mesh(me, log=True):
     if log: print(f" num_shells= {vertex_union.num_components}")
     return vertex_union.num_components
 
-def get_vertex_shells(me):
+def get_vertex_shells(me: types.Mesh):
     # build union-find object and join all edges
     uf = UnionFind(len(me.vertices))
     for e in me.edges:
         # print(f" ---edge= {e.vertices[:]}")
         uf.union(e.vertices[0], e.vertices[1])
 
-    return uf.retrieve_compoents()
+    return uf.retrieve_components()
 
-def get_face_shells_manifold(vertex_shells, VtoF, EtoF, VtoE):
+def get_face_shells_manifold(vertex_shells: list[list[int]], VtoF:list[int], EtoF:list[int], VtoE:list[int]):
     """ Returns a list of lists containing the faces (index) for each separate shell """
     # use the dicts to get the face_shells (list of lists of faces per shell)
     # at the same time check that all the edges related are 2-manifold
@@ -273,7 +330,7 @@ def get_face_shells_manifold(vertex_shells, VtoF, EtoF, VtoE):
     return face_shells
 
 ## EXERCISE 7
-def genus_mesh(me, log=True):
+def genus_mesh(me: types.Mesh, log=True):
     # based on Euler-Poincare equataion [F + V = E + R + 2(S-H)]
     # [H] is the number of holes, the genus of the object
     # Derived: [H = (-F - V + E + R)/2 + S]
@@ -300,7 +357,7 @@ def genus_mesh(me, log=True):
     return int(genus)
 
 ## EXERCISE 8
-def calc_area_mesh(me, log=True):
+def calc_area_mesh(me: types.Mesh, log=True):
     # sum the area of all the polygons + compare with BLENDER
     sum_area = 0
     sum_area_BLENDER = 0
@@ -329,7 +386,7 @@ def calc_area_mesh(me, log=True):
         print(f" area= { r(sum_area) }")
     return sum_area
 
-def polygon_area(me, face_index, log=True):
+def polygon_area(me: types.Mesh, face_index:int, log=True):
     """ Return the calculated area of a 3D blender polygon (trapezoid method w/ projections)  """
     face = me.polygons[face_index]
 
@@ -351,7 +408,7 @@ def polygon_area(me, face_index, log=True):
     return face_area
 
 ### EXERCISE 9 / 10
-def calc_volume_centerMass(me, calc_centerMass=False, log=True):
+def calc_volume_centerMass(me: types.Mesh, calc_centerMass=False, log=True):
     # retrieve shells of the mesh
     vertex_shells = get_vertex_shells(me)
     print(f" number of shells= { len(vertex_shells) }")
@@ -408,4 +465,3 @@ def calc_volume_centerMass(me, calc_centerMass=False, log=True):
         if calc_centerMass: print(f" center_mass= {sum_G}")
 
     return sum_vol, sum_G if calc_centerMass else sum_vol
-    return sum_vol, sum_G

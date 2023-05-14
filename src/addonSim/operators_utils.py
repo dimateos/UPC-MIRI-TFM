@@ -446,6 +446,22 @@ class Info_printData_OT(types.Operator):
         info_mesh.desc_mesh_data(obj.data)
         return {'FINISHED'}
 
+class Info_printQueries_OT(types.Operator):
+    bl_idname = "dm.info_print_queries"
+    bl_label = "Print mesh queries"
+    bl_description = "DEBUG print in the console some mesh queries etc"
+    bl_options = {'INTERNAL'}
+
+    @classmethod
+    def poll(cls, context):
+        obj = bpy.context.active_object
+        return (obj and obj.type == 'MESH')
+
+    def execute(self, context: types.Context):
+        obj = bpy.context.active_object
+        utils_geo.queryLogAll_mesh(obj.data)
+        return {'FINISHED'}
+
 class Info_printAPI_OT(types.Operator):
     bl_idname = "dm.info_print_api"
     bl_label = "Print mesh API"
@@ -490,6 +506,7 @@ util_classes_op = [
     Util_deleteOrphanData_OT,
 
     Info_printData_OT,
+    Info_printQueries_OT,
     Info_printAPI_OT,
     Info_printMatrices_OT
 ]

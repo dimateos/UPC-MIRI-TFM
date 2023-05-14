@@ -86,7 +86,8 @@ class Info_inpect_PT(types.Panel):
         # some more print info
         if obj.type == 'MESH':
             col = box.column()
-            col.operator(ops_util.Info_printData_OT.bl_idname, icon="HELP")
+            col.operator(ops_util.Info_printData_OT.bl_idname, icon="SPREADSHEET")
+            col.operator(ops_util.Info_printQueries_OT.bl_idname, icon="SPREADSHEET")
             col.operator(ops_util.Info_printAPI_OT.bl_idname, icon="HELP")
 
     def drawMode_edit(self, context, obj, box):
