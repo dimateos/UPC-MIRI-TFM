@@ -316,6 +316,7 @@ def set_meshAttr_perFace(mesh: types.Mesh, dataAttr, values):
             dataAttr.data[loopID].__setattr__(dataAttrName, val)
 
 #-------------------------------------------------------------------
+# IDEA:: common vector contsants?
 
 class SHAPES:
     octa_verts = [
@@ -382,33 +383,73 @@ def get_curveData(points: list[Vector], name ="poly-curve", w=0.05, res=0):
     curve_data.fill_mode = "FULL" #'FULL', 'HALF', 'FRONT', 'BACK'
     return curve_data
 
-def get_tubeMesh(src_verts, src_edges, name ="tube-mesh", radii=0.05, res=0):
-    """ extrudes sampled circle points around the vertices """
-    verts, faces = [], []
+def get_resMappedFromCurve(curveRes):
+    """ return the number sample points (side faces) the curve profile will have """
+    return 4 + curveRes*2
+
+    #-------------------------------------------------------------------
+
+def get_ringVerts(v:Vector, radii:float, res:float, step:float, vertsOut:list[Vector], axisU = Vector((1,0,0)), axisV=Vector((0,1,0))):
+    for i in range(res):
+        sample = v + radii * (cos(i * step) * axisU + sin(i * step) * axisV)
+        vertsOut.append(sample)
+
+def get_ringVerts_interleaved(vList:list[Vector], radii:float, res:float, step:float, vertsOut:list[Vector], axisU = Vector((1,0,0)), axisV=Vector((0,1,0))):
+    for i in range(res):
+        for v in vList:
+            sample = v + radii * (cos(i * step) * axisU + sin(i * step) * axisV)
+            vertsOut.append(sample)
+
+def get_tubeMesh_pairsQuad(src_verts_pairs, name ="tube-mesh", radii=0.05, res=4):
+    """ direction aligned simplified version: only single pairs and quad faces"""
+    assert (res >= 2)
     res_step = PI * 2 / res
+    verts, faces = [], []
+
+    # directly work on each face
+    for vid, vPair in enumerate(src_verts_pairs):
+        get_ringVerts_interleaved(vPair, radii, res, res_step, verts)
+
+        # generate faces quads -> ccw so normals towards outside
+        vs_id_base = vid*res*2
+        for i in range(0, res-1):
+            vs_id = vs_id_base + i *2
+            faces.append((vs_id, vs_id+2, vs_id+3, vs_id+1))
+
+        # add connection from first to last too
+        vs_id = vs_id_base + res*2 -2
+        faces.append((vs_id, vs_id_base, vs_id_base+1, vs_id+1))
+
+    me = bpy.data.meshes.new(name)
+    me.from_pydata(vertices=verts, edges=[], faces=faces)
+    return me
+
+def get_tubeMesh_AAtriFan(src_verts, src_edges, name ="tube-mesh", radii=0.05, res=4):
+    """ extrudes AA sampled circle points around the vertices using a triangle fan"""
+    assert (res >= 2)
+    res_step = PI * 2 / res
+    verts, faces = [], []
 
     # generate the new vertices (axis aligned sampled circle)
     for v_id in range(len(src_verts)):
         v = Vector(src_verts[v_id])
-        for i in range(res):
-            sample = v + radii * Vector((0, cos(i * res_step), sin(i * res_step)))
-            verts.append(sample)
+        get_ringVerts(v, radii, res, res_step, verts)
 
-    # generate faces triangle stripes joining verticers from the edges
+    # generate faces triangle stripes joining verts from the edges -> ccw so normals towards outside
     for v1_id, v2_id in src_edges:
         for i in range(1, res):
             vs_id = v2_id * res + i
             vs_id_prev = v1_id * res + i
             # print(f"vs_id: {vs_id} - vsp_id: {vsp_id}")
-            faces.append((vs_id, vs_id_prev - 1, vs_id - 1))
-            faces.append((vs_id, vs_id_prev, vs_id_prev - 1))
+            faces.append((vs_id - 1, vs_id_prev - 1, vs_id))
+            faces.append((vs_id_prev - 1, vs_id_prev, vs_id))
 
         # add connection from first to last too
         vs_id = v2_id * res
         vs_id_prev = v1_id * res
-        faces.append((vs_id, vs_id_prev +res - 1, vs_id +res- 1))
-        faces.append((vs_id, vs_id_prev, vs_id_prev +res- 1))
+        faces.append((vs_id +res- 1, vs_id_prev +res - 1, vs_id))
+        faces.append((vs_id_prev +res- 1, vs_id_prev, vs_id))
 
-        me = bpy.data.meshes.new(name)
-        me.from_pydata(vertices=verts, edges=[], faces=faces)
-        return me
+    me = bpy.data.meshes.new(name)
+    me.from_pydata(vertices=verts, edges=[], faces=faces)
+    return me
