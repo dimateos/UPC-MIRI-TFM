@@ -8,91 +8,132 @@ from .unionfind import UnionFind
 
 
 #-------------------------------------------------------------------
-#-MAPPINGS
+## MAPPINGS
+# OPT:: cannot initiate with simple concatenation because being a list of objects it would all be a single reference
 
-def get_meshDicts(me, queries_dict=None, queries_default=False):
+get_meshDicts_expected_keys = {"VtoF", "VtoE", "EtoF", "EktoE", "FtoE", "FtoF"}
+def get_meshDicts(me: types.Mesh, queries_dict: dict[str, bool] = None, queries_default=False) -> dict[str, list[set[int]]]:
     """ Returns multiple dicts of the mesh (that complement available in blender, e.g. mesh.edge_keys)
         * Queries_dict optimizes the code (at least memory) and filters returned dict, Ex:
         > { "VtoF": True, "EtoF": True, "EktoE": False }
         > { "VtoF": [...], "VtoE": None, "EtoF": [...], "EktoE": None, "FtoE": None }
     """
-    # OPT:: better with a set to handle AND/OR as |& etc
-    _expected_keys = ["VtoF", "VtoE", "EtoF", "EktoE", "FtoE", "FtoF"]
+    global get_meshDicts_expected_keys
 
     # empty dict just calculate all
     if queries_dict is None:
-        queries_dict = {}
+        queries_dict = dict()
         queries_default = True
     else:
-        for k in queries_dict.keys():
-            if k not in _expected_keys:
-                print(f"W- get_meshDicts {k} not implemented...")
+        diff = queries_dict.keys() - get_meshDicts_expected_keys
+        if len(diff) != 0:
+            print(f"W- get_meshDicts {diff} not implemented...")
 
     # add missing keys as default value
-    for k in _expected_keys:
+    for k in get_meshDicts_expected_keys:
         if k not in queries_dict: queries_dict[k] = queries_default
 
     # iterate edges to build the dictionary VtoE and EktoE
-    vertex_edges = [list() for v in me.vertices] if queries_dict["VtoE"] else None
-    _build_keys = queries_dict["EktoE"] or queries_dict["FtoE"] or queries_dict["EtoF"]
-    edgeKey_edge = dict() if _build_keys else None
+    VtoE = [set() for v in me.vertices] if queries_dict["VtoE"] else None
+    _build_EKtoE = queries_dict["EktoE"] or queries_dict["FtoE"] or queries_dict["EtoF"] or queries_dict["FtoF"]
+    EKtoE = dict() if _build_EKtoE else None
 
-    if vertex_edges or _build_keys:
-        for i,e in enumerate(me.edges):
-            assert (e.index == i)
-            edgeKey_edge[e.key] = i
-            if vertex_edges:
-                for v in e.vertices:  vertex_edges[v].append(i)
+    if VtoE or _build_EKtoE:
+        for e in me.edges:
+            #assert (e.index == i)
+            EKtoE[e.key] = e.index
+            if VtoE:
+                for v in e.vertices: VtoE[v].add(e.index)
 
     # iterate faces to build VtoF, EtoF and FtoE (id instead of keys)
-    vertex_faces = [list() for v in me.vertices] if queries_dict["VtoF"] else None
-    face_edges = [list() for f in me.polygons] if queries_dict["FtoE"] else None
-    edge_faces = [list() for e in me.edges] if queries_dict["EtoF"] else None
+    VtoF = [set() for v in me.vertices] if queries_dict["VtoF"] else None
+    FtoE = [set() for f in me.polygons] if queries_dict["FtoE"] else None
+    _build_EtoF = queries_dict["EtoF"] or queries_dict["FtoF"]
+    EtoF = [set() for e in me.edges] if _build_EtoF else None
 
-    if vertex_faces or edgeKey_edge:
+    if VtoF or FtoE or EtoF:
         for face in me.polygons:
-            if vertex_faces:
-                for v in face.vertices: vertex_faces[v].append(face.index)
+            if VtoF:
+                for v in face.vertices: VtoF[v].add(face.index)
 
-            if edgeKey_edge:
+            if FtoE or EtoF:
                 for e_key in face.edge_keys:
                     # retrieve edge index
-                    e_index = edgeKey_edge[e_key]
+                    e_index = EKtoE[e_key]
                     # store based on index instead of key
-                    if face_edges: face_edges[face.index].append(e_index)
-                    if edge_faces: edge_faces[e_index].append(face.index)
+                    if FtoE: FtoE[face.index].add(e_index)
+                    if EtoF: EtoF[e_index].add(face.index)
 
     # iterate EtoF for FtoF
-    face_faces = [list() for f in me.polygons] if queries_dict["FtoF"] else None
-    for f1,f2 in edge_faces:
-        face_faces[f1].append(f2)
-        face_faces[f2].append(f1)
+    # NOTE:: atm expects the mesh to be manifold!
+    FtoF = [set() for f in me.polygons] if queries_dict["FtoF"] else None
+    if FtoF:
+        #for f1,f2 in EtoF:
+        #    FtoF[f1].add(f2)
+        #    FtoF[f2].add(f1)
+
+        # iterate EtoF to add faces to each other neighs
+        for faces in EtoF:
+            # in manifold meshes, there will only be a pair per edge
+            for f in faces:
+                faces_other = faces-{f}
+                FtoF[f] |= faces_other
 
     # return all dicts inside a packed dictionary
-    return { "VtoF": vertex_faces, "VtoE": vertex_edges,
-             "EtoF": edge_faces, "FtoE": face_edges, "FtoF": face_faces,
-             "EktoE": edgeKey_edge if queries_dict["EktoE"] else None }
+    return { "VtoF": VtoF, "VtoE": VtoE,
+             "FtoE": FtoE, "FtoF": FtoF,
+             "EtoF": EtoF if queries_dict["EtoF"] else None,
+             "EktoE": EKtoE if queries_dict["EktoE"] else None }
 
-def map_EtoF(me: types.Mesh):
-    """ Returns the dictionary from Edge to Faces """
-    # build the dictionary from edge "key" to edge id
-    edgeKey_edge = dict()
-    for i,e in enumerate(me.edges):
-        edgeKey_edge[e.key] = i
+def map_FtoF(me: types.Mesh):
+    """ Returns the dictionary from Faces to Faces """
+    EKtoE = map_EKtoE(me)
+    EtoF = map_EtoF(me, EKtoE)
 
-    # build edge to face relation using a list of sets (there is no repetition but a set is more appropiate)
-    edge_faces = [set() for v in me.edges]
-    for face in me.polygons:
-        for e_key in face.edge_keys:
-            # use pair as the string key to retieve index
-            e_index = edgeKey_edge[e_key]
-            # store based on index instead of key
-            edge_faces[e_index].add(face.index)
+    FtoF = [set() for f in me.polygons]
 
-    return edge_faces
+    # iterate EtoF to add faces to each other neighs
+    for faces in EtoF:
+        # in manifold meshes, there will only be a pair per edge
+        for f in faces:
+            faces_other = faces-{f}
+            FtoF[f] |= faces_other
+
+    return FtoF
 
 def map_VtoF_EtoF_VtoE(me: types.Mesh):
-    """ Returns multiple mappings of the mesh (that complement blenders) """
+    """ Returns multiple mappings of the mesh (that complement blenders)
+        NOTE:: basically the same performance as the general method
+    """
+    EKtoE = dict()
+    VtoE = [set() for v in me.vertices]
+
+    # use the same face iteration to build both maps
+    for e in me.edges:
+        EKtoE[e.key] = e.index
+
+        for v in e.vertices:
+            VtoE[v].add(e.index)
+
+    VtoF = [set() for v in me.vertices]
+    EtoF = [set() for e in me.edges]
+
+    # use the same face iteration to build both maps
+    for face in me.polygons:
+        for v in face.vertices:
+            VtoF[v].add(face.index)
+
+        # same as in map_EtoF but reuse the same loop
+        for e_key in face.edge_keys:
+            e_index = EKtoE[e_key]
+            EtoF[e_index].add(face.index)
+
+    return VtoF, EtoF, VtoE
+
+def map_VtoF_EtoF_VtoE_dictBased(me: types.Mesh):
+    """ Returns multiple mappings of the mesh (that complement blenders)
+        NOTE:: turns out to be less performant than the list based methods
+    """
     EKtoE: dict[tuple[int,int],int] = dict()
     VtoE: dict[int, set[int]] = dict()
 
@@ -121,50 +162,19 @@ def map_VtoF_EtoF_VtoE(me: types.Mesh):
 
     return VtoF, EtoF, VtoE
 
-def map_VtoF_EtoF_VtoE_prev(me):
-    """ Returns multiple mappings of the mesh (that complement blenders) """
-    # build vertex to face relation using a list of sets (to remove repetitions)
-    vertex_faces = [set() for v in me.vertices]
-
-    # build the dictionary from edge "key" to edge id
-    edgeKey_edge = dict()
-    for i,e in enumerate(me.edges): edgeKey_edge[str(e.key)] = i
-    # build edge to face relation using a list of sets (to remove repetitions)
-    edge_faces = [set() for v in me.edges]
-
-    for face in me.polygons:
-        for v in face.vertices:
-            vertex_faces[v].add(face.index)
-
-        for e_key in face.edge_keys:
-            # use pair as the string key to retieve index
-            e_index = edgeKey_edge[str(e_key)]
-            # store based on index instead of key
-            edge_faces[e_index].add(face.index)
-
-    # build the dictionary from vertex to edge too
-    vertex_edges = [set() for v in me.vertices]
-    for e in me.edges:
-        for v in e.vertices:
-            vertex_edges[v].add(e.index)
-
-    return vertex_faces, edge_faces, vertex_edges
-
 def map_EtoF(me: types.Mesh, EKtoE=None):
     """ Returns the dictionary from Edge to Faces """
     EKtoE = map_EKtoE(me) if not EKtoE else EKtoE
 
-    # dictionary size should be len(me.edges) but using a map skips initial memory alloc
     # there is no face repetition, using it directly as more appropiate
-    EtoF: dict[int, set[int]] = dict()
+    EtoF = [set() for e in me.edges]
 
     for face in me.polygons:
         for e_key in face.edge_keys:
             # use pair as the string key to retieve index
             e_index = EKtoE[e_key]
             # store based on index instead of key
-            try: EtoF[e_index].add(face.index)
-            except KeyError: EtoF[e_index] = {face.index}
+            EtoF[e_index].add(face.index)
 
     return EtoF
 
@@ -278,7 +288,8 @@ def manifold_types_mesh(me: types.Mesh, log=True):
     num_boundary = 0
     num_manifold = 0
     num_nomanifold = 0
-    for e, faces in EtoF.items():
+    #for e, faces in EtoF.items():
+    for faces in EtoF:
         if len(faces) == 1: num_boundary+=1
         elif len(faces) == 2: num_manifold+=1
         else: num_nomanifold+=1

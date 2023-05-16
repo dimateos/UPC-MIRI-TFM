@@ -172,16 +172,17 @@ class LinkCollection():
 
         # retrieve objs, meshes -> dicts per shard
         self.shards_parent = obj_shards
-        self.shards_objs     : list[types.Object|int] = [LINK_ERROR_IDX.missing]* len(cont)
-        self.shards_meshes   : list[types.Mesh|int]   = [LINK_ERROR_IDX.missing]* len(cont)
-        self.shards_meshMaps : list[dict|int]         = [LINK_ERROR_IDX.missing]* len(cont)
+        self.shards_objs        : list[types.Object|int] = [LINK_ERROR_IDX.missing]* len(cont)
+        self.shards_meshes      : list[types.Mesh|int]   = [LINK_ERROR_IDX.missing]* len(cont)
+        self.shards_meshes_FtoF : list[dict|int]         = [LINK_ERROR_IDX.missing]* len(cont)
 
         for idx_found,shard in enumerate(obj_shards.children):
             idx_cell = self.cont_foundId[idx_found]
             self.shards_objs[idx_cell] = shard
             mesh = shard.data
             self.shards_meshes[idx_cell] = mesh
-            self.shards_meshMaps[idx_cell] = utils_geo.get_meshDicts(mesh)
+            #self.shards_meshes_FtoF[idx_cell] = utils_geo.get_meshDicts(mesh)["FtoF"]
+            self.shards_meshes_FtoF[idx_cell] = utils_geo.map_FtoF(mesh)
 
         stats.logDt("calculated shards mesh dicts (interleaved missing cells)")
 
@@ -260,7 +261,7 @@ class LinkCollection():
 
                 # walls only add local faces from the same cell
                 if l.toWall:
-                    w_neighs = self.shards_meshMaps[idx_cell]["FtoF"][idx_face]
+                    w_neighs = self.shards_meshes_FtoF[idx_cell][idx_face]
                     w_neighs = [ keys_perFace[f] for f in w_neighs ]
                     l.addNeighsValid(w_neighs)
                     continue
@@ -268,8 +269,8 @@ class LinkCollection():
                 # extract idx and geometry faces neighs
                 c1, c2 = l.key_cells
                 f1, f2 = l.key_faces
-                m1_neighs = self.shards_meshMaps[c1]["FtoF"]
-                m2_neighs = self.shards_meshMaps[c2]["FtoF"]
+                m1_neighs = self.shards_meshes_FtoF[c1]
+                m2_neighs = self.shards_meshes_FtoF[c2]
                 f1_neighs = m1_neighs[f1]
                 f2_neighs = m2_neighs[f2]
 

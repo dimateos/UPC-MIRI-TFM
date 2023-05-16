@@ -414,7 +414,7 @@ def returnSanitized_object(obj):
         return obj
 
 #-------------------------------------------------------------------
-# NOTE:: a bit misc utils...
+# NOTE:: misc utils may be better somewhere else...
 
 def get_timestamp() -> int:
     """ Get current timestamp as int """
@@ -486,3 +486,17 @@ def assure_list(val_list):
     if not isinstance(val_list, list):
         return [val_list]
     return val_list
+
+def compare_dicts(dict1, dict2):
+    if set(dict1.keys()) != set(dict2.keys()):
+        return False
+    for key in dict1:
+        if dict1[key] != dict2[key]:
+            return False
+    return True
+
+def listMap_dict(d):
+    l = [None] * len(d)
+    for k,val in d.items():
+        l[k] = val
+    return l
