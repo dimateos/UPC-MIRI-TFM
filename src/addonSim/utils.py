@@ -8,6 +8,44 @@ from .stats import getStats, timeit
 
 #-------------------------------------------------------------------
 
+getPerpendicular_stable_minMagSq = 1e-3*1e-3
+""" small magnitudes will be unstable when normalizing """
+
+def getPerpendicular_stable(n:Vector, normalize=True):
+    """ find the most stable perpendicular vector """
+
+    global getPerpendicular_stable_minMagSq
+    if getPerpendicular_stable_minMagSq:
+        assert(n.length_squared > getPerpendicular_stable_minMagSq)
+
+    # pick the axis vector that yields the lowest dot product (least aligned one)
+    Ax, Ay, Az = abs(n.x), abs(n.y), abs(n.z)
+
+    # do cross product with that axis (directly compose the resulting vector)
+    if Ax < Ay:
+        if Ax < Az:
+            perp = Vector((0, -n.z, n.y))
+        else:
+            perp = Vector((-n.y, n.x, 0))
+    else:
+        if Ay < Az:
+            perp = Vector((n.z, 0, -n.x))
+        else:
+            perp = Vector((-n.y, n.x, 0))
+
+    if normalize: perp.normalize()
+    return perp
+
+def getPerpendicularBase_stable(n:Vector, normalize=True):
+    """ find the most stable basis """
+    perp = getPerpendicular_stable(n, normalize)
+    perp2 = n.cross(perp)
+
+    if normalize: perp2.normalize()
+    return perp, perp2
+
+#-------------------------------------------------------------------
+
 def transform_points(points: list[Vector], matrix) -> list[Vector]:
     """ INPLACE: Transform given points by the trans matrix """
     # no list comprehension of the whole list, asigning to a reference var changes the reference not the referenced

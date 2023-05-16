@@ -295,8 +295,8 @@ def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: LinkC
             p4 = l.dir*1.8
 
             # vary curve props
-            #res = (prefs.links_res+1) +2
-            res = prefs.links_res
+            #res = prefs.links_res
+            res = (prefs.links_res+1) +2
             width = prefs.links_width * 1.5
             mat = wallsMat
 
@@ -316,16 +316,7 @@ def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: LinkC
             alpha = l.life+0.1 if prefs.links_matAlpha else 1.0
             mat = utils_render.get_colorMat(utils_render.COLORS.red*l.life, alpha, name)
 
-        # Create new curve per link and spawn
-        if l.toWall:
-            #curve= utils_render.get_tubeMesh_AAtriFan([p1, p3], [(0,1)], name, width, utils_render.get_resMappedFromCurve(res))
-            #curve= utils_render.get_tubeMesh_AAtriFan([p1, p2, p3, p4], [(0,1), (1,2), (2,3)], name, width, utils_render.get_resMappedFromCurve(res))
-            #curve= utils_render.get_tubeMesh_pairsQuad([(p1, p2)], name, width, utils_render.get_resMappedFromCurve(res))
-            curve= utils_render.get_tubeMesh_pairsQuad([(p1, p2), (p3, p4)], name, width, utils_render.get_resMappedFromCurve(res))
-            utils_render.set_smoothShading(curve)
-        else:
-            curve = utils_render.get_curveData([p1, p2], name, width, res)
-
+        curve= utils_render.get_tubeMesh_pairsQuad([(p1, p2)], name, width, res)
         obj_link = utils.gen_child(obj, name, context, curve, keepTrans=True, hide=not cfg.struct_showLinks)
         obj_link.location = l.pos
         obj_link.active_material = mat

@@ -402,13 +402,16 @@ def get_ringVerts_interleaved(vList:list[Vector], radii:float, res:float, step:f
 
 def get_tubeMesh_pairsQuad(src_verts_pairs, name ="tube-mesh", radii=0.05, res=4):
     """ direction aligned simplified version: only single pairs and quad faces"""
+    res = get_resMappedFromCurve(res)
     assert (res >= 2)
     res_step = PI * 2 / res
     verts, faces = [], []
 
     # directly work on each face
     for vid, vPair in enumerate(src_verts_pairs):
-        get_ringVerts_interleaved(vPair, radii, res, res_step, verts)
+        normal = vPair[1] - vPair[0]
+        u,v = utils.getPerpendicularBase_stable(normal)
+        get_ringVerts_interleaved(vPair, radii, res, res_step, verts, u,v)
 
         # generate faces quads -> ccw so normals towards outside
         vs_id_base = vid*res*2
@@ -426,6 +429,7 @@ def get_tubeMesh_pairsQuad(src_verts_pairs, name ="tube-mesh", radii=0.05, res=4
 
 def get_tubeMesh_AAtriFan(src_verts, src_edges, name ="tube-mesh", radii=0.05, res=4):
     """ extrudes AA sampled circle points around the vertices using a triangle fan"""
+    res = get_resMappedFromCurve(res)
     assert (res >= 2)
     res_step = PI * 2 / res
     verts, faces = [], []

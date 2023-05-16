@@ -167,7 +167,7 @@ class MW_prefs(bpy.types.AddonPreferences):
     )
     links_res: props.IntProperty(
         name="WIP: Link res", description="WIP: ",
-        default=0, min=0, max=8,
+        default=-1, min=-1, max=8,
     )
 
     #-------------------------------------------------------------------
