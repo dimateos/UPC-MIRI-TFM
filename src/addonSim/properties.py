@@ -91,45 +91,45 @@ class MW_gen_cfg(types.PropertyGroup):
     nbl_selectedRoot_currentCFG = None
     nbl_selectedRoot_currentOBJ = None
 
-    @staticmethod
-    def hasSelectedRoot() -> bool:
-        return MW_gen_cfg.nbl_selectedRoot_currentOBJ and MW_gen_cfg.nbl_selectedRoot_currentCFG
+    @classmethod
+    def hasSelectedRoot(cls) -> bool:
+        return cls.nbl_selectedRoot_currentOBJ and cls.nbl_selectedRoot_currentCFG
 
-    @staticmethod
-    def getSelectedRoot() -> tuple[types.Object, "MW_gen_cfg"]:
-        return MW_gen_cfg.nbl_selectedRoot_currentOBJ, MW_gen_cfg.nbl_selectedRoot_currentCFG
-    @staticmethod
-    def getSelectedRoot_obj() -> types.Object:
-        return MW_gen_cfg.nbl_selectedRoot_currentOBJ
-    @staticmethod
-    def getSelectedRoot_cfg() -> "MW_gen_cfg":
-        return MW_gen_cfg.nbl_selectedRoot_currentCFG
+    @classmethod
+    def getSelectedRoot(cls) -> tuple[types.Object, "MW_gen_cfg"]:
+        return cls.nbl_selectedRoot_currentOBJ, cls.nbl_selectedRoot_currentCFG
+    @classmethod
+    def getSelectedRoot_obj(cls) -> types.Object:
+        return cls.nbl_selectedRoot_currentOBJ
+    @classmethod
+    def getSelectedRoot_cfg(cls) -> "MW_gen_cfg":
+        return cls.nbl_selectedRoot_currentCFG
 
 
-    @staticmethod
-    def setSelectedRoot(selected):
+    @classmethod
+    def setSelectedRoot(cls, selected):
         # OPT:: multi-selection / root?
-        if selected: MW_gen_cfg.nbl_selectedRoot_currentOBJ, MW_gen_cfg.nbl_selectedRoot_currentCFG = MW_gen_cfg.getRoot(selected[-1])
-        else: MW_gen_cfg.nbl_selectedRoot_currentOBJ, MW_gen_cfg.nbl_selectedRoot_currentCFG = None,None
+        if selected: cls.nbl_selectedRoot_currentOBJ, cls.nbl_selectedRoot_currentCFG = cls.getRoot(selected[-1])
+        else: cls.nbl_selectedRoot_currentOBJ, cls.nbl_selectedRoot_currentCFG = None,None
 
     # trigger new root on selection
-    @staticmethod
-    def setSelectedRoot_callback(_scene_=None, _selected_=None):
-        MW_gen_cfg.setSelectedRoot(_selected_)
+    @classmethod
+    def setSelectedRoot_callback(cls, _scene_=None, _selected_=None):
+        cls.setSelectedRoot(_selected_)
 
-    @staticmethod
-    def resetSelectedRoot():
-        MW_gen_cfg.nbl_selectedRoot_currentOBJ, MW_gen_cfg.nbl_selectedRoot_currentCFG = None, None
+    @classmethod
+    def resetSelectedRoot(cls):
+        cls.nbl_selectedRoot_currentOBJ, cls.nbl_selectedRoot_currentCFG = None, None
 
 
-    @staticmethod
-    def sanitizeSelectedRoot():
-        if utils.needsSanitize_object(MW_gen_cfg.nbl_selectedRoot_currentOBJ):
-            MW_gen_cfg.resetSelectedRoot()
+    @classmethod
+    def sanitizeSelectedRoot(cls):
+        if utils.needsSanitize_object(cls.nbl_selectedRoot_currentOBJ):
+            cls.resetSelectedRoot()
 
-    @staticmethod
-    def sanitizeSelectedRoot_callback(_scene_=None, _name_selected_=None):
-        MW_gen_cfg.sanitizeSelectedRoot()
+    @classmethod
+    def sanitizeSelectedRoot_callback(cls, _scene_=None, _name_selected_=None):
+        cls.sanitizeSelectedRoot()
 
     #-------------------------------------------------------------------
 

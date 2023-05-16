@@ -276,8 +276,8 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
         return self.end_op()
 
 
-    @classmethod
-    def getSelectedRoot_links_autoRecalc(cls) -> tuple[types.Object, "MW_gen_cfg", LinkCollection|None]:
+    @staticmethod
+    def getSelectedRoot_links_autoRecalc() -> tuple[types.Object, "MW_gen_cfg", LinkCollection|None]:
         """ Retrieves links or recalculates them automatically """
         def getLinks():
             obj, cfg = MW_gen_cfg.getSelectedRoot()
