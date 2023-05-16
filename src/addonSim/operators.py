@@ -216,8 +216,8 @@ class MW_gen_OT(_StartRefresh_OT):
 
 class MW_gen_recalc_OT(_StartRefresh_OT):
     bl_idname = "mw.gen_recalc"
-    bl_label = "Recalculate selected links"
-    bl_description = "Useful after a module reload etc..."
+    bl_label = "Recalculate links"
+    bl_description = "For selected root. Useful after a module reload etc..."
 
     # UNDO as part of bl_options will cancel any edit last operation pop up
     bl_options = {'INTERNAL', 'UNDO'}
@@ -275,6 +275,32 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
 
         return self.end_op()
 
+
+    @classmethod
+    def getSelectedRoot_links_autoRecalc(cls) -> tuple[types.Object, "MW_gen_cfg", LinkCollection|None]:
+        """ Retrieves links or recalculates them automatically """
+        def getLinks():
+            obj, cfg = MW_gen_cfg.getSelectedRoot()
+            links = None
+
+            if not cfg.ptrID_links:
+                DEV.log_msg("Found no links in incomplete fracture", {'LINKS'})
+            else:
+                links = LinkStorage.getLinks(cfg.ptrID_links)
+                if not links:
+                    DEV.log_msg("Found no links in storage", {'LINKS'})
+            return obj, cfg, links
+
+        # attempt to retrieve links
+        obj, cfg, links = getLinks()
+
+        # call recalc op once
+        if not links and getPrefs().util_recalc_OT_auto:
+            bpy.ops.mw.gen_recalc()
+            obj, cfg, links = getLinks()
+
+        return obj, cfg, links
+
 #-------------------------------------------------------------------
 
 class MW_gen_links_OT(_StartRefresh_OT):
@@ -296,18 +322,14 @@ class MW_gen_links_OT(_StartRefresh_OT):
 
     def execute(self, context: types.Context):
         self.start_op()
-        obj, cfg = MW_gen_cfg.getSelectedRoot()
+
+        obj, cfg, links = MW_gen_recalc_OT.getSelectedRoot_links_autoRecalc()
+        if not links:
+            return self.end_op_error("No links storage found...")
 
         ## WIP:: per cell no need but atm cont ref is inside LinkCollection structure
         #obj_links_perCell = mw_setup.gen_linksEmptiesPerCell(obj, cfg, context)
         #mw_setup.gen_linksCellObjects(obj_links_perCell, links.cont, cfg, context)
-
-        # per links require the structure
-        if not cfg.ptrID_links:
-            return self.end_op_error("Incompleted fracture... (not checked in poll atm)")
-        links = LinkStorage.getLinks(cfg.ptrID_links)
-        if not links:
-            return self.end_op_error("No links storage found...")
 
         obj_links, obj_links_toWall = mw_setup.gen_linksEmpties(obj, cfg, context)
         mw_setup.gen_linksObjects(obj_links, obj_links_toWall, links, cfg, context)
@@ -346,14 +368,9 @@ class MW_sim_step_OT(_StartRefresh_OT):
         return MW_gen_cfg.hasSelectedRoot()
 
     def invoke(self, context, event):
-        obj, cfgGen = MW_gen_cfg.getSelectedRoot()
-
-        # per links require the structure
-        if not cfgGen.ptrID_links:
-            return self.cancel_op("Incompleted fracture... (not checked in poll atm)")
-        self.links = LinkStorage.getLinks(cfgGen.ptrID_links)
+        obj, cfgGen, self.links = MW_gen_recalc_OT.getSelectedRoot_links_autoRecalc()
         if not self.links:
-            return self.cancel_op("No links storage found...")
+            return self.end_op_error("No links storage found...")
 
         # store the random generator
         mw_sim.storeRnd()

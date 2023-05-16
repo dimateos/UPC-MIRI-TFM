@@ -44,7 +44,9 @@ class MW_gen_PT(types.Panel):
 
             # recalculate fracture
             boxLinks = box.box()
-            boxLinks.operator(ops.MW_gen_recalc_OT.bl_idname, icon="ZOOM_PREVIOUS")
+            col_rowSplit = boxLinks.row().split(factor=0.66)
+            col_rowSplit.operator(ops.MW_gen_recalc_OT.bl_idname, icon="ZOOM_PREVIOUS")
+            col_rowSplit.prop(prefs, "util_recalc_OT_auto")
 
             # links storage
             col_rowSplit = boxLinks.row().split(factor=0.66)

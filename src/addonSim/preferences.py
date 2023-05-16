@@ -200,6 +200,11 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=True,
     )
 
+    util_recalc_OT_auto: props.BoolProperty(
+        name="auto", description="Recalculate automatically when needed",
+        default=True,
+    )
+
 
     #-------------------------------------------------------------------
     # NOTE:: panels alone cannot store properties... here mixing dm panels with mw stuff, could separate the addons
