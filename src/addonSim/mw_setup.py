@@ -272,6 +272,8 @@ def gen_linksEmptiesPerCell(obj: types.Object, cfg: MW_gen_cfg, context: types.C
     return obj_links_perCell
 
 def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: LinkCollection, cfg: MW_gen_cfg, context: types.Context):
+    #objLinks = None
+    #objWall = None
     prefs = getPrefs()
     wallsMat = utils_render.get_colorMat(utils_render.COLORS.blue+utils_render.COLORS.white * 0.33, 1.0, "linkWallsMat")
 
@@ -282,8 +284,9 @@ def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: LinkC
 
         # links to walls
         if l.toWall:
-            name= f"w{c1}_c{c2}-f{f2}"
+            if not objWall: continue
             obj = objWall
+            name= f"w{c1}_c{c2}-f{f2}"
 
             # start at the face outward
             p1 = Vector()
@@ -296,8 +299,9 @@ def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: LinkC
 
         # regular links
         else:
-            name= f"c{c1}_c{c2}-f{f1}_f{f2}"
+            if not objLinks: continue
             obj = objLinks
+            name= f"c{c1}_c{c2}-f{f1}_f{f2}"
 
             # two points around the face
             p1 = +l.dir*0.1
@@ -310,7 +314,12 @@ def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: LinkC
             mat = utils_render.get_colorMat(utils_render.COLORS.red*l.life, alpha, name)
 
         # Create new curve per link and spawn
-        curve = utils_render.get_curveData([p1, p2], name, width, res)
+        if l.toWall:
+            curve= utils_render.get_tubeMesh([p1, p2], [(0,1)], name, width, res+1)
+            utils_render.set_smoothShading(curve)
+        else:
+            curve = utils_render.get_curveData([p1, p2], name, width, res)
+
         obj_link = utils.gen_child(obj, name, context, curve, keepTrans=True, hide=not cfg.struct_showLinks)
         obj_link.location = l.pos
         obj_link.active_material = mat

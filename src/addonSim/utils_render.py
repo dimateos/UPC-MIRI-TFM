@@ -1,6 +1,7 @@
 import bpy
 import bpy.types as types
 from mathutils import Vector, Matrix
+from math import pi as PI, cos, sin, radians
 from random import uniform
 
 from . import utils
@@ -354,7 +355,17 @@ class SHAPES:
         me.from_pydata(vertices=SHAPES.cuboid_verts, edges=[], faces=SHAPES.cuboid_faces)
         return me
 
+def set_smoothShading(me: types.Mesh, active=True, faces_idx = None):
+    """ set smooth shading for specified faces or for all when none provided """
+    if faces_idx:
+        for f in faces_idx:
+            me.polygons[f].use_smooth = active
+    else:
+        for f in me.polygons:
+            f.use_smooth = active
+
 def get_curveData(points: list[Vector], name ="poly-curve", w=0.05, res=0):
+    """ creates a blender poly-curve following the points """
     # Create new POLY curve
     curve_data = bpy.data.curves.new(name, 'CURVE')
     curve_data.dimensions = '3D'
@@ -370,3 +381,34 @@ def get_curveData(points: list[Vector], name ="poly-curve", w=0.05, res=0):
     curve_data.bevel_resolution = res
     curve_data.fill_mode = "FULL" #'FULL', 'HALF', 'FRONT', 'BACK'
     return curve_data
+
+def get_tubeMesh(src_verts, src_edges, name ="tube-mesh", radii=0.05, res=0):
+    """ extrudes sampled circle points around the vertices """
+    verts, faces = [], []
+    res_step = PI * 2 / res
+
+    # generate the new vertices (axis aligned sampled circle)
+    for v_id in range(len(src_verts)):
+        v = Vector(src_verts[v_id])
+        for i in range(res):
+            sample = v + radii * Vector((0, cos(i * res_step), sin(i * res_step)))
+            verts.append(sample)
+
+    # generate faces triangle stripes joining verticers from the edges
+    for v1_id, v2_id in src_edges:
+        for i in range(1, res):
+            vs_id = v2_id * res + i
+            vs_id_prev = v1_id * res + i
+            # print(f"vs_id: {vs_id} - vsp_id: {vsp_id}")
+            faces.append((vs_id, vs_id_prev - 1, vs_id - 1))
+            faces.append((vs_id, vs_id_prev, vs_id_prev - 1))
+
+        # add connection from first to last too
+        vs_id = v2_id * res
+        vs_id_prev = v1_id * res
+        faces.append((vs_id, vs_id_prev +res - 1, vs_id +res- 1))
+        faces.append((vs_id, vs_id_prev, vs_id_prev +res- 1))
+
+        me = bpy.data.meshes.new(name)
+        me.from_pydata(vertices=verts, edges=[], faces=faces)
+        return me

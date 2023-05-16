@@ -5,8 +5,6 @@ from mathutils import Vector, Matrix
 from .unionfind import UnionFind
 
 
-
-
 #-------------------------------------------------------------------
 ## MAPPINGS
 # OPT:: cannot initiate with simple concatenation because being a list of objects it would all be a single reference
