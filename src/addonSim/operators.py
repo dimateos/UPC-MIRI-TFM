@@ -336,6 +336,7 @@ class MW_gen_links_OT(_StartRefresh_OT):
         #mw_setup.gen_linksSingleObject(obj_links, obj_links_toWall, links, cfg, context)
 
         mw_setup.gen_linksObject(obj, links, cfg, context)
+        mw_setup.gen_linksWallObject(obj, links, cfg, context)
 
         return self.end_op()
 
@@ -396,9 +397,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
             else: mw_sim.step(self.links, cfg.deg, cfg.subSteps)
 
         # IDEA:: store copy or original or button to recalc links from start? -> set all life to 1 but handle any dynamic list
-        obj_links, obj_links_toWall = mw_setup.genWIP_linksEmpties(obj, cfgGen, context)
-        mw_setup.genWIP_linksObjects(obj_links, obj_links_toWall, self.links, cfgGen, context)
-        if obj: MW_gen_cfg.setMetaType(obj, {"CHILD"}, skipParent=True)
+        mw_setup.gen_linksObject(obj, self.links, cfgGen, context)
         utils.select_unhide(obj, context)
 
         return self.end_op()

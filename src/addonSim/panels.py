@@ -124,11 +124,14 @@ class MW_gen_PT(types.Panel):
                 col.prop(prefs, "gen_setup_matColors")
                 col.prop(prefs, "gen_setup_matAlpha")
                 col.prop(cfg, "struct_linksScale")
-                col.prop(prefs, "links_matAlpha")
+                #col.prop(prefs, "links_matAlpha")
+                col.prop(prefs, "links_smoothShade")
                 col.prop(prefs, "links_depth")
                 col.prop(prefs, "links_width")
                 col.prop(prefs, "links_widthDead")
+                col.prop(prefs, "links_widthModLife")
                 col.prop(prefs, "links_res")
+                col.prop(prefs, "links_wallExtraScale")
 
 
             # inspect props

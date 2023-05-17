@@ -78,7 +78,7 @@ class MW_prefs(bpy.types.AddonPreferences):
         shards = "shards"
 
         # OPT:: too much redundant "shards.."
-        links = "Links"
+        links = "links"
         links_toWalls = links+"_toWall"
         links_perCell = links+"_perCell"
         links_group = "L"
@@ -157,21 +157,33 @@ class MW_prefs(bpy.types.AddonPreferences):
         name="WIP: Link alpha mod", description="Degrade alpha with life",
         default=False,
     )
+    links_smoothShade: props.BoolProperty(
+        name="WIP: Link smooth shade",
+        default=True,
+    )
     links_depth: props.FloatProperty(
         name="WIP: Const link depth", description="Constant link d",
         default=0.15, min=0.01, max=0.4, step=0.05, precision=4
     )
     links_width: props.FloatProperty(
         name="WIP: Link width", description="Max link w",
-        default=0.05, min=0.01, max=0.2, step=0.05, precision=4
+        default=0.1, min=0.01, max=0.3, step=0.05, precision=4
     )
     links_widthDead: props.FloatProperty(
         name="WIP: Dead link width", description="Min link w",
-        default=0.005, min=0.001, max=0.01, step=0.05, precision=4
+        default=0.01, min=0.005, max=0.02, step=0.05, precision=4
+    )
+    links_widthModLife: props.BoolProperty(
+        name="WIP: Life affects width",
+        default=True,
     )
     links_res: props.IntProperty(
-        name="WIP: Link res", description="WIP: ",
-        default=1, min=-1, max=8,
+        name="WIP: Link res", description="WIP: curve res -> faces",
+        default=0, min=-1, max=8,
+    )
+    links_wallExtraScale: props.FloatProperty(
+        name="WIP: Link walls extra", description="WIP: extra scaling",
+        default=3, min=0.5, max=6,
     )
 
     #-------------------------------------------------------------------
@@ -270,7 +282,7 @@ class MW_prefs(bpy.types.AddonPreferences):
 
     dm_PT_meta_show_tmpDebug: props.BoolProperty(
         name="Show debug...", description="WIP: Show some debug stuff",
-        default=True,
+        default=False,
     )
     dm_PT_orphans_collection: props.StringProperty(
         name="", description="E.g. meshes, mats, curves, etc",

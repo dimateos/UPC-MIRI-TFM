@@ -411,7 +411,7 @@ def get_ringVerts_interleaved(vList:list[Vector], radii:float, resFaces:float, s
             vertsOut.append(sample)
 
 #attributesData:dict[str,dict] = None,
-def get_tubeMesh_pairsQuad(src_verts_pairs:list[tuple[Vector]], name ="tube-mesh", radii=0.05, resFaces=4):
+def get_tubeMesh_pairsQuad(src_verts_pairs:list[tuple[Vector]], src_scale:list[float] = None, name ="tube-mesh", radii=0.05, resFaces=4, smoothShade = True):
     """ direction aligned simplified version: only single pairs and quad faces"""
     assert (resFaces >= 2)
     res_step = PI * 2 / resFaces
@@ -427,7 +427,8 @@ def get_tubeMesh_pairsQuad(src_verts_pairs:list[tuple[Vector]], name ="tube-mesh
     for vid, vPair in enumerate(src_verts_pairs):
         normal = vPair[1] - vPair[0]
         u,v = utils.getPerpendicularBase_stable(normal)
-        get_ringVerts_interleaved(vPair, radii, resFaces, res_step, verts, u,v)
+        r = radii*src_scale[vid] if src_scale else radii
+        get_ringVerts_interleaved(vPair, r, resFaces, res_step, verts, u,v)
 
         # generate faces quads -> ccw so normals towards outside
         vs_id_base = vid*resFaces*2
@@ -441,9 +442,12 @@ def get_tubeMesh_pairsQuad(src_verts_pairs:list[tuple[Vector]], name ="tube-mesh
 
     me = bpy.data.meshes.new(name)
     me.from_pydata(vertices=verts, edges=[], faces=faces)
+
+    # apply smooth shading
+    if smoothShade: set_smoothShading(me)
     return me
 
-def get_tubeMesh_AAtriFan(src_verts:list[Vector], src_edges:list[tuple[int]], name ="tube-mesh", radii=0.05, resFaces=4):
+def get_tubeMesh_AAtriFan(src_verts:list[Vector], src_edges:list[tuple[int]], src_scale:list[float] = None, name ="tube-mesh", radii=0.05, resFaces=4, smoothShade = True):
     """ extrudes AA sampled circle points around the vertices using a triangle fan"""
     assert (resFaces >= 2)
     res_step = PI * 2 / resFaces
@@ -451,8 +455,9 @@ def get_tubeMesh_AAtriFan(src_verts:list[Vector], src_edges:list[tuple[int]], na
 
     # generate the new vertices (axis aligned sampled circle)
     for v_id in range(len(src_verts)):
-        v = Vector(src_verts[v_id])
-        get_ringVerts(v, radii, resFaces, res_step, verts)
+        v = src_verts[v_id]
+        r = radii*src_scale[v_id] if src_scale else radii
+        get_ringVerts(v, r, resFaces, res_step, verts)
 
     # generate faces triangle stripes joining verts from the edges -> ccw so normals towards outside
     for v1_id, v2_id in src_edges:
@@ -471,4 +476,7 @@ def get_tubeMesh_AAtriFan(src_verts:list[Vector], src_edges:list[tuple[int]], na
 
     me = bpy.data.meshes.new(name)
     me.from_pydata(vertices=verts, edges=[], faces=faces)
+
+    # apply smooth shading
+    if smoothShade: set_smoothShading(me)
     return me

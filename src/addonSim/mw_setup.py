@@ -150,7 +150,8 @@ def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
 def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context, invertOrientation = False):
     prefs = getPrefs()
     if not prefs.gen_setup_matColors:
-        matShards = utils_render.get_colorMat(utils_render.COLORS.gray, alpha=prefs.gen_setup_matAlpha, matName=prefs.names.shards+"Mat")
+        color3 = utils_render.COLORS.gray
+        matShards = utils_render.get_colorMat(color3, alpha=prefs.gen_setup_matAlpha, matName=prefs.names.shards+"Mat")
 
     for cell in cont:
         # skip none cells (computation error)
@@ -214,6 +215,10 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
         else:
             obj_shard.active_material = matShards
 
+            # WIP:: additional attr to visualize in the view mode -> alpha is not visualized...
+            # TODO:: just change all colors to be vec4...
+            #utils_render.gen_meshAttr(mesh, utils_render.COLORS.assure_4d_alpha(color3, prefs.gen_setup_matAlpha), 0, "FLOAT_COLOR", "POINT", "alphaColor")
+
     getStats().logDt("generated shards objects")
 
 def gen_LEGACY_CONT(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
@@ -265,28 +270,62 @@ def gen_LEGACY_CONT(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context
 
 def gen_linksObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cfg, context: types.Context):
     prefs = getPrefs()
+    name = prefs.names.links
     baseColor = utils_render.COLORS.red
 
     # iterate the global map and store vert pairs for the tube mesh generation
     verts: list[tuple[Vector,Vector]] = []
-    props: list[Vector] = []
+    life: list[float] = []
+    lifeColor: list[Vector] = []
     for key,l in links.link_map.items():
         if not l.toWall:
             verts.append((l.pos-l.dir*prefs.links_depth, l.pos+l.dir*prefs.links_depth))
-            props.append( (baseColor*l.life).to_4d() )
+            if prefs.links_widthModLife: life.append(l.life)
+            lifeColor.append( (baseColor*l.life).to_4d() )
 
     resFaces = utils_render.get_resFaces_fromCurveRes(prefs.links_res)
-    mesh = utils_render.get_tubeMesh_pairsQuad(verts, prefs.names.links, prefs.links_width, resFaces)
+    mesh = utils_render.get_tubeMesh_pairsQuad(verts, life, name, prefs.links_width, resFaces, prefs.links_smoothShade)
 
     # color encoded attributes for viewing in viewport edit mode
-    utils_render.gen_meshAttr(mesh, props, resFaces*2, "FLOAT_COLOR", "POINT", "life")
+    utils_render.gen_meshAttr(mesh, lifeColor, resFaces*2, "FLOAT_COLOR", "POINT", "life")
 
     # potentially reuse child
-    obj_links = utils.gen_childReuse(obj, prefs.names.links, context, mesh, keepTrans=False, hide=not cfg.struct_showLinks)
-    mesh.name = prefs.names.links
+    obj_links = utils.gen_childReuse(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showLinks)
+    mesh.name = name
 
+    MW_gen_cfg.setMetaType(obj_links, {"CHILD"}, childrenRec=False)
     getStats().logDt("generated links object")
     return obj_links
+
+def gen_linksWallObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cfg, context: types.Context):
+    prefs = getPrefs()
+    name = prefs.names.links_toWalls
+    wallsExtraScale = prefs.links_wallExtraScale
+
+    # iterate the global map and store vert pairs for the tube mesh generation
+    verts: list[tuple[Vector,Vector]] = []
+    for key,l in links.link_map.items():
+        if l.toWall:
+            verts.append((l.pos, l.pos+l.dir*prefs.links_depth))
+
+    resFaces = utils_render.get_resFaces_fromCurveRes(prefs.links_res+3)
+    mesh = utils_render.get_tubeMesh_pairsQuad(verts, None, name, prefs.links_width*wallsExtraScale, resFaces, prefs.links_smoothShade)
+
+    # potentially reuse child
+    obj_wallLinks = utils.gen_childReuse(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showLinks_toWalls)
+    mesh.name = name
+
+    # set global material
+    color3 = utils_render.COLORS.blue+utils_render.COLORS.white * 0.33
+    wallsMat = utils_render.get_colorMat(color3, 1.0, "linkWallsMat")
+    obj_wallLinks.active_material = wallsMat
+
+    # WIP:: additional attr to visualize in the ame view mode
+    utils_render.gen_meshAttr(mesh, color3.to_4d(), 0, "FLOAT_COLOR", "POINT", "blueColor")
+
+    MW_gen_cfg.setMetaType(obj_wallLinks, {"CHILD"}, childrenRec=False)
+    getStats().logDt("generated wall links object")
+    return obj_wallLinks
 
 #-------------------------------------------------------------------
 # WIP:: links empties etc... final generation/visual not set
@@ -342,18 +381,19 @@ def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: Li
             mat = utils_render.get_colorMat(utils_render.COLORS.red*l.life, alpha, name)
 
         res = utils_render.get_resFaces_fromCurveRes(res)
-        curve= utils_render.get_tubeMesh_pairsQuad([(p1, p2)], name, width, res)
+        curve= utils_render.get_tubeMesh_pairsQuad([(p1, p2)], None, name, width, res)
         obj_link = utils.gen_child(obj, name, context, curve, keepTrans=True, hide=not cfg.struct_showLinks)
         obj_link.location = l.pos
         obj_link.active_material = mat
 
+    MW_gen_cfg.setMetaType(objLinks.parent, {"CHILD"}, skipParent=True)
     getStats().logDt("generated links to walls objects")
 
 def genWIP_linksEmptiesPerCell(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     obj_links_perCell = utils.gen_childClean(obj, getPrefs().names.links_perCell, context, None, keepTrans=False, hide=not cfg.struct_showLinks_perCell)
     return obj_links_perCell
 
-def genWIP_linksCellObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
+def genWIP_linksCellObjects(objParent: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
     # WIP:: links better generated from map isntead of cont? + done in a separate op
     # WIP:: atm just hiding reps -> maybe generate using a different map instead of iterating the raw cont
     #   maybe merge shard/link loop
@@ -365,7 +405,7 @@ def genWIP_linksCellObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg,
 
         # group the links by cell using a parent
         nameGroup= f"{getPrefs().names.links_group}_{getPrefs().names.get_IdFormated(cell.id)}"
-        obj_group = utils.gen_child(obj, nameGroup, context, None, keepTrans=False, hide=False)
+        obj_group = utils.gen_child(objParent, nameGroup, context, None, keepTrans=False, hide=False)
         #obj_group.matrix_world = Matrix.Identity(4)
         #obj_group.location = cell.centroid()
 
@@ -400,5 +440,5 @@ def genWIP_linksCellObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg,
             obj_link.hide_set(key_rep or not cfg.struct_showLinks_perCell)
             #obj_link.location = cell.centroid()
 
-    MW_gen_cfg.setMetaType(obj, {"CHILD"}, skipParent=False)
+    MW_gen_cfg.setMetaType(objParent, {"CHILD"}, skipParent=False)
     getStats().logDt("generated links per cell objects")
