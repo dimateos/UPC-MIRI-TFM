@@ -182,7 +182,7 @@ class MW_prefs(bpy.types.AddonPreferences):
             ('BINARY', "Binary", "Any differece from full life affects drastically"),
         ),
         options={'ENUM_FLAG'},
-        default={'UNIFORM'},
+        default={'BINARY'},
     )
 
     links_res: props.IntProperty(

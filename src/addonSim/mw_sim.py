@@ -32,7 +32,7 @@ def restoreRnd(addState=0):
     for i in range(addState): rnd.random()
 
 #-------------------------------------------------------------------
-# WIP:: atm just a static method
+# WIP:: atm just a static method -> should be a class with accesss to link collection, initial state, etc
 
 def setAll(links: LinkCollection, life= 1.0):
     # iterate the global map
@@ -44,8 +44,10 @@ def stepAll(links: LinkCollection, deg = 0.01):
     for key,l in links.link_map.items():
         l.degrade(deg)
 
+#-------------------------------------------------------------------
+
 def step(links: LinkCollection, deg = 0.01, subSteps = 10):
-    # get entry links should be calculated
+    # WIP:: flatten per wall links -> maybe additional map with separate stuff
     entryKeys = [ id
                   for ids_perWall in links.keys_perWall.values() if ids_perWall
                   for id in ids_perWall ]
@@ -54,21 +56,46 @@ def step(links: LinkCollection, deg = 0.01, subSteps = 10):
         DEV.log_msg(f"Found no entry links!", {"SIM", "ERROR"})
         return
 
-    rootKey = rnd.choice(entryKeys)
-    rootLink = links.link_map[rootKey]
-    linkKey = rnd.choice(rootLink.neighs)
-    link = links.link_map[linkKey]
-    #DEV.log_msg(f"Root link {rootKey} from {len(entryKeys)} -> first {linkKey} from {len(rootLink.neighs)}", {"SIM", "STEP"})
+    # get input link
+    rootLink = get_entryLink(links, entryKeys)
+    currentLink = get_nextLink(links, rootLink)
+    #DEV.log_msg(f"Root link {rootLink.key_cells} from {len(entryKeys)} -> first {currentLink.key_cells} from {len(rootLink.neighs)}", {"SIM", "STEP"})
 
     # WIP:: sort input axis aligned to achieve entering by the top of "hill" model
     # WIP:: dict with each iteration info for rendering / study etc
 
     for i in range(subSteps):
-        link.degrade(deg)
+        currentLink.degrade(deg)
 
         # IDEA:: break condition
         if False: break
 
         # choose link to propagate
-        linkKey = rnd.choice(link.neighs)
-        link = links.link_map[linkKey]
+        currentLink = get_nextLink(links, currentLink)
+
+#-------------------------------------------------------------------
+#  https://docs.python.org/dev/library/random.html#random.choices
+
+def get_entryLink(links: LinkCollection, entryKeys:list[Link.keyType]) -> Link:
+    weights = [ get_entryWeight(links, lk) for lk in entryKeys ]
+    rootKey = rnd.choices(entryKeys, weights)[0]
+    #rootKey = rnd.choice(entryKeys)
+    return links.link_map[rootKey]
+
+def get_entryWeight(links: LinkCollection, linkKey):
+    l = links.link_map[linkKey]
+    w = 0
+    w += max(l.pos.y * 10)
+    w += abs(l.pos.z) * 100
+    return w
+
+def get_nextLink(links: LinkCollection, currentLink:Link) -> Link:
+    weights = [ get_entryWeight(links, lk) for lk in currentLink.neighs ]
+    linkKey = rnd.choices(currentLink.neighs, weights)[0]
+    #linkKey = rnd.choice(currentLink.neighs)
+    return links.link_map[linkKey]
+
+def get_nextWeight(links: LinkCollection, linkKey):
+    l = links.link_map[linkKey]
+    w = 1 if not l.toWall else 0
+    return max(0, w)
