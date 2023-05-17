@@ -191,19 +191,24 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
         # IDEA:: test visuals alternatives -> add to dm utils
         #if DEV.VISUAL_TESTS:
         if prefs.gen_setup_matColors:
+            # test uv and if attr float 2d is mapped to UV too
             uv = utils_render.gen_meshUV(mesh, [Vector([0.66, 0.66]), Vector([0.33, 0.33])])
             utils_render.set_meshUV_rnd(mesh, uv.name)
+            auv = utils_render.gen_meshAttr(mesh, Vector([0.33,0.66]), adomain="CORNER", atype="FLOAT2", name="AUVtest")
 
+            # test vertex colors
             vc_old = utils_render.gen_meshVC_legacy(mesh, utils_render.COLORS.pink)
             utils_render.set_meshVC_legacy(mesh, vc_old, utils_render.COLORS.list_gray)
             utils_render.set_meshVC_legacy_rnd(mesh, vc_old)
             vc = utils_render.gen_meshVC(mesh, utils_render.COLORS.list_rgb4D )
             vcFace = utils_render.gen_meshVC(mesh, utils_render.COLORS.list_rgb4D, adomain="CORNER")
 
+            # test attr color
             ac = utils_render.gen_meshAC(mesh, utils_render.COLORS.list_fade, adomain="CORNER", name="ACtestcolor")
             ac2 = utils_render.gen_meshAC(mesh, adomain="FACE")
             ac3 = utils_render.gen_meshAC(mesh, utils_render.COLORS.red, adomain="EDGE")
 
+            # test non color attr
             at = utils_render.gen_meshAttr(mesh, adomain="FACE")
             utils_render.set_meshAttr_rnd(mesh, at)
             atc = utils_render.gen_meshAttr(mesh, utils_render.COLORS.blue.to_4d(), adomain="CORNER", atype="FLOAT_COLOR", name="ATtestcolor")
@@ -267,6 +272,7 @@ def gen_LEGACY_CONT(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context
 #-------------------------------------------------------------------
 # WIP:: maybe links to go from face to face of scaled down shards?
 # TODO:: to walls, show damage, etc
+# TODO:: single face tube -> code per face instead of vert? see in table
 
 def gen_linksObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cfg, context: types.Context):
     prefs = getPrefs()
@@ -275,16 +281,16 @@ def gen_linksObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cfg, c
 
     # iterate the global map and store vert pairs for the tube mesh generation
     verts: list[tuple[Vector,Vector]] = []
-    life: list[float] = []
+    lifeWidths: list[float] = []
     lifeColor: list[Vector] = []
     for key,l in links.link_map.items():
         if not l.toWall:
             verts.append((l.pos-l.dir*prefs.links_depth, l.pos+l.dir*prefs.links_depth))
-            if prefs.links_widthModLife: life.append(l.life)
+            if prefs.links_widthModLife: lifeWidths.append(prefs.links_widthDead * (1-l.life) + prefs.links_width * l.life)
             lifeColor.append( (baseColor*l.life).to_4d() )
 
     resFaces = utils_render.get_resFaces_fromCurveRes(prefs.links_res)
-    mesh = utils_render.get_tubeMesh_pairsQuad(verts, life, name, prefs.links_width, resFaces, prefs.links_smoothShade)
+    mesh = utils_render.get_tubeMesh_pairsQuad(verts, lifeWidths, name, 1.0, resFaces, prefs.links_smoothShade)
 
     # color encoded attributes for viewing in viewport edit mode
     utils_render.gen_meshAttr(mesh, lifeColor, resFaces*2, "FLOAT_COLOR", "POINT", "life")
@@ -321,7 +327,7 @@ def gen_linksWallObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cf
     obj_wallLinks.active_material = wallsMat
 
     # WIP:: additional attr to visualize in the ame view mode
-    utils_render.gen_meshAttr(mesh, color3.to_4d(), 0, "FLOAT_COLOR", "POINT", "blueColor")
+    utils_render.gen_meshAttr(mesh, color3.to_4d(), 1, "FLOAT_COLOR", "POINT", "blueColor")
 
     MW_gen_cfg.setMetaType(obj_wallLinks, {"CHILD"}, childrenRec=False)
     getStats().logDt("generated wall links object")

@@ -91,6 +91,7 @@ class ATTRS:
     attrsColor_atype = [ "FLOAT_COLOR", "BYTE_COLOR" ]
     attrsColor_adomain = [ "POINT", "CORNER" ]
 
+    @staticmethod
     def get_src_inDomain(mesh: types.Mesh, adomain:str):
         """ Map the str to the mesh data """
         if adomain == "POINT": return mesh.vertices
@@ -99,15 +100,7 @@ class ATTRS:
         elif adomain == "CORNER": return mesh.loops
         else: raise TypeError(f"{adomain} not in {ATTRS.attrs_adomain}")
 
-    def get_attrName_dataType(dataAttr):
-        """ Map the data type to the data access attr """
-        if isinstance(dataAttr, types.MeshLoopColorLayer): return "uv"
-        elif isinstance(dataAttr, types.Attribute):
-            atype = dataAttr.domain
-            if atype in ATTRS.attrsColor_adomain: return "color"
-            else: return "value"
-        else: raise TypeError(f"{dataAttr.name} could not be mapped")
-
+    @staticmethod
     def get_value_inType(atype:str, v):
         """ Get a value of the type aprox """
         if   atype == "FLOAT"       : val= v
@@ -122,6 +115,32 @@ class ATTRS:
         else                        : raise TypeError(f"{atype} not in {ATTRS.attrs_atype}")
         return val
 
+    @staticmethod
+    def get_attrName_inType(atype:str):
+        """ Get the attr name of the type aprox """
+        if   atype == "FLOAT"       : name = "value"
+        elif atype == "FLOAT_COLOR" : name = "color"
+        elif atype == "FLOAT2"      : name = "vector"
+        elif atype == "FLOAT_VECTOR": name = "vector"
+        elif atype == "BYTE_COLOR"  : name = "color"
+        elif atype == "BOOL"        : name = "value"
+        elif atype == "INT"         : name = "value"
+        elif atype == "INT8"        : name = "value"
+        elif atype == "STRING"      : name = "value"
+        else                        : raise TypeError(f"{atype} not in {ATTRS.attrs_atype}")
+        return name
+
+    @staticmethod
+    def get_attrName_inData(dataAttr):
+        """ Map the data type to the data access attr """
+        if isinstance(dataAttr, types.MeshLoopColorLayer): return "uv"
+        elif isinstance(dataAttr, types.Attribute):
+            return ATTRS.get_attrName_inType(dataAttr.data_type)
+        else: raise TypeError(f"{dataAttr.name} could not be mapped")
+
+    #-------------------------------------------------------------------
+
+    @staticmethod
     def get_rnd_inType(atype:str, minC = 0.0, maxC = 1.0):
         """ Get a random value of the type aprox """
         if   atype == "FLOAT"       : rnd= uniform(minC, maxC)
@@ -136,6 +155,7 @@ class ATTRS:
         else                        : raise TypeError(f"{atype} not in {ATTRS.attrs_atype}")
         return rnd
 
+    @staticmethod
     def get_periodic_inType(atype:str, minC = 0.0, maxC = 1.0, period_id:int = None, period = 2):
         """ Get periodic value in the type (building a ramp from 0-1 in period)"""
         step = int((period_id % period) / period) + 1
@@ -145,6 +165,7 @@ class ATTRS:
 
     rndRep_vals = { atype: list() for atype in attrs_atype }
     rndRep_count = { atype: 0 for atype in attrs_atype }
+    @staticmethod
     def get_rnd_periodic_inType(atype:str, minC = 0.0, maxC = 1.0, period = 2):
         """ Get a random value of the type with certain periodicity (limit rnd values) """
         if len(ATTRS.rndRep_vals[atype]) < period:
@@ -155,6 +176,7 @@ class ATTRS:
         ATTRS.rndRep_count[atype] +=1
         return rndRep
 
+    @staticmethod
     def get_deferred_inType(atype:str, minC = 0.0, maxC = 1.0, period_id:int = None, period = 2):
         """ Proxy function to pick the random method used in other functions"""
         return ATTRS.get_rnd_inType(atype, minC, maxC)
@@ -221,8 +243,8 @@ def gen_meshVC(mesh: types.Mesh, color_base:Vector|list[Vector] = None, joinFace
         TODO:: using generalized set mesh attr, maybe also general version for common set + create list in random and pass it
         IDEA:: maybe join faces as a parameter in the ATTRS class?
     """
-    assert(atype in ATTRS.attrsColor_atype)
-    assert(adomain in ATTRS.attrsColor_adomain)
+    assert atype in ATTRS.attrsColor_atype, f"{atype} not in {ATTRS.attrsColor_atype}"
+    assert adomain in ATTRS.attrsColor_adomain, f"{adomain} not in {ATTRS.attrsColor_adomain}"
     vc = mesh.color_attributes.new(f"{name}_{adomain}_{atype}", atype, adomain)
     if color_base:
         if not joinFaces or adomain != "CORNER": set_meshVC(mesh, vc, color_base)
@@ -251,8 +273,8 @@ def gen_meshAC(mesh: types.Mesh, color_base:Vector|list[Vector] = None, atype="F
     """ Add an attribute layer to the mesh to add color: 4D float PER loop, face, edge, vertex, etc
         NOTE:: when using POINT/CORNER will also be added as a color_attribute
     """
-    assert(atype in ATTRS.attrsColor_atype)
-    assert(adomain in ATTRS.attrs_adomain)
+    assert atype in ATTRS.attrsColor_atype, f"{atype} not in {ATTRS.attrsColor_atype}"
+    assert adomain in ATTRS.attrs_adomain, f"{adomain} not in {ATTRS.attrs_adomain}"
     ac = mesh.attributes.new(f"{name}_{adomain}_{atype}", atype, adomain)
     if color_base: set_meshAC(mesh, ac, color_base)
     return ac
@@ -275,7 +297,7 @@ def set_meshAC_rnd(mesh: types.Mesh, ac: types.Attribute|str, minC=0.0, maxC=1.0
 
 #-------------------------------------------------------------------
 
-def gen_meshAttr(mesh: types.Mesh, val_base = None, val_repeats = 0, atype="FLOAT", adomain="EDGE", name="AT") -> types.Attribute:
+def gen_meshAttr(mesh: types.Mesh, val_base = None, val_repeats = 1, atype="FLOAT", adomain="EDGE", name="AT") -> types.Attribute:
     """ Add a custom attribute layer to the mesh: vector, float, string, etc PER loop, face, edge, vertex, etc
         NOTE:: when using colors and POINT/CORNER will also be added as a color_attribute PLUS the access attribute changes
     """
@@ -285,16 +307,17 @@ def gen_meshAttr(mesh: types.Mesh, val_base = None, val_repeats = 0, atype="FLOA
     if val_base: set_meshAttr(mesh, attrs, val_base, val_repeats)
     return attrs
 
-def set_meshAttr(mesh: types.Mesh, attr: types.Attribute|str, val_base, val_repeats = 0):
+def set_meshAttr(mesh: types.Mesh, attr: types.Attribute|str, val_base, val_repeats = 1):
     """ Set property values, either periodically repeating val_base + repeating each input in order"""
     if isinstance(attr, str): attr = mesh.attributes[attr]
     val_base = utils.assure_list(val_base)
     source = ATTRS.get_src_inDomain(mesh, attr.domain)
     # data attribute access depends on the type...
-    dataAttrName = "color" if attr.data_type in ATTRS.attrsColor_atype else "value"
+    dataAttrName = ATTRS.get_attrName_inData(attr)
 
     # input repetition options on top of periodically repeat val_base over source extent
-    gen_repIndices = [i for i in range(len(val_base)) for _ in range(val_repeats+1)]
+    assert val_repeats > 0, "val_repeats must be at least 1"
+    gen_repIndices = [i for i in range(len(val_base)) for _ in range(val_repeats)]
     for i, datum in enumerate(source):
         i_value = gen_repIndices[i % len(gen_repIndices)]
         val = val_base[i_value]
@@ -305,20 +328,21 @@ def set_meshAttr_rnd(mesh: types.Mesh, attr: types.Attribute|str, minC=0.0, maxC
     if isinstance(attr, str): attr = mesh.attributes[attr]
     source = ATTRS.get_src_inDomain(mesh, attr.domain)
     # data attribute access depends on the type...
-    dataAttrName = "color" if attr.data_type in ATTRS.attrsColor_atype else "value"
+    dataAttrName = ATTRS.get_attrName_inData(attr)
     for i, datum in enumerate(source):
         val = ATTRS.get_deferred_inType(attr.data_type, minC, maxC, i)
         attr.data[i].__setattr__(dataAttrName, val)
 
-def set_meshAttr_perFace(mesh: types.Mesh, dataAttr, values, val_repeats = 0):
+def set_meshAttr_perFace(mesh: types.Mesh, dataAttr, values, val_repeats = 1):
     """ Generalized method to set a property per face to corners of a mesh.
         NOTE:: requires acess to the data not a str to search it in the mesh
     """
     values = utils.assure_list(values)
-    dataAttrName = ATTRS.get_attrName_dataType(dataAttr)
+    dataAttrName = ATTRS.get_attrName_inData(dataAttr)
 
     # input repetition options on top of periodically repeat val_base over source extent
-    gen_repIndices = [i for i in range(len(val_base)) for _ in range(val_repeats+1)]
+    gen_repIndices = [i for i in range(len(values)) for _ in range(val_repeats)]
+    assert val_repeats > 0, "val_repeats must be at least 1"
     for i, face in enumerate(mesh.polygons):
         i_value = gen_repIndices[i % len(gen_repIndices)]
         val = values[i_value]

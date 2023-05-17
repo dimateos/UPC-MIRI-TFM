@@ -121,7 +121,7 @@ class MW_prefs(bpy.types.AddonPreferences):
     )
     gen_PT_meta_show_tmpDebug: props.BoolProperty(
         name="Show DEBUG...", description="WIP: Show some debug stuff",
-        default=True,
+        default=False,
     )
 
     #-------------------------------------------------------------------
@@ -282,7 +282,7 @@ class MW_prefs(bpy.types.AddonPreferences):
 
     dm_PT_meta_show_tmpDebug: props.BoolProperty(
         name="Show debug...", description="WIP: Show some debug stuff",
-        default=False,
+        default=True,
     )
     dm_PT_orphans_collection: props.StringProperty(
         name="", description="E.g. meshes, mats, curves, etc",

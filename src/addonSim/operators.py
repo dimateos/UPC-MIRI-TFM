@@ -67,6 +67,7 @@ class MW_gen_OT(_StartRefresh_OT):
     # IDEA:: SIM: shrink here or as part of sim, e.g. smoothing? -> support physics interspace
     # IDEA:: SIM: add mass add rigid body proportional to volume? from voro++?
     # IDEA:: recalculate cont after reload from cfg exact params -> precision used stored? all props stored but some in side panel? e.g. visual and precision
+    # OPT:: assets with msg
 
     def execute(self, context: types.Context):
         self.start_op()
@@ -398,7 +399,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
 
         # IDEA:: store copy or original or button to recalc links from start? -> set all life to 1 but handle any dynamic list
         mw_setup.gen_linksObject(obj, self.links, cfgGen, context)
-        utils.select_unhide(obj, context)
+        #utils.select_unhide(obj, context)
 
         return self.end_op()
 

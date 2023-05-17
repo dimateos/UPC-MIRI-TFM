@@ -30,12 +30,13 @@ class MW_gen_PT(types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        layoutCol = self.layout.column()
         prefs = getPrefs()
 
         # draw the fracture generation ops
-        self.draw_onSelected(context, layout)
+        self.draw_onSelected(context, layoutCol)
 
-        open, box = ui.draw_toggleBox(prefs, "gen_PT_meta_show_tmpDebug", layout)
+        open, box = ui.draw_toggleBox(prefs, "gen_PT_meta_show_tmpDebug", layoutCol)
         if open:
             # delete all fractures
             col_rowSplit = box.row().split(factor=0.66)
@@ -90,9 +91,11 @@ class MW_gen_PT(types.Panel):
         else:
             # show info of root + selected
             msg = f"Root: {obj.name}"
-            selected = context.selected_objects[-1]
-            if selected.name != obj.name:
-                msg += f" - {selected.name}"
+
+            if context.selected_objects:
+                selected = context.selected_objects[-1]
+                if selected.name != obj.name:
+                    msg += f" - {selected.name}"
 
             # button to bake the shard
             col_rowSplit = col.row().split(factor=0.90)
@@ -100,14 +103,13 @@ class MW_gen_PT(types.Panel):
             col_rowSplit.operator(ops.MW_util_bake_OT.bl_idname, text="", icon="UNLINKED")
 
             # delete
-            mainCol = layout.column()
-            col_rowSplit = mainCol.row().split(factor=0.70)
+            col_rowSplit = layout.row().split(factor=0.70)
             col_rowSplit.operator(ops.MW_util_delete_OT.bl_idname, text="DELETE rec", icon="CANCEL")
             prefs = getPrefs()
             col_rowSplit.prop(prefs, "util_delete_OT_unhideSelect")
 
             # dupe
-            col_rowSplit = mainCol.row().split(factor=0.70)
+            col_rowSplit = layout.row().split(factor=0.70)
             col_rowSplit.operator(ops.MW_gen_OT.bl_idname, text="DUPLICATE Fracture", icon="DUPLICATE")
             col_rowSplit.prop(prefs, "gen_duplicate_OT_hidePrev")
 
@@ -137,8 +139,8 @@ class MW_gen_PT(types.Panel):
             # inspect props
             if not prefs.gen_PT_meta_show_root: cfg = selected.mw_gen
             open, box = ui.draw_propsToggle(cfg, prefs, "gen_PT_meta_show_summary", "gen_PT_meta_propFilter", "gen_PT_meta_propEdit", "get_PT_meta_propShowId", layout)
-            col_rowSplit = box.row().split()
             if open:
+                col_rowSplit = box.row().split()
                 col_rowSplit.prop(prefs, "gen_PT_meta_show_root")
                 col_rowSplit.label(text=obj.name if prefs.gen_PT_meta_show_root else selected.name)
 
