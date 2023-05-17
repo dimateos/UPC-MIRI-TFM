@@ -173,10 +173,18 @@ class MW_prefs(bpy.types.AddonPreferences):
         name="WIP: Dead link width", description="Min link w",
         default=0.005, min=0.001, max=0.01, step=0.05, precision=4
     )
-    links_widthModLife: props.BoolProperty(
+
+    links_widthModLife: props.EnumProperty(
         name="WIP: Life affects width",
-        default=True,
+        items=(
+            ('DISABLED', "Disabled", "No effect on width"),
+            ('UNIFORM', "Uniform effect", "Uniform effect on width"),
+            ('BINARY', "Binary", "Any differece from full life affects drastically"),
+        ),
+        options={'ENUM_FLAG'},
+        default={'UNIFORM'},
     )
+
     links_res: props.IntProperty(
         name="WIP: Link res", description="WIP: curve res -> faces",
         default=0, min=-1, max=8,

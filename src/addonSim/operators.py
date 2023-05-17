@@ -388,7 +388,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
         obj, cfgGen = MW_gen_cfg.getSelectedRoot()
 
         # achieve constructive results
-        mw_sim.restoreRnd()
+        mw_sim.restoreRnd(cfg.addSeed)
 
         # TODO:: bl undo does not undo changes in the links tho
         if cfg.steps_reset: mw_sim.setAll(self.links, 1.0)

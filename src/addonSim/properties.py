@@ -352,6 +352,11 @@ class MW_sim_cfg(types.PropertyGroup):
         default=0.025, min=0.001, max=0.1, step=1, precision=3
     )
 
+    addSeed: props.IntProperty(
+        name="Add random seed",
+        default=0, min=0, max=100,
+    )
+
 #class MW_vis_cfg(types.PropertyGroup):
 #    pass
 

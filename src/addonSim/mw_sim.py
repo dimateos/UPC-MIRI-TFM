@@ -24,9 +24,12 @@ _rndState = None
 def storeRnd():
     global _rndState
     _rndState = rnd.getstate()
-def restoreRnd():
+def restoreRnd(addState=0):
     global _rndState
     rnd.setstate(_rndState)
+
+    # NOTE:: just call some amount of randoms to modify seed, could modify state but requires copying a 600 elemnt tuple
+    for i in range(addState): rnd.random()
 
 #-------------------------------------------------------------------
 # WIP:: atm just a static method
@@ -56,6 +59,9 @@ def step(links: LinkCollection, deg = 0.01, subSteps = 10):
     linkKey = rnd.choice(rootLink.neighs)
     link = links.link_map[linkKey]
     #DEV.log_msg(f"Root link {rootKey} from {len(entryKeys)} -> first {linkKey} from {len(rootLink.neighs)}", {"SIM", "STEP"})
+
+    # WIP:: sort input axis aligned to achieve entering by the top of "hill" model
+    # WIP:: dict with each iteration info for rendering / study etc
 
     for i in range(subSteps):
         link.degrade(deg)

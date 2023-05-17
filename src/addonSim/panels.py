@@ -131,7 +131,8 @@ class MW_gen_PT(types.Panel):
                 col.prop(prefs, "links_depth")
                 col.prop(prefs, "links_width")
                 col.prop(prefs, "links_widthDead")
-                col.prop(prefs, "links_widthModLife")
+                rowsub = col.row()
+                rowsub.prop(prefs, "links_widthModLife")
                 col.prop(prefs, "links_res")
                 col.prop(prefs, "links_wallExtraScale")
 
