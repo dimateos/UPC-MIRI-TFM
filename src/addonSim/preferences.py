@@ -167,11 +167,11 @@ class MW_prefs(bpy.types.AddonPreferences):
     )
     links_width: props.FloatProperty(
         name="WIP: Link width", description="Max link w",
-        default=0.1, min=0.01, max=0.3, step=0.05, precision=4
+        default=0.05, min=0.01, max=0.2, step=0.05, precision=4
     )
     links_widthDead: props.FloatProperty(
         name="WIP: Dead link width", description="Min link w",
-        default=0.01, min=0.005, max=0.02, step=0.05, precision=4
+        default=0.005, min=0.001, max=0.01, step=0.05, precision=4
     )
     links_widthModLife: props.BoolProperty(
         name="WIP: Life affects width",
@@ -183,7 +183,7 @@ class MW_prefs(bpy.types.AddonPreferences):
     )
     links_wallExtraScale: props.FloatProperty(
         name="WIP: Link walls extra", description="WIP: extra scaling",
-        default=3, min=0.5, max=6,
+        default=2, min=0.5, max=6,
     )
 
     #-------------------------------------------------------------------

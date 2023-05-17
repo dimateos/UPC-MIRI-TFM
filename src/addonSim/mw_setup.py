@@ -273,6 +273,7 @@ def gen_LEGACY_CONT(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context
 # WIP:: maybe links to go from face to face of scaled down shards?
 # TODO:: to walls, show damage, etc
 # TODO:: single face tube -> code per face instead of vert? see in table
+# TODO:: fix misalgined origin...
 
 def gen_linksObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cfg, context: types.Context):
     prefs = getPrefs()
@@ -296,7 +297,7 @@ def gen_linksObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cfg, c
     utils_render.gen_meshAttr(mesh, lifeColor, resFaces*2, "FLOAT_COLOR", "POINT", "life")
 
     # potentially reuse child
-    obj_links = utils.gen_childReuse(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showLinks)
+    obj_links = utils.gen_childReuse(obj, name, context, mesh, keepTrans=True, hide=not cfg.struct_showLinks)
     mesh.name = name
 
     MW_gen_cfg.setMetaType(obj_links, {"CHILD"}, childrenRec=False)
@@ -318,7 +319,7 @@ def gen_linksWallObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cf
     mesh = utils_render.get_tubeMesh_pairsQuad(verts, None, name, prefs.links_width*wallsExtraScale, resFaces, prefs.links_smoothShade)
 
     # potentially reuse child
-    obj_wallLinks = utils.gen_childReuse(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showLinks_toWalls)
+    obj_wallLinks = utils.gen_childReuse(obj, name, context, mesh, keepTrans=True, hide=not cfg.struct_showLinks_toWalls)
     mesh.name = name
 
     # set global material
