@@ -260,22 +260,47 @@ def gen_LEGACY_CONT(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context
     getStats().logDt("calculated stats (use breakpoints to see)")
 
 #-------------------------------------------------------------------
+# WIP:: maybe links to go from face to face of scaled down shards?
+# TODO:: to walls, show damage, etc
 
-# WIP:: links empties,..
-def gen_linksEmpties(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
+def gen_linksObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cfg, context: types.Context):
+    prefs = getPrefs()
+    baseColor = utils_render.COLORS.red
+
+    # iterate the global map and store vert pairs for the tube mesh generation
+    verts: list[tuple[Vector,Vector]] = []
+    props: list[Vector] = []
+    for key,l in links.link_map.items():
+        if not l.toWall:
+            verts.append((l.pos-l.dir*prefs.links_depth, l.pos+l.dir*prefs.links_depth))
+            props.append( (baseColor*l.life).to_4d() )
+
+    resFaces = utils_render.get_resFaces_fromCurveRes(prefs.links_res)
+    mesh = utils_render.get_tubeMesh_pairsQuad(verts, prefs.names.links, prefs.links_width, resFaces)
+
+    # color encoded attributes for viewing in viewport edit mode
+    utils_render.gen_meshAttr(mesh, props, resFaces*2, "FLOAT_COLOR", "POINT", "life")
+
+    # potentially reuse child
+    obj_links = utils.gen_childReuse(obj, prefs.names.links, context, mesh, keepTrans=False, hide=not cfg.struct_showLinks)
+    mesh.name = prefs.names.links
+
+    getStats().logDt("generated links object")
+    return obj_links
+
+#-------------------------------------------------------------------
+# WIP:: links empties etc... final generation/visual not set
+
+def genWIP_linksEmpties(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     obj_links = utils.gen_childClean(obj, getPrefs().names.links, context, None, keepTrans=False, hide=not cfg.struct_showLinks)
     obj_links_toWall = utils.gen_childClean(obj, getPrefs().names.links_toWalls, context, None, keepTrans=False, hide=not cfg.struct_showLinks_toWalls)
     return obj_links, obj_links_toWall
 
-def gen_linksEmptiesPerCell(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_links_perCell = utils.gen_childClean(obj, getPrefs().names.links_perCell, context, None, keepTrans=False, hide=not cfg.struct_showLinks_perCell)
-    return obj_links_perCell
-
-def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: LinkCollection, cfg: MW_gen_cfg, context: types.Context):
-    #objLinks = None
-    #objWall = None
+def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: LinkCollection, cfg: MW_gen_cfg, context: types.Context):
     prefs = getPrefs()
     wallsMat = utils_render.get_colorMat(utils_render.COLORS.blue+utils_render.COLORS.white * 0.33, 1.0, "linkWallsMat")
+    #objLinks = None
+    #objWall = None
 
     # iterate the global map
     for key,l in links.link_map.items():
@@ -291,12 +316,12 @@ def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: LinkC
             # start at the face outward
             p1 = Vector()
             p2 = l.dir*0.1
-            p3 = l.dir*0.8
-            p4 = l.dir*1.8
+            #p3 = l.dir*0.8
+            #p4 = l.dir*1.8
 
             # vary curve props
-            #res = prefs.links_res
             res = (prefs.links_res+1) +2
+            #res = prefs.links_res
             width = prefs.links_width * 1.5
             mat = wallsMat
 
@@ -316,6 +341,7 @@ def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: LinkC
             alpha = l.life+0.1 if prefs.links_matAlpha else 1.0
             mat = utils_render.get_colorMat(utils_render.COLORS.red*l.life, alpha, name)
 
+        res = utils_render.get_resFaces_fromCurveRes(res)
         curve= utils_render.get_tubeMesh_pairsQuad([(p1, p2)], name, width, res)
         obj_link = utils.gen_child(obj, name, context, curve, keepTrans=True, hide=not cfg.struct_showLinks)
         obj_link.location = l.pos
@@ -323,8 +349,11 @@ def gen_linksObjects(objLinks: types.Object, objWall: types.Object, links: LinkC
 
     getStats().logDt("generated links to walls objects")
 
+def genWIP_linksEmptiesPerCell(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
+    obj_links_perCell = utils.gen_childClean(obj, getPrefs().names.links_perCell, context, None, keepTrans=False, hide=not cfg.struct_showLinks_perCell)
+    return obj_links_perCell
 
-def gen_linksCellObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
+def genWIP_linksCellObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
     # WIP:: links better generated from map isntead of cont? + done in a separate op
     # WIP:: atm just hiding reps -> maybe generate using a different map instead of iterating the raw cont
     #   maybe merge shard/link loop

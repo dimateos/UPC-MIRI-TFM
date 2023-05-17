@@ -275,27 +275,33 @@ def set_meshAC_rnd(mesh: types.Mesh, ac: types.Attribute|str, minC=0.0, maxC=1.0
 
 #-------------------------------------------------------------------
 
-def gen_meshAttr(mesh: types.Mesh, val_base = None, atype="FLOAT", adomain="EDGE", name="AT") -> types.Attribute:
+def gen_meshAttr(mesh: types.Mesh, val_base = None, val_repeats = 0, atype="FLOAT", adomain="EDGE", name="AT") -> types.Attribute:
     """ Add a custom attribute layer to the mesh: vector, float, string, etc PER loop, face, edge, vertex, etc
         NOTE:: when using colors and POINT/CORNER will also be added as a color_attribute PLUS the access attribute changes
     """
     assert(atype in ATTRS.attrs_atype)
     assert(adomain in ATTRS.attrs_adomain)
     attrs = mesh.attributes.new(f"{name}_{adomain}_{atype}", atype, adomain)
-    if val_base: set_meshAttr(mesh, attrs, val_base)
+    if val_base: set_meshAttr(mesh, attrs, val_base, val_repeats)
     return attrs
 
-def set_meshAttr(mesh: types.Mesh, attr: types.Attribute|str, val_base):
+def set_meshAttr(mesh: types.Mesh, attr: types.Attribute|str, val_base, val_repeats = 0):
+    """ Set property values, either periodically repeating val_base + repeating each input in order"""
     if isinstance(attr, str): attr = mesh.attributes[attr]
     val_base = utils.assure_list(val_base)
     source = ATTRS.get_src_inDomain(mesh, attr.domain)
     # data attribute access depends on the type...
     dataAttrName = "color" if attr.data_type in ATTRS.attrsColor_atype else "value"
+
+    # input repetition options on top of periodically repeat val_base over source extent
+    gen_repIndices = [i for i in range(len(val_base)) for _ in range(val_repeats+1)]
     for i, datum in enumerate(source):
-        val = val_base[i % len(val_base)]
+        i_value = gen_repIndices[i % len(gen_repIndices)]
+        val = val_base[i_value]
         attr.data[i].__setattr__(dataAttrName, val)
 
 def set_meshAttr_rnd(mesh: types.Mesh, attr: types.Attribute|str, minC=0.0, maxC=1.0):
+    """ Set randomized property values """
     if isinstance(attr, str): attr = mesh.attributes[attr]
     source = ATTRS.get_src_inDomain(mesh, attr.domain)
     # data attribute access depends on the type...
@@ -304,14 +310,18 @@ def set_meshAttr_rnd(mesh: types.Mesh, attr: types.Attribute|str, minC=0.0, maxC
         val = ATTRS.get_deferred_inType(attr.data_type, minC, maxC, i)
         attr.data[i].__setattr__(dataAttrName, val)
 
-def set_meshAttr_perFace(mesh: types.Mesh, dataAttr, values):
+def set_meshAttr_perFace(mesh: types.Mesh, dataAttr, values, val_repeats = 0):
     """ Generalized method to set a property per face to corners of a mesh.
         NOTE:: requires acess to the data not a str to search it in the mesh
     """
     values = utils.assure_list(values)
     dataAttrName = ATTRS.get_attrName_dataType(dataAttr)
+
+    # input repetition options on top of periodically repeat val_base over source extent
+    gen_repIndices = [i for i in range(len(val_base)) for _ in range(val_repeats+1)]
     for i, face in enumerate(mesh.polygons):
-        val = values[i % len(values)]
+        i_value = gen_repIndices[i % len(gen_repIndices)]
+        val = values[i_value]
         for j, loopID in enumerate(face.loop_indices):
             dataAttr.data[loopID].__setattr__(dataAttrName, val)
 
@@ -365,7 +375,7 @@ def set_smoothShading(me: types.Mesh, active=True, faces_idx = None):
         for f in me.polygons:
             f.use_smooth = active
 
-def get_curveData(points: list[Vector], name ="poly-curve", w=0.05, res=0):
+def get_curveData(points: list[Vector], name ="poly-curve", w=0.05, resFaces=0):
     """ creates a blender poly-curve following the points """
     # Create new POLY curve
     curve_data = bpy.data.curves.new(name, 'CURVE')
@@ -379,80 +389,85 @@ def get_curveData(points: list[Vector], name ="poly-curve", w=0.05, res=0):
 
     # Set the visuals
     curve_data.bevel_depth = w
-    curve_data.bevel_resolution = res
+    curve_data.bevel_resolution = resFaces
     curve_data.fill_mode = "FULL" #'FULL', 'HALF', 'FRONT', 'BACK'
     return curve_data
 
-def get_resMappedFromCurve(curveRes):
-    """ return the number sample points (side faces) the curve profile will have """
+def get_resFaces_fromCurveRes(curveRes):
+    """ return the number sample points (or side faces) the curve profile will have """
     return 4 + curveRes*2
 
     #-------------------------------------------------------------------
 
-def get_ringVerts(v:Vector, radii:float, res:float, step:float, vertsOut:list[Vector], axisU = Vector((1,0,0)), axisV=Vector((0,1,0))):
-    for i in range(res):
+def get_ringVerts(v:Vector, radii:float, resFaces:float, step:float, vertsOut:list[Vector], axisU = Vector((1,0,0)), axisV=Vector((0,1,0))):
+    for i in range(resFaces):
         sample = v + radii * (cos(i * step) * axisU + sin(i * step) * axisV)
         vertsOut.append(sample)
 
-def get_ringVerts_interleaved(vList:list[Vector], radii:float, res:float, step:float, vertsOut:list[Vector], axisU = Vector((1,0,0)), axisV=Vector((0,1,0))):
-    for i in range(res):
+def get_ringVerts_interleaved(vList:list[Vector], radii:float, resFaces:float, step:float, vertsOut:list[Vector], axisU = Vector((1,0,0)), axisV=Vector((0,1,0))):
+    for i in range(resFaces):
         for v in vList:
             sample = v + radii * (cos(i * step) * axisU + sin(i * step) * axisV)
             vertsOut.append(sample)
 
-def get_tubeMesh_pairsQuad(src_verts_pairs, name ="tube-mesh", radii=0.05, res=4):
+#attributesData:dict[str,dict] = None,
+def get_tubeMesh_pairsQuad(src_verts_pairs:list[tuple[Vector]], name ="tube-mesh", radii=0.05, resFaces=4):
     """ direction aligned simplified version: only single pairs and quad faces"""
-    res = get_resMappedFromCurve(res)
-    assert (res >= 2)
-    res_step = PI * 2 / res
+    assert (resFaces >= 2)
+    res_step = PI * 2 / resFaces
     verts, faces = [], []
+
+    ## generate mesh attributes
+    #me = bpy.data.meshes.new(name)
+    #if attributesData:
+    #    for key,val in attributesData.items():
+    #        gen
 
     # directly work on each face
     for vid, vPair in enumerate(src_verts_pairs):
         normal = vPair[1] - vPair[0]
         u,v = utils.getPerpendicularBase_stable(normal)
-        get_ringVerts_interleaved(vPair, radii, res, res_step, verts, u,v)
+        get_ringVerts_interleaved(vPair, radii, resFaces, res_step, verts, u,v)
 
         # generate faces quads -> ccw so normals towards outside
-        vs_id_base = vid*res*2
-        for i in range(0, res-1):
+        vs_id_base = vid*resFaces*2
+        for i in range(0, resFaces-1):
             vs_id = vs_id_base + i *2
             faces.append((vs_id, vs_id+2, vs_id+3, vs_id+1))
 
         # add connection from first to last too
-        vs_id = vs_id_base + res*2 -2
+        vs_id = vs_id_base + resFaces*2 -2
         faces.append((vs_id, vs_id_base, vs_id_base+1, vs_id+1))
 
     me = bpy.data.meshes.new(name)
     me.from_pydata(vertices=verts, edges=[], faces=faces)
     return me
 
-def get_tubeMesh_AAtriFan(src_verts, src_edges, name ="tube-mesh", radii=0.05, res=4):
+def get_tubeMesh_AAtriFan(src_verts:list[Vector], src_edges:list[tuple[int]], name ="tube-mesh", radii=0.05, resFaces=4):
     """ extrudes AA sampled circle points around the vertices using a triangle fan"""
-    res = get_resMappedFromCurve(res)
-    assert (res >= 2)
-    res_step = PI * 2 / res
+    assert (resFaces >= 2)
+    res_step = PI * 2 / resFaces
     verts, faces = [], []
 
     # generate the new vertices (axis aligned sampled circle)
     for v_id in range(len(src_verts)):
         v = Vector(src_verts[v_id])
-        get_ringVerts(v, radii, res, res_step, verts)
+        get_ringVerts(v, radii, resFaces, res_step, verts)
 
     # generate faces triangle stripes joining verts from the edges -> ccw so normals towards outside
     for v1_id, v2_id in src_edges:
-        for i in range(1, res):
-            vs_id = v2_id * res + i
-            vs_id_prev = v1_id * res + i
+        for i in range(1, resFaces):
+            vs_id = v2_id * resFaces + i
+            vs_id_prev = v1_id * resFaces + i
             # print(f"vs_id: {vs_id} - vsp_id: {vsp_id}")
             faces.append((vs_id - 1, vs_id_prev - 1, vs_id))
             faces.append((vs_id_prev - 1, vs_id_prev, vs_id))
 
         # add connection from first to last too
-        vs_id = v2_id * res
-        vs_id_prev = v1_id * res
-        faces.append((vs_id +res- 1, vs_id_prev +res - 1, vs_id))
-        faces.append((vs_id_prev +res- 1, vs_id_prev, vs_id))
+        vs_id = v2_id * resFaces
+        vs_id_prev = v1_id * resFaces
+        faces.append((vs_id +resFaces- 1, vs_id_prev +resFaces - 1, vs_id))
+        faces.append((vs_id_prev +resFaces- 1, vs_id_prev, vs_id))
 
     me = bpy.data.meshes.new(name)
     me.from_pydata(vertices=verts, edges=[], faces=faces)

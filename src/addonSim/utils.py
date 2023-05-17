@@ -254,7 +254,8 @@ def delete_objectChildren(ob_father: types.Object, ignore_data = False, rec=True
     for child in reversed(toDelete):
         delete_object(child, ignore_data)
 
-def delete_data(data, type:str, do_unlink=False):
+def delete_data(data, type = "MESH", do_unlink=False):
+    """ NOTE:: seems like deleting the data deletes the object? """
     if not do_unlink and data.users: return
     #DEV.log_msg(f"Deleting {data.name}", {"DELETE", "DATA"})
     try:
@@ -431,6 +432,25 @@ def gen_childClean(
     obj_child = get_child(obj, name)
     if obj_child:
         delete_objectRec(obj_child)
+    return gen_child(**get_kwargs())
+
+def gen_childReuse(
+    obj: types.Object, name: str, context: types.Context,
+    mesh: types.Mesh = None, keepTrans = True, noInv = False, hide: bool = False
+    ):
+    """ Generate a new child, reuse the previous one if found """
+    obj_child = get_child(obj, name)
+    if obj_child:
+        #  NOTE:: subtitute to unlink and then delete prev data, otherwise deleting it deletes the object?
+        if obj_child.data:
+            prevMesh = obj_child.data
+            obj_child.data = mesh
+            delete_data(prevMesh, obj_child.type)
+
+        #set_child(obj_child, obj, keepTrans, noInv)
+        obj_child.hide_set(hide)
+        return obj_child
+
     return gen_child(**get_kwargs())
 
 #-------------------------------------------------------------------

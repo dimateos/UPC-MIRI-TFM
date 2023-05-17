@@ -114,6 +114,8 @@ class MW_gen_PT(types.Panel):
             # WIP:: testing
             layout.operator(ops.MW_gen_links_OT.bl_idname, icon="OUTLINER_DATA_GREASEPENCIL")
 
+            # IDEA:: global slider mat alpha if found
+
             # visuals
             open, box = ui.draw_toggleBox(prefs, "gen_PT_meta_show_visuals", layout)
             if open:
@@ -123,6 +125,7 @@ class MW_gen_PT(types.Panel):
                 col.prop(prefs, "gen_setup_matAlpha")
                 col.prop(cfg, "struct_linksScale")
                 col.prop(prefs, "links_matAlpha")
+                col.prop(prefs, "links_depth")
                 col.prop(prefs, "links_width")
                 col.prop(prefs, "links_widthDead")
                 col.prop(prefs, "links_res")
