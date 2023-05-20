@@ -67,6 +67,9 @@ class Link():
 
     #-------------------------------------------------------------------
 
+    def __len__(self):
+        return len(self.neighs_toCell) * len(self.neighs_toWall)
+
     def setNeighs(self, newNeighs:list[key_t]):
         """ Clear and add links """
         self.neighs_toCell.clear()
@@ -263,7 +266,7 @@ class LinkCollection():
                 #DEV.log_msg(f"l {l.key_cells} {l.key_cells}")
 
                 # avoid recalculating link neighs (and duplicating them)
-                if l.neighs:
+                if len(l):
                     continue
 
                 # walls only add local faces from the same cell

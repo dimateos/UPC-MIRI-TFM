@@ -72,7 +72,7 @@ class MW_gen_cfg(types.PropertyGroup):
         return roots
 
     @staticmethod
-    def setMetaType(obj: types.Object, type: dict, skipParent = False, childrenRec = True):
+    def setMetaType(obj: types.Object, type: set[str], skipParent = False, childrenRec = True):
         """ Set the property to the object and all its children (dictionary ies copied, not referenced)
             # NOTE:: acessing obj children is O(len(bpy.data.objects)), so just call it on the root again
         """

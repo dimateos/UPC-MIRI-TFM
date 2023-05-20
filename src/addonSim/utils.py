@@ -63,10 +63,9 @@ def get_verts(obj: types.Object, worldSpace=False) -> list[Vector, 6]:
         verts = [v.co for v in mesh.vertices]
     return verts
 
-def get_bb_data(obj: types.Object, margin_disp = 0.0, worldSpace=False) -> tuple[list[Vector, 6], float, Vector]:
+def get_bb_data(obj: types.Object, margin_disp = 0.0, worldSpace=False) -> tuple[list[Vector], float, float]:
     """ Get the object bounding box MIN/MAX Vector pair in world space """
-    disp = Vector()
-    disp.xyz = margin_disp
+    disp = Vector([margin_disp]*3)
 
     if worldSpace:
         matrix = obj.matrix_world
