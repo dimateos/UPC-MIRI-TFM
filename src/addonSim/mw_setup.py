@@ -285,7 +285,7 @@ def gen_linksObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cfg, c
     lifeWidths: list[float] = []
     lifeColor: list[Vector] = []
     for key,l in links.link_map.items():
-        if not l.toWall:
+        if not l.airLink:
             verts.append((l.pos-l.dir*prefs.links_depth, l.pos+l.dir*prefs.links_depth))
             lifeColor.append( (baseColor*l.life).to_4d() )
 
@@ -310,20 +310,20 @@ def gen_linksObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cfg, c
 
 def gen_linksWallObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cfg, context: types.Context):
     prefs = getPrefs()
-    name = prefs.names.links_toWalls
+    name = prefs.names.links_air
     wallsExtraScale = prefs.links_wallExtraScale
 
     # iterate the global map and store vert pairs for the tube mesh generation
     verts: list[tuple[Vector,Vector]] = []
     for key,l in links.link_map.items():
-        if l.toWall:
+        if l.airLink:
             verts.append((l.pos, l.pos+l.dir*prefs.links_depth))
 
     resFaces = utils_render.get_resFaces_fromCurveRes(prefs.links_res+3)
     mesh = utils_render.get_tubeMesh_pairsQuad(verts, None, name, prefs.links_width*wallsExtraScale, resFaces, prefs.links_smoothShade)
 
     # potentially reuse child
-    obj_wallLinks = utils.gen_childReuse(obj, name, context, mesh, keepTrans=True, hide=not cfg.struct_showLinks_toWalls)
+    obj_wallLinks = utils.gen_childReuse(obj, name, context, mesh, keepTrans=True, hide=not cfg.struct_showLinks_airLinks)
     mesh.name = name
 
     # set global material
@@ -343,8 +343,8 @@ def gen_linksWallObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cf
 
 def genWIP_linksEmpties(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     obj_links = utils.gen_childClean(obj, getPrefs().names.links, context, None, keepTrans=False, hide=not cfg.struct_showLinks)
-    obj_links_toWall = utils.gen_childClean(obj, getPrefs().names.links_toWalls, context, None, keepTrans=False, hide=not cfg.struct_showLinks_toWalls)
-    return obj_links, obj_links_toWall
+    obj_links_air = utils.gen_childClean(obj, getPrefs().names.links_air, context, None, keepTrans=False, hide=not cfg.struct_showLinks_airLinks)
+    return obj_links, obj_links_air
 
 def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: LinkCollection, cfg: MW_gen_cfg, context: types.Context):
     prefs = getPrefs()
@@ -358,7 +358,7 @@ def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: Li
         f1, f2 = l.key_faces
 
         # links to walls
-        if l.toWall:
+        if l.airLink:
             if not objWall: continue
             obj = objWall
             name= f"w{c1}_c{c2}-f{f2}"
@@ -401,8 +401,8 @@ def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: Li
     getStats().logDt("generated links to walls objects")
 
 def genWIP_linksEmptiesPerCell(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_links_perCell = utils.gen_childClean(obj, getPrefs().names.links_perCell, context, None, keepTrans=False, hide=not cfg.struct_showLinks_perCell)
-    return obj_links_perCell
+    obj_links_legacy = utils.gen_childClean(obj, getPrefs().names.links_legacy, context, None, keepTrans=False, hide=not cfg.struct_showLinks_legacy)
+    return obj_links_legacy
 
 def genWIP_linksCellObjects(objParent: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
     # WIP:: links better generated from map isntead of cont? + done in a separate op
@@ -429,7 +429,7 @@ def genWIP_linksCellObjects(objParent: types.Object, cont: Container, cfg: MW_ge
             # wall link
             if n_id < 0:
                 name= f"s{cell.id}_w{-n_id}"
-                obj_link = utils.gen_child(obj_group, name, context, None, keepTrans=False, hide=not cfg.struct_showLinks_toWalls)
+                obj_link = utils.gen_child(obj_group, name, context, None, keepTrans=False, hide=not cfg.struct_showLinks_airLinks)
                 continue
 
             # TODO:: so some cells actually connect with the missing ones...
@@ -448,7 +448,7 @@ def genWIP_linksCellObjects(objParent: types.Object, cont: Container, cfg: MW_ge
             curve = utils_render.get_curveData([cell_centroid, neigh_centroid], name, cfg.links_width, cfg.links_res)
             obj_link = utils.gen_child(obj_group, name, context, curve, keepTrans=False, hide=not cfg.struct_showLinks)
 
-            obj_link.hide_set(key_rep or not cfg.struct_showLinks_perCell)
+            obj_link.hide_set(key_rep or not cfg.struct_showLinks_legacy)
             #obj_link.location = cell.centroid()
 
     MW_gen_cfg.setMetaType(objParent, {"CHILD"}, skipParent=False)

@@ -133,11 +133,11 @@ def draw_gen_cfgDebug(cfg: MW_gen_cfg, layout: types.UILayout):
         col.label(text="Show:")
         rowsub = col.row(align=True)
         rowsub.prop(cfg, "struct_showShards")
-        rowsub.prop(cfg, "struct_showLinks_perCell")
+        rowsub.prop(cfg, "struct_showLinks_legacy")
 
         rowsub = col.row(align=True)
         rowsub.prop(cfg, "struct_showLinks")
-        rowsub.prop(cfg, "struct_showLinks_toWalls")
+        rowsub.prop(cfg, "struct_showLinks_airLinks")
 
         rowsub = col.row(align=True)
         rowsub.prop(cfg, "struct_showPoints")

@@ -244,11 +244,11 @@ class MW_gen_cfg(types.PropertyGroup):
         name="WIP: Links", description="Voronoi cells links per face",
         default=True,
     )
-    struct_showLinks_toWalls: props.BoolProperty(
+    struct_showLinks_airLinks: props.BoolProperty(
         name="WIP: Links to walls", description="Voronoi cells links per face to walls",
         default=True,
     )
-    struct_showLinks_perCell: props.BoolProperty(
+    struct_showLinks_legacy: props.BoolProperty(
         name="Cell links (centroid)", description="Links from centroids to neigh cells",
         default=False,
     )
@@ -300,8 +300,8 @@ class MW_gen_cfg(types.PropertyGroup):
         if not obj: return
         links = utils.get_child(obj, getPrefs().names.links)
         if links: utils.scale_objectChildren(links, self.struct_linksScale)
-        links_toWall = utils.get_child(obj, getPrefs().names.links_toWalls)
-        if links_toWall: utils.scale_objectChildren(links_toWall, self.struct_linksScale)
+        links_Air_Cell = utils.get_child(obj, getPrefs().names.links_air)
+        if links_Air_Cell: utils.scale_objectChildren(links_Air_Cell, self.struct_linksScale)
 
 
     struct_linksScale: props.FloatProperty(

@@ -79,8 +79,8 @@ class MW_prefs(bpy.types.AddonPreferences):
 
         # OPT:: too much redundant "shards.."
         links = "links"
-        links_toWalls = links+"_toWall"
-        links_perCell = links+"_perCell"
+        links_air = links+"_air"
+        links_legacy = links+"_legacy"
         links_group = "L"
 
         # OPT:: dynamic depending on number of cells

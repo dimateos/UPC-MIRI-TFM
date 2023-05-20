@@ -185,8 +185,8 @@ class MW_gen_OT(_StartRefresh_OT):
             return self.end_op("DEV.LEGACY_CONT stop...")
         mw_setup.gen_shardsObjects(obj_shards, cont, cfg, self.ctx, invertOrientation=prefs.gen_setup_invertShardNormals)
 
-        #obj_links_perCell = mw_setup.genWIP_linksEmptiesPerCell(obj_root, cfg, self.ctx)
-        #mw_setup.genWIP_linksCellObjects(obj_links_perCell, cont, cfg, self.ctx)
+        #obj_links_legacy = mw_setup.genWIP_linksEmptiesPerCell(obj_root, cfg, self.ctx)
+        #mw_setup.genWIP_linksCellObjects(obj_links_legacy, cont, cfg, self.ctx)
 
         # calculate links and store in the external storage
         links:LinkCollection = LinkCollection(cont, obj_shards)
@@ -329,12 +329,12 @@ class MW_gen_links_OT(_StartRefresh_OT):
             return self.end_op_error("No links storage found...")
 
         ## WIP:: per cell no need but atm cont ref is inside LinkCollection structure
-        #obj_links_perCell = mw_setup.genWIP_linksEmptiesPerCell(obj, cfg, context)
-        #mw_setup.genWIP_linksCellObjects(obj_links_perCell, links.cont, cfg, context)
+        #obj_links_legacy = mw_setup.genWIP_linksEmptiesPerCell(obj, cfg, context)
+        #mw_setup.genWIP_linksCellObjects(obj_links_legacy, links.cont, cfg, context)
 
-        #obj_links, obj_links_toWall = mw_setup.genWIP_linksEmpties(obj, cfg, context)
-        ##mw_setup.genWIP_linksObjects(obj_links, obj_links_toWall, links, cfg, context)
-        #mw_setup.gen_linksSingleObject(obj_links, obj_links_toWall, links, cfg, context)
+        #obj_links, obj_links_air = mw_setup.genWIP_linksEmpties(obj, cfg, context)
+        ##mw_setup.genWIP_linksObjects(obj_links, obj_links_air, links, cfg, context)
+        #mw_setup.gen_linksSingleObject(obj_links, obj_links_air, links, cfg, context)
 
         mw_setup.gen_linksObject(obj, links, cfg, context)
         mw_setup.gen_linksWallObject(obj, links, cfg, context)

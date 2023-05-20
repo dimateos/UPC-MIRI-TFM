@@ -31,7 +31,7 @@ class LINK_ERROR_IDX:
 class Link():
     key_t = tuple[int, int]
 
-    def __init__(self, col: "LinkCollection", key_cells: tuple[int, int], key_faces: tuple[int, int], pos_world:Vector, dir_world:Vector, toWall=False):
+    def __init__(self, col: "LinkCollection", key_cells: tuple[int, int], key_faces: tuple[int, int], pos_world:Vector, dir_world:Vector, airLink=False):
         # no directionality but tuple key instead of set
         self.collection: "LinkCollection" = col
         self.key_cells : Link.key_t       = key_cells
@@ -39,14 +39,14 @@ class Link():
 
         # OPT:: ref to links or keys? dead list?
         # neighs populated afterwards
-        self.neighs_toCell: list[Link.key_t] = list()
-        self.neighs_toWall: list[Link.key_t] = list()
+        self.neighs_Cell_Cell: list[Link.key_t] = list()
+        self.neighs_Air_Cell: list[Link.key_t] = list()
         self.neighs_error : list[Link.key_t] = list()
 
 
         # XXX:: to out?
         self.reset()
-        self.toWall = toWall
+        self.airLink = airLink
 
         # properties in world space?
         self.pos = pos_world
@@ -68,12 +68,12 @@ class Link():
     #-------------------------------------------------------------------
 
     def __len__(self):
-        return len(self.neighs_toCell) * len(self.neighs_toWall)
+        return len(self.neighs_Cell_Cell) * len(self.neighs_Air_Cell)
 
     def setNeighs(self, newNeighs:list[key_t]):
         """ Clear and add links """
-        self.neighs_toCell.clear()
-        self.neighs_toWall.clear()
+        self.neighs_Cell_Cell.clear()
+        self.neighs_Air_Cell.clear()
         self.neighs_error.clear()
         self.addNeighs(newNeighs)
 
@@ -81,8 +81,8 @@ class Link():
         """ Classify and add links to the respective neigh list """
         for kn in newNeighs:
             if   kn[0] in LINK_ERROR_IDX.all: self.neighs_error.append(kn)
-            elif kn[0] < 0                  : self.neighs_toWall.append(kn)
-            else                            : self.neighs_toCell.append(kn)
+            elif kn[0] < 0                  : self.neighs_Air_Cell.append(kn)
+            else                            : self.neighs_Cell_Cell.append(kn)
 
 #-------------------------------------------------------------------
 
@@ -98,8 +98,8 @@ class LinkCollection():
         # TODO:: unionfind joined components + manually delete links
         # IDEA:: dynamic lists of broken?
         self.link_map: dict[Link.key_t, Link] = dict()
-        self.links_toCell : list[Link] = list()
-        self.links_toWall : list[Link] = list()
+        self.links_Cell_Cell : list[Link] = list()
+        self.links_Air_Cell : list[Link] = list()
 
         # init wall dict with just empty lists (some will remain empty)
         self.keys_perWall: dict[int, list[Link.key_t]] = {
@@ -223,11 +223,11 @@ class LinkCollection():
                 if idx_neighCell < 0:
                     key = (idx_neighCell, idx_cell)
                     key_faces = (idx_neighCell, idx_face)
-                    l = Link(self, key, key_faces, pos, normal, toWall=True)
+                    l = Link(self, key, key_faces, pos, normal, airLink=True)
 
                     # add to mappings per wall and cell
                     self.link_map[key] = l
-                    self.links_toWall.append(l)
+                    self.links_Air_Cell.append(l)
                     self.keys_perWall[idx_neighCell].append(key)
                     self.keys_perCell[idx_cell][idx_face] = key
                     continue
@@ -246,7 +246,7 @@ class LinkCollection():
 
                 # add to mappings for both per cells
                 self.link_map[key] = l
-                self.links_toCell.append(l)
+                self.links_Cell_Cell.append(l)
                 self.keys_perCell[idx_cell][idx_face] = key
                 self.keys_perCell[idx_neighCell][idx_neighFace] = key
 
@@ -270,7 +270,7 @@ class LinkCollection():
                     continue
 
                 # walls only add local faces from the same cell
-                if l.toWall:
+                if l.airLink:
                     w_neighs = self.shards_meshes_FtoF[idx_cell][idx_face]
                     w_neighs = [ keys_perFace[f] for f in w_neighs ]
                     l.addNeighs(w_neighs)
@@ -294,7 +294,7 @@ class LinkCollection():
         stats.logDt("aggregated link neighbours")
         logType = {"CALC", "LINKS"}
         if not self.link_map: logType |= {"ERROR"}
-        DEV.log_msg(f"Found {len(self.links_toCell)} links to cells + {len(self.links_toWall)} links to walls (total {len(self.link_map)})", logType)
+        DEV.log_msg(f"Found {len(self.links_Cell_Cell)} links to cells + {len(self.links_Air_Cell)} links to walls (total {len(self.link_map)})", logType)
         self.initialized = True
 
     #-------------------------------------------------------------------
