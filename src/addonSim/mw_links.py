@@ -27,27 +27,30 @@ class LINK_ERROR_IDX:
 
 
 # OPT:: could use a class or an array of props? pyhton already slow so ok class?
+# IDEA:: augmented cell class instead of array of props? cont -> cell -> link... less key map indirections
 class Link():
-    keyType = tuple[int, int]
+    key_t = tuple[int, int]
 
     def __init__(self, col: "LinkCollection", key_cells: tuple[int, int], key_faces: tuple[int, int], pos_world:Vector, dir_world:Vector, toWall=False):
-        self.reset()
+        # no directionality but tuple key instead of set
+        self.collection: "LinkCollection" = col
+        self.key_cells : Link.key_t       = key_cells
+        self.key_faces : Link.key_t       = key_faces
+
+        # OPT:: ref to links or keys? dead list?
+        # neighs populated afterwards
+        self.neighs_toCell: list[Link.key_t] = list()
+        self.neighs_toWall: list[Link.key_t] = list()
+        self.neighs_error : list[Link.key_t] = list()
+
+
         # XXX:: to out?
+        self.reset()
         self.toWall = toWall
 
         # properties in world space?
         self.pos = pos_world
         self.dir = dir_world
-
-
-        # no directionality but tuple key instead of set
-        self.collection: "LinkCollection" = col
-        self.key_cells: Link.keyType = key_cells
-        self.key_faces: Link.keyType = key_faces
-
-        # neighs populated afterwards
-        self.neighs: list[Link.keyType] = list()
-        self.neighs_dead: list[Link.keyType] = list()
 
     #-------------------------------------------------------------------
 
@@ -56,6 +59,7 @@ class Link():
         self.life -= deg
         self.life = max(0, self.life)
         self.life = min(1, self.life)
+        # TODO:: move to dead list on other neighbours?
 
     def reset(self, life=1.0):
         """ Reset simulation parameters """
@@ -63,19 +67,22 @@ class Link():
 
     #-------------------------------------------------------------------
 
-    def setNeighsValid(self, newNeighs:list[keyType]):
-        """ Set links checking errors """
-        self.neighs = []
-        self.addNeighsValid(newNeighs)
+    def setNeighs(self, newNeighs:list[key_t]):
+        """ Clear and add links """
+        self.neighs_toCell.clear()
+        self.neighs_toWall.clear()
+        self.neighs_error.clear()
+        self.addNeighs(newNeighs)
 
-    def addNeighsValid(self, newNeighs:list[keyType]):
-        """ Add links checking errors
-            IDEA:: do here or outside?
-        """
-        self.neighs += [ key for key in newNeighs if key[0] not in LINK_ERROR_IDX.all ]
-
+    def addNeighs(self, newNeighs:list[key_t]):
+        """ Classify and add links to the respective neigh list """
+        for kn in newNeighs:
+            if   kn[0] in LINK_ERROR_IDX.all: self.neighs_error.append(kn)
+            elif kn[0] < 0                  : self.neighs_toWall.append(kn)
+            else                            : self.neighs_toCell.append(kn)
 
 #-------------------------------------------------------------------
+
 
 class LinkCollection():
 
@@ -87,19 +94,19 @@ class LinkCollection():
 
         # TODO:: unionfind joined components + manually delete links
         # IDEA:: dynamic lists of broken?
-        self.link_map: dict[Link.keyType, Link] = dict()
+        self.link_map: dict[Link.key_t, Link] = dict()
+        self.links_toCell : list[Link] = list()
+        self.links_toWall : list[Link] = list()
 
         # init wall dict with just empty lists (some will remain empty)
-        self.keys_perWall: dict[int, list[Link.keyType]] = {
+        self.keys_perWall: dict[int, list[Link.key_t]] = {
             id: list() for id in cont.get_conainerId_limitWalls()+cont.walls_cont_idx
         }
-        self.num_toWalls = 0
 
         # OPT:: raw int error substutiting lists or put in a list with just the errorring int?
         # cell dict lists will have the same size of neighs/faces so fill in the following loop while checking for missing ones
-        self.keys_perCell: dict[int, list[Link.keyType] | int] = dict()
+        self.keys_perCell: dict[int, list[Link.key_t] | int] = dict()
         """ NOTE:: missing cells are filled with a placeholder id to preserve original position idx """
-        self.num_toCells = 0
 
 
         # calculate missing cells and query neighs
@@ -127,8 +134,8 @@ class LinkCollection():
 
 
         # build symmetric face map of the found cells
-        self.keys_asymmetry    : list[Link.keyType]  = []
-        self.keys_missing      : list[Link.keyType]  = []
+        self.keys_asymmetry    : list[Link.key_t]  = []
+        self.keys_missing      : list[Link.key_t]  = []
         self.cont_neighs_faces : list[list[int]|int] = [LINK_ERROR_IDX.missing]*len(cont)
         """ NOTE:: missing cells and neigh asymmetries are filled with a placeholder id too """
 
@@ -216,8 +223,8 @@ class LinkCollection():
                     l = Link(self, key, key_faces, pos, normal, toWall=True)
 
                     # add to mappings per wall and cell
-                    self.num_toWalls += 1
                     self.link_map[key] = l
+                    self.links_toWall.append(l)
                     self.keys_perWall[idx_neighCell].append(key)
                     self.keys_perCell[idx_cell][idx_face] = key
                     continue
@@ -235,8 +242,8 @@ class LinkCollection():
                 l = Link(self, key, key_faces, pos, normal)
 
                 # add to mappings for both per cells
-                self.num_toCells += 1
                 self.link_map[key] = l
+                self.links_toCell.append(l)
                 self.keys_perCell[idx_cell][idx_face] = key
                 self.keys_perCell[idx_neighCell][idx_neighFace] = key
 
@@ -263,7 +270,7 @@ class LinkCollection():
                 if l.toWall:
                     w_neighs = self.shards_meshes_FtoF[idx_cell][idx_face]
                     w_neighs = [ keys_perFace[f] for f in w_neighs ]
-                    l.addNeighsValid(w_neighs)
+                    l.addNeighs(w_neighs)
                     continue
 
                 # extract idx and geometry faces neighs
@@ -279,12 +286,12 @@ class LinkCollection():
                 c2_keys = self.keys_perCell[c2]
                 c1_neighs = [ c1_keys[f] for f in f1_neighs ]
                 c2_neighs = [ c2_keys[f] for f in f2_neighs ]
-                l.setNeighsValid(c1_neighs + c2_neighs)
+                l.setNeighs(c1_neighs + c2_neighs)
 
         stats.logDt("aggregated link neighbours")
         logType = {"CALC", "LINKS"}
         if not self.link_map: logType |= {"ERROR"}
-        DEV.log_msg(f"Found {self.num_toCells} links to cells + {self.num_toWalls} links to walls (total {len(self.link_map)})", logType)
+        DEV.log_msg(f"Found {len(self.links_toCell)} links to cells + {len(self.links_toWall)} links to walls (total {len(self.link_map)})", logType)
         self.initialized = True
 
     #-------------------------------------------------------------------
@@ -307,13 +314,13 @@ class LinkCollection():
     #-------------------------------------------------------------------
 
     @staticmethod
-    def getKey_swap(k1,k2) -> tuple[Link.keyType,bool]:
+    def getKey_swap(k1,k2) -> tuple[Link.key_t,bool]:
         swap = k1 > k2
         key = (k1, k2) if not swap else (k2, k1)
         return key,swap
 
     @staticmethod
-    def getKey(k1,k2, swap) -> Link.keyType:
+    def getKey(k1,k2, swap) -> Link.key_t:
         key = (k1, k2) if not swap else (k2, k1)
         return key
 
