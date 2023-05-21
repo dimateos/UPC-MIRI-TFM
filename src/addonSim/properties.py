@@ -327,15 +327,16 @@ class MW_gen_cfg(types.PropertyGroup):
 # OPT:: maybe split files + some go to prefs + new propGroup to add to scene props_utils instead of prefs
 # IDEA:: vis cfg part of each gen and sim, or subpart with another group?
 # IDEA:: using animation frame handler to see the simulaion play?
+# IDEA:: min -1 for infinite break condition?
 
 class MW_sim_cfg(types.PropertyGroup):
     steps: props.IntProperty(
         name="Number of iters", description="WIP: atm redo each modification",
-        default=1, min=1, max=1000,
+        default=1, min=0, max=1000,
     )
     subSteps: props.IntProperty(
         name="Number of propagations per iter", description="WIP: atm redo each modification",
-        default=10, min=1, max=100,
+        default=10, min=0, max=100,
     )
 
     steps_uniformDeg: props.BoolProperty(

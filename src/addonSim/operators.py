@@ -391,7 +391,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
         cfg : MW_sim_cfg= self.cfg
 
         # achieve constructive results during adjust op menu
-        self.sim.resetSim()
+        self.sim.resetSim(cfg.addSeed)
         self.sim.set_deg(cfg.deg)
 
         for step in range(cfg.steps):
@@ -402,6 +402,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
         obj, cfgGen = MW_gen_cfg.getSelectedRoot()
         if obj:
             mw_setup.gen_linksObject(obj, self.links, cfgGen, context)
+            mw_setup.gen_linksWallObject(obj, self.links, cfgGen, context)
 
         return self.end_op()
 
@@ -434,6 +435,7 @@ class MW_sim_reset_OT(_StartRefresh_OT):
         obj, cfgGen = MW_gen_cfg.getSelectedRoot()
         if obj:
             mw_setup.gen_linksObject(obj, self.links, cfgGen, context)
+            mw_setup.gen_linksWallObject(obj, self.links, cfgGen, context)
         return self.end_op()
 
 #-------------------------------------------------------------------

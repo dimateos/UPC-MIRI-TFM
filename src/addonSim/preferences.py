@@ -191,7 +191,7 @@ class MW_prefs(bpy.types.AddonPreferences):
     )
     links_wallExtraScale: props.FloatProperty(
         name="WIP: Link walls extra", description="WIP: extra scaling",
-        default=2, min=0.5, max=6,
+        default=1.25, min=0.25, max=3,
     )
 
     #-------------------------------------------------------------------

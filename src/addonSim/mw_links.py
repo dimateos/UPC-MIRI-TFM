@@ -51,6 +51,13 @@ class Link():
         self.pos = pos_world
         self.dir = dir_world
 
+    def __str__(self):
+        s = f"k{self.key_cells} l({self.life:.3f})"
+        if self.airLink_initial:
+            s += f" [AIR-WALL] d{self.dir.to_tuple(2)}"
+        elif self.airLink: s += f" [AIR]"
+        return s
+
     #-------------------------------------------------------------------
     # TODO:: set life etc to trigger reliving links? changing dynamic lists etc
 
@@ -93,7 +100,7 @@ class Link():
             else                            : self.neighs_Cell_Cell.append(self.collection.link_map[kn])
 
 #-------------------------------------------------------------------
-
+# TODO:: some likes will become air + others unreachable etc
 
 class LinkCollection():
 
