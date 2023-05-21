@@ -278,27 +278,29 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
 
 
     @staticmethod
+    def getSelectedRoot_links():
+        obj, cfg = MW_gen_cfg.getSelectedRoot()
+        links = None
+
+        if not cfg.ptrID_links:
+            DEV.log_msg("Found no links in incomplete fracture", {'LINKS'})
+        else:
+            links = LinkStorage.getLinks(cfg.ptrID_links)
+            if not links:
+                DEV.log_msg("Found no links in storage", {'LINKS'})
+        return obj, cfg, links
+
+    @staticmethod
     def getSelectedRoot_links_autoRecalc() -> tuple[types.Object, "MW_gen_cfg", LinkCollection|None]:
         """ Retrieves links or recalculates them automatically """
-        def getLinks():
-            obj, cfg = MW_gen_cfg.getSelectedRoot()
-            links = None
-
-            if not cfg.ptrID_links:
-                DEV.log_msg("Found no links in incomplete fracture", {'LINKS'})
-            else:
-                links = LinkStorage.getLinks(cfg.ptrID_links)
-                if not links:
-                    DEV.log_msg("Found no links in storage", {'LINKS'})
-            return obj, cfg, links
 
         # attempt to retrieve links
-        obj, cfg, links = getLinks()
+        obj, cfg, links = MW_gen_recalc_OT.getSelectedRoot_links()
 
         # call recalc op once
         if not links and getPrefs().util_recalc_OT_auto:
             bpy.ops.mw.gen_recalc()
-            obj, cfg, links = getLinks()
+            obj, cfg, links = MW_gen_recalc_OT.getSelectedRoot_links()
 
         return obj, cfg, links
 
@@ -356,6 +358,8 @@ class MW_sim_step_OT(_StartRefresh_OT):
 
     bl_options = {'PRESET', 'REGISTER', 'UNDO'}
     cfg: props.PointerProperty(type=MW_sim_cfg)
+    sim: mw_sim.Simulation = None
+    links: LinkCollection = None
 
     def __init__(self) -> None:
         super().__init__()
@@ -377,30 +381,59 @@ class MW_sim_step_OT(_StartRefresh_OT):
         if not self.links:
             return self.end_op_error("No links storage found...")
 
-        # store the random generator
-        mw_sim.storeRnd()
+        # create simulation object
+        self.sim = mw_sim.Simulation(self.links)
 
         return super().invoke(context, event)
 
     def execute(self, context: types.Context):
         self.start_op()
         cfg : MW_sim_cfg= self.cfg
-        obj, cfgGen = MW_gen_cfg.getSelectedRoot()
 
-        # achieve constructive results
-        mw_sim.restoreRnd(cfg.addSeed)
-
-        # TODO:: bl undo does not undo changes in the links tho
-        if cfg.steps_reset: mw_sim.setAll(self.links, 1.0)
+        # achieve constructive results during adjust op menu
+        self.sim.resetSim()
+        self.sim.set_deg(cfg.deg)
 
         for step in range(cfg.steps):
-            if cfg.steps_uniformDeg: mw_sim.stepAll(self.links, cfg.deg)
-            else: mw_sim.step(self.links, cfg.deg, cfg.subSteps)
+            if cfg.steps_uniformDeg: self.sim.stepAll()
+            else: self.sim.step(cfg.subSteps)
 
         # IDEA:: store copy or original or button to recalc links from start? -> set all life to 1 but handle any dynamic list
-        mw_setup.gen_linksObject(obj, self.links, cfgGen, context)
-        #utils.select_unhide(obj, context)
+        obj, cfgGen = MW_gen_cfg.getSelectedRoot()
+        if obj:
+            mw_setup.gen_linksObject(obj, self.links, cfgGen, context)
 
+        return self.end_op()
+
+class MW_sim_reset_OT(_StartRefresh_OT):
+    bl_idname = "mw.sim_reset"
+    bl_label = "sim reset"
+    bl_description = "WIP: sim reset"
+
+    bl_options = {'INTERNAL', 'UNDO'}
+    links: LinkCollection = None
+
+    def __init__(self) -> None:
+        super().__init__()
+        # config some base class log flags...
+
+    @classmethod
+    def poll(cls, context):
+        return MW_gen_cfg.hasSelectedRoot()
+
+    def invoke(self, context, event):
+        obj, cfgGen, self.links = MW_gen_recalc_OT.getSelectedRoot_links()
+        if not self.links:
+            return self.end_op_error("No links storage found...")
+
+        return super().invoke(context, event)
+
+    def execute(self, context: types.Context):
+        mw_sim.resetLife(self.links)
+
+        obj, cfgGen = MW_gen_cfg.getSelectedRoot()
+        if obj:
+            mw_setup.gen_linksObject(obj, self.links, cfgGen, context)
         return self.end_op()
 
 #-------------------------------------------------------------------
@@ -488,7 +521,10 @@ classes = [
     MW_gen_OT,
     MW_gen_recalc_OT,
     MW_gen_links_OT,
+
     MW_sim_step_OT,
+    MW_sim_reset_OT,
+
     MW_util_delete_OT,
     MW_util_delete_all_OT,
     MW_util_bake_OT,

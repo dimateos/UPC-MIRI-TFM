@@ -33,56 +33,64 @@ class Link():
 
     def __init__(self, col: "LinkCollection", key_cells: tuple[int, int], key_faces: tuple[int, int], pos_world:Vector, dir_world:Vector, airLink=False):
         # no directionality but tuple key instead of set
-        self.collection: "LinkCollection" = col
         self.key_cells : Link.key_t       = key_cells
         self.key_faces : Link.key_t       = key_faces
+        self.collection: "LinkCollection" = col
 
-        # OPT:: ref to links or keys? dead list?
         # neighs populated afterwards
-        self.neighs_Cell_Cell: list[Link.key_t] = list()
-        self.neighs_Air_Cell: list[Link.key_t] = list()
+        self.neighs_Cell_Cell: list[Link] = list()
+        self.neighs_Air_Cell: list[Link] = list()
         self.neighs_error : list[Link.key_t] = list()
 
-
-        # XXX:: to out?
+        # sim props
+        self.airLink_initial = airLink
         self.reset()
-        self.airLink = airLink
 
         # properties in world space?
+        # IDEA:: ref to face to draw exaclty at it?
         self.pos = pos_world
         self.dir = dir_world
 
     #-------------------------------------------------------------------
+    # TODO:: set life etc to trigger reliving links? changing dynamic lists etc
 
     def degrade(self, deg):
-        """ Degrade link preserving life [0,1] """
+        """ Degrade link life """
         self.life -= deg
-        self.life = max(0, self.life)
-        self.life = min(1, self.life)
-        # TODO:: move to dead list on other neighbours?
+        #self.clamp()
+
+    @property
+    def life_clamped(self):
+        """ Get link life clamped [0,1] """
+        return min( max(self.life, 0), 1)
+
+    def clamp(self):
+        """ Clamp link life [0,1] """
+        self.life = self.life_clamped
 
     def reset(self, life=1.0):
         """ Reset simulation parameters """
         self.life = life
+        self.airLink = self.airLink_initial
 
     #-------------------------------------------------------------------
 
     def __len__(self):
-        return len(self.neighs_Cell_Cell) * len(self.neighs_Air_Cell)
+        return len(self.neighs_Cell_Cell) + len(self.neighs_Air_Cell)
 
-    def setNeighs(self, newNeighs:list[key_t]):
+    def setNeighs(self, newNeighsKeys:list[key_t]):
         """ Clear and add links """
         self.neighs_Cell_Cell.clear()
         self.neighs_Air_Cell.clear()
         self.neighs_error.clear()
-        self.addNeighs(newNeighs)
+        self.addNeighs(newNeighsKeys)
 
-    def addNeighs(self, newNeighs:list[key_t]):
-        """ Classify and add links to the respective neigh list """
-        for kn in newNeighs:
+    def addNeighs(self, newNeighsKeys:list[key_t]):
+        """ Classify by key and add queried links to the respective neigh list """
+        for kn in newNeighsKeys:
             if   kn[0] in LINK_ERROR_IDX.all: self.neighs_error.append(kn)
-            elif kn[0] < 0                  : self.neighs_Air_Cell.append(kn)
-            else                            : self.neighs_Cell_Cell.append(kn)
+            elif kn[0] < 0                  : self.neighs_Air_Cell.append(self.collection.link_map[kn])
+            else                            : self.neighs_Cell_Cell.append(self.collection.link_map[kn])
 
 #-------------------------------------------------------------------
 

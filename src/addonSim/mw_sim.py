@@ -12,19 +12,46 @@ from .stats import getStats
 
 
 #-------------------------------------------------------------------
-# IDEA:: could have a globlal class etc?
+# IDEA:: toggle full log / etc
+
+class SubStepInfo:
+    def __init__(self):
+        pass
+class StepInfo:
+    def __init__(self):
+        self.sub : list[SubStepInfo] = list()
+
 
 class Simulation:
-
-    def __init__(self, initial_links: LinkCollection):
+    def __init__(self, links_initial: LinkCollection, deg = 0.05, log = True):
         self.storeRnd()
 
-        self.links = initial_links
+        self.links = links_initial
+        self.initial_life = [ l.life for l in self.links.links_Cell_Cell ]
+        self.deg = deg
 
         self.entry    : Link           = None
         self.current  : Link           = None
-        self.stepsLog : list[Link.key] = None
 
+        self.log = log
+        self.simInfo : list[StepInfo] = list()
+        self.stepInfo : StepInfo = None
+        self.subInfo : SubStepInfo = None
+        self.id_step = self.id_substep = -1
+
+    def set_deg(self, deg):
+        self.deg = deg
+
+    def resetSim(self):
+        self.restoreRnd()
+        for i,l in enumerate(self.links.links_Cell_Cell):
+            l.life = self.initial_life[i]
+
+        if self.log:
+            self.simInfo.clear()
+            self.stepInfo : StepInfo = None
+            self.subInfo : SubStepInfo = None
+        self.id_step = self.id_substep = -1
 
     def storeRnd(self):
         self.rndState = rnd.getstate()
@@ -36,72 +63,84 @@ class Simulation:
     #-------------------------------------------------------------------
 
     def setAll(self, life= 1.0):
-        # iterate the global map
-        for key,l in self.links.link_map.items():
+        for l in self.links.links_Cell_Cell:
             l.reset(life)
 
-    def stepAll(self, deg = 0.01):
-        # iterate the global map
+    def stepAll(self):
         for key,l in self.links.link_map.items():
-            l.degrade(deg)
+            l.degrade(self.deg)
 
     #-------------------------------------------------------------------
 
-    def step(self, deg = 0.01, subSteps = 10):
-        # WIP:: flatten per wall self.links -> maybe additional map with separate stuff
-        entryKeys = [ id
-                    for ids_perWall in self.links.keys_perWall.values() if ids_perWall
-                    for id in ids_perWall ]
-
-        if not entryKeys:
-            DEV.log_msg(f"Found no entry self.links!", {"SIM", "ERROR"})
+    def step(self, subSteps = 10):
+        if not self.links.links_Air_Cell:
+            DEV.log_msg(f"Found no entry links!", {"SIM", "ERROR"})
             return
 
-        # get input link
-        rootLink = self.get_entryLink(entryKeys)
-        currentLink = self.get_nextLink(rootLink)
-        #DEV.log_msg(f"Root link {rootLink.key_cells} from {len(entryKeys)} -> first {currentLink.key_cells} from {len(rootLink.neighs)}", {"SIM", "STEP"})
+        # get entry
+        self.entry = self.current = self.get_entryLink(self.links.links_Air_Cell)
 
-        # WIP:: sort input axis aligned to achieve entering by the top of "hill" model
-        # WIP:: dict with each iteration info for rendering / study etc
+        # logging step info
+        self.id_step += 1
+        if (self.log):
+            self.stepInfo = StepInfo()
+            self.simInfo.append(self.stepInfo)
 
+        # main loop
         for i in range(subSteps):
-            currentLink.degrade(deg)
-            #DEV.log_msg(f"link {currentLink.key_cells} deg to {currentLink.life}", {"SIM", "STEP"})
+            self.id_substep += 1
 
-            # IDEA:: break condition
+            # logging path info
+            if (self.log):
+                self.subInfo = StepInfo()
+                self.stepInfo.sub.append(self.subInfo)
+
+            # WIP:: choose link to propagate
+            self.current = self.get_nextLink(self.current)
+
+            # WIP:: degrade should be a bit rnd etc
+            self.apply_degradation(self.current)
+
+            # WIP:: break condition, no substep count
             if False: break
 
-            # choose link to propagate
-            currentLink = self.get_nextLink(currentLink)
 
     #-------------------------------------------------------------------
     #  https://docs.python.org/dev/library/random.html#random.choices
 
-    def get_entryLink(self, entryKeys:list[Link.key_t]) -> Link:
-        weights = [ self.get_entryWeight(lk) for lk in entryKeys ]
-        rootKey = rnd.choices(entryKeys, weights)[0]
-        #rootKey = rnd.choice(entryKeys)
-        return self.links.link_map[rootKey]
+    def get_entryLink(self, entries:list[Link]) -> Link:
+        weights = [ self.get_entryWeight(el) for el in entries ]
+        pick = rnd.choices(entries, weights)[0]
+        return pick
 
-    def get_entryWeight(self, linkKey):
-        l = self.links.link_map[linkKey]
-        w = 0
-        w += max(l.pos.y * 10, 0)
+    def get_entryWeight(self, el:Link):
+        w = 1
+        #w = 0
+        #w += max(el.pos.y * 10, 0)
         #w += abs(l.pos.z) * 100
         #if l.pos != 0: w = 0
-        if abs(l.dir.z) > 0.2: w = 0
+        #if abs(el.dir.z) > 0.2: w = 0
         return w
 
+    #-------------------------------------------------------------------
 
-    def get_nextLink(self, currentLink:Link) -> Link:
-        weights = [ self.get_nextWeight(lk) for lk in currentLink.neighs ]
-        linkKey = rnd.choices(currentLink.neighs, weights)[0]
-        #linkKey = rnd.choice(currentLink.neighs)
-        return self.links.link_map[linkKey]
+    def get_nextLink(self, cl:Link) -> Link:
+        weights = [ self.get_nextWeight(cl) for cl in cl.neighs_Cell_Cell ]
+        pick = rnd.choices(cl.neighs_Cell_Cell, weights)[0]
+        return pick
 
-    def get_nextWeight(self, linkKey):
-        l = self.links.link_map[linkKey]
-        w = 1 if not l.toWall else 0
+    def get_nextWeight(self, cl):
+        w = 1
+        #w = 1 if not cl.airLink else 0
         #if l.life != 1: w = 0
-        return max(0, w)
+        #return max(0, w)
+        return w
+
+    #-------------------------------------------------------------------
+
+    def apply_degradation(self, cl:Link):
+        cl.degrade(self.deg)
+
+def resetLife(links: LinkCollection, life = 1.0):
+    for i,l in enumerate(links.links_Cell_Cell):
+        l.life = life

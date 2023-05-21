@@ -165,6 +165,7 @@ class MW_sim_PT(types.Panel):
 
         #col.label(text=f"...")
         self.layout.operator(ops.MW_sim_step_OT.bl_idname)
+        self.layout.operator(ops.MW_sim_reset_OT.bl_idname)
 
 
 #-------------------------------------------------------------------

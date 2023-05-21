@@ -286,13 +286,15 @@ def gen_linksObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cfg, c
     lifeColor: list[Vector] = []
     for key,l in links.link_map.items():
         if not l.airLink:
+            life = l.life_clamped
+
             verts.append((l.pos-l.dir*prefs.links_depth, l.pos+l.dir*prefs.links_depth))
-            lifeColor.append( (baseColor*l.life).to_4d() )
+            lifeColor.append( (baseColor*life).to_4d() )
 
             if prefs.links_widthModLife == {"UNIFORM"}:
-                lifeWidths.append(prefs.links_widthDead * (1-l.life) + prefs.links_width * l.life)
+                lifeWidths.append(prefs.links_widthDead * (1-life) + prefs.links_width * life)
             elif prefs.links_widthModLife == {"BINARY"}:
-                lifeWidths.append(prefs.links_widthDead if l.life<1 else prefs.links_width)
+                lifeWidths.append(prefs.links_widthDead if life<1 else prefs.links_width)
 
     resFaces = utils_render.get_resFaces_fromCurveRes(prefs.links_res)
     mesh = utils_render.get_tubeMesh_pairsQuad(verts, lifeWidths, name, 1.0, resFaces, prefs.links_smoothShade)
