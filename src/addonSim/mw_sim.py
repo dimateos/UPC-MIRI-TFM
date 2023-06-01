@@ -19,6 +19,7 @@ from .stats import getStats
 # IDEA:: pass/reuse cfg sim direclty maybe also for mwcont?
 
 class SubStepInfo:
+    """ Information per sub step """
     def __init__(self):
         self.current_pick   : Link        = None
         self.neighs         : list[Link]  = None
@@ -27,12 +28,15 @@ class SubStepInfo:
         self.current_deg    : float       = None
 
 class StepInfo:
+    """ Information per step """
     def __init__(self):
         self.sub             : list[SubStepInfo] = list()
         self.entry_pick      : Link              = None
         self.entries         : list[Link]        = None
         self.entries_weights : list[float]       = None
         self.current_exit    : Link              = None
+        self.break_exit      : bool              = False
+        self.break_msg       : str               = None
 
 class SIM_CONST:
     """ #WIP:: Some sim constants, maybe moved"""

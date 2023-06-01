@@ -1,5 +1,6 @@
 import bpy.types as types
 from mathutils import Vector, Matrix
+INF_FLOAT = float("inf")
 
 from tess import Container, Cell
 
@@ -31,7 +32,7 @@ class LINK_ERROR_IDX:
 class Link():
     key_t = tuple[int, int]
 
-    def __init__(self, col: "LinkCollection", key_cells: tuple[int, int], key_faces: tuple[int, int], pos_world:Vector, dir_world:Vector, airLink=False):
+    def __init__(self, col: "LinkCollection", key_cells: tuple[int, int], key_faces: tuple[int, int], pos_world:Vector, dir_world:Vector, face_area:float, airLink=False):
         # no directionality but tuple key instead of set
         self.key_cells : Link.key_t       = key_cells
         self.key_faces : Link.key_t       = key_faces
@@ -50,6 +51,11 @@ class Link():
         # IDEA:: ref to face to draw exaclty at it?
         self.pos = pos_world
         self.dir = dir_world
+        self.area = face_area
+
+        # relative versions calculated afterwards
+        self.pos_normalized = None
+        self.area_normalized = None
 
     def __str__(self):
         s = f"k{self.key_cells} l({self.life:.3f})"
@@ -211,6 +217,12 @@ class LinkCollection():
 
         stats.logDt("calculated shards mesh dicts (interleaved missing cells)")
 
+        # accumulate pos and area to calculate relative ones later
+        self.min_pos = Vector([INF_FLOAT]*3)
+        self.max_pos = Vector([-INF_FLOAT]*3)
+        self.min_area = INF_FLOAT
+        self.max_area = -INF_FLOAT
+
         # FIRST loop to build the global dictionaries
         for idx_cell in self.cont_foundId:
 
@@ -231,14 +243,25 @@ class LinkCollection():
                 face: types.MeshPolygon = me.polygons[idx_face]
                 pos = m_toWorld @ face.center
                 normal = mn_toWorld @ face.normal
+                area = face.area
                 # NOTE:: potentially rotated normals may have a length of 1.0 +- 1e-8 but not worth normalizing
                 #DEV.log_msg(f"face.normal {face.normal} (l: {face.normal.length}) -> world {normal} (l: {normal.length})", cut=False)
+
+                # check min/max
+                if self.min_pos.x > pos.x: self.min_pos.x = pos.x
+                elif self.max_pos.x < pos.x: self.max_pos.x = pos.x
+                if self.min_pos.y > pos.y: self.min_pos.y = pos.y
+                elif self.max_pos.y < pos.y: self.max_pos.y = pos.y
+                if self.min_pos.z > pos.z: self.min_pos.z = pos.z
+                elif self.max_pos.z < pos.z: self.max_pos.z = pos.z
+                if self.min_area > area: self.min_area = area
+                elif self.max_area < area: self.min_area = area
 
                 # link to a wall, wont be repeated
                 if idx_neighCell < 0:
                     key = (idx_neighCell, idx_cell)
                     key_faces = (idx_neighCell, idx_face)
-                    l = Link(self, key, key_faces, pos, normal, airLink=True)
+                    l = Link(self, key, key_faces, pos, normal, area, airLink=True)
 
                     # add to mappings per wall and cell
                     self.link_map[key] = l
@@ -257,7 +280,7 @@ class LinkCollection():
                 # build the link
                 idx_neighFace = self.cont_neighs_faces[idx_cell][idx_face]
                 key_faces = LinkCollection.getKey(idx_face, idx_neighFace, swap)
-                l = Link(self, key, key_faces, pos, normal)
+                l = Link(self, key, key_faces, pos, normal, area)
 
                 # add to mappings for both per cells
                 self.link_map[key] = l
@@ -268,7 +291,7 @@ class LinkCollection():
         stats.logDt(f"created link map")
 
 
-        # SECOND loop to aggregate the links neighbours, only need to iterate keys_perCell
+        # SECOND loop to aggregate the links neighbours, only need to iterate cont_foundId
         for idx_cell in self.cont_foundId:
             keys_perFace = self.keys_perCell[idx_cell]
             for idx_face,key in enumerate(keys_perFace):
