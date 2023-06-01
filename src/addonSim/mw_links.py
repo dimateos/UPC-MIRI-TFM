@@ -53,10 +53,6 @@ class Link():
         self.dir = dir_world
         self.area = face_area
 
-        # relative versions calculated afterwards
-        self.pos_normalized = None
-        self.area_normalized = None
-
     def __str__(self):
         s = f"k{self.key_cells} l({self.life:.3f}) p({self.picks})"
         if self.airLink_initial:
@@ -87,6 +83,16 @@ class Link():
         self.life = life
         self.airLink = self.airLink_initial
         self.picks : int = 0
+
+    #-------------------------------------------------------------------
+
+    #def pos_normalized(self, min):
+    #    """ Get link life clamped [0,1] """
+    #    return min( max(self.life, 0), 1)
+
+    #    # relative versions calculated afterwards
+    #    self.pos_normalized = None
+    #    self.area_normalized = None
 
     #-------------------------------------------------------------------
 
@@ -257,7 +263,7 @@ class LinkCollection():
                 if self.min_pos.z > pos.z: self.min_pos.z = pos.z
                 elif self.max_pos.z < pos.z: self.max_pos.z = pos.z
                 if self.min_area > area: self.min_area = area
-                elif self.max_area < area: self.min_area = area
+                elif self.max_area < area: self.max_area = area
 
                 # link to a wall, wont be repeated
                 if idx_neighCell < 0:
@@ -290,7 +296,9 @@ class LinkCollection():
                 self.keys_perCell[idx_cell][idx_face] = key
                 self.keys_perCell[idx_neighCell][idx_neighFace] = key
 
+        # WIP:: maybe could use model BB instead of calculating the position
         stats.logDt(f"created link map")
+        DEV.log_msg(f"Pos limits: {self.min_pos},{self.max_pos} | Area limits: {self.min_area},{self.max_area}", {"CALC", "LINKS", "LIMITS"}, cut=False)
 
 
         # SECOND loop to aggregate the links neighbours, only need to iterate cont_foundId
