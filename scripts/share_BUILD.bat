@@ -4,8 +4,10 @@ REM TODO: final version using a fresh blender install + minimal addons (no debug
 
 REM shared data and shared path
 CALL ./env
-pushd %cd%
+:_check_shared
+    if not exist "%dSHARED_DATA%" EXIT /B
 
+pushd %cd%
 :_zip
     CALL ./_scripts/getTS.bat
     REM zip locally before moving to drive (move is slash sensitive)

@@ -3,7 +3,8 @@ REM mirror some data files to shared drive folder (no purge of old files)
 
 REM shared data and shared path
 CALL ./env
-
+:_check_shared
+    if not exist "%dSHARED_DATA%" EXIT /B
 
 :assets
     set "folder=models-TEST"
