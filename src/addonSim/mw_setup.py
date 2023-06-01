@@ -316,18 +316,21 @@ def gen_linksWallObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cf
 
     # iterate the global map and store vert pairs for the tube mesh generation
     verts: list[tuple[Vector,Vector]] = []
-    lifeWidths: list[float] = []
+    lifeWidth: list[float] = []
     for i,l in enumerate(links.links_Air_Cell):
         #DEV.log_msg(f"life {l.life}")
 
         # skip drawing entry links with no probability
         if weights and weights[i] == 0: continue
 
-        lifeWidths.append(prefs.links_width*wallsExtraScale*l.life)
+        # WIP:: also skip drawing non picked?
+        if not l.picks: continue
+
+        lifeWidth.append(prefs.links_width*wallsExtraScale*l.life)
         verts.append((l.pos, l.pos+l.dir*prefs.links_depth))
 
     resFaces = utils_render.get_resFaces_fromCurveRes(prefs.links_res+3)
-    mesh = utils_render.get_tubeMesh_pairsQuad(verts, lifeWidths, name, 1+prefs.links_width*wallsExtraScale, resFaces, prefs.links_smoothShade)
+    mesh = utils_render.get_tubeMesh_pairsQuad(verts, lifeWidth, name, 1+prefs.links_width*wallsExtraScale, resFaces, prefs.links_smoothShade)
 
     # potentially reuse child
     obj_wallLinks = utils.gen_childReuse(obj, name, context, mesh, keepTrans=True, hide=not cfg.struct_showLinks_airLinks)

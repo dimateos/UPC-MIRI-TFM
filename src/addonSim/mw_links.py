@@ -58,7 +58,7 @@ class Link():
         self.area_normalized = None
 
     def __str__(self):
-        s = f"k{self.key_cells} l({self.life:.3f})"
+        s = f"k{self.key_cells} l({self.life:.3f}) p({self.picks})"
         if self.airLink_initial:
             s += f" [AIR-WALL] d{self.dir.to_tuple(2)}"
         elif self.airLink: s += f" [AIR]"
@@ -69,6 +69,7 @@ class Link():
 
     def degrade(self, deg):
         """ Degrade link life """
+        self.picks +=1
         self.life -= deg
         #self.clamp()
 
@@ -85,6 +86,7 @@ class Link():
         """ Reset simulation parameters """
         self.life = life
         self.airLink = self.airLink_initial
+        self.picks : int = 0
 
     #-------------------------------------------------------------------
 

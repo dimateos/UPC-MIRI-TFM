@@ -18,6 +18,8 @@ from .stats import getStats
 # IDEA:: manually pick step/ entry? by num?
 # IDEA:: pass/reuse cfg sim direclty maybe also for mwcont?
 
+# IDEA:: bridges neighbours? too aligned wall links, vertically aligned internal -> when broken? cannot go though?
+
 class SubStepInfo:
     """ Information per sub step """
     def __init__(self):
@@ -39,32 +41,42 @@ class StepInfo:
         self.break_msg       : str               = None
 
 class SIM_CONST:
-    """ #WIP:: Some sim constants, maybe moved"""
+    """ #WIP:: Some sim constants, maybe moved """
     upY = Vector((0,1,0))
     backZ = Vector((0,0,-1))
     dot_align_threshold = 1-1e-6
 
-    def aligned(v1:Vector, v2:Vector, bothDir = True):
+    def aligned(v1:Vector, v2:Vector, bothDir = False):
+        return SIM_CONST.aligned_min(v1,v2,SIM_CONST.dot_align_threshold, bothDir)
+
+    def aligned_min(v1:Vector, v2:Vector, minDot:float, bothDir = False):
         d = v1.dot(v2)
         if bothDir: d = abs(d)
-        return d > SIM_CONST.dot_align_threshold
+        return d > minDot
+
+    def aligned_max(v1:Vector, v2:Vector, maxDot:float, bothDir = False):
+        d = v1.dot(v2)
+        if bothDir: d = abs(d)
+        return d < maxDot
+
 
 class SIM_CFG:
     """ Sim config values to tweak """
     test = False
 
     entry_minY_align = 0.1
+    next_minY_align = 0.1
 
 #-------------------------------------------------------------------
 
 class Simulation:
     def __init__(self, links_initial: LinkCollection, deg = 0.05, log = True, test = True):
         self.storeRnd()
-        SIM_CFG.test = test
+        SIM_CFG.test2D = test
 
         self.links           = links_initial
         self.initial_life    = [ l.life for l in self.links.links_Cell_Cell ]
-        self.initialAir_life = [ l.life for l in self.links.links_Air_Cell ]
+        self.initialAir_life = [ l.life for l in self.links.links_Air_Cell  ]
         self.deg             = deg
 
         self.entry    : Link           = None
@@ -126,16 +138,17 @@ class Simulation:
             self.stepInfo = StepInfo()
             self.simInfo.append(self.stepInfo)
 
-        # get entry and add to its life to use it as a counter
+        # get entry and degrade it to increase its stepped counter
         self.entry = self.current = self.get_entryLink(entries)
-        self.entry.life += 1
+        self.entry.degrade(self.deg*10)
+
+        # LOG entry
         if inlineLog:
             DEV.log_msg(f" > ({self.id_step})   : entry {self.stepInfo.entry_pick}"
                         f" : n{len(self.stepInfo.entries)} {self.stepInfo.entries_weights}",
                         {"SIM", "LOG", "STEP"}, cut=False)
-            if SIM_CFG.test:
+            if SIM_CFG.test2D:
                 DEV.log_msg(f" > ({self.id_step})   : TEST flag set", {"SIM", "LOG", "STEP"})
-
 
         # main loop
         for i in range(subSteps):
@@ -153,6 +166,12 @@ class Simulation:
             if self.current:
                 self.apply_degradation(self.current)
 
+            # WIP:: break condition
+            if not self.current or False:
+                self.stepInfo.break_exit = True
+                self.stepInfo.break_msg = "NO_NEIGH"
+                break
+
             # LOG inline during loop
             if inlineLog:
                 DEV.log_msg(f" > ({self.id_step},{self.id_substep}) : {self.subInfo.current_pick}"
@@ -161,12 +180,7 @@ class Simulation:
                         {"SIM", "LOG", "SUB"}, cut=False)
                 #self.subInfo
 
-            # WIP:: break condition
-            if not self.current or False:
-                self.stepInfo.break_exit = True
-                self.stepInfo.break_msg = "NO_NEIGH"
-                break
-
+        # LOG exit
         if (self.log):
             self.stepInfo.current_exit = self.current
         if inlineLog:
@@ -199,12 +213,14 @@ class Simulation:
         w = 1
 
         # face aligned upwards
-        if el.dir.dot(SIM_CONST.upY) < SIM_CFG.entry_minY_align:
+        # WIP:: same as just reading the normalized Y component?
+        #if not SIM_CONST.aligned_min(el.dir, SIM_CONST.upY, SIM_CFG.entry_minY_align):
+        if el.dir.y < SIM_CFG.entry_minY_align:
             w = 0
 
-        # WIP:: limit axis for the hill model
-        if SIM_CFG.test:
-            if SIM_CONST.aligned(el.dir, SIM_CONST.backZ):
+        # WIP:: limit axis for the hill model (same as reading Z component)?
+        if SIM_CFG.test2D:
+            if SIM_CONST.aligned(el.dir, SIM_CONST.backZ, bothDir=True):
                 w = 0
 
         return w
@@ -212,21 +228,22 @@ class Simulation:
     #-------------------------------------------------------------------
 
     def get_nextLink(self, cl:Link) -> Link:
-        neighs = cl.neighs_Cell_Cell
+        # merge neighs, the water could scape to the outer surface
+        neighs = cl.neighs_Cell_Cell + cl.neighs_Air_Cell
 
-        # WIP:: add wall when no neighs found
-        if not neighs:
-            neighs = cl.neighs_Air_Cell
         if not neighs:
             return None
 
-        weights = [ self.get_nextWeight(cl) for cl in neighs ]
-        picks = rnd.choices(neighs, weights)
+        weights = [ self.get_nextWeight(cl, nl) for nl in neighs ]
 
-        # pick not empty
-        if not picks:
+        # choices may fail
+        try:
+            picks = rnd.choices(neighs, weights)
+            pick = picks[0]
+
+        # picks empty or no cumulative weights
+        except ValueError:
             return None
-        pick = picks[0]
 
         # continuous trace info
         if self.log:
@@ -236,11 +253,20 @@ class Simulation:
 
         return pick
 
-    def get_nextWeight(self, cl):
+    def get_nextWeight(self, cl:Link, nl:Link):
         w = 1
-        #w = 1 if not cl.airLink else 0
-        #if l.life != 1: w = 0
-        #return max(0, w)
+
+        # relative direction cannot go up
+        # WIP:: should diff from edge that connects not parent link center
+        dpos = nl.pos - cl.pos
+        if not SIM_CONST.aligned_min(dpos.normalized(), -SIM_CONST.upY, SIM_CFG.next_minY_align):
+            w = 0
+
+        # WIP:: limit axis for the hill model also for next links as they can pick walls to exit
+        if SIM_CFG.test2D:
+            if SIM_CONST.aligned(nl.dir, SIM_CONST.backZ, bothDir=True):
+                w = 0
+
         return w
 
     #-------------------------------------------------------------------
