@@ -309,7 +309,7 @@ def gen_linksObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cfg, c
     getStats().logDt("generated links object")
     return obj_links
 
-def gen_linksWallObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cfg, context: types.Context):
+def gen_linksWallObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cfg, context: types.Context, weights : list[float] = None):
     prefs = getPrefs()
     name = prefs.names.links_air
     wallsExtraScale = prefs.links_wallExtraScale
@@ -317,8 +317,12 @@ def gen_linksWallObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cf
     # iterate the global map and store vert pairs for the tube mesh generation
     verts: list[tuple[Vector,Vector]] = []
     lifeWidths: list[float] = []
-    for l in links.links_Air_Cell:
-        DEV.log_msg(f"life {l.life}")
+    for i,l in enumerate(links.links_Air_Cell):
+        #DEV.log_msg(f"life {l.life}")
+
+        # skip drawing entry links with no probability
+        if weights and weights[i] == 0: continue
+
         lifeWidths.append(prefs.links_width*wallsExtraScale*l.life)
         verts.append((l.pos, l.pos+l.dir*prefs.links_depth))
 

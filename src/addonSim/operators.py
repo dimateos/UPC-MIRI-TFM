@@ -5,7 +5,7 @@ import bpy.props as props
 from .preferences import getPrefs
 from .properties import (
     MW_gen_cfg,
-    MW_sim_cfg,
+    MW_SIM_CONST,
 )
 from .operators_utils import _StartRefresh_OT, util_classes_op
 
@@ -357,7 +357,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
     bl_description = "WIP: sim steps"
 
     bl_options = {'PRESET', 'REGISTER', 'UNDO'}
-    cfg: props.PointerProperty(type=MW_sim_cfg)
+    cfg: props.PointerProperty(type=MW_SIM_CONST)
     sim: mw_sim.Simulation = None
     links: LinkCollection = None
 
@@ -388,7 +388,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
 
     def execute(self, context: types.Context):
         self.start_op()
-        cfg : MW_sim_cfg= self.cfg
+        cfg : MW_SIM_CONST= self.cfg
 
         # achieve constructive results during adjust op menu
         self.sim.resetSim(cfg.addSeed)
@@ -402,7 +402,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
         obj, cfgGen = MW_gen_cfg.getSelectedRoot()
         if obj:
             mw_setup.gen_linksObject(obj, self.links, cfgGen, context)
-            mw_setup.gen_linksWallObject(obj, self.links, cfgGen, context)
+            mw_setup.gen_linksWallObject(obj, self.links, cfgGen, context, self.sim.stepInfo.entries_weights if self.sim.stepInfo else None)
 
         return self.end_op()
 
