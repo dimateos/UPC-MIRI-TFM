@@ -290,7 +290,7 @@ class MW_gen_cfg(types.PropertyGroup):
 
     struct_shardScale: props.FloatProperty(
         name="Shard scale", description="Reduce some bits to be able to see the links better",
-        default=0.9, min=0.25, max=1,
+        default=0.75, min=0.25, max=1,
         update=struct_shardScale_update
     )
 
@@ -329,7 +329,7 @@ class MW_gen_cfg(types.PropertyGroup):
 # IDEA:: using animation frame handler to see the simulaion play?
 # IDEA:: min -1 for infinite break condition?
 
-class MW_SIM_CONST(types.PropertyGroup):
+class MW_sim_cfg(types.PropertyGroup):
     steps: props.IntProperty(
         name="Number of iters", description="WIP: atm redo each modification",
         default=1, min=0, max=1000,
@@ -367,7 +367,7 @@ class MW_SIM_CONST(types.PropertyGroup):
 
 classes = [
     MW_gen_cfg,
-    MW_SIM_CONST,
+    MW_sim_cfg,
     #MW_vis_cfg,
 ]
 _name = f"{__name__[14:]}" #\t(...{__file__[-32:]})"
@@ -387,7 +387,7 @@ def register():
         name="MW_Generation", description="MW generation properties")
 
     bpy.types.Object.mw_sim = props.PointerProperty(
-        type=MW_SIM_CONST,
+        type=MW_sim_cfg,
         name="MW_Simulation", description="MW simulation properties")
 
     ## WIP maybe visualization stored in scene?
