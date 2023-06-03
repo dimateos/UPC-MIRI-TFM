@@ -86,16 +86,6 @@ class Link():
 
     #-------------------------------------------------------------------
 
-    #def pos_normalized(self, min):
-    #    """ Get link life clamped [0,1] """
-    #    return min( max(self.life, 0), 1)
-
-    #    # relative versions calculated afterwards
-    #    self.pos_normalized = None
-    #    self.area_normalized = None
-
-    #-------------------------------------------------------------------
-
     def __len__(self):
         return len(self.neighs_Cell_Cell) + len(self.neighs_Air_Cell)
 
@@ -230,6 +220,7 @@ class LinkCollection():
         self.max_pos = Vector([-INF_FLOAT]*3)
         self.min_area = INF_FLOAT
         self.max_area = -INF_FLOAT
+        self.avg_area = 0
 
         # FIRST loop to build the global dictionaries
         for idx_cell in self.cont_foundId:
@@ -262,6 +253,8 @@ class LinkCollection():
                 elif self.max_pos.y < pos.y: self.max_pos.y = pos.y
                 if self.min_pos.z > pos.z: self.min_pos.z = pos.z
                 elif self.max_pos.z < pos.z: self.max_pos.z = pos.z
+                # area too
+                self.avg_area += area
                 if self.min_area > area: self.min_area = area
                 elif self.max_area < area: self.max_area = area
 
@@ -298,7 +291,10 @@ class LinkCollection():
 
         # WIP:: maybe could use model BB instead of calculating the position
         stats.logDt(f"created link map")
-        DEV.log_msg(f"Pos limits: {self.min_pos},{self.max_pos} | Area limits: {self.min_area},{self.max_area}", {"CALC", "LINKS", "LIMITS"}, cut=False)
+        self.avg_area /= float(len(self.link_map))
+        DEV.log_msg(f"Pos limits: {utils.vec3_to_string(self.min_pos)}, {utils.vec3_to_string(self.max_pos)}"
+                    f" | Area limits: ({self.min_area:.2f},{self.max_area:.2f}) avg:{self.avg_area:.2f}",
+                    {"CALC", "LINKS", "LIMITS"}, cut=False)
 
 
         # SECOND loop to aggregate the links neighbours, only need to iterate cont_foundId
