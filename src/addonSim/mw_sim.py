@@ -28,6 +28,8 @@ class SubStepData:
         self.currentL_deg         : float       = None
         self.currentL_candidates  : list[Link]  = None
         self.currentL_candidatesW : list[float] = None
+        self.waterLevel           : float       = None
+        self.waterLevel_deg       : float       = None
 
 class StepData:
     """ Information per step """
@@ -66,6 +68,11 @@ class SIM_CFG:
     entryL_min_align = 0.1
     nextL_min_align = 0.1
 
+    water_baseCost = 0.005
+    water_linkCost = 0.1
+    water_minAbsorb_check = 0.33
+    water_minAbsorb_continueProb = 0.9
+
     # add test, deg, log, etc here
 
 #-------------------------------------------------------------------
@@ -80,9 +87,10 @@ class Simulation:
         self.links_iniLife_air = [ l.life for l in self.links.links_Air_Cell  ]
         self.deg               = deg
 
-        self.entryL     : Link  = None
-        self.currentL   : Link  = None
-        self.waterLevel : float = 1.0
+        self.entryL              : Link  = None
+        self.currentL            : Link  = None
+        self.currentL_areaFactor : float = 1.0
+        self.waterLevel          : float = 1.0
 
         self.trace      : bool           = log
         self.trace_data : list[StepData] = list()
@@ -104,9 +112,10 @@ class Simulation:
                 l.reset(self.links_iniLife_air[i])
 
         # reset currents
-        self.entryL     : Link  = None
-        self.currentL   : Link  = None
-        self.waterLevel : float = 1.0
+        self.entryL              : Link  = None
+        self.currentL            : Link  = None
+        self.currentL_areaFactor : float = 1.0
+        self.waterLevel          : float = 1.0
 
         # reset log
         if self.trace:
@@ -169,6 +178,7 @@ class Simulation:
 
             # choose next link to propagate
             self.get_nextLink()
+            self.currentL_areaFactor = self.currentL.area / self.links.avg_area
 
             # apply degradation etc
             if self.currentL:
@@ -223,12 +233,17 @@ class Simulation:
             if SIM_CONST.aligned(l.dir, SIM_CONST.backZ, bothDir=True):
                 return 0
 
-        # original uniform probability
-        w = 1
-
         # IDEA:: maybe shift vector a bit by some wind factor?
-        if not SIM_CONST.aligned_min(l.dir, SIM_CONST.upY, SIM_CFG.entryL_min_align):
+        water_dir_inv = SIM_CONST.upY
+
+        # cut-off min align
+        d = l.dir.dot(water_dir_inv)
+        if d < SIM_CFG.entryL_min_align:
             w = 0
+
+        # weight using face area
+        else:
+            w = d * l.area
 
         return w
 
@@ -280,7 +295,7 @@ class Simulation:
 
     def link_degradation(self):
         # calcultate degradation
-        d = self.deg
+        d = self.deg * self.waterLevel
 
         # apply degradation
         self.currentL.degrade(d)
@@ -292,7 +307,25 @@ class Simulation:
 
 
     def water_degradation(self):
-        pass
+        # minimun degradation that also happens when the water runs through a exterior face
+        d = SIM_CFG.water_baseCost * self.currentL_areaFactor
+
+        # interior also takes into account current link life
+        if not self.currentL.airLink:
+            d += SIM_CFG.water_linkCost * self.currentL.life_clamped
+
+        self.waterLevel -= d
+
+        # check complete water absortion event
+        if self.waterLevel < SIM_CFG.water_minAbsorb_check:
+            minAbsorb = self.waterLevel / SIM_CFG.water_minAbsorb_check
+            if minAbsorb * SIM_CFG.water_minAbsorb_continueProb < rnd.random():
+                self.waterLevel = -1
+
+        if self.trace:
+            self.sub_trace.waterLevel = self.currentL.life
+            self.sub_trace.waterLevel_deg = d
+
 
     def check_continue(self):
         # no next link was found
@@ -300,8 +333,10 @@ class Simulation:
             if self.trace: self.step_trace.break_msg = "NO_LINK"
             return False
 
-        # there is still some water
-
+        # not more water
+        if self.waterLevel < 0:
+            if self.trace: self.step_trace.break_msg = "NO_WATER"
+            return False
 
         return True
 
