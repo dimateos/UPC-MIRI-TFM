@@ -321,7 +321,7 @@ def gen_linksWallObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cf
         #DEV.log_msg(f"life {l.life}")
 
         # skip drawing entry links with no probability
-        if weights and weights[i] == 0: continue
+        #if weights and weights[i] == 0: continue
 
         # WIP:: also skip drawing non picked?
         if not l.picks: continue

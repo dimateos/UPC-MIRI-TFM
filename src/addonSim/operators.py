@@ -390,9 +390,14 @@ class MW_sim_step_OT(_StartRefresh_OT):
         self.start_op()
         cfg : MW_sim_cfg= self.cfg
 
+        # handle refresh
+        cancel = self.checkRefresh_cancel()
+        if cancel: return self.end_op_refresh(skipLog=True)
+
         # achieve constructive results during adjust op menu
         self.sim.resetSim(cfg.addSeed)
         self.sim.set_deg(cfg.deg)
+        DEV.log_msg(f"steps({cfg.steps}) subSteps({cfg.subSteps}) deg({cfg.deg})", {'SETUP'})
 
         for step in range(cfg.steps):
             if cfg.steps_uniformDeg: self.sim.stepAll()

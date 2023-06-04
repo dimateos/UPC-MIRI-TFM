@@ -7,6 +7,7 @@ from .preferences import getPrefs
 from .mw_links import LinkCollection, Link
 from tess import Container, Cell
 
+from . import utils
 from .utils_dev import DEV
 from .stats import getStats
 
@@ -39,7 +40,7 @@ class StepData:
         self.entryL_candidates  : list[Link]        = None
         self.entryL_candidatesW : list[float]       = None
         self.exitL              : Link              = None
-        self.break_msg          : str               = "no-break"
+        self.break_msg          : str               = "NO_BREAK"
 
 class SIM_CONST:
     """ #WIP:: Some sim constants, maybe moved """
@@ -68,9 +69,9 @@ class SIM_CFG:
     entryL_min_align = 0.1
     nextL_min_align = 0.1
 
-    water_baseCost = 0.005
-    water_linkCost = 0.1
-    water_minAbsorb_check = 0.33
+    water_baseCost = 0.01
+    water_linkCost = 0.2
+    water_minAbsorb_check = 0
     water_minAbsorb_continueProb = 0.9
 
     # add test, deg, log, etc here
@@ -80,23 +81,23 @@ class SIM_CFG:
 class Simulation:
     def __init__(self, links_initial: LinkCollection, deg = 0.05, log = True, test = True):
         self.storeRnd()
+
         SIM_CFG.test2D = test
+        if SIM_CFG.test2D:
+            DEV.log_msg(f" > init : TEST flag set", {"SIM", "LOG", "STEP"})
 
         self.links             = links_initial
         self.links_iniLife     = [ l.life for l in self.links.links_Cell_Cell ]
         self.links_iniLife_air = [ l.life for l in self.links.links_Air_Cell  ]
         self.deg               = deg
 
-        self.entryL              : Link  = None
-        self.currentL            : Link  = None
-        self.currentL_areaFactor : float = 1.0
-        self.waterLevel          : float = 1.0
+        self.resetCurrent()
+        self.step_id = self.sub_id = -1
 
         self.trace      : bool           = log
         self.trace_data : list[StepData] = list()
         self.step_trace : StepData       = None
         self.sub_trace  : SubStepData    = None
-        self.step_id = self.sub_id = -1
 
     def set_deg(self, deg):
         self.deg = deg
@@ -111,25 +112,27 @@ class Simulation:
             for i,l in enumerate(self.links.links_Air_Cell):
                 l.reset(self.links_iniLife_air[i])
 
-        # reset currents
-        self.entryL              : Link  = None
-        self.currentL            : Link  = None
-        self.currentL_areaFactor : float = 1.0
-        self.waterLevel          : float = 1.0
+        self.resetCurrent()
+        self.step_id    = self.sub_id = -1
 
         # reset log
         if self.trace:
             self.trace_data.clear()
             self.step_trace = None
-            self.sub_trace = None
-            self.step_id = self.sub_id = -1
+            self.sub_trace  = None
+
+    def resetCurrent(self):
+        self.entryL              : Link  = None
+        self.currentL            : Link  = None
+        self.waterLevel          : float = 1.0
 
     def storeRnd(self):
         self.rndState = rnd.getstate()
     def restoreRnd(self, addState=0):
         """ NOTE:: just call some amount of randoms to modify seed, could modify state but requires copying a 600 elemnt tuple """
-        rnd.setstate(self.rndState)
-        for i in range(addState): rnd.random()
+        utils.rnd_seed(addState)
+        #rnd.setstate(self.rndState)
+        #for i in range(addState): rnd.random()
 
     #-------------------------------------------------------------------
 
@@ -144,9 +147,11 @@ class Simulation:
     #-------------------------------------------------------------------
 
     def step(self, subSteps = 10, inlineLog = True):
+        self.resetCurrent()
+        self.step_id += 1
+
         # TODO:: improve this, also src of slowness?
         if (self.trace):
-            self.step_id += 1
             self.step_trace = StepData()
             self.trace_data.append(self.step_trace)
         else: inlineLog = False
@@ -159,26 +164,21 @@ class Simulation:
 
         # LOG entry
         if inlineLog:
-            DEV.log_msg(f" > ({self.step_id})   : entry {self.step_trace.entryL}"
+            DEV.log_msg(f" > ({self.step_id}) : entry {self.step_trace.entryL}"
                         f" : n{len(self.step_trace.entryL_candidates)} {self.step_trace.entryL_candidatesW}",
                         {"SIM", "LOG", "STEP"}, cut=False)
-            if SIM_CFG.test2D:
-                DEV.log_msg(f" > ({self.step_id})   : TEST flag set", {"SIM", "LOG", "STEP"})
 
 
         # main loop with a break condition
-        for i in range(subSteps):
-            if not self.check_continue(): break
-
-            # logging path info
+        self.sub_id = -1
+        while self.check_continue(subSteps):
+            self.sub_id += 1
             if (self.trace):
-                self.sub_id += 1
                 self.sub_trace = SubStepData()
                 self.step_trace.subs.append(self.sub_trace)
 
             # choose next link to propagate
             self.get_nextLink()
-            self.currentL_areaFactor = self.currentL.area / self.links.avg_area
 
             # apply degradation etc
             if self.currentL:
@@ -187,9 +187,10 @@ class Simulation:
 
                 # LOG inline during loop
                 if inlineLog:
-                    DEV.log_msg(f" > ({self.step_id},{self.sub_id}) : {self.sub_trace.currentL}"
-                            f" d({self.sub_trace.currentL_deg:.3f})"
-                            f" : n{len(self.sub_trace.currentL_candidates)} {self.sub_trace.currentL_candidatesW}",
+                    DEV.log_msg(f" > ({self.step_id},{self.sub_id}) : w({self.sub_trace.waterLevel:.3f})"
+                            f" : dw({self.sub_trace.waterLevel_deg:.3f}) dl({self.sub_trace.currentL_deg:.3f})"
+                            f" : {self.sub_trace.currentL}"
+                            f" : n{len(self.sub_trace.currentL_candidates)} {self.sub_trace.currentL_candidatesW[:32]}",
                             {"SIM", "LOG", "SUB"}, cut=False)
 
 
@@ -197,7 +198,8 @@ class Simulation:
         if (self.trace):
             self.step_trace.exitL = self.currentL
         if inlineLog:
-            DEV.log_msg(f" > ({self.step_id})   : exit {self.step_trace.exitL} ({self.step_trace.break_msg})", {"SIM", "LOG", "STEP"})
+            DEV.log_msg(f" > ({self.step_id}) : exit ({self.step_trace.break_msg})"
+                        f": {self.step_trace.exitL}", {"SIM", "LOG", "STEP"}, cut=False)
 
 
     #-------------------------------------------------------------------
@@ -241,9 +243,9 @@ class Simulation:
         if d < SIM_CFG.entryL_min_align:
             w = 0
 
-        # weight using face area
+        # weight using face areaFactor (could use regular area instead)
         else:
-            w = d * l.area
+            w = d * l.areaFactor
 
         return w
 
@@ -283,6 +285,15 @@ class Simulation:
         # original uniform probability
         w = 1
 
+        ## TODO:: new probs
+        ## IDEA:: maybe shift vector a bit by some wind factor?
+        #water_dir_inv = SIM_CONST.upY
+
+        ## cut-off min align
+        #d = l.dir.dot(water_dir_inv)
+        #if d < SIM_CFG.entryL_min_align:
+        #    w = 0
+
         # relative direction cannot go up
         # WIP:: should diff from edge that connects not parent link center
         dpos = l.pos - self.currentL.pos
@@ -299,46 +310,55 @@ class Simulation:
 
         # apply degradation
         self.currentL.degrade(d)
-        # TODO:: trigger breaking?
 
         if self.trace:
             self.sub_trace.currentL_life = self.currentL.life
             self.sub_trace.currentL_deg = d
 
+        # TODO:: trigger breaking?
 
     def water_degradation(self):
         # minimun degradation that also happens when the water runs through a exterior face
-        d = SIM_CFG.water_baseCost * self.currentL_areaFactor
+        d = SIM_CFG.water_baseCost * self.currentL.areaFactor
 
         # interior also takes into account current link life
         if not self.currentL.airLink:
-            d += SIM_CFG.water_linkCost * self.currentL.life_clamped
+            d += SIM_CFG.water_linkCost * self.currentL.areaFactor * self.currentL.life_clamped
 
         self.waterLevel -= d
 
-        # check complete water absortion event
-        if self.waterLevel < SIM_CFG.water_minAbsorb_check:
-            minAbsorb = self.waterLevel / SIM_CFG.water_minAbsorb_check
-            if minAbsorb * SIM_CFG.water_minAbsorb_continueProb < rnd.random():
-                self.waterLevel = -1
-
         if self.trace:
-            self.sub_trace.waterLevel = self.currentL.life
+            self.sub_trace.waterLevel = self.waterLevel
             self.sub_trace.waterLevel_deg = d
 
+        # check complete water absortion event
+        if self.waterLevel < SIM_CFG.water_minAbsorb_check and self.waterLevel > 0:
+            minAbsorb = self.waterLevel / SIM_CFG.water_minAbsorb_check
+            if minAbsorb * SIM_CFG.water_minAbsorb_continuexºProb < rnd.random():
+                self.waterLevel = -1
 
-    def check_continue(self):
+    def check_continue(self, subSteps):
         # no next link was found
         if not self.currentL:
-            if self.trace: self.step_trace.break_msg = "NO_LINK"
+            if self.trace:
+                self.step_trace.break_msg = "NO_LINK"
             return False
 
-        # not more water
+        # no more water
         if self.waterLevel < 0:
-            if self.trace: self.step_trace.break_msg = "NO_WATER"
+            if self.trace:
+                if self.waterLevel == -1: self.step_trace.break_msg = "NO_WATER_RND"
+                else: self.step_trace.break_msg = "NO_WATER"
+            return False
+
+        # max iterations when enabled
+        if subSteps and self.sub_id >= subSteps-1:
+            if self.trace:
+                self.step_trace.break_msg = "MAX_ITERS"
             return False
 
         return True
+
 
 # WIP:: simulation instance only resides in the OP -> move to MWcont and share across OP invokes
 def resetLife(links: LinkCollection, life = 1.0):

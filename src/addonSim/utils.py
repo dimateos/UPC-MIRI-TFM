@@ -561,3 +561,7 @@ def listMap_dict(d):
 def vec3_to_string(v:Vector, fmt:str = ".2f"):
     fmt_vec = f"({{:{fmt}}},{{:{fmt}}},{{:{fmt}}})"
     return f"{fmt_vec}".format(*v)
+
+def key_to_string(k:tuple[int,int], fmt:str = ">2"):
+    fmt_vec = f"({{:{fmt}}},{{:{fmt}}})"
+    return f"{fmt_vec}".format(*k)

@@ -52,11 +52,12 @@ class Link():
         self.pos = pos_world
         self.dir = dir_world
         self.area = face_area
+        self.areaFactor = 1.0
 
     def __str__(self):
-        s = f"k{self.key_cells} l({self.life:.3f}) p({self.picks})"
+        s = f"k{utils.key_to_string(self.key_cells)} a({self.areaFactor:.3f},{self.area:.3f}) life({self.life:.3f},{self.picks})"
         if self.airLink_initial:
-            s += f" [AIR-WALL] d{self.dir.to_tuple(2)}"
+            s += f" [AIR-WALL] dir{self.dir.to_tuple(2)}"
         elif self.airLink: s += f" [AIR]"
         return s
 
@@ -312,6 +313,9 @@ class LinkCollection():
                 # avoid recalculating link neighs (and duplicating them)
                 if len(l):
                     continue
+
+                # calculate area factor relative to avg area
+                l.areaFactor = l.area / self.avg_area
 
                 # walls only add local faces from the same cell
                 if l.airLink:
