@@ -54,6 +54,15 @@ class Link():
         self.area = face_area
         self.areaFactor = 1.0
 
+        from math import sin
+        def step_function(value):
+            return 1 if value >= 0 else 0
+        def calculate_result(x, y):
+            result = 0.5 * sin((10 * x + 5 * y)) + 0.5
+            step_result = step_function(sin(20 * y) + 0.8)
+            return result * step_result
+        self.resistance = calculate_result(self.pos.x, self.pos.y)
+
     def __str__(self):
         s = f"k{utils.key_to_string(self.key_cells)} a({self.areaFactor:.3f},{self.area:.3f}) life({self.life:.3f},{self.picks})"
         if self.airLink_initial:

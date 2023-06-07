@@ -350,7 +350,7 @@ class MW_sim_cfg(types.PropertyGroup):
 
     deg: props.FloatProperty(
         name="Degradation", description="WIP: flat reduction",
-        default=0.025, min=0.001, max=0.1, step=1, precision=3
+        default=0.25, min=0.05, max=0.75, step=1, precision=3
     )
 
     addSeed: props.IntProperty(

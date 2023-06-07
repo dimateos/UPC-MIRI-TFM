@@ -236,18 +236,19 @@ class Simulation:
             # WIP:: limit axis for the hill model
             if SIM_CONST.aligned(l.dir, SIM_CONST.backZ, bothDir=True):
                 return 0
+        w = 1
 
+        # relative position gravity align
         # IDEA:: maybe shift vector a bit by some wind factor?
         water_dir_inv = SIM_CONST.upY
-
-        # cut-off min align
         d = l.dir.dot(water_dir_inv)
+
+        # cut-off
         if d < SIM_CFG.entryL_min_align:
-            w = 0
+            return 0
 
         # weight using face areaFactor (could use regular area instead)
-        else:
-            w = d * l.areaFactor
+        w *= d * l.areaFactor
 
         return w
 
@@ -283,24 +284,22 @@ class Simulation:
             # WIP:: limit axis for the hill model also for next links (e.g. exit wall links)
             if SIM_CONST.aligned(l.dir, SIM_CONST.backZ, bothDir=True):
                 return 0
-
-        # original uniform probability
         w = 1
 
-        ## TODO:: new probs
-        ## IDEA:: maybe shift vector a bit by some wind factor?
-        #water_dir_inv = SIM_CONST.upY
-
-        ## cut-off min align
-        #d = l.dir.dot(water_dir_inv)
-        #if d < SIM_CFG.entryL_min_align:
-        #    w = 0
-
-        # relative direction cannot go up
-        # WIP:: should diff from edge that connects not parent link center
+        # relative pos align
+        water_dir_inv = -SIM_CONST.upY
         dpos = l.pos - self.currentL.pos
-        if not SIM_CONST.aligned_min(dpos.normalized(), -SIM_CONST.upY, SIM_CFG.nextL_min_align):
-            w = 0
+        d = dpos.normalized().dot(water_dir_inv)
+
+        # cut-off
+        if d < SIM_CFG.nextL_min_align:
+            return 0
+
+        # weight using only the angle
+        w *= d
+
+        # check link resistance field
+        w *= l.resistance
 
         return w
 
@@ -321,7 +320,7 @@ class Simulation:
 
     def water_degradation(self):
         # minimun degradation that also happens when the water runs through a exterior face
-        d = SIM_CFG.water_baseCost * self.currentL.areaFactor
+        d = SIM_CFG.water_baseCost * self.currentL.areaFactor * self.currentL.resistance
 
         # interior also takes into account current link life
         if not self.currentL.airLink:
@@ -338,6 +337,8 @@ class Simulation:
             minAbsorb = self.waterLevel / SIM_CFG.water_minAbsorb_check
             if minAbsorb * SIM_CFG.water_minAbsorb_continuexºProb < rnd.random():
                 self.waterLevel = -1
+
+    #-------------------------------------------------------------------
 
     def check_continue(self, subSteps):
         # no next link was found
