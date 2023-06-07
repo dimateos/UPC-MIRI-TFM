@@ -199,7 +199,9 @@ class Simulation:
             self.step_trace.exitL = self.currentL
         if inlineLog:
             DEV.log_msg(f" > ({self.step_id}) : exit ({self.step_trace.break_msg})"
-                        f": {self.step_trace.exitL}", {"SIM", "LOG", "STEP"}, cut=False)
+                        f": {self.step_trace.exitL}"
+                        f" : n{len(self.sub_trace.currentL_candidates)} {self.sub_trace.currentL_candidatesW[:32]}",
+                        {"SIM", "LOG", "STEP"}, cut=False)
 
 
     #-------------------------------------------------------------------
@@ -267,7 +269,7 @@ class Simulation:
                 picks = rnd.choices(candidates, weights)
                 self.currentL = picks[0]
 
-            except ValueError:
+            except ValueError as e:
                 self.currentL = None
 
         # continuous trace data
