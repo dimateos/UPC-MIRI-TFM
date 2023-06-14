@@ -332,7 +332,7 @@ class MW_gen_cfg(types.PropertyGroup):
 class MW_sim_cfg(types.PropertyGroup):
     steps: props.IntProperty(
         name="Number of iters", description="WIP: atm redo each modification",
-        default=1, min=0, max=1000,
+        default=1, min=1, max=1000,
     )
     subSteps: props.IntProperty(
         name="Number of propagations per iter", description="WIP: atm redo each modification",

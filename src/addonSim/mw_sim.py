@@ -71,7 +71,7 @@ class SIM_CFG:
 
     water_baseCost = 0.01
     water_linkCost = 0.2
-    water_minAbsorb_check = 0
+    water_minAbsorb_check = 0.3
     water_minAbsorb_continueProb = 0.9
 
     # add test, deg, log, etc here
@@ -222,7 +222,7 @@ class Simulation:
                 picks = rnd.choices(candidates, weights)
                 self.entryL = picks[0]
 
-            except ValueError:
+            except ValueError as e:
                 self.entryL = None
 
         # continuous trace data
