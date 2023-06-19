@@ -10,9 +10,9 @@ from .properties import (
 from .operators_utils import _StartRefresh_OT, util_classes_op
 
 from . import mw_setup
-from . import mw_cont
+from . import mw_extraction
 from .mw_links import LinkCollection, LinkStorage
-from tess import Container
+from .mw_cont import MW_Container
 from . import mw_sim
 
 from . import ui
@@ -141,8 +141,8 @@ class MW_gen_OT(_StartRefresh_OT):
 
         DEV.log_msg("Start calc points", {'CALC'})
         # Get the points and transform to local space when needed
-        mw_cont.detect_points_from_object(obj_original, cfg, self.ctx)
-        points = mw_cont.get_points_from_object_fallback(obj_original, cfg, self.ctx)
+        mw_extraction.detect_points_from_object(obj_original, cfg, self.ctx)
+        points = mw_extraction.get_points_from_object_fallback(obj_original, cfg, self.ctx)
         if not points:
             return self.end_op_error("found no points...")
 
@@ -159,7 +159,7 @@ class MW_gen_OT(_StartRefresh_OT):
         # XXX:: child verts / partilces should be checked inside?
 
         # Limit and rnd a bit the points
-        mw_cont.points_transformCfg(points, cfg, bb_radius)
+        mw_extraction.points_transformCfg(points, cfg, bb_radius)
 
         # Add some reference of the points to the scene
         mw_setup.gen_pointsObject(obj_root, points, self.cfg, self.ctx)
@@ -172,7 +172,7 @@ class MW_gen_OT(_StartRefresh_OT):
         # XXX:: voro++ has some static constant values that have to be edited in compile time...
         #e.g. max_wall_size, tolerance for vertices,
 
-        cont:Container = mw_cont.cont_fromPoints(points, bb, faces4D, precision=prefs.gen_calc_precisionWalls)
+        cont = MW_Container(points, bb, faces4D, precision=prefs.gen_calc_precisionWalls)
         if not cont:
             return self.end_op_error("found no cont... but could try recalculate!")
 
@@ -242,7 +242,7 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
             obj_toFrac = utils.get_child(obj_root, prefs.names.original_dissolve)
         else: obj_toFrac = utils.get_child(obj_root, prefs.names.original_copy)
 
-        points = mw_cont.get_points_from_fracture(obj_root, cfg)
+        points = mw_extraction.get_points_from_fracture(obj_root, cfg)
         if not points:
             return self.end_op_error("found no points...")
 
@@ -260,7 +260,7 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
 
 
         DEV.log_msg("Calc cont and links (shards not regenerated!)", {'CALC'})
-        cont:Container = mw_cont.cont_fromPoints(points, bb, faces4D, precision=prefs.gen_calc_precisionWalls)
+        cont = MW_Container(points, bb, faces4D, precision=prefs.gen_calc_precisionWalls)
         if not cont:
             return self.end_op_error("found no cont... but could try recalculate!")
 

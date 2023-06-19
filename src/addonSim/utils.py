@@ -7,6 +7,8 @@ from .stats import getStats, timeit
 
 
 #-------------------------------------------------------------------
+# IDEA:: split into utils scene, math, misc etc
+
 
 getPerpendicular_stable_minMagSq = 1e-3*1e-3
 """ small magnitudes will be unstable when normalizing """
