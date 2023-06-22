@@ -14,6 +14,9 @@ from . import utils
 from .utils_dev import DEV
 from .stats import getStats
 
+from .mw_links import LinkCollection
+from .unionfind import UnionFind
+
 
 # OPT:: not recursive + query obj.children a lot
 #-------------------------------------------------------------------
@@ -210,12 +213,26 @@ def points_transformCfg(points: list[Vector], cfg: MW_gen_cfg, bb_radius: float)
 
 #-------------------------------------------------------------------
 
+# TODO:: check already have it + apply
 def boolean_mod_add(obj_original: types.Object, obj_shardsRoot: types.Object, context: types.Context):
-    for shard in obj_shardsRoot.children:
+    c = obj_shardsRoot.children
+    for shard in c:
         mod = shard.modifiers.new(name="Boolean", type='BOOLEAN')
         mod.object = obj_original
         mod.operation = 'INTERSECT'
         mod.solver = "FAST"
 
+    DEV.log_msg(f"Applied boolean to {len(c)} shards)", {"CALC", "MOD"})
+
     # Calculates all booleans at once (faster).
     depsgraph = context.evaluated_depsgraph_get()
+
+# TODO:: test with sep comps -> random remove?
+def get_connected_comps(links: LinkCollection):
+    cell_union = UnionFind(len(links.cont_foundId))
+
+    for l in links.links_Cell_Cell:
+        cell_union.union(*l.key_cells)
+
+    DEV.log_msg(f"Extracted {cell_union.num_components} components)", {"CALC", "COMP"})
+    return cell_union

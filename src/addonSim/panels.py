@@ -116,6 +116,7 @@ class MW_gen_PT(types.Panel):
             # WIP:: testing
             layout.operator(ops.MW_gen_links_OT.bl_idname, icon="OUTLINER_DATA_GREASEPENCIL")
             layout.operator(ops.MW_util_bool_OT.bl_idname, icon="MOD_BOOLEAN")
+            layout.operator(ops.MW_util_comps_OT.bl_idname, icon="NODE_COMPOSITING")
 
             # IDEA:: global slider mat alpha if found
 

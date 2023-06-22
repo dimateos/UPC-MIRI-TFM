@@ -290,7 +290,7 @@ class MW_gen_cfg(types.PropertyGroup):
 
     struct_shardScale: props.FloatProperty(
         name="Shard scale", description="Reduce some bits to be able to see the links better",
-        default=0.75, min=0.25, max=1,
+        default=0.75, min=0.25, max=1.5,
         update=struct_shardScale_update
     )
 

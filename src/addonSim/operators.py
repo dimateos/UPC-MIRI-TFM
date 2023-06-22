@@ -438,6 +438,7 @@ class MW_sim_reset_OT(_StartRefresh_OT):
         return super().invoke(context, event)
 
     def execute(self, context: types.Context):
+        self.start_op()
         mw_sim.resetLife(self.links)
 
         obj, cfgGen = MW_gen_cfg.getSelectedRoot()
@@ -448,10 +449,37 @@ class MW_sim_reset_OT(_StartRefresh_OT):
 
 #-------------------------------------------------------------------
 
+class MW_util_comps_OT(_StartRefresh_OT):
+    bl_idname = "mw.util_omps"
+    bl_label = "check comps"
+    bl_description = "WIP: check connected components"
+
+    bl_options = {'INTERNAL', 'UNDO'}
+
+    def __init__(self) -> None:
+        super().__init__()
+        # config some base class log flags...
+
+    @classmethod
+    def poll(cls, context):
+        return MW_gen_cfg.hasSelectedRoot()
+
+    def invoke(self, context, event):
+        obj, cfgGen, self.links = MW_gen_recalc_OT.getSelectedRoot_links()
+        if not self.links:
+            return self.end_op_error("No links storage found...")
+
+        return super().invoke(context, event)
+
+    def execute(self, context: types.Context):
+        self.start_op()
+        mw_extraction.get_connected_comps(self.links)
+        return self.end_op()
+
 class MW_util_bool_OT(_StartRefresh_OT):
     bl_idname = "mw.util_bool"
     bl_label = "bool mod"
-    bl_description = "WIP: bool mod"
+    bl_description = "WIP: add bool modifier"
 
     bl_options = {'INTERNAL', 'UNDO'}
 
@@ -467,11 +495,11 @@ class MW_util_bool_OT(_StartRefresh_OT):
         self.start_op()
         obj, cfg = MW_gen_cfg.getSelectedRoot()
 
-        prefs = getPrefs()
-        obj_original = utils.get_child(obj, prefs.names.original_copy + prefs.names.original)
-        obj_shards = utils.get_child(obj, prefs.names.shards)
-
-        mw_extraction.boolean_mod_add(obj_original, obj_shards, context)
+        if obj:
+            prefs = getPrefs()
+            obj_original = utils.get_child(obj, prefs.names.original_copy + prefs.names.original)
+            obj_shards = utils.get_child(obj, prefs.names.shards)
+            mw_extraction.boolean_mod_add(obj_original, obj_shards, context)
 
         return self.end_op()
 
@@ -562,6 +590,7 @@ classes = [
     MW_sim_step_OT,
     MW_sim_reset_OT,
 
+    MW_util_comps_OT,
     MW_util_bool_OT,
     MW_util_delete_OT,
     MW_util_delete_all_OT,
