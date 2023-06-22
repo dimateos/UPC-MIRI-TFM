@@ -148,12 +148,8 @@ class LinkCollection():
         self.cont_neighs    : list[list[int]|int] = [LINK_ERROR_IDX.missing]*len(cont)
         """ NOTE:: missing cells are filled with a placeholder id to preserve original position idx """
 
-        # force a break into two components
-        def isMiddleCell(idx_cell):
-            return False
-
         for idx_cell,cell in enumerate(cont):
-            if cell is None or (DEV.DEBUG_COMPS and isMiddleCell(idx_cell)):
+            if cell is None:
                 self.cont_missingId.append(idx_cell)
                 self.keys_perCell[idx_cell] = LINK_ERROR_IDX.missing
             else:
@@ -255,10 +251,13 @@ class LinkCollection():
                 # get world props
                 face: types.MeshPolygon = me.polygons[idx_face]
                 pos = m_toWorld @ face.center
+                if DEV.DEBUG_COMPS and abs(pos.x) < 0.5: continue
                 normal = mn_toWorld @ face.normal
                 area = face.area
                 # NOTE:: potentially rotated normals may have a length of 1.0 +- 1e-8 but not worth normalizing
                 #DEV.log_msg(f"face.normal {face.normal} (l: {face.normal.length}) -> world {normal} (l: {normal.length})", cut=False)
+
+
 
                 # check min/max
                 if self.min_pos.x > pos.x: self.min_pos.x = pos.x
