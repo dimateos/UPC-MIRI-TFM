@@ -4,14 +4,15 @@
 # OPT:: a lot of room to do it
 # IDEA:: some access from UI to toggle dynamically?
 class DEV:
-    DEBUG = True
-    HANDLE_GLOBAL_EXCEPT = False
-    CALLBACK_REGISTER_ALL = False
+    HANDLE_GLOBAL_EXCEPT  = False   # more robust extension global error but harder to debug
+    CALLBACK_REGISTER_ALL = False   # inspect when all available callbacks are triggered
 
-    ASSERT_CELL_POS = True
-    LEGACY_CONT = False
-    VISUAL_TESTS = True
-    """ Checking some stats of legacy cont (could also do for the regular one) """
+    DEBUG_MODEL           = True    # fake 2D so ignore some directional links (at sim)
+    DEBUG_COMPS           = True    # break links at the middle of the model to test comps (at link gen)
+
+    ASSERT_CELL_POS       = True    # assert some local and global pos match
+    LEGACY_CONT           = False   # check some stats of legacy cont
+    VISUAL_TESTS          = True    # testing some visual props
 
     # IDEA:: profiling levels instead of just bool, or stats log uisng log_msg with tags
     logs = True
