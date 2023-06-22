@@ -18,7 +18,7 @@ from .stats import getStats
 # OPT:: not recursive + query obj.children a lot
 #-------------------------------------------------------------------
 
-def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
+def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     """ Attempts to retrieve a point per option and disables them when none is found """
     cfg.meta_source_enabled = set()
 
@@ -79,7 +79,7 @@ def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
 
     getStats().logDt(f"detected points: {cfg.meta_source_enabled}")
 
-def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, context):
+def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     if not cfg.meta_source_enabled:
         cfg.source = { cfg.sourceOptions.error_key }
         DEV.log_msg("No points found...", {"CALC", "SOURCE", "ERROR"})
@@ -89,7 +89,7 @@ def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, context)
     getStats().logDt(f"retrieved points: {len(points)}")
     return points
 
-def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context):
+def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     """ Retrieves point using the method selected
         * REF: some get_points from original cell fracture modifier
     """
@@ -207,3 +207,15 @@ def points_transformCfg(points: list[Vector], cfg: MW_gen_cfg, bb_radius: float)
     points_noDoubles(points, cfg)
     points_addNoise(points, cfg, bb_radius)
     getStats().logDt(f"transform/limit points: {len(points)} (noise {cfg.source_noise:.4f})")
+
+#-------------------------------------------------------------------
+
+def boolean_mod_add(obj_original: types.Object, obj_shardsRoot: types.Object, context: types.Context):
+    for shard in obj_shardsRoot.children:
+        mod = shard.modifiers.new(name="Boolean", type='BOOLEAN')
+        mod.object = obj_original
+        mod.operation = 'INTERSECT'
+        mod.solver = "FAST"
+
+    # Calculates all booleans at once (faster).
+    depsgraph = context.evaluated_depsgraph_get()

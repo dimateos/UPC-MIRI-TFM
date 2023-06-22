@@ -335,7 +335,7 @@ class Simulation:
         # check complete water absortion event
         if self.waterLevel < SIM_CFG.water_minAbsorb_check and self.waterLevel > 0:
             minAbsorb = self.waterLevel / SIM_CFG.water_minAbsorb_check
-            if minAbsorb * SIM_CFG.water_minAbsorb_continuexºProb < rnd.random():
+            if minAbsorb * SIM_CFG.water_minAbsorb_continueProb < rnd.random():
                 self.waterLevel = -1
 
     #-------------------------------------------------------------------

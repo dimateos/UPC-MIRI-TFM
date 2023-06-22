@@ -185,6 +185,9 @@ class MW_gen_OT(_StartRefresh_OT):
             return self.end_op("DEV.LEGACY_CONT stop...")
         mw_setup.gen_shardsObjects(obj_shards, cont, cfg, self.ctx, invertOrientation=prefs.gen_setup_invertShardNormals)
 
+        # limit the surface to the original?
+        #mw_extraction.boolean_mod_add(obj_original, obj_shards, self.ctx)
+
         #obj_links_legacy = mw_setup.genWIP_linksEmptiesPerCell(obj_root, cfg, self.ctx)
         #mw_setup.genWIP_linksCellObjects(obj_links_legacy, cont, cfg, self.ctx)
 
@@ -445,6 +448,33 @@ class MW_sim_reset_OT(_StartRefresh_OT):
 
 #-------------------------------------------------------------------
 
+class MW_util_bool_OT(_StartRefresh_OT):
+    bl_idname = "mw.util_bool"
+    bl_label = "bool mod"
+    bl_description = "WIP: bool mod"
+
+    bl_options = {'INTERNAL', 'UNDO'}
+
+    def __init__(self) -> None:
+        super().__init__()
+        # config some base class log flags...
+
+    @classmethod
+    def poll(cls, context):
+        return MW_gen_cfg.hasSelectedRoot()
+
+    def execute(self, context: types.Context):
+        self.start_op()
+        obj, cfg = MW_gen_cfg.getSelectedRoot()
+
+        prefs = getPrefs()
+        obj_original = utils.get_child(obj, prefs.names.original_copy + prefs.names.original)
+        obj_shards = utils.get_child(obj, prefs.names.shards)
+
+        mw_extraction.boolean_mod_add(obj_original, obj_shards, context)
+
+        return self.end_op()
+
 class MW_util_delete_OT(_StartRefresh_OT):
     bl_idname = "mw.util_delete"
     bl_label = "Delete fracture object"
@@ -532,6 +562,7 @@ classes = [
     MW_sim_step_OT,
     MW_sim_reset_OT,
 
+    MW_util_bool_OT,
     MW_util_delete_OT,
     MW_util_delete_all_OT,
     MW_util_bake_OT,

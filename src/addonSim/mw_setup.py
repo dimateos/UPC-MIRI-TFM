@@ -26,13 +26,15 @@ from .stats import getStats
 def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     cfg.meta_type = {"ROOT"}
     cfg.struct_nameOriginal = obj.name
+    prefs = getPrefs()
 
     # Empty object to hold all of them set at the original obj trans
     obj_root = bpy.data.objects.new(cfg.get_struct_name(), None)
     context.scene.collection.objects.link(obj_root)
 
     # Duplicate the original object
-    obj_copy = utils.copy_objectRec(obj, context, namePreffix=getPrefs().names.original_copy)
+    prefs.names.original = obj.name
+    obj_copy = utils.copy_objectRec(obj, context, namePreffix=prefs.names.original_copy)
     #MW_gen_cfg.setMetaType(obj_copy, {"CHILD"})
 
     # Scene viewport
@@ -56,7 +58,7 @@ def copy_originalPrev(obj: types.Object, cfg: MW_gen_cfg, context: types.Context
     obj_root = utils.copy_object(obj, context)
 
     # copy the original from the previous root withou suffix
-    obj_original = utils.get_child(obj, getPrefs().names.original_copy+cfg.struct_nameOriginal)
+    obj_original = utils.get_child(obj, prefs.names.original_copy+cfg.struct_nameOriginal)
     obj_copy = utils.copy_objectRec(obj_original, context)
     utils.set_child(obj_copy, obj_root)
 

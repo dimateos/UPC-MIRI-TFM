@@ -35,7 +35,7 @@ class MW_Container(Container):
         #Legacy cont some tests mid operator
         if DEV.LEGACY_CONT:
             super().__init__(points=points, limits=bb_tuples)
-            DEV.log_msg(f"Found {len(self.cont)} cells (NO walls - {len(faces4D)} faces)", {"CALC", "CONT", "LEGACY"})
+            DEV.log_msg(f"Found {len(self)} cells (NO walls - {len(faces4D)} faces)", {"CALC", "CONT", "LEGACY"})
             self.initialized = True
             return
 
@@ -58,8 +58,8 @@ class MW_Container(Container):
             # Check non empty
             getStats().logDt("calculated cont")
             logType = {"CALC", "CONT"}
-            if not len(self.cont): logType |= {"ERROR"}
-            DEV.log_msg(f"Found {len(self.cont)} cells ({len(self.cont.walls)} walls from {len(faces4D)} faces)", logType)
+            if not len(self): logType |= {"ERROR"}
+            DEV.log_msg(f"Found {len(self)} cells ({len(self.walls)} walls from {len(faces4D)} faces)", logType)
             self.initialized = True
 
         except Exception as e:
