@@ -46,8 +46,8 @@ class MW_Container(Container):
         else:
             Container.custom_walls_precision = Container.custom_walls_precision_default
 
-        # XXX:: container creation might fail do to some voro++ config params... hard to tweak for all?
-        # XXX:: also seems that if the mesh vertices/partilces are further appart if behaves better? clustered by tolerance?
+        # XXX:: container creation might fail do to some voro++ config params... hard to tweak for all? NOT DYNAMIC needs recompile
+        # XXX:: also seems that if the mesh vertices/particles are further appart if behaves better? clustered by tolerance?
         # XXX:: some tiny intersection between cells might happen due to tolerance -> check or not worth it, we shrink then would not be noticeable
 
         try:

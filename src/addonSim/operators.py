@@ -130,14 +130,10 @@ class MW_gen_OT(_StartRefresh_OT):
 
 
         DEV.log_msg("Initial object setup", {'SETUP'})
-        # TODO:: convex hull triangulates the faces... e.g. UV sphere ends with more!
+        # NOTE:: convex hull triangulates the faces... e.g. UV sphere ends with more!
         if cfg.shape_useConvexHull:
             obj_toFrac = mw_setup.copy_convex(obj_root, obj_original, cfg, self.ctx)
         else: obj_toFrac = obj_original
-
-        # TODO:: visual panel impro
-        # TODO:: scale shards to see links better + add material random color with alpha + ui callback?
-        # this callbacks to shard maps seem to need a global map access -> links.cont / links.objs? check non valid root
 
         DEV.log_msg("Start calc points", {'CALC'})
         # Get the points and transform to local space when needed
@@ -156,7 +152,6 @@ class MW_gen_OT(_StartRefresh_OT):
 
         # XXX:: 2D objects should use the boundary? limits walls per axis
         # XXX:: limit particles axis too?
-        # XXX:: child verts / partilces should be checked inside?
 
         # Limit and rnd a bit the points
         mw_extraction.points_transformCfg(points, cfg, bb_radius)
@@ -168,9 +163,8 @@ class MW_gen_OT(_StartRefresh_OT):
 
         DEV.log_msg("Start calc cont and links", {'CALC'})
         # IDEA:: mesh conecting input points + use single mesh instead of one per link?
+        # IDEA:: generate in phases? only cont, then links, etc...
         # XXX:: detect meshes with no volume? test basic shape for crashes...
-        # XXX:: voro++ has some static constant values that have to be edited in compile time...
-        #e.g. max_wall_size, tolerance for vertices,
 
         cont = MW_Container(points, bb, faces4D, precision=prefs.gen_calc_precisionWalls)
         if not cont:
@@ -184,12 +178,6 @@ class MW_gen_OT(_StartRefresh_OT):
             mw_setup.gen_LEGACY_CONT(obj_shards, cont, cfg, self.ctx)
             return self.end_op("DEV.LEGACY_CONT stop...")
         mw_setup.gen_shardsObjects(obj_shards, cont, cfg, self.ctx, invertOrientation=prefs.gen_setup_invertShardNormals)
-
-        # limit the surface to the original?
-        #mw_extraction.boolean_mod_add(obj_original, obj_shards, self.ctx)
-
-        #obj_links_legacy = mw_setup.genWIP_linksEmptiesPerCell(obj_root, cfg, self.ctx)
-        #mw_setup.genWIP_linksCellObjects(obj_links_legacy, cont, cfg, self.ctx)
 
         # calculate links and store in the external storage
         links:LinkCollection = LinkCollection(cont, obj_shards)

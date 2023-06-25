@@ -114,7 +114,7 @@ class Link():
             else                            : self.neighs_Cell_Cell.append(self.collection.link_map[kn])
 
 #-------------------------------------------------------------------
-# TODO:: some likes will become air + others unreachable etc
+# TODO:: some linkes will become air + others unreachable etc
 
 class LinkCollection():
 
