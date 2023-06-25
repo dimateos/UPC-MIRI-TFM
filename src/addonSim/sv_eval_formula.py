@@ -16,10 +16,31 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+# dimateos:: adapted to remove additional dependencies
+
 import ast
 
-from sverchok.utils.script_importhelper import safe_names
-from sverchok.utils import sv_logging
+def make_functions_dict(*functions):
+    return dict([(function.__name__, function) for function in functions])
+
+from math import *
+from sv_math import sign
+safe_names = make_functions_dict(
+        # From math module
+        acos, acosh, asin, asinh, atan, atan2,
+        atanh, ceil, copysign, cos, cosh, degrees,
+        erf, erfc, exp, expm1, fabs, factorial, floor,
+        fmod, frexp, fsum, gamma, hypot, isfinite, isinf,
+        isnan, ldexp, lgamma, log, log10, log1p, log2, modf,
+        pow, radians, sin, sinh, sqrt, tan, tanh, trunc,
+        # Additional functions
+        abs, sign, max, min, len, sum, zip,
+        ## From mathutlis module
+        #Vector, Matrix,
+        ## Python type conversions
+        #tuple, list, str, dict, set, int, float,
+        #any, all, dir
+    )
 
 class VariableCollector(ast.NodeVisitor):
     """
@@ -116,7 +137,7 @@ def sv_compile(string):
         root = ast.parse(string, mode='eval')
         return compile(root, "<expression>", 'eval')
     except SyntaxError as e:
-        logging.exception(e)
+        #logging.exception(e)
         raise Exception("Invalid expression syntax: " + str(e))
 
 def safe_eval_compiled(compiled, variables, allowed_names = None):
@@ -133,7 +154,7 @@ def safe_eval_compiled(compiled, variables, allowed_names = None):
         env["__builtins__"] = {}
         return eval(compiled, env)
     except SyntaxError as e:
-        sv_logging.exception(e)
+        #sv_logging.exception(e)
         raise Exception("Invalid expression syntax: " + str(e))
 
 # It could be safer...
@@ -150,6 +171,6 @@ def safe_eval(string, variables):
         root = ast.parse(string, mode='eval')
         return eval(compile(root, "<expression>", 'eval'), env)
     except SyntaxError as e:
-        logging.exception(e)
+        #logging.exception(e)
         raise Exception("Invalid expression syntax: " + str(e))
 

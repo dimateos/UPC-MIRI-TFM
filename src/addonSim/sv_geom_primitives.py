@@ -5,12 +5,87 @@
 # SPDX-License-Identifier: GPL3
 # License-Filename: LICENSE
 
+# dimateos:: adapted to remove additional dependencies
+
 import math
 from math import sin, cos, sqrt, acos, pi, atan
 import numpy as np
 
-from sverchok.utils.sv_bmesh_utils import bmesh_from_pydata
-from sverchok.utils.sv_bmesh_utils import pydata_from_bmesh
+import bmesh
+
+def has_element(pol_edge):
+    if pol_edge is None:
+        return False
+    if len(pol_edge) > 0 and hasattr(pol_edge[0], '__len__') and len(pol_edge[0]) > 0:
+        return True
+    return False
+
+def bmesh_from_pydata(
+        verts=None, edges=[], faces=[],
+        markup_face_data=False, markup_edge_data=False, markup_vert_data=False,
+        normal_update=False, index_edges=False):
+
+    """
+    verts              : necessary
+    edges / faces      : optional
+    normal_update      : optional - will update verts/edges/faces normals at the end
+    index_edges (bool) : optional - will make it possible for users of the bmesh to manually
+                         iterate over any edges or do index lookups
+    """
+
+    bm = bmesh.new()
+    bm_verts = bm.verts
+    add_vert = bm_verts.new
+
+    py_verts = verts.tolist() if type(verts) == np.ndarray else verts
+
+    for co in py_verts:
+        add_vert(co)
+
+    bm_verts.index_update()
+    bm_verts.ensure_lookup_table()
+
+    if has_element(faces):
+        add_face = bm.faces.new
+        py_faces = faces.tolist() if type(faces) == np.ndarray else faces
+        for face in py_faces:
+            add_face(tuple(bm_verts[i] for i in face))
+
+        bm.faces.index_update()
+
+    if has_element(edges):
+        if markup_edge_data:
+            initial_index_layer = bm.edges.layers.int.new("initial_index")
+
+        add_edge = bm.edges.new
+        get_edge = bm.edges.get
+        py_faces = edges.tolist() if type(edges) == np.ndarray else edges
+        for idx, edge in enumerate(edges):
+            edge_seq = tuple(bm_verts[i] for i in edge)
+            bm_edge = get_edge(edge_seq)
+            if not bm_edge:
+                bm_edge = add_edge(edge_seq)
+            if markup_edge_data:
+                bm_edge[initial_index_layer] = idx
+
+    if has_element(edges) or index_edges:
+        bm.edges.index_update()
+
+    if markup_vert_data:
+        bm_verts.ensure_lookup_table()
+        layer = bm_verts.layers.int.new("initial_index")
+        for idx, vert in enumerate(bm_verts):
+            vert[layer] = idx
+
+    if markup_face_data:
+        bm.faces.ensure_lookup_table()
+        layer = bm.faces.layers.int.new("initial_index")
+        for idx, face in enumerate(bm.faces):
+            face[layer] = idx
+
+    if normal_update:
+        bm.normal_update()
+    return bm
 
 # constants
 PI = math.pi
