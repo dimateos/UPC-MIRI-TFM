@@ -6,6 +6,7 @@ from tess import Container, Cell
 
 from . import utils
 from . import utils_geo
+from . import mw_resist
 from .utils_dev import DEV
 from .stats import getStats
 
@@ -25,7 +26,6 @@ class LINK_ERROR_IDX:
     all = [ missing, asymmetry ]
 
 #-------------------------------------------------------------------
-
 
 # OPT:: could use a class or an array of props? pyhton already slow so ok class?
 # IDEA:: augmented cell class instead of array of props? cont -> cell -> link... less key map indirections
@@ -54,17 +54,8 @@ class Link():
         self.area = face_area
         self.areaFactor = 1.0
 
-        from math import sin
-        def step_function(value):
-            return 1 if value >= 0 else -1
-        def calculate_result(x, y):
-            result = 0.5 * sin((3 * y)) + 0.5
-            #result = 0.5 * sin((5 * x + 3 * y)) + 0.5
-            step_result = step_function(sin(20 * y) + 0.8)
-            return result
-
-        #self.resistance = 0.5 + 0.5* calculate_result(self.pos.x, self.pos.y)
-        self.resistance = calculate_result(self.pos.x, self.pos.y)
+        #self.resistance = 0.5 + 0.5* mw_resist.get2D(self.pos.x, self.pos.y)
+        self.resistance = mw_resist.get2D(self.pos.x, self.pos.y)
 
     def __str__(self):
         s = f"k{utils.key_to_string(self.key_cells)} a({self.areaFactor:.3f},{self.area:.3f}) life({self.life:.3f},{self.picks})"

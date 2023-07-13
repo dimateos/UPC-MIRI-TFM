@@ -497,6 +497,8 @@ class Info_printMatrices_OT(types.Operator):
 
 #-------------------------------------------------------------------
 
+from . import mw_resist
+
 class Debug_testCode_OT(types.Operator):
     bl_idname = "dm.debug_test_code"
     bl_label = "DEBUG: run test code"
@@ -522,24 +524,7 @@ class Debug_testCode_OT(types.Operator):
         obj = bpy.data.objects.new(name, mesh)
         context.scene.collection.objects.link(obj)
 
-        # REP:: apply resistance field values to it
-        from math import sin
-        def step_function(value):
-            return 1 if value >= 0 else -1
-        def resistance_field(x, y):
-            result = 0.5 * sin((3 * y)) + 0.5
-            #result = 0.5 * sin((5 * x + 3 * y)) + 0.5
-            #step_result = step_function(sin(20 * y) + 0.8)
-            return result
-        def resistance_field_color(x, y):
-            #r = 0.5 + 0.5* resistance_field(x,y)
-            r = resistance_field(x,y)
-            if r >= 0:
-                return Vector([r,0,0,1])
-            else:
-                return Vector([0,0,-r,1])
-
-        rest_colors = [ resistance_field_color(v.co.x, v.co.y) for v in mesh.vertices ]
+        rest_colors = [ mw_resist.get2D_color4D(v.co.x, v.co.y) for v in mesh.vertices ]
         utils_render.gen_meshAttr(mesh, rest_colors, 1, "FLOAT_COLOR", "POINT", "resistance")
 
         return {'FINISHED'}
