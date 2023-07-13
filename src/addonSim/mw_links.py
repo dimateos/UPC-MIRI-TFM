@@ -56,11 +56,14 @@ class Link():
 
         from math import sin
         def step_function(value):
-            return 1 if value >= 0 else 0
+            return 1 if value >= 0 else -1
         def calculate_result(x, y):
-            result = 0.5 * sin((10 * x + 5 * y)) + 0.5
+            result = 0.5 * sin((3 * y)) + 0.5
+            #result = 0.5 * sin((5 * x + 3 * y)) + 0.5
             step_result = step_function(sin(20 * y) + 0.8)
-            return result * step_result
+            return result
+
+        #self.resistance = 0.5 + 0.5* calculate_result(self.pos.x, self.pos.y)
         self.resistance = calculate_result(self.pos.x, self.pos.y)
 
     def __str__(self):

@@ -335,7 +335,7 @@ def rect(dim_x=1.0, dim_y=1.62, radius=0.0, nverts=5, matrix=None, mode='pydata'
 
 
 
-def grid(dim_x=1.0, dim_y=1.62, nx=2, ny=2, anchor=0, matrix=None, mode='pydata'):
+def grid(dim_x=1.0, dim_y=1.62, nx=2, ny=2, anchor=0, mode='pydata'):
     '''
 
     dim_x   -   total dimension on x side
@@ -389,7 +389,7 @@ def grid(dim_x=1.0, dim_y=1.62, nx=2, ny=2, anchor=0, matrix=None, mode='pydata'
         if mode == 'pydata':
             return verts, [], faces
         else:
-            return bmesh_from_pydata(vert, [], faces)
+            return bmesh_from_pydata(verts, [], faces)
 
 
     if mode == 'np':

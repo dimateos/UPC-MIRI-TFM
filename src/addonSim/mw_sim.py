@@ -65,7 +65,7 @@ class SIM_CONST:
 class SIM_CFG:
     """ Sim config values to tweak """
     entryL_min_align = 0.1
-    nextL_min_align = 0.1
+    nextL_min_align = -0.1
 
     water_baseCost = 0.01
     water_linkCost = 0.2
@@ -179,8 +179,8 @@ class Simulation:
 
             # apply degradation etc
             if self.currentL:
-                self.link_degradation()
                 self.water_degradation()
+                self.link_degradation()
 
                 # LOG inline during loop
                 if inlineLog:
@@ -296,9 +296,10 @@ class Simulation:
         w *= d
 
         # check link resistance field
-        w *= l.resistance
+        r = 1 - l.resistance
+        w *= r
 
-        return w
+        return max(w, 0.0001)
 
     #-------------------------------------------------------------------
 
