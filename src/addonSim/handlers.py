@@ -41,14 +41,14 @@ def unregisterAllHandlers():
 def callback_updatePost(scene=None):
     """ Called AFTER each scene update """
     DEV.log_msg(f"callback_updatePost: depsgraph_update_post", {"CALLBACK", "UPDATE"})
+    global callback_selectionChange_current, callback_selectionChange_prev, callback_selectionChange_prev_valid
 
     # check change in selection
-    global callback_selectionChange_current
     if bpy.context.selected_objects != callback_selectionChange_current:
         # support prev selections check?
-        global callback_selectionChange_prev, callback_selectionChange_prev_valid
         callback_selectionChange_prev = callback_selectionChange_current
-        if callback_selectionChange_current: callback_selectionChange_prev_valid = callback_selectionChange_current
+        if callback_selectionChange_current:
+            callback_selectionChange_prev_valid = callback_selectionChange_current
 
         callback_selectionChange_current = bpy.context.selected_objects
         activeName = bpy.context.active_object.name if bpy.context.active_object else "None"

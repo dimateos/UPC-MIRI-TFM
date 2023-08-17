@@ -185,7 +185,7 @@ class MW_gen_cfg(types.PropertyGroup):
 
     source_limit: props.IntProperty(
         name="Limit points", description="Limit the number of input points, 0 for unlimited",
-        default=100, min=0, max=5000,
+        default=100, min=0, max=10000,
     )
     source_noise: props.FloatProperty(
         name="RND noise", description="Randomize point distribution",
