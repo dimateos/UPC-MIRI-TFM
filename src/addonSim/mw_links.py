@@ -6,7 +6,7 @@ from tess import Container, Cell
 
 from . import utils
 from . import utils_geo
-from . import mw_resist
+from . import mw_resistance
 from .utils_dev import DEV
 from .stats import getStats
 
@@ -54,8 +54,8 @@ class Link():
         self.area = face_area
         self.areaFactor = 1.0
 
-        #self.resistance = 0.5 + 0.5* mw_resist.get2D(self.pos.x, self.pos.y)
-        self.resistance = mw_resist.get2D(self.pos.x, self.pos.y)
+        #self.resistance = 0.5 + 0.5* mw_resistance.get2D(self.pos.x, self.pos.y)
+        self.resistance = mw_resistance.get2D(self.pos.x, self.pos.y)
 
     def __str__(self):
         s = f"k{utils.key_to_string(self.key_cells)} a({self.areaFactor:.3f},{self.area:.3f}) life({self.life:.3f},{self.picks})"

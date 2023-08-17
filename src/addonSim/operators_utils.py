@@ -196,13 +196,13 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
     # toggles and scale per data
     _prop_showName = props.BoolProperty(name="name", description="Toggle viewport vis of names", default=False)
     _prop_scale = props.FloatProperty(name="s", default=0.25, min=0.01, max=1.0, step=0.5, precision=3)
-    verts_gen: props.BoolProperty( name="Verts (octa)", default=True)
+    verts_gen: props.BoolProperty(name="Verts (octa)", default=True)
     verts_name: _prop_showName
     verts_scale: _prop_scale
-    edges_gen: props.BoolProperty( name="Edges (cube)", default=False)
+    edges_gen: props.BoolProperty(name="Edges (cube)", default=False)
     edges_name: _prop_showName
     edge_scale: _prop_scale
-    faces_gen: props.BoolProperty( name="Faces (tetra)", default=True)
+    faces_gen: props.BoolProperty(name="Faces (tetra)", default=True)
     faces_name: _prop_showName
     faces_scale: _prop_scale
 
@@ -497,7 +497,7 @@ class Info_printMatrices_OT(types.Operator):
 
 #-------------------------------------------------------------------
 
-from . import mw_resist
+from . import mw_resistance
 
 class Debug_testCode_OT(types.Operator):
     bl_idname = "dm.debug_test_code"
@@ -524,7 +524,7 @@ class Debug_testCode_OT(types.Operator):
         obj = bpy.data.objects.new(name, mesh)
         context.scene.collection.objects.link(obj)
 
-        rest_colors = [ mw_resist.get2D_color4D(v.co.x, v.co.y) for v in mesh.vertices ]
+        rest_colors = [ mw_resistance.get2D_color4D(v.co.x, v.co.y) for v in mesh.vertices ]
         utils_render.gen_meshAttr(mesh, rest_colors, 1, "FLOAT_COLOR", "POINT", "resistance")
 
         return {'FINISHED'}
