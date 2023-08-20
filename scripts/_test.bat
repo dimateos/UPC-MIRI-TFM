@@ -11,19 +11,25 @@ REM check packages to it
 bpy --version
 bpy -c "help(\"modules\")"
 bpip freeze
+bpip list -v
+
 REM NOTE: local pip will still try to access Python roaming packages, whereas blender python wont
 REM         so it wont install requirements already satisfied there, maybe with --force-reinstall?
+REM %bpackages% forces to be installed in the local folder, otehrwise pip could skip it
 
 REM backup env (using some common external .bat)
 bpip_backup code
-
-REM autocomplete for bpy and bmesh etc
-bpip install fake-bpy-module-3.4
 
 REM voro++ interface for this python version...
 bpip install wheel
 bpip install setuptools-scm
 bpip install setuptools
+REM used for tests in the other repo
+%bpip% install pytest -t %bpackages%
+REM autocomplete for bpy and bmesh etc
+bpip install fake-bpy-module-3.4
+
+::... done with install deps (note that the shared blender installation has all modules already)
 
 REM all fail when compiling c++ interface... 'Python.h': No such file or directory
 REM had to install a full python dev env on top of Blenders
@@ -44,3 +50,5 @@ bpip install --editable ../DATA/UPC-MIRI-TFM-tess
 REM NOTE: it seems I can have both installs, local and editable at the sametime?
 REM maybe because the setup actually uses setup.py direclty not pip
 bpy setup.py develop &REM needs to be executed at the root of the library repository
+
+::... done with update.bat

@@ -23,6 +23,8 @@ REM shared paths
     set bexe=%RETVAL%
     CALL :getAbsPath "%dBUILD%\3.4\scripts\addons"
     set bscripts=%RETVAL%
+    CALL :getAbsPath "%dBUILD%\3.4\python\lib\site-packages"
+    set bpackages=%RETVAL%
 
 :_voro
     set "dBUILD_tfm=%dDATA%\UPC-MIRI-TFM-tess"
