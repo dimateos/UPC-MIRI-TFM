@@ -3,13 +3,13 @@ import bpy.types as types
 import bpy.props as props
 
 from .preferences import getPrefs
-from .properties import (
-    MW_gen_cfg,
-    MW_sim_cfg,
-)
 from .properties_root import (
     MW_id,
     MW_root,
+)
+from .properties import (
+    MW_gen_cfg,
+    MW_sim_cfg,
 )
 from .operators_utils import _StartRefresh_OT, util_classes_op
 
@@ -30,8 +30,8 @@ from .stats import getStats
 
 class MW_gen_OT(_StartRefresh_OT):
     bl_idname = "mw.gen"
-    bl_label = "Fracture generation"
-    bl_description = "Fracture generation using voro++"
+    bl_label = "Cells generation"
+    bl_description = "Voronoi cells generation using voro++"
 
     # REGISTER + UNDO pops the edit last op window
     bl_options = {'PRESET', 'REGISTER', 'UNDO'}

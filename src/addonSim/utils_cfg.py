@@ -23,7 +23,8 @@ class CONST_CFG:
 def getProps_names(data):
     """ Get all properties names of an object, e.g. not just the modified ones in PropertyGroup.keys() """
     props_names = []
-    for prop_name in dir(data):
+    #for prop_name in dir(data):
+    for prop_name in data.keys():
         # skip callable methods (sub classes are class props, not instance)
         if callable(getattr(data, prop_name)): continue
 
