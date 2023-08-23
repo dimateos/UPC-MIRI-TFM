@@ -7,6 +7,10 @@ from .properties import (
     MW_gen_cfg,
     MW_sim_cfg,
 )
+from .properties_root import (
+    MW_id,
+    MW_root,
+)
 from .operators_utils import _StartRefresh_OT, util_classes_op
 
 from . import mw_setup
@@ -90,7 +94,7 @@ class MW_gen_OT(_StartRefresh_OT):
 
 
         # Retrieve root
-        obj, cfg = MW_gen_cfg.getSelectedRoot()
+        obj, cfg = MW_root.getSelected()
         getStats().logDt("retrieved root object")
         try:
             # Selected object not fractured, fresh execution
@@ -216,12 +220,12 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_gen_cfg.hasSelectedRoot()
+        return MW_root.hasSelected()
 
     def execute(self, context: types.Context):
         self.start_op()
         prefs = getPrefs()
-        obj_root, cfg = MW_gen_cfg.getSelectedRoot()
+        obj_root, cfg = MW_root.getSelected()
 
         # delete current cont when found
         if cfg.ptrID_links:
@@ -269,8 +273,8 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
 
 
     @staticmethod
-    def getSelectedRoot_links():
-        obj, cfg = MW_gen_cfg.getSelectedRoot()
+    def getSelected_links():
+        obj, cfg = MW_root.getSelected()
         links = None
 
         if not cfg.ptrID_links:
@@ -282,16 +286,16 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
         return obj, cfg, links
 
     @staticmethod
-    def getSelectedRoot_links_autoRecalc() -> tuple[types.Object, "MW_gen_cfg", LinkCollection|None]:
+    def getSelected_links_autoRecalc() -> tuple[types.Object, "MW_gen_cfg", LinkCollection|None]:
         """ Retrieves links or recalculates them automatically """
 
         # attempt to retrieve links
-        obj, cfg, links = MW_gen_recalc_OT.getSelectedRoot_links()
+        obj, cfg, links = MW_gen_recalc_OT.getSelected_links()
 
         # call recalc op once
         if not links and getPrefs().util_recalc_OT_auto:
             bpy.ops.mw.gen_recalc()
-            obj, cfg, links = MW_gen_recalc_OT.getSelectedRoot_links()
+            obj, cfg, links = MW_gen_recalc_OT.getSelected_links()
 
         return obj, cfg, links
 
@@ -312,12 +316,12 @@ class MW_gen_links_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_gen_cfg.hasSelectedRoot()
+        return MW_root.hasSelected()
 
     def execute(self, context: types.Context):
         self.start_op()
 
-        obj, cfg, links = MW_gen_recalc_OT.getSelectedRoot_links_autoRecalc()
+        obj, cfg, links = MW_gen_recalc_OT.getSelected_links_autoRecalc()
         if not links:
             return self.end_op_error("No links storage found...")
 
@@ -336,7 +340,7 @@ class MW_gen_links_OT(_StartRefresh_OT):
 
     def end_op(self, msg="", skipLog=False, retPass=False):
         """ OVERRIDE:: end_op to perform assign child to all """
-        obj, cfg = MW_gen_cfg.getSelectedRoot()
+        obj, cfg = MW_root.getSelected()
         if obj: MW_gen_cfg.setMetaType(obj, {"CHILD"}, skipParent=True)
         return super().end_op(msg, skipLog, retPass)
 
@@ -365,10 +369,10 @@ class MW_sim_step_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_gen_cfg.hasSelectedRoot()
+        return MW_root.hasSelected()
 
     def invoke(self, context, event):
-        obj, cfgGen, self.links = MW_gen_recalc_OT.getSelectedRoot_links_autoRecalc()
+        obj, cfgGen, self.links = MW_gen_recalc_OT.getSelected_links_autoRecalc()
         if not self.links:
             return self.end_op_error("No links storage found...")
 
@@ -395,7 +399,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
             else: self.sim.step(cfg.subSteps)
 
         # IDEA:: store copy or original or button to recalc links from start? -> set all life to 1 but handle any dynamic list
-        obj, cfgGen = MW_gen_cfg.getSelectedRoot()
+        obj, cfgGen = MW_root.getSelected()
         if obj:
             mw_setup.gen_linksObject(obj, self.links, cfgGen, context)
             mw_setup.gen_linksWallObject(obj, self.links, cfgGen, context, self.sim.step_trace.entryL_candidatesW if self.sim.trace else None)
@@ -416,10 +420,10 @@ class MW_sim_reset_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_gen_cfg.hasSelectedRoot()
+        return MW_root.hasSelected()
 
     def invoke(self, context, event):
-        obj, cfgGen, self.links = MW_gen_recalc_OT.getSelectedRoot_links()
+        obj, cfgGen, self.links = MW_gen_recalc_OT.getSelected_links()
         if not self.links:
             return self.end_op_error("No links storage found...")
 
@@ -429,7 +433,7 @@ class MW_sim_reset_OT(_StartRefresh_OT):
         self.start_op()
         mw_sim.resetLife(self.links)
 
-        obj, cfgGen = MW_gen_cfg.getSelectedRoot()
+        obj, cfgGen = MW_root.getSelected()
         if obj:
             mw_setup.gen_linksObject(obj, self.links, cfgGen, context)
             mw_setup.gen_linksWallObject(obj, self.links, cfgGen, context)
@@ -450,10 +454,10 @@ class MW_util_comps_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_gen_cfg.hasSelectedRoot()
+        return MW_root.hasSelected()
 
     def invoke(self, context, event):
-        obj, cfgGen, self.links = MW_gen_recalc_OT.getSelectedRoot_links()
+        obj, cfgGen, self.links = MW_gen_recalc_OT.getSelected_links()
         if not self.links:
             return self.end_op_error("No links storage found...")
 
@@ -477,11 +481,11 @@ class MW_util_bool_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_gen_cfg.hasSelectedRoot()
+        return MW_root.hasSelected()
 
     def execute(self, context: types.Context):
         self.start_op()
-        obj, cfg = MW_gen_cfg.getSelectedRoot()
+        obj, cfg = MW_root.getSelected()
 
         if obj:
             prefs = getPrefs()
@@ -501,11 +505,11 @@ class MW_util_delete_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_gen_cfg.hasSelectedRoot()
+        return MW_root.hasSelected()
 
     def execute(self, context: types.Context):
         self.start_op()
-        obj, cfg = MW_gen_cfg.getSelectedRoot()
+        obj, cfg = MW_root.getSelected()
         prefs = getPrefs()
 
         # optionally unhide the original object
@@ -538,11 +542,11 @@ class MW_util_delete_all_OT(_StartRefresh_OT):
         # iterate and delete roots
         roots = MW_gen_cfg.getSceneRoots(context.scene)
         for obj_root in roots:
-            MW_gen_cfg.setSelectedRoot([obj_root])
+            MW_root.setSelected([obj_root])
             bpy.ops.mw.util_delete()
 
-        #MW_gen_cfg.resetSelectedRoot()
-        MW_gen_cfg.setSelectedRoot(context.selected_objects)
+        #MW_root.resetSelected()
+        MW_root.setSelected(context.selected_objects)
         return self.end_op()
 
 #-------------------------------------------------------------------
@@ -564,7 +568,7 @@ class MW_util_bake_OT(_StartRefresh_OT):
         obj = context.selected_objects[-1]
         obj.parent = None
         MW_gen_cfg.setMetaType(obj, {"NONE"})
-        MW_gen_cfg.setSelectedRoot(context.selected_objects)
+        MW_root.setSelected(context.selected_objects)
         return self.end_op(skipLog=True)
 
 #-------------------------------------------------------------------

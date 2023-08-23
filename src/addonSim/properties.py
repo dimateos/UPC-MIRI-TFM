@@ -3,147 +3,22 @@ import bpy.types as types
 import bpy.props as props
 
 from .preferences import getPrefs
+from .properties_root import (
+    MW_id,
+    MW_root,
+)
 
 from . import handlers
 from . import utils
 from .utils_dev import DEV
 
 
-# OPT:: comment some sections
 #-------------------------------------------------------------------
 
 class MW_gen_cfg(types.PropertyGroup):
 
-    meta_type: props.EnumProperty(
-        name="Type", description="Meta type added to the object to control some logic",
-        items=(
-            ('NONE', "No fracture", "No fracture generated"),
-            ('ROOT', "Root object", "Root object holding the fracture"),
-            ('CHILD', "Child object", "Child object part of the fracture"),
-        ),
-        options={'ENUM_FLAG'},
-        default={'NONE'},
-    )
-
-    @staticmethod
-    def isRoot(obj: types.Object) -> bool:
-        return "ROOT" in obj.mw_gen.meta_type
-    @staticmethod
-    def isChild(obj: types.Object) -> bool:
-        return "CHILD" in obj.mw_gen.meta_type
-
-    @staticmethod
-    def hasRoot(obj: types.Object) -> bool:
-        """ Quick check if the object is part of a fracture """
-        #DEV.log_msg(f"hasRoot check: {obj.name} -> {obj.mw_gen.meta_type}", {"REC", "CFG"})
-        return "NONE" not in obj.mw_gen.meta_type
-
-    # OPT:: should really try to acces the parent direclty -> but careful with rna of deleted...
-    # OPT:: too much used around in poll functions, performance hit? use a callback to be used on selected object? +also show name of selected etc
-    @staticmethod
-    def getRoot(obj: types.Object) -> tuple[types.Object, "MW_gen_cfg"]:
-        """ Retrieve the root object holding the config (MW_gen_cfg forward declared)"""
-        #DEV.log_msg(f"getRoot search: {obj.name} -> {obj.mw_gen.meta_type}", {"REC", "CFG"})
-        if "NONE" in obj.mw_gen.meta_type:
-            return obj, None
-
-        try:
-            obj_chain = obj
-            while "CHILD" in obj_chain.mw_gen.meta_type:
-                obj_chain = obj_chain.parent
-
-            # OPT:: check the root is actually root: could happen if an object is copy pasted
-            if "ROOT" not in obj_chain.mw_gen.meta_type: raise ValueError("Chain ended with no root")
-            #DEV.log_msg(f"getRoot chain end: {obj_chain.name}", {"RET", "CFG"})
-            return obj_chain, obj_chain.mw_gen
-
-        # the parent was removed
-        except AttributeError:
-            DEV.log_msg(f"getRoot chain broke: {obj.name} -> no rec parent", {"ERROR", "CFG"})
-            return obj, None
-        # the parent was not root
-        except ValueError:
-            DEV.log_msg(f"getRoot chain broke: {obj_chain.name} -> not root ({obj_chain.mw_gen.meta_type})", {"ERROR", "CFG"})
-            return obj, None
-
-    @staticmethod
-    def getSceneRoots(scene: types.Scene) -> list[types.Object]:
-        roots = [ obj for obj in scene.objects if MW_gen_cfg.isRoot(obj) ]
-        return roots
-
-    @staticmethod
-    def setMetaType(obj: types.Object, type: set[str], skipParent = False, childrenRec = True):
-        """ Set the property to the object and all its children (dictionary ies copied, not referenced)
-            # NOTE:: acessing obj children is O(len(bpy.data.objects)), so just call it on the root again
-        """
-        if not skipParent:
-            obj.mw_gen.meta_type = type.copy()
-
-        toSet = obj.children_recursive if childrenRec else obj.children
-        #DEV.log_msg(f"Setting {type} to {len(toSet)} objects", {"CFG"})
-        for child in toSet:
-            child.mw_gen.meta_type = type.copy()
-
-    #-------------------------------------------------------------------
-    #callbacks
-
-    # OPT:: unset on reload, could have a flag and let the panel update it -> cannot be done from addon register
-    nbl_selectedRoot_currentCFG = None
-    nbl_selectedRoot_currentOBJ = None
-
-    @classmethod
-    def hasSelectedRoot(cls) -> bool:
-        return cls.nbl_selectedRoot_currentOBJ and cls.nbl_selectedRoot_currentCFG
-
-    @classmethod
-    def getSelectedRoot(cls) -> tuple[types.Object, "MW_gen_cfg"]:
-        return cls.nbl_selectedRoot_currentOBJ, cls.nbl_selectedRoot_currentCFG
-    @classmethod
-    def getSelectedRoot_obj(cls) -> types.Object:
-        return cls.nbl_selectedRoot_currentOBJ
-    @classmethod
-    def getSelectedRoot_cfg(cls) -> "MW_gen_cfg":
-        return cls.nbl_selectedRoot_currentCFG
-
-
-    @classmethod
-    def setSelectedRoot(cls, selected):
-        # OPT:: multi-selection / root?
-        if selected: cls.nbl_selectedRoot_currentOBJ, cls.nbl_selectedRoot_currentCFG = cls.getRoot(selected[-1])
-        else: cls.nbl_selectedRoot_currentOBJ, cls.nbl_selectedRoot_currentCFG = None,None
-
-    # trigger new root on selection
-    @classmethod
-    def setSelectedRoot_callback(cls, _scene_=None, _selected_=None):
-        cls.setSelectedRoot(_selected_)
-
-    @classmethod
-    def resetSelectedRoot(cls):
-        cls.nbl_selectedRoot_currentOBJ, cls.nbl_selectedRoot_currentCFG = None, None
-
-
-    @classmethod
-    def sanitizeSelectedRoot(cls):
-        if utils.needsSanitize_object(cls.nbl_selectedRoot_currentOBJ):
-            cls.resetSelectedRoot()
-
-    @classmethod
-    def sanitizeSelectedRoot_callback(cls, _scene_=None, _name_selected_=None):
-        cls.sanitizeSelectedRoot()
-
-    #-------------------------------------------------------------------
-
+    # TODO:: maybe move to id too -> final fract with the global storage
     ptrID_links: props.StringProperty(default="nullptr")
-
-    #def init(self):
-    #    self.test_str = "test"
-
-    #    # fracture data preserved on the object
-    #    #self.nbl_cont: Container = None
-    #    #self.nbl_links: LinkCollection = None
-
-    #test_str: str = "test"
-    #test_strProp: props.StringProperty(default="testProp")
 
     #-------------------------------------------------------------------
 
@@ -283,7 +158,7 @@ class MW_gen_cfg(types.PropertyGroup):
     # IDEA:: update to direclty modify the scene
 
     def struct_shardScale_update(self, context):
-        obj = MW_gen_cfg.getSelectedRoot_obj()
+        obj = MW_root.getSelected_obj()
         if not obj: return
         shards = utils.get_child(obj, getPrefs().names.shards)
         utils.scale_objectChildren(shards, self.struct_shardScale)
@@ -296,7 +171,7 @@ class MW_gen_cfg(types.PropertyGroup):
 
     # IDEA:: maybe keep attached to faces by having and ID or something? atm momment cannot scale like this need another pivot
     def struct_linksScale_update(self, context):
-        obj = MW_gen_cfg.getSelectedRoot_obj()
+        obj = MW_root.getSelected_obj()
         if not obj: return
         links = utils.get_child(obj, getPrefs().names.links)
         if links: utils.scale_objectChildren(links, self.struct_linksScale)
@@ -375,31 +250,11 @@ _name = f"{__name__[14:]}" #\t(...{__file__[-32:]})"
 def register():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "REG"})
 
-    handlers.callback_selectionChange_actions.append(MW_gen_cfg.setSelectedRoot_callback)
-    handlers.callback_loadFile_actions.append(MW_gen_cfg.sanitizeSelectedRoot_callback)
-
     for cls in classes:
         bpy.utils.register_class(cls)
 
-    # appear as part of default object props
-    bpy.types.Object.mw_gen = props.PointerProperty(
-        type=MW_gen_cfg,
-        name="MW_Generation", description="MW generation properties")
-
-    bpy.types.Object.mw_sim = props.PointerProperty(
-        type=MW_sim_cfg,
-        name="MW_Simulation", description="MW simulation properties")
-
-    ## WIP maybe visualization stored in scene?
-    #bpy.types.Object.mw_vis = props.PointerProperty(
-    #    type=MW_vis_cfg,
-    #    name="MW_Visualization", description="MW visualization properties")
-
 def unregister():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})
-
-    handlers.callback_selectionChange_actions.remove(MW_gen_cfg.setSelectedRoot_callback)
-    handlers.callback_loadFile_actions.remove(MW_gen_cfg.sanitizeSelectedRoot_callback)
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

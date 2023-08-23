@@ -7,7 +7,7 @@ from .stats import getStats, timeit
 
 
 #-------------------------------------------------------------------
-# IDEA:: split into utils scene, math, misc etc
+# IDEA:: split into utils scene, math, misc etc -> at least blender / non-blender
 
 
 getPerpendicular_stable_minMagSq = 1e-3*1e-3

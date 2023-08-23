@@ -3,8 +3,8 @@ import bpy.types as types
 import bpy.props as props
 
 from .preferences import getPrefs, ADDON
-from .properties import (
-    MW_gen_cfg,
+from .properties_root import (
+    MW_root,
 )
 from . import operators as ops
 from .panels_utils import util_classes_pt
@@ -61,7 +61,7 @@ class MW_gen_PT(types.Panel):
 
     def draw_onSelected(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
-        obj, cfg = MW_gen_cfg.getSelectedRoot()
+        obj, cfg = MW_root.getSelected()
         col = layout.column()
 
         # Something selected, not last active
@@ -162,7 +162,7 @@ class MW_sim_PT(types.Panel):
 
     def draw(self, context):
         prefs = getPrefs()
-        obj, cfg = MW_gen_cfg.getSelectedRoot()
+        obj, cfg = MW_root.getSelected()
         col = self.layout.column()
 
         #col.label(text=f"...")
