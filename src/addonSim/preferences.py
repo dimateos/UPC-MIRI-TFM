@@ -84,7 +84,7 @@ class MW_prefs(bpy.types.AddonPreferences):
         links_group = "L"
 
         # OPT:: dynamic depending on number of cells
-        child_idFormat = "03"
+        child_idFormat = "04"
 
         @staticmethod
         def get_IdFormated(idx:int):

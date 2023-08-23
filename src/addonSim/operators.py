@@ -10,9 +10,9 @@ from .properties import (
 from .operators_utils import _StartRefresh_OT, util_classes_op
 
 from . import mw_setup
-from . import mw_cont
+from . import mw_extraction
 from .mw_links import LinkCollection, LinkStorage
-from tess import Container
+from .mw_cont import MW_Container
 from . import mw_sim
 
 from . import ui
@@ -130,19 +130,15 @@ class MW_gen_OT(_StartRefresh_OT):
 
 
         DEV.log_msg("Initial object setup", {'SETUP'})
-        # TODO:: convex hull triangulates the faces... e.g. UV sphere ends with more!
+        # NOTE:: convex hull triangulates the faces... e.g. UV sphere ends with more!
         if cfg.shape_useConvexHull:
             obj_toFrac = mw_setup.copy_convex(obj_root, obj_original, cfg, self.ctx)
         else: obj_toFrac = obj_original
 
-        # TODO:: visual panel impro
-        # TODO:: scale shards to see links better + add material random color with alpha + ui callback?
-        # this callbacks to shard maps seem to need a global map access -> links.cont / links.objs? check non valid root
-
         DEV.log_msg("Start calc points", {'CALC'})
         # Get the points and transform to local space when needed
-        mw_cont.detect_points_from_object(obj_original, cfg, self.ctx)
-        points = mw_cont.get_points_from_object_fallback(obj_original, cfg, self.ctx)
+        mw_extraction.detect_points_from_object(obj_original, cfg, self.ctx)
+        points = mw_extraction.get_points_from_object_fallback(obj_original, cfg, self.ctx)
         if not points:
             return self.end_op_error("found no points...")
 
@@ -156,10 +152,9 @@ class MW_gen_OT(_StartRefresh_OT):
 
         # XXX:: 2D objects should use the boundary? limits walls per axis
         # XXX:: limit particles axis too?
-        # XXX:: child verts / partilces should be checked inside?
 
         # Limit and rnd a bit the points
-        mw_cont.points_transformCfg(points, cfg, bb_radius)
+        mw_extraction.points_transformCfg(points, cfg, bb_radius)
 
         # Add some reference of the points to the scene
         mw_setup.gen_pointsObject(obj_root, points, self.cfg, self.ctx)
@@ -168,11 +163,10 @@ class MW_gen_OT(_StartRefresh_OT):
 
         DEV.log_msg("Start calc cont and links", {'CALC'})
         # IDEA:: mesh conecting input points + use single mesh instead of one per link?
+        # IDEA:: generate in phases? only cont, then links, etc...
         # XXX:: detect meshes with no volume? test basic shape for crashes...
-        # XXX:: voro++ has some static constant values that have to be edited in compile time...
-        #e.g. max_wall_size, tolerance for vertices,
 
-        cont:Container = mw_cont.cont_fromPoints(points, bb, faces4D, precision=prefs.gen_calc_precisionWalls)
+        cont = MW_Container(points, bb, faces4D, precision=prefs.gen_calc_precisionWalls)
         if not cont:
             return self.end_op_error("found no cont... but could try recalculate!")
 
@@ -184,9 +178,6 @@ class MW_gen_OT(_StartRefresh_OT):
             mw_setup.gen_LEGACY_CONT(obj_shards, cont, cfg, self.ctx)
             return self.end_op("DEV.LEGACY_CONT stop...")
         mw_setup.gen_shardsObjects(obj_shards, cont, cfg, self.ctx, invertOrientation=prefs.gen_setup_invertShardNormals)
-
-        #obj_links_legacy = mw_setup.genWIP_linksEmptiesPerCell(obj_root, cfg, self.ctx)
-        #mw_setup.genWIP_linksCellObjects(obj_links_legacy, cont, cfg, self.ctx)
 
         # calculate links and store in the external storage
         links:LinkCollection = LinkCollection(cont, obj_shards)
@@ -242,7 +233,7 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
             obj_toFrac = utils.get_child(obj_root, prefs.names.original_dissolve)
         else: obj_toFrac = utils.get_child(obj_root, prefs.names.original_copy)
 
-        points = mw_cont.get_points_from_fracture(obj_root, cfg)
+        points = mw_extraction.get_points_from_fracture(obj_root, cfg)
         if not points:
             return self.end_op_error("found no points...")
 
@@ -260,7 +251,7 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
 
 
         DEV.log_msg("Calc cont and links (shards not regenerated!)", {'CALC'})
-        cont:Container = mw_cont.cont_fromPoints(points, bb, faces4D, precision=prefs.gen_calc_precisionWalls)
+        cont = MW_Container(points, bb, faces4D, precision=prefs.gen_calc_precisionWalls)
         if not cont:
             return self.end_op_error("found no cont... but could try recalculate!")
 
@@ -435,6 +426,7 @@ class MW_sim_reset_OT(_StartRefresh_OT):
         return super().invoke(context, event)
 
     def execute(self, context: types.Context):
+        self.start_op()
         mw_sim.resetLife(self.links)
 
         obj, cfgGen = MW_gen_cfg.getSelectedRoot()
@@ -444,6 +436,60 @@ class MW_sim_reset_OT(_StartRefresh_OT):
         return self.end_op()
 
 #-------------------------------------------------------------------
+
+class MW_util_comps_OT(_StartRefresh_OT):
+    bl_idname = "mw.util_omps"
+    bl_label = "check comps"
+    bl_description = "WIP: check connected components"
+
+    bl_options = {'INTERNAL', 'UNDO'}
+
+    def __init__(self) -> None:
+        super().__init__()
+        # config some base class log flags...
+
+    @classmethod
+    def poll(cls, context):
+        return MW_gen_cfg.hasSelectedRoot()
+
+    def invoke(self, context, event):
+        obj, cfgGen, self.links = MW_gen_recalc_OT.getSelectedRoot_links()
+        if not self.links:
+            return self.end_op_error("No links storage found...")
+
+        return super().invoke(context, event)
+
+    def execute(self, context: types.Context):
+        self.start_op()
+        mw_extraction.get_connected_comps(self.links)
+        return self.end_op()
+
+class MW_util_bool_OT(_StartRefresh_OT):
+    bl_idname = "mw.util_bool"
+    bl_label = "bool mod"
+    bl_description = "WIP: add bool modifier"
+
+    bl_options = {'INTERNAL', 'UNDO'}
+
+    def __init__(self) -> None:
+        super().__init__()
+        # config some base class log flags...
+
+    @classmethod
+    def poll(cls, context):
+        return MW_gen_cfg.hasSelectedRoot()
+
+    def execute(self, context: types.Context):
+        self.start_op()
+        obj, cfg = MW_gen_cfg.getSelectedRoot()
+
+        if obj:
+            prefs = getPrefs()
+            obj_original = utils.get_child(obj, prefs.names.original_copy + prefs.names.original)
+            obj_shards = utils.get_child(obj, prefs.names.shards)
+            mw_extraction.boolean_mod_add(obj_original, obj_shards, context)
+
+        return self.end_op()
 
 class MW_util_delete_OT(_StartRefresh_OT):
     bl_idname = "mw.util_delete"
@@ -532,6 +578,8 @@ classes = [
     MW_sim_step_OT,
     MW_sim_reset_OT,
 
+    MW_util_comps_OT,
+    MW_util_bool_OT,
     MW_util_delete_OT,
     MW_util_delete_all_OT,
     MW_util_bake_OT,

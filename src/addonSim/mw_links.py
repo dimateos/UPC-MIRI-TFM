@@ -6,6 +6,7 @@ from tess import Container, Cell
 
 from . import utils
 from . import utils_geo
+from . import mw_resistance
 from .utils_dev import DEV
 from .stats import getStats
 
@@ -25,7 +26,6 @@ class LINK_ERROR_IDX:
     all = [ missing, asymmetry ]
 
 #-------------------------------------------------------------------
-
 
 # OPT:: could use a class or an array of props? pyhton already slow so ok class?
 # IDEA:: augmented cell class instead of array of props? cont -> cell -> link... less key map indirections
@@ -54,14 +54,8 @@ class Link():
         self.area = face_area
         self.areaFactor = 1.0
 
-        from math import sin
-        def step_function(value):
-            return 1 if value >= 0 else 0
-        def calculate_result(x, y):
-            result = 0.5 * sin((10 * x + 5 * y)) + 0.5
-            step_result = step_function(sin(20 * y) + 0.8)
-            return result * step_result
-        self.resistance = calculate_result(self.pos.x, self.pos.y)
+        #self.resistance = 0.5 + 0.5* mw_resistance.get2D(self.pos.x, self.pos.y)
+        self.resistance = mw_resistance.get2D(self.pos.x, self.pos.y)
 
     def __str__(self):
         s = f"k{utils.key_to_string(self.key_cells)} a({self.areaFactor:.3f},{self.area:.3f}) life({self.life:.3f},{self.picks})"
@@ -114,7 +108,7 @@ class Link():
             else                            : self.neighs_Cell_Cell.append(self.collection.link_map[kn])
 
 #-------------------------------------------------------------------
-# TODO:: some likes will become air + others unreachable etc
+# TODO:: some linkes will become air + others unreachable etc
 
 class LinkCollection():
 
@@ -251,10 +245,13 @@ class LinkCollection():
                 # get world props
                 face: types.MeshPolygon = me.polygons[idx_face]
                 pos = m_toWorld @ face.center
+                if DEV.DEBUG_COMPS and abs(pos.x) < 0.5: continue
                 normal = mn_toWorld @ face.normal
                 area = face.area
                 # NOTE:: potentially rotated normals may have a length of 1.0 +- 1e-8 but not worth normalizing
                 #DEV.log_msg(f"face.normal {face.normal} (l: {face.normal.length}) -> world {normal} (l: {normal.length})", cut=False)
+
+
 
                 # check min/max
                 if self.min_pos.x > pos.x: self.min_pos.x = pos.x

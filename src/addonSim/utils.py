@@ -7,6 +7,8 @@ from .stats import getStats, timeit
 
 
 #-------------------------------------------------------------------
+# IDEA:: split into utils scene, math, misc etc
+
 
 getPerpendicular_stable_minMagSq = 1e-3*1e-3
 """ small magnitudes will be unstable when normalizing """
@@ -46,11 +48,11 @@ def getPerpendicularBase_stable(n:Vector, normalize=True):
 
 #-------------------------------------------------------------------
 
-def transform_points(points: list[Vector], matrix) -> list[Vector]:
+def transform_points(points: list[Vector] |  list[list], matrix) -> list[Vector]:
     """ INPLACE: Transform given points by the trans matrix """
     # no list comprehension of the whole list, asigning to a reference var changes the reference not the referenced
     for i,p in enumerate(points):
-        points[i] = matrix @ p
+        points[i] = matrix @ Vector(p)
 
 def get_verts(obj: types.Object, worldSpace=False) -> list[Vector, 6]:
     """ Get the object vertices in world space """

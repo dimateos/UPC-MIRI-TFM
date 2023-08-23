@@ -185,7 +185,7 @@ class MW_gen_cfg(types.PropertyGroup):
 
     source_limit: props.IntProperty(
         name="Limit points", description="Limit the number of input points, 0 for unlimited",
-        default=100, min=0, max=5000,
+        default=100, min=0, max=10000,
     )
     source_noise: props.FloatProperty(
         name="RND noise", description="Randomize point distribution",
@@ -290,7 +290,7 @@ class MW_gen_cfg(types.PropertyGroup):
 
     struct_shardScale: props.FloatProperty(
         name="Shard scale", description="Reduce some bits to be able to see the links better",
-        default=0.75, min=0.25, max=1,
+        default=0.75, min=0.25, max=1.5,
         update=struct_shardScale_update
     )
 

@@ -64,10 +64,8 @@ class SIM_CONST:
 # TODO:: edit in UI some panel
 class SIM_CFG:
     """ Sim config values to tweak """
-    test = False
-
     entryL_min_align = 0.1
-    nextL_min_align = 0.1
+    nextL_min_align = -0.1
 
     water_baseCost = 0.01
     water_linkCost = 0.2
@@ -79,12 +77,11 @@ class SIM_CFG:
 #-------------------------------------------------------------------
 
 class Simulation:
-    def __init__(self, links_initial: LinkCollection, deg = 0.05, log = True, test = True):
+    def __init__(self, links_initial: LinkCollection, deg = 0.05, log = True):
         self.storeRnd()
 
-        SIM_CFG.test2D = test
-        if SIM_CFG.test2D:
-            DEV.log_msg(f" > init : TEST flag set", {"SIM", "LOG", "STEP"})
+        if DEV.DEBUG_MODEL:
+            DEV.log_msg(f" > init : DEBUG_MODEL flag set", {"SIM", "LOG", "STEP"})
 
         self.links             = links_initial
         self.links_iniLife     = [ l.life for l in self.links.links_Cell_Cell ]
@@ -182,8 +179,8 @@ class Simulation:
 
             # apply degradation etc
             if self.currentL:
-                self.link_degradation()
                 self.water_degradation()
+                self.link_degradation()
 
                 # LOG inline during loop
                 if inlineLog:
@@ -232,7 +229,7 @@ class Simulation:
             self.step_trace.entryL_candidatesW = weights
 
     def get_entryWeight(self, l:Link):
-        if SIM_CFG.test2D:
+        if DEV.DEBUG_MODEL:
             # WIP:: limit axis for the hill model
             if SIM_CONST.aligned(l.dir, SIM_CONST.backZ, bothDir=True):
                 return 0
@@ -280,7 +277,7 @@ class Simulation:
             self.sub_trace.currentL_candidatesW = weights
 
     def get_nextWeight(self, l:Link):
-        if SIM_CFG.test2D:
+        if DEV.DEBUG_MODEL:
             # WIP:: limit axis for the hill model also for next links (e.g. exit wall links)
             if SIM_CONST.aligned(l.dir, SIM_CONST.backZ, bothDir=True):
                 return 0
@@ -299,9 +296,10 @@ class Simulation:
         w *= d
 
         # check link resistance field
-        w *= l.resistance
+        r = 1 - l.resistance
+        w *= r
 
-        return w
+        return max(w, 0.0001)
 
     #-------------------------------------------------------------------
 
@@ -335,7 +333,7 @@ class Simulation:
         # check complete water absortion event
         if self.waterLevel < SIM_CFG.water_minAbsorb_check and self.waterLevel > 0:
             minAbsorb = self.waterLevel / SIM_CFG.water_minAbsorb_check
-            if minAbsorb * SIM_CFG.water_minAbsorb_continuexºProb < rnd.random():
+            if minAbsorb * SIM_CFG.water_minAbsorb_continueProb < rnd.random():
                 self.waterLevel = -1
 
     #-------------------------------------------------------------------
