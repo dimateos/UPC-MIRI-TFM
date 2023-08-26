@@ -417,7 +417,7 @@ def gen_child(
     obj: types.Object, name: str, context: types.Context,
     mesh: types.Mesh = None, keepTrans = True, noInv = False, hide: bool = False
     ):
-    """ Generate a new child with the CHILD meta_type """
+    """ Generate a new child with the CHILD mw_id.type """
     obj_child = bpy.data.objects.new(name, mesh)
     context.scene.collection.objects.link(obj_child)
 

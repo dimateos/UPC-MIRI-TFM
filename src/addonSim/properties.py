@@ -243,7 +243,7 @@ class MW_vis_cfg(types.PropertyGroup):
 classes = [
     MW_gen_cfg,
     MW_sim_cfg,
-    #MW_vis_cfg,
+    MW_vis_cfg,
 ]
 _name = f"{__name__[14:]}" #\t(...{__file__[-32:]})"
 

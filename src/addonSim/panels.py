@@ -204,7 +204,6 @@ class MW_addon_PT(types.Panel):
 classes = [
     MW_gen_PT,
     MW_sim_PT,
-#] + util_classes_pt + [
     MW_addon_PT,
 ] + util_classes_pt
 

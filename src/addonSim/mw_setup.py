@@ -7,6 +7,11 @@ from math import radians
 # IDEA:: global prefs might not be so good
 #from .preferences import prefs
 from .preferences import getPrefs
+from .properties_root import (
+    MW_id,
+    MW_root,
+    MW_id_utils,
+)
 from .properties import (
     MW_gen_cfg,
 )
@@ -24,7 +29,7 @@ from .stats import getStats
 #-------------------------------------------------------------------
 
 def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    cfg.meta_type = {"ROOT"}
+    obj.mw_id.meta_type = {"ROOT"}
     cfg.struct_nameOriginal = obj.name
     prefs = getPrefs()
 
@@ -35,7 +40,7 @@ def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     # Duplicate the original object
     prefs.names.original = obj.name
     obj_copy = utils.copy_objectRec(obj, context, namePreffix=prefs.names.original_copy)
-    #MW_gen_cfg.setMetaType(obj_copy, {"CHILD"})
+    #MW_id_utils.setMetaType(obj_copy, {"CHILD"})
 
     # Scene viewport
     obj.select_set(False)
@@ -82,7 +87,7 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, cont
     # Duplicate again the copy and set child too
     obj_c = utils.copy_objectRec(obj_copy, context, keep_mods=False)
     obj_c.name = getPrefs().names.original_convex
-    #MW_gen_cfg.setMetaType(obj_c, {"CHILD"})
+    #MW_id_utils.setMetaType(obj_c, {"CHILD"})
     utils.set_child(obj_c, obj)
 
     # XXX:: need to mesh update? + decimate before more perf? but need to change EDIT/OBJ modes?
@@ -103,7 +108,7 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, cont
     # Second copy with the face dissolve
     obj_d = utils.copy_objectRec(obj_c, context, keep_mods=False)
     obj_d.name = getPrefs().names.original_dissolve
-    #MW_gen_cfg.setMetaType(obj_d, {"CHILD"})
+    #MW_id_utils.setMetaType(obj_d, {"CHILD"})
     utils.set_child(obj_d, obj)
 
     # dissolve faces based on angle limit
@@ -307,7 +312,7 @@ def gen_linksObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cfg, c
     obj_links = utils.gen_childReuse(obj, name, context, mesh, keepTrans=True, hide=not cfg.struct_showLinks)
     mesh.name = name
 
-    MW_gen_cfg.setMetaType(obj_links, {"CHILD"}, childrenRec=False)
+    MW_id_utils.setMetaType(obj_links, {"CHILD"}, childrenRec=False)
     getStats().logDt("generated links object")
     return obj_links
 
@@ -346,7 +351,7 @@ def gen_linksWallObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cf
     # WIP:: additional attr to visualize in the ame view mode
     utils_render.gen_meshAttr(mesh, color3.to_4d(), 1, "FLOAT_COLOR", "POINT", "blueColor")
 
-    MW_gen_cfg.setMetaType(obj_wallLinks, {"CHILD"}, childrenRec=False)
+    MW_id_utils.setMetaType(obj_wallLinks, {"CHILD"}, childrenRec=False)
     getStats().logDt("generated wall links object")
     return obj_wallLinks
 
@@ -409,7 +414,7 @@ def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: Li
         obj_link.location = l.pos
         obj_link.active_material = mat
 
-    MW_gen_cfg.setMetaType(objLinks.parent, {"CHILD"}, skipParent=True)
+    MW_id_utils.setMetaType(objLinks.parent, {"CHILD"}, skipParent=True)
     getStats().logDt("generated links to walls objects")
 
 def genWIP_linksEmptiesPerCell(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
@@ -463,5 +468,5 @@ def genWIP_linksCellObjects(objParent: types.Object, cont: Container, cfg: MW_ge
             obj_link.hide_set(key_rep or not cfg.struct_showLinks_legacy)
             #obj_link.location = cell.centroid()
 
-    MW_gen_cfg.setMetaType(objParent, {"CHILD"}, skipParent=False)
+    MW_id_utils.setMetaType(objParent, {"CHILD"}, skipParent=False)
     getStats().logDt("generated links per cell objects")

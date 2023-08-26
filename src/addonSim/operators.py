@@ -6,6 +6,7 @@ from .preferences import getPrefs
 from .properties_root import (
     MW_id,
     MW_root,
+    MW_id_utils,
 )
 from .properties import (
     MW_gen_cfg,
@@ -36,6 +37,7 @@ class MW_gen_OT(_StartRefresh_OT):
     # REGISTER + UNDO pops the edit last op window
     bl_options = {'PRESET', 'REGISTER', 'UNDO'}
     cfg: props.PointerProperty(type=MW_gen_cfg)
+    invoked_once = False
 
     def __init__(self) -> None:
         super().__init__(init_log=True)
@@ -52,7 +54,7 @@ class MW_gen_OT(_StartRefresh_OT):
 
     def invoke(self, context, event):
         # avoid last stored operation overide
-        self.cfg.meta_type = {"NONE"}
+        self.invoked_once = False
         # clean memory ptr leftovers
         self.last_ptrID_links = ""
         return super().invoke(context, event)
@@ -89,7 +91,8 @@ class MW_gen_OT(_StartRefresh_OT):
             # NOTE:: no longer supporting edit fracture -> basically always replaces all objects in the scene which is slower than a fresh one
             else:
                 # Copy the config to the op only once to allow the user to edit it afterwards
-                if "NONE" in self.cfg.meta_type:
+                if not self.invoked_once:
+                    self.invoked_once = True
                     DEV.log_msg("cfg found once: copying props to OP", {'SETUP'})
                     copyProps(cfg, self.cfg)
 
@@ -187,7 +190,7 @@ class MW_gen_OT(_StartRefresh_OT):
             self.cfg.name = self.obj_root.name
             copyProps(self.cfg, self.obj_root.mw_gen)
             # set the meta type to all objects at once
-            MW_gen_cfg.setMetaType(self.obj_root, {"CHILD"}, skipParent=True)
+            MW_id_utils.setMetaType(self.obj_root, {"CHILD"}, skipParent=True)
 
         return super().end_op(msg, skipLog, retPass)
 
@@ -323,7 +326,7 @@ class MW_gen_links_OT(_StartRefresh_OT):
     def end_op(self, msg="", skipLog=False, retPass=False):
         """ OVERRIDE:: end_op to perform assign child to all """
         obj, cfg = MW_root.getSelected()
-        if obj: MW_gen_cfg.setMetaType(obj, {"CHILD"}, skipParent=True)
+        if obj: MW_id_utils.setMetaType(obj, {"CHILD"}, skipParent=True)
         return super().end_op(msg, skipLog, retPass)
 
 #-------------------------------------------------------------------
@@ -522,7 +525,7 @@ class MW_util_delete_all_OT(_StartRefresh_OT):
         self.start_op()
 
         # iterate and delete roots
-        roots = MW_gen_cfg.getSceneRoots(context.scene)
+        roots = MW_id_utils.getSceneRoots(context.scene)
         for obj_root in roots:
             MW_root.setSelected([obj_root])
             bpy.ops.mw.util_delete()
@@ -543,13 +546,13 @@ class MW_util_bake_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return context.selected_objects and MW_gen_cfg.isChild(context.selected_objects[-1])
+        return context.selected_objects and MW_id_utils.isChild(context.selected_objects[-1])
 
     def execute(self, context: types.Context):
         self.start_op(skipStats=True)
         obj = context.selected_objects[-1]
         obj.parent = None
-        MW_gen_cfg.setMetaType(obj, {"NONE"})
+        MW_id_utils.setMetaType(obj, {"NONE"})
         MW_root.setSelected(context.selected_objects)
         return self.end_op(skipLog=True)
 

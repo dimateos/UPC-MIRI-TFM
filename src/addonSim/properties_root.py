@@ -2,8 +2,6 @@ import bpy
 import bpy.types as types
 import bpy.props as props
 
-from .preferences import getPrefs
-
 from . import handlers
 from . import utils
 from .utils_dev import DEV
@@ -26,68 +24,77 @@ class MW_id(types.PropertyGroup):
     )
 
 #-------------------------------------------------------------------
-# Functions outside the class to avoid all the memory footprint inside the objects
 
-def isRoot(obj: types.Object) -> bool:
-    return "ROOT" in obj.mw_id.meta_type
-def isChild(obj: types.Object) -> bool:
-    return "CHILD" in obj.mw_id.meta_type
+class MW_id_utils:
+    """ MW_id util functions stored outside the class to avoid all the memory footprint inside the objects"""
 
-def hasRoot(obj: types.Object) -> bool:
-    """ Quick check if the object is part of a fracture """
-    #DEV.log_msg(f"hasRoot check: {obj.name} -> {obj.mw_id.meta_type}", {"REC", "CFG"})
-    return "NONE" not in obj.mw_id.meta_type
+    @staticmethod
+    def isRoot(obj: types.Object) -> bool:
+        return "ROOT" in obj.mw_id.meta_type
+    @staticmethod
+    def isChild(obj: types.Object) -> bool:
+        return "CHILD" in obj.mw_id.meta_type
 
-
-def getRoot(obj: types.Object) -> tuple[types.Object, "MW_id"]:
-    """ Retrieve the root object holding the config (MW_id forward declared)"""
-    #DEV.log_msg(f"getRoot search: {obj.name} -> {obj.mw_id.meta_type}", {"REC", "CFG"})
-    if "NONE" in obj.mw_id.meta_type:
-        return obj, None
-
-    try:
-        obj_chain = obj
-        while "CHILD" in obj_chain.mw_id.meta_type:
-            obj_chain = obj_chain.parent
-
-        # NOTE:: check the root is actually root: could happen if an object is modified at some step by the user
-        if "ROOT" not in obj_chain.mw_id.meta_type: raise ValueError("Chain ended with no root")
-        #DEV.log_msg(f"getRoot chain end: {obj_chain.name}", {"RET", "CFG"})
-        return obj_chain, obj_chain.mw_id
-
-    # the parent was removed
-    except AttributeError:
-        DEV.log_msg(f"getRoot chain broke: {obj.name} -> no rec parent", {"ERROR", "CFG"})
-        return obj, None
-    # the parent was not root
-    except ValueError:
-        DEV.log_msg(f"getRoot chain broke: {obj_chain.name} -> not root ({obj_chain.mw_id.meta_type})", {"ERROR", "CFG"})
-        return obj, None
-
-def getSceneRoots(scene: types.Scene) -> list[types.Object]:
-    roots = [ obj for obj in scene.objects if MW_id.isRoot(obj) ]
-    return roots
+    @staticmethod
+    def hasRoot(obj: types.Object) -> bool:
+        """ Quick check if the object is part of a fracture """
+        #DEV.log_msg(f"hasRoot check: {obj.name} -> {obj.mw_id.meta_type}", {"REC", "CFG"})
+        return "NONE" not in obj.mw_id.meta_type
 
 
-# OPT:: avoid using this and just set the children?
-def setMetaType(obj: types.Object, type: set[str], skipParent = False, childrenRec = True):
-    """ Set the property to the object and all its children (dictionary ies copied, not referenced)
-        # NOTE:: acessing obj children is O(len(bpy.data.objects)), so just call it on the root again
-    """
-    if not skipParent:
-        obj.mw_id.meta_type = type.copy()
+    @staticmethod
+    def getRoot(obj: types.Object) -> tuple[types.Object, "MW_id"]:
+        """ Retrieve the root object holding the config (MW_id forward declared)"""
+        #DEV.log_msg(f"getRoot search: {obj.name} -> {obj.mw_id.meta_type}", {"REC", "CFG"})
+        if "NONE" in obj.mw_id.meta_type:
+            return obj, None
 
-    toSet = obj.children_recursive if childrenRec else obj.children
-    #DEV.log_msg(f"Setting {type} to {len(toSet)} objects", {"CFG"})
-    for child in toSet:
-        child.mw_id.meta_type = type.copy()
+        try:
+            obj_chain = obj
+            while "CHILD" in obj_chain.mw_id.meta_type:
+                obj_chain = obj_chain.parent
+
+            # NOTE:: check the root is actually root: could happen if an object is modified at some step by the user
+            if "ROOT" not in obj_chain.mw_id.meta_type: raise ValueError("Chain ended with no root")
+            #DEV.log_msg(f"getRoot chain end: {obj_chain.name}", {"RET", "CFG"})
+            return obj_chain, obj_chain.mw_id
+
+        # the parent was removed
+        except AttributeError:
+            DEV.log_msg(f"getRoot chain broke: {obj.name} -> no rec parent", {"ERROR", "CFG"})
+            return obj, None
+        # the parent was not root
+        except ValueError:
+            DEV.log_msg(f"getRoot chain broke: {obj_chain.name} -> not root ({obj_chain.mw_id.meta_type})", {"ERROR", "CFG"})
+            return obj, None
+
+    @staticmethod
+    def getSceneRoots(scene: types.Scene) -> list[types.Object]:
+        roots = [ obj for obj in scene.objects if MW_id_utils.isRoot(obj) ]
+        return roots
+
+
+    # OPT:: avoid using this and just set the children?
+    @staticmethod
+    def setMetaType(obj: types.Object, type: set[str], skipParent = False, childrenRec = True):
+        """ Set the property to the object and all its children (dictionary ies copied, not referenced)
+            # NOTE:: acessing obj children is O(len(bpy.data.objects)), so just call it on the root again
+        """
+        if not skipParent:
+            obj.mw_id.meta_type = type.copy()
+
+        toSet = obj.children_recursive if childrenRec else obj.children
+        #DEV.log_msg(f"Setting {type} to {len(toSet)} objects", {"CFG"})
+        for child in toSet:
+            child.mw_id.meta_type = type.copy()
 
 
 #-------------------------------------------------------------------
 # callbacks for selection / undo to keep track of selected root fracture
 
-class MW_root(types.PropertyGroup):
+class MW_root:
     # TODO:: store the data in the scene/file to avoid losing it on reload? Still issues with global storage anyway
+    #class MW_root(types.PropertyGroup): + register the class etc
     #my_object: bpy.props.PointerProperty(type=bpy.types.Object)
 
     nbl_selected_cfg = None
@@ -111,7 +118,7 @@ class MW_root(types.PropertyGroup):
     @classmethod
     def setSelected(cls, selected):
         # OPT:: multi-selection / root?
-        if selected: cls.nbl_selected_obj, cls.nbl_selected_cfg = MW_id.getRoot(selected[-1])
+        if selected: cls.nbl_selected_obj, cls.nbl_selected_cfg = MW_id_utils.getRoot(selected[-1])
         else: cls.nbl_selected_obj, cls.nbl_selected_cfg = None,None
 
     # trigger new root on selection
@@ -155,7 +162,6 @@ def register():
     bpy.types.Object.mw_id = props.PointerProperty(
         type=MW_id,
         name="MW_id", description="MW fracture id")
-
 
 def unregister():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})

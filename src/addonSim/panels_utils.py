@@ -256,6 +256,7 @@ class Info_inpect_PT(types.Panel):
                 for f in selected_faces[:limit]: col.label(text=f"{f.index}: {f.vertices[:]}")
             if len(selected_faces) > limit: col.label(text=f"...")
 
+
 #-------------------------------------------------------------------
 # Blender events
 
