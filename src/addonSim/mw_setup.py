@@ -29,12 +29,12 @@ from .stats import getStats
 #-------------------------------------------------------------------
 
 def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj.mw_id.meta_type = {"ROOT"}
     cfg.struct_nameOriginal = obj.name
     prefs = getPrefs()
 
     # Empty object to hold all of them set at the original obj trans
     obj_root = bpy.data.objects.new(cfg.get_struct_name(), None)
+    obj_root.mw_id.meta_type = {"ROOT"}
     context.scene.collection.objects.link(obj_root)
 
     # Duplicate the original object

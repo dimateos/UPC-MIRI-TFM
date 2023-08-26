@@ -5,6 +5,7 @@ import bpy.props as props
 from .preferences import getPrefs, ADDON
 from .properties_root import (
     MW_root,
+    MW_id_utils,
 )
 from . import operators as ops
 from .panels_utils import util_classes_pt
@@ -61,13 +62,15 @@ class MW_gen_PT(types.Panel):
 
     def draw_onSelected(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
-        obj, cfg = MW_root.getSelected()
+        obj = context.selected_objects[-1] if context.selected_objects else None
         col = layout.column()
 
         # Something selected, not last active
         if not obj:
             col.label(text="No object selected...", icon="ERROR")
             return
+
+        cfg = obj.mw_gen if MW_id_utils.hasRoot(obj) else None
 
         # No fracture selected
         if not cfg:
@@ -140,7 +143,8 @@ class MW_gen_PT(types.Panel):
 
 
             # inspect props
-            if not prefs.gen_PT_meta_show_root: cfg = selected.mw_gen
+            if not prefs.gen_PT_meta_show_root:
+                cfg = selected.mw_gen
             open, box = ui.draw_propsToggle(cfg, prefs, "gen_PT_meta_show_summary", "gen_PT_meta_propFilter", "gen_PT_meta_propEdit", "get_PT_meta_propShowId", layout)
             if open:
                 col_rowSplit = box.row().split()
@@ -162,7 +166,7 @@ class MW_sim_PT(types.Panel):
 
     def draw(self, context):
         prefs = getPrefs()
-        obj, cfg = MW_root.getSelected()
+        #obj, cfg = MW_root.getSelected()
         col = self.layout.column()
 
         #col.label(text=f"...")

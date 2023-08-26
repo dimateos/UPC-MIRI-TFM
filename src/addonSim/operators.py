@@ -78,13 +78,13 @@ class MW_gen_OT(_StartRefresh_OT):
 
 
         # Retrieve root
-        obj, cfg = MW_root.getSelected()
+        obj = MW_root.getSelected()
         getStats().logDt("retrieved root object")
         try:
             # Selected object not fractured, fresh execution
-            if not cfg:
+            if obj is None:
                 DEV.log_msg("cfg NOT found: new frac", {'SETUP'})
-                obj_root, obj_original = mw_setup.copy_original(obj, self.cfg, context)
+                obj_root, obj_original = mw_setup.copy_original(context.selected_objects[-1], self.cfg, context)
                 return self.execute_fresh(obj_root, obj_original)
 
             # Fracture the same original object, copy props for a duplicated result to tweak parameters
@@ -94,7 +94,7 @@ class MW_gen_OT(_StartRefresh_OT):
                 if not self.invoked_once:
                     self.invoked_once = True
                     DEV.log_msg("cfg found once: copying props to OP", {'SETUP'})
-                    copyProps(cfg, self.cfg)
+                    copyProps(obj.mw_gen, self.cfg)
 
                 # optionally unhide the original fracture object but always unselect
                 obj.select_set(False)
@@ -210,7 +210,8 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
     def execute(self, context: types.Context):
         self.start_op()
         prefs = getPrefs()
-        obj_root, cfg = MW_root.getSelected()
+        obj_root = MW_root.getSelected()
+        cfg = obj_root.mw_gen
 
         # delete current cont when found
         if cfg.ptrID_links:
@@ -259,7 +260,8 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
 
     @staticmethod
     def getSelected_links():
-        obj, cfg = MW_root.getSelected()
+        obj = MW_root.getSelected()
+        cfg = obj.mw_gen
         links = None
 
         if not cfg.ptrID_links:
@@ -325,7 +327,7 @@ class MW_gen_links_OT(_StartRefresh_OT):
 
     def end_op(self, msg="", skipLog=False, retPass=False):
         """ OVERRIDE:: end_op to perform assign child to all """
-        obj, cfg = MW_root.getSelected()
+        obj = MW_root.getSelected()
         if obj: MW_id_utils.setMetaType(obj, {"CHILD"}, skipParent=True)
         return super().end_op(msg, skipLog, retPass)
 
@@ -384,8 +386,9 @@ class MW_sim_step_OT(_StartRefresh_OT):
             else: self.sim.step(cfg.subSteps)
 
         # IDEA:: store copy or original or button to recalc links from start? -> set all life to 1 but handle any dynamic list
-        obj, cfgGen = MW_root.getSelected()
+        obj = MW_root.getSelected()
         if obj:
+            cfgGen = obj.mw_gen
             mw_setup.gen_linksObject(obj, self.links, cfgGen, context)
             mw_setup.gen_linksWallObject(obj, self.links, cfgGen, context, self.sim.step_trace.entryL_candidatesW if self.sim.trace else None)
 
@@ -418,8 +421,9 @@ class MW_sim_reset_OT(_StartRefresh_OT):
         self.start_op()
         mw_sim.resetLife(self.links)
 
-        obj, cfgGen = MW_root.getSelected()
+        obj = MW_root.getSelected()
         if obj:
+            cfgGen = obj.mw_gen
             mw_setup.gen_linksObject(obj, self.links, cfgGen, context)
             mw_setup.gen_linksWallObject(obj, self.links, cfgGen, context)
         return self.end_op()
@@ -470,7 +474,7 @@ class MW_util_bool_OT(_StartRefresh_OT):
 
     def execute(self, context: types.Context):
         self.start_op()
-        obj, cfg = MW_root.getSelected()
+        obj = MW_root.getSelected()
 
         if obj:
             prefs = getPrefs()
@@ -494,7 +498,8 @@ class MW_util_delete_OT(_StartRefresh_OT):
 
     def execute(self, context: types.Context):
         self.start_op()
-        obj, cfg = MW_root.getSelected()
+        obj = MW_root.getSelected()
+        cfg = obj.mw_gen
         prefs = getPrefs()
 
         # optionally unhide the original object

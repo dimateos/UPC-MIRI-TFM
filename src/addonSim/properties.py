@@ -158,7 +158,7 @@ class MW_gen_cfg(types.PropertyGroup):
     # IDEA:: update to direclty modify the scene
 
     def struct_shardScale_update(self, context):
-        obj = MW_root.getSelected_obj()
+        obj = MW_root.getSelected()
         if not obj: return
         shards = utils.get_child(obj, getPrefs().names.shards)
         utils.scale_objectChildren(shards, self.struct_shardScale)
@@ -171,7 +171,7 @@ class MW_gen_cfg(types.PropertyGroup):
 
     # IDEA:: maybe keep attached to faces by having and ID or something? atm momment cannot scale like this need another pivot
     def struct_linksScale_update(self, context):
-        obj = MW_root.getSelected_obj()
+        obj = MW_root.getSelected()
         if not obj: return
         links = utils.get_child(obj, getPrefs().names.links)
         if links: utils.scale_objectChildren(links, self.struct_linksScale)

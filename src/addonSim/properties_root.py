@@ -43,11 +43,11 @@ class MW_id_utils:
 
 
     @staticmethod
-    def getRoot(obj: types.Object) -> tuple[types.Object, "MW_id"]:
+    def getRoot(obj: types.Object) -> types.Object | None:
         """ Retrieve the root object holding the config (MW_id forward declared)"""
         #DEV.log_msg(f"getRoot search: {obj.name} -> {obj.mw_id.meta_type}", {"REC", "CFG"})
         if "NONE" in obj.mw_id.meta_type:
-            return obj, None
+            return None
 
         try:
             obj_chain = obj
@@ -57,16 +57,16 @@ class MW_id_utils:
             # NOTE:: check the root is actually root: could happen if an object is modified at some step by the user
             if "ROOT" not in obj_chain.mw_id.meta_type: raise ValueError("Chain ended with no root")
             #DEV.log_msg(f"getRoot chain end: {obj_chain.name}", {"RET", "CFG"})
-            return obj_chain, obj_chain.mw_id
+            return obj_chain
 
         # the parent was removed
         except AttributeError:
             DEV.log_msg(f"getRoot chain broke: {obj.name} -> no rec parent", {"ERROR", "CFG"})
-            return obj, None
+            return None
         # the parent was not root
         except ValueError:
             DEV.log_msg(f"getRoot chain broke: {obj_chain.name} -> not root ({obj_chain.mw_id.meta_type})", {"ERROR", "CFG"})
-            return obj, None
+            return None
 
     @staticmethod
     def getSceneRoots(scene: types.Scene) -> list[types.Object]:
@@ -97,44 +97,40 @@ class MW_root:
     #class MW_root(types.PropertyGroup): + register the class etc
     #my_object: bpy.props.PointerProperty(type=bpy.types.Object)
 
-    nbl_selected_cfg = None
     nbl_selected_obj = None
 
     @classmethod
     def hasSelected(cls) -> bool:
-        return cls.nbl_selected_obj and cls.nbl_selected_cfg
+        return cls.nbl_selected_obj is not None
 
     @classmethod
-    def getSelected(cls) -> tuple[types.Object, "MW_id"]:
-        return cls.nbl_selected_obj, cls.nbl_selected_cfg
-    @classmethod
-    def getSelected_obj(cls) -> types.Object:
+    def getSelected(cls) -> types.Object | None:
         return cls.nbl_selected_obj
-    @classmethod
-    def getSelected_cfg(cls) -> "MW_id":
-        return cls.nbl_selected_cfg
-
 
     @classmethod
     def setSelected(cls, selected):
         # OPT:: multi-selection / root?
-        if selected: cls.nbl_selected_obj, cls.nbl_selected_cfg = MW_id_utils.getRoot(selected[-1])
-        else: cls.nbl_selected_obj, cls.nbl_selected_cfg = None,None
+        if selected:
+            cls.nbl_selected_obj = MW_id_utils.getRoot(selected[-1])
+        else:
+            cls.resetSelected()
 
-    # trigger new root on selection
-    @classmethod
-    def setSelected_callback(cls, _scene_=None, _selected_=None):
-        cls.setSelected(_selected_)
 
     @classmethod
     def resetSelected(cls):
-        cls.nbl_selected_obj, cls.nbl_selected_cfg = None, None
-
+        cls.nbl_selected_obj = None
 
     @classmethod
     def sanitizeSelected(cls):
+        """ Potentially sanitize objects no longer on the scene """
         if utils.needsSanitize_object(cls.nbl_selected_obj):
             cls.resetSelected()
+
+
+    # callback triggers
+    @classmethod
+    def setSelected_callback(cls, _scene_=None, _selected_=None):
+        cls.setSelected(_selected_)
 
     @classmethod
     def sanitizeSelected_callback(cls, _scene_=None, _name_selected_=None):
