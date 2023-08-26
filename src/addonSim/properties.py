@@ -108,7 +108,7 @@ class MW_gen_cfg(types.PropertyGroup):
 
     #-------------------------------------------------------------------
     # NOTE:: now the elements can be properly hidden while the last operator panel is open...
-    # IDEA:: use for actually adding to the scene or not
+    # IDEA:: use for actually adding to the scene or not, otherwise not worth the recalculation
 
     struct_showShards: props.BoolProperty(
         name="Shards", description="Voronoi cells",
@@ -233,8 +233,8 @@ class MW_sim_cfg(types.PropertyGroup):
         default=0, min=0, max=100,
     )
 
-#class MW_vis_cfg(types.PropertyGroup):
-#    pass
+class MW_vis_cfg(types.PropertyGroup):
+    pass
 
 
 #-------------------------------------------------------------------
@@ -252,6 +252,22 @@ def register():
 
     for cls in classes:
         bpy.utils.register_class(cls)
+
+    # appear as part of default object props
+    # NOTE:: only non-default values of property groups get stored in objects memory, there are optimizations
+
+    bpy.types.Object.mw_gen = props.PointerProperty(
+        type=MW_gen_cfg,
+        name="MW_Generation", description="MW generation properties")
+
+    bpy.types.Object.mw_sim = props.PointerProperty(
+        type=MW_sim_cfg,
+        name="MW_Simulation", description="MW simulation properties")
+
+    bpy.types.Object.mw_vis = props.PointerProperty(
+        type=MW_vis_cfg,
+        name="MW_Visualization", description="MW visualization properties")
+
 
 def unregister():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})

@@ -44,7 +44,7 @@ class MW_gen_OT(_StartRefresh_OT):
         self.refresh_log = True
         self.end_log     = True
 
-    # NOTE:: no poll because the button is removed from ui isntead
+    # NOTE:: no poll because the button is removed from ui in draw instead
 
     def draw(self, context: types.Context):
         super().draw(context)
@@ -59,20 +59,6 @@ class MW_gen_OT(_StartRefresh_OT):
 
     #-------------------------------------------------------------------
 
-    # OPT:: GEN: more error handling of user deletion of intermediate objects?
-    # OPT:: automatically add particles/child parts -> most interesting method... -> util OP not part of flow
-    # IDEA:: GEN: support for non meshes (e.g. curves)
-    # IDEA:: GEN: disabled pencil too, should check points are close enugh/inside
-    # IDEA:: GEN: atm only a single selected object + spawning direclty on the scene collection
-    # IDEA:: GEN: recursiveness of shards? at least fracture existing fract obj instead of root -> bake button?
-    # NOTE:: GEN: avoid convex hull from voro++ -> break in convex pieces, or test cells uniformly distrib? aprox or exact?
-    # OPT:: RENDER: interior handle for materials
-
-    # IDEA:: SIM: shrink here or as part of sim, e.g. smoothing? -> support physics interspace
-    # IDEA:: SIM: add mass add rigid body proportional to volume? from voro++?
-    # IDEA:: recalculate cont after reload from cfg exact params -> precision used stored? all props stored but some in side panel? e.g. visual and precision
-    # OPT:: assets with msg
-
     def execute(self, context: types.Context):
         self.start_op()
         self.obj_root = None
@@ -82,10 +68,6 @@ class MW_gen_OT(_StartRefresh_OT):
         cancel = self.checkRefresh_cancel()
         if cancel: return self.end_op_refresh(skipLog=True)
 
-        # TODO:: run again more smartly, like detect no need for changes (e.g. name change or prefs debug show) -> compare both props, or use prop update func self ref? also for spawn indices
-        # IDEA:: move all visual toggles to the side panel to avoid recalculations...
-        # OPT:: separate simulation and scene generation: option to no store inter meshes
-        # IDEA:: decimate before/after convex, test perf? sep operator?
 
         # Free existing link memory -> now purged on undo callback dynamically
         prefs = getPrefs()

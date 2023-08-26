@@ -12,7 +12,7 @@ from .utils_dev import DEV
 #-------------------------------------------------------------------
 
 class MW_id(types.PropertyGroup):
-    """ The only property stored in the objects to identify the roots """
+    """ Property stored in the objects to identify the roots """
 
     meta_type: props.EnumProperty(
         name="Type", description="Meta type added to the object to control some logic",
@@ -38,6 +38,7 @@ def hasRoot(obj: types.Object) -> bool:
     #DEV.log_msg(f"hasRoot check: {obj.name} -> {obj.mw_id.meta_type}", {"REC", "CFG"})
     return "NONE" not in obj.mw_id.meta_type
 
+
 def getRoot(obj: types.Object) -> tuple[types.Object, "MW_id"]:
     """ Retrieve the root object holding the config (MW_id forward declared)"""
     #DEV.log_msg(f"getRoot search: {obj.name} -> {obj.mw_id.meta_type}", {"REC", "CFG"})
@@ -49,7 +50,7 @@ def getRoot(obj: types.Object) -> tuple[types.Object, "MW_id"]:
         while "CHILD" in obj_chain.mw_id.meta_type:
             obj_chain = obj_chain.parent
 
-        # NOTE:: check the root is actually root: could happen if an object is copy pasted
+        # NOTE:: check the root is actually root: could happen if an object is modified at some step by the user
         if "ROOT" not in obj_chain.mw_id.meta_type: raise ValueError("Chain ended with no root")
         #DEV.log_msg(f"getRoot chain end: {obj_chain.name}", {"RET", "CFG"})
         return obj_chain, obj_chain.mw_id
@@ -67,6 +68,7 @@ def getSceneRoots(scene: types.Scene) -> list[types.Object]:
     roots = [ obj for obj in scene.objects if MW_id.isRoot(obj) ]
     return roots
 
+
 # OPT:: avoid using this and just set the children?
 def setMetaType(obj: types.Object, type: set[str], skipParent = False, childrenRec = True):
     """ Set the property to the object and all its children (dictionary ies copied, not referenced)
@@ -80,14 +82,14 @@ def setMetaType(obj: types.Object, type: set[str], skipParent = False, childrenR
     for child in toSet:
         child.mw_id.meta_type = type.copy()
 
+
 #-------------------------------------------------------------------
 # callbacks for selection / undo to keep track of selected root fracture
 
 class MW_root(types.PropertyGroup):
-    # TODO:: store the data in the scene to avoid losing it?
+    # TODO:: store the data in the scene/file to avoid losing it on reload? Still issues with global storage anyway
     #my_object: bpy.props.PointerProperty(type=bpy.types.Object)
 
-    # XXX:: unset on reload, could have a flag and let the panel update it -> cannot be done from addon register
     nbl_selected_cfg = None
     nbl_selected_obj = None
 
@@ -109,7 +111,7 @@ class MW_root(types.PropertyGroup):
     @classmethod
     def setSelected(cls, selected):
         # OPT:: multi-selection / root?
-        if selected: cls.nbl_selected_obj, cls.nbl_selected_cfg = cls.getRoot(selected[-1])
+        if selected: cls.nbl_selected_obj, cls.nbl_selected_cfg = MW_id.getRoot(selected[-1])
         else: cls.nbl_selected_obj, cls.nbl_selected_cfg = None,None
 
     # trigger new root on selection
