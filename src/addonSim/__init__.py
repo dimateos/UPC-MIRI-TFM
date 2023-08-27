@@ -29,9 +29,9 @@ preferences.ADDON._bl_name = __name__
 
 submodules = [
     handlers,
-    preferences,
     properties_root,
     properties,
+    preferences,
     operators,
     panels,
 ]

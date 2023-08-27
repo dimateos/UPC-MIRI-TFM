@@ -20,14 +20,12 @@ class CONST_CFG:
     """ Properties that cant be rendered in the ui direclty with ui.prop(data, name) """
 
 
-def getProps_names(data):
+def getProps_names(data, showDefault=True):
     """ Get all properties names of an object, e.g. not just the modified ones in PropertyGroup.keys() """
     props_names = []
 
-    # TODO:: .keys to show only non default
-    #for prop_name in data.keys():
-
-    for prop_name in dir(data):
+    data_dir = dir(data) if showDefault else data.keys()
+    for prop_name in data_dir:
         # skip callable methods (sub classes are class props, not instance)
         if callable(getattr(data, prop_name)): continue
 
@@ -41,10 +39,10 @@ def getProps_names(data):
         props_names.append(prop_name)
     return props_names
 
-def getProps_namesFiltered(data, propFilter:str=None, exc_nonBlProp=False):
+def getProps_namesFiltered(data, propFilter:str=None, exc_nonBlProp=False, showDefault=True):
     """ Get all properties names filtered """
     # build dynamic filter prop
-    prop_names = getProps_names(data)
+    prop_names = getProps_names(data, showDefault)
     if propFilter:
         propFilter_clean = propFilter.replace(" ","").lower()
         filters =  [ f for f in propFilter_clean.split(",") if f]

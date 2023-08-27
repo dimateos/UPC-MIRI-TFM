@@ -9,6 +9,8 @@ from .mw_links import LinkStorage
 
 from .utils_dev import DEV
 
+from .properties_utils import Prop_inspector
+
 # Access from other modules to constants
 class ADDON:
     _bl_info = None
@@ -47,7 +49,7 @@ class MW_prefs(bpy.types.AddonPreferences):
         default="-PT,",
     )
     prefs_PT_meta_propEdit: props.BoolProperty(
-        name="edit", description="Edit the props",
+        name="edit", description="Enable editting the props",
         default=True,
     )
     prefs_PT_meta_propShowId: props.BoolProperty(
@@ -60,6 +62,8 @@ class MW_prefs(bpy.types.AddonPreferences):
         name="Show debug...", description="WIP: Show some debug stuff",
         default=True,
     )
+
+    prefs_meta_inspector: props.PointerProperty(type=Prop_inspector)
 
     #-------------------------------------------------------------------
 
@@ -120,7 +124,7 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=False,
     )
     gen_PT_meta_show_tmpDebug: props.BoolProperty(
-        name="Show DEBUG...", description="WIP: Show some debug stuff",
+        name="Show debug...", description="WIP: Show some debug stuff",
         default=False,
     )
 
@@ -290,7 +294,7 @@ class MW_prefs(bpy.types.AddonPreferences):
 
     dm_PT_meta_show_tmpDebug: props.BoolProperty(
         name="Show debug...", description="WIP: Show some debug stuff",
-        default=True,
+        default=False,
     )
     dm_PT_orphans_collection: props.StringProperty(
         name="", description="E.g. meshes, mats, curves, etc",

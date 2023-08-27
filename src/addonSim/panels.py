@@ -118,8 +118,8 @@ class MW_gen_PT(types.Panel):
 
             # WIP:: testing
             layout.operator(ops.MW_gen_links_OT.bl_idname, icon="OUTLINER_DATA_GREASEPENCIL")
-            layout.operator(ops.MW_util_bool_OT.bl_idname, icon="MOD_BOOLEAN")
-            layout.operator(ops.MW_util_comps_OT.bl_idname, icon="NODE_COMPOSITING")
+            #layout.operator(ops.MW_util_bool_OT.bl_idname, icon="MOD_BOOLEAN")
+            #layout.operator(ops.MW_util_comps_OT.bl_idname, icon="NODE_COMPOSITING")
 
             # IDEA:: global slider mat alpha if found
 
@@ -193,6 +193,7 @@ class MW_addon_PT(types.Panel):
         col = layout.column()
 
         ui.draw_propsToggle(prefs, prefs, "prefs_PT_meta_show_prefs", "prefs_PT_meta_propFilter", "prefs_PT_meta_propEdit", "get_PT_meta_propShowId", col)
+        ui.draw_propsToggle_new(prefs, prefs.prefs_meta_inspector, col)
 
         open, box = ui.draw_toggleBox(prefs, "prefs_PT_meta_show_tmpDebug", layout)
         if open:

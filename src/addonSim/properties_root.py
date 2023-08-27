@@ -6,6 +6,7 @@ from . import handlers
 from . import utils
 from .utils_dev import DEV
 
+from .properties_utils import Prop_inspector
 
 #-------------------------------------------------------------------
 
@@ -21,6 +22,16 @@ class MW_id(types.PropertyGroup):
         ),
         options={'ENUM_FLAG'},
         default={'NONE'},
+    )
+
+    storage_id: props.IntProperty(
+        name="Storage id", description="Id to access the pairing global storage data",
+        default=-1,
+    )
+
+    cell_id: props.IntProperty(
+        name="Cell id", description="Id that matches the voronoi cell index",
+        default=-1,
     )
 
 #-------------------------------------------------------------------
@@ -141,6 +152,7 @@ class MW_root:
 # Blender events
 
 classes = [
+    Prop_inspector,
     MW_id,
 ]
 _name = f"{__name__[14:]}" #\t(...{__file__[-32:]})"

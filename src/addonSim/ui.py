@@ -5,6 +5,7 @@ from .preferences import getPrefs
 from .properties import (
     MW_gen_cfg,
 )
+from .properties_utils import Prop_inspector
 
 from .utils_cfg import getProps_namesFiltered
 from .utils_dev import DEV
@@ -16,7 +17,7 @@ class CONST_ICONS:
 
 #-------------------------------------------------------------------
 
-def draw_toggleBox(metadata, propToggle_name:str, layout: types.UILayout, text="") -> tuple[bool, types.UILayout]:
+def draw_toggleBox(metadata, propToggle_name:str, layout: types.UILayout, text:str=None) -> tuple[bool, types.UILayout]:
     """ Create a box with a toggle. Return the state of the toggle and the created layout """
     box = layout.box()
     open = getattr(metadata, propToggle_name)
@@ -28,10 +29,10 @@ def draw_toggleBox(metadata, propToggle_name:str, layout: types.UILayout, text="
         box.prop(metadata, propToggle_name, toggle=True, icon=icon)
     return open, box
 
-def draw_props(data, propFilter:str, layout: types.UILayout, showId=False):
+def draw_props(data, propFilter:str, layout: types.UILayout, showId=False, showDefault=True):
     """ Draw all properties of an object in a sub layout. """
     # get the props filtered without the non prop ones
-    prop_names = getProps_namesFiltered(data, propFilter, exc_nonBlProp=True)
+    prop_names = getProps_namesFiltered(data, propFilter, exc_nonBlProp=True, showDefault=showDefault)
 
     # all should be bl props
     for prop_name in prop_names:
@@ -44,9 +45,10 @@ def draw_propsToggle(data, metadata, propToggle_name:str, propFilter_name:str, p
     if open:
         split = box.split(factor=0.6)
         split.scale_y = 0.8
-        split.prop(metadata, propFilter_name, text="")
         split.prop(metadata, propEdit_name)
         split.prop(metadata, propShowId_name)
+
+        box.prop(metadata, propFilter_name, text="")
 
         col = box.column()
         col.enabled = getattr(metadata, propEdit_name)
@@ -55,6 +57,29 @@ def draw_propsToggle(data, metadata, propToggle_name:str, propFilter_name:str, p
         draw_props(data, propFilter, col, showId)
 
     return open, box
+
+
+def draw_propsToggle_new(data, data_inspector:Prop_inspector, layout:types.UILayout, text:str=None) -> tuple[bool, types.UILayout]:
+    """ Draw all properties of an object under a toggleable layout. """
+    open, box = draw_toggleBox(data_inspector, "meta_show_props", layout, text)
+    if open:
+        split = box.split(factor=0.0)
+        split.scale_y = 0.8
+        split.prop(data_inspector, "meta_propShowId")
+        split.prop(data_inspector, "meta_propDefault")
+        split.prop(data_inspector, "meta_propEdit")
+
+        box.prop(data_inspector, "meta_propFilter", text="")
+
+        col = box.column()
+        showId = getattr(data_inspector, "meta_propShowId")
+        showDefault = getattr(data_inspector, "meta_propDefault")
+        col.enabled = getattr(data_inspector, "meta_propEdit")
+        propFilter = getattr(data_inspector, "meta_propFilter")
+        draw_props(data, propFilter, col, showId, showDefault)
+
+    open_debug, box_debug = False, False
+    return open, box, open_debug, box_debug
 
 #-------------------------------------------------------------------
 
