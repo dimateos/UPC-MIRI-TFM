@@ -12,6 +12,8 @@ from .properties import (
     MW_gen_cfg,
     MW_sim_cfg,
 )
+from .properties_utils import copyProps
+
 from .operators_utils import _StartRefresh_OT, util_classes_op
 
 from . import mw_setup
@@ -22,7 +24,6 @@ from . import mw_sim
 
 from . import ui
 from . import utils
-from .utils_cfg import copyProps
 from .utils_dev import DEV
 from .stats import getStats
 

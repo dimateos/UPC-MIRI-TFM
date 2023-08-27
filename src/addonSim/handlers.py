@@ -1,7 +1,8 @@
 import bpy
 from bpy.app.handlers import persistent
 
-from . import utils_cfg
+from .properties_utils import getProps_namesFiltered
+
 from .utils_dev import DEV
 
 # IDEA:: probably save_post to store some json for some sim
@@ -22,7 +23,7 @@ class Actions(list):
 
 def registerAllHandlers():
     """ Check whenever they are called etc"""
-    handler_names = utils_cfg.getProps_namesFiltered(bpy.app.handlers, "-n_")
+    handler_names = getProps_namesFiltered(bpy.app.handlers, "-n_")
     DEV.log_msg(f"Registering {len(handler_names)}: {handler_names}", {"CALLBACK", "TEST-HANDLERS", "DEV"})
 
     for hn in handler_names:
@@ -30,7 +31,7 @@ def registerAllHandlers():
         getattr(bpy.app.handlers, hn).append(f)
 
 def unregisterAllHandlers():
-    handler_names = utils_cfg.getProps_namesFiltered(bpy.app.handlers, "-n_")
+    handler_names = getProps_namesFiltered(bpy.app.handlers, "-n_")
     DEV.log_msg(f"Unregistering {len(handler_names)}: {handler_names}", {"CALLBACK", "TEST-HANDLERS", "DEV"})
     for hn in handler_names: getattr(bpy.app.handlers, hn).clear()
 
