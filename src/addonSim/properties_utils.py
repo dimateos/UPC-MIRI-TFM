@@ -7,13 +7,23 @@ from .utils_dev import DEV
 
 #-------------------------------------------------------------------
 
+def set_meta_show_toggled(self, context):
+    self.meta_show_toggled = True
+
 class Prop_inspector(types.PropertyGroup):
     """ Meta filters to display/edit a property group in a panel """
+
+    # utility to avoid additional operator refreshes, set manually back to False after skip
+    meta_show_toggled: props.BoolProperty(
+        description="Meta flag to indicate no config change",
+        default=False,
+    )
 
     meta_show_props: props.BoolProperty(
         # NOTE:: text name to be replaced in the ui
         description="Show properties",
         default=False,
+        update=set_meta_show_toggled
     )
 
     meta_propFilter: props.StringProperty(
@@ -42,6 +52,12 @@ class Prop_inspector(types.PropertyGroup):
     meta_show_debug_props: props.BoolProperty(
         name="debug...", description="Show debug properties",
         default=False,
+        update=set_meta_show_toggled
+    )
+    meta_show_debug: props.BoolProperty(
+        name="Show debug...", description="Development stuff...",
+        default=False,
+        update=set_meta_show_toggled
     )
 
 #-------------------------------------------------------------------
@@ -72,13 +88,17 @@ class CONST_FILTERS:
 #-------------------------------------------------------------------
 
 def getProps_names(data, addDefault=True):
-    """ Get all properties names of an object, e.g. not just the modified ones in PropertyGroup.keys() """
+    """ Get all properties names of an object, e.g. not just the modified ones in PropertyGroup.keys()
+        # NOTE:: skip read only prop groups
+    """
     props_names = []
 
     data_dir = dir(data) if addDefault else data.keys()
     for prop_name in data_dir:
-        # skip callable methods (sub classes are class props, not instance)
-        if callable(getattr(data, prop_name)): continue
+        # skip prop groups and callable methods (sub classes are class props, not instance)
+        prop_ref = getattr(data, prop_name)
+        if callable(prop_ref): continue
+        if isinstance(prop_ref, types.PropertyGroup): continue
 
         # minumun filter of read only props
         filterMask = [ prop_name.startswith(f) for f in CONST_FILTERS.filter_readOnly]

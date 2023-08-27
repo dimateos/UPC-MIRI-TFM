@@ -7,6 +7,7 @@ from .properties_root import (
     MW_id,
     MW_root,
 )
+from .properties_utils import Prop_inspector
 
 from . import handlers
 from . import utils

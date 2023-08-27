@@ -34,37 +34,19 @@ def draw_props_raw(data, prop_names:list[str], layout: types.UILayout, showId=Fa
         if showId: layout.row().prop(data, prop_name, text=prop_name)
         else: layout.row().prop(data, prop_name)
 
+#-------------------------------------------------------------------
+
 def draw_props(data, propFilter:str, layout: types.UILayout, showId=False, showDefault=True):
     """ Query and draw all properties of an object in a sub layout. """
     # get the props filtered without the non prop ones
     prop_names = getProps_namesFiltered(data, propFilter, exc_nonBlProp=True, showDefault=showDefault)
     draw_props_raw(data, prop_names, layout, showId)
 
-def draw_propsToggle_old(data, metadata, propToggle_name:str, propFilter_name:str, propEdit_name:str, propShowId_name:str, layout: types.UILayout) -> tuple[bool, types.UILayout]:
-    """ Draw all properties of an object under a toggleable layout. """
-    open, box = draw_toggleBox(metadata, propToggle_name, layout)
-    if open:
-        split = box.split(factor=0.6)
-        split.scale_y = 0.8
-        split.prop(metadata, propEdit_name)
-        split.prop(metadata, propShowId_name)
-
-        box.prop(metadata, propFilter_name, text="")
-
-        col = box.column()
-        col.enabled = getattr(metadata, propEdit_name)
-        propFilter = getattr(metadata, propFilter_name)
-        showId = getattr(metadata, propShowId_name)
-        draw_props(data, propFilter, col, showId)
-
-    return open, box
-
 def draw_propsToggle(data, data_inspector:Prop_inspector, layout:types.UILayout, text:str="Properties") -> tuple[bool, types.UILayout]:
     """ Draw all properties of an object under a toggleable layout. """
 
     # outer fold
     open, box = draw_toggleBox(data_inspector, "meta_show_props", layout, text)
-    open_debug, box_debug = False, None
     if open:
 
         # top of filter
@@ -102,7 +84,7 @@ def draw_propsToggle(data, data_inspector:Prop_inspector, layout:types.UILayout,
         col.enabled = editable
         draw_props_raw(data, prop_names, col, showId)
 
-    return open, box, open_debug, box_debug
+    return open, box
 
 #-------------------------------------------------------------------
 
@@ -114,6 +96,7 @@ def draw_refresh(data, layout: types.UILayout):
     split.prop(data, "meta_refresh", toggle=True, icon_only=True, icon='FILE_REFRESH')
 
 #-------------------------------------------------------------------
+# OPT:: not reused ui so should go to the op?
 
 def draw_gen_cfg(cfg: MW_gen_cfg, layout: types.UILayout, context: types.Context):
     box = layout.box()
@@ -175,7 +158,7 @@ def draw_gen_cfgDebug(cfg: MW_gen_cfg, layout: types.UILayout):
     from .preferences import getPrefs
     prefs = getPrefs()
 
-    open, box = draw_toggleBox(prefs, "gen_PT_meta_show_tmpDebug", layout)
+    open, box = draw_toggleBox(prefs.gen_PT_meta_inspector, "meta_show_debug_props", layout)
     if open:
         col = box.column()
         col.label(text="Show:")

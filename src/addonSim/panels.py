@@ -30,14 +30,13 @@ class MW_gen_PT(types.Panel):
     bl_options = {'HEADER_LAYOUT_EXPAND'}
 
     def draw(self, context):
-        layout = self.layout
         layoutCol = self.layout.column()
         prefs = getPrefs()
 
         # draw the fracture generation ops
         self.draw_onSelected(context, layoutCol)
 
-        open, box = ui.draw_toggleBox(prefs, "gen_PT_meta_show_tmpDebug", layoutCol)
+        open, box = ui.draw_toggleBox(prefs.gen_PT_meta_inspector, "meta_show_debug_props", layoutCol)
         if open:
             # delete all fractures
             col_rowSplit = box.row().split(factor=0.66)
@@ -70,7 +69,12 @@ class MW_gen_PT(types.Panel):
             col.label(text="No object selected...", icon="ERROR")
             return
 
-        cfg = obj.mw_gen if MW_id_utils.hasRoot(obj) else None
+        # check if there is a root selected
+        if MW_root.hasSelected():
+            obj = MW_root.getSelected()
+            cfg = obj.mw_gen
+        else:
+            cfg = None
 
         # No fracture selected
         if not cfg:
@@ -91,6 +95,7 @@ class MW_gen_PT(types.Panel):
             # show info of root + selected
             msg = f"Root: {obj.name}"
 
+            # add selected obj name
             if context.selected_objects:
                 selected = context.selected_objects[-1]
                 if selected.name != obj.name:
@@ -137,18 +142,17 @@ class MW_gen_PT(types.Panel):
                 col.prop(prefs, "links_res")
                 col.prop(prefs, "links_wallExtraScale")
 
-
-            # inspect props
-            if not prefs.gen_PT_meta_show_root:
+            # inspect root or selected?
+            if not prefs.all_PT_meta_show_root:
                 cfg = selected.mw_gen
 
+            open, box = ui.draw_propsToggle(cfg, prefs.gen_PT_meta_inspector, layout)
 
-            open, box = ui.draw_propsToggle_old(cfg, prefs, "gen_PT_meta_show_summary", "gen_PT_meta_propFilter", "gen_PT_meta_propEdit", "get_PT_meta_propShowId", layout)
-            #open, box = ui.draw_propsToggle(prefs, prefs.prefs_meta_inspector, col)
             if open:
+                # toggle inspect root
                 col_rowSplit = box.row().split()
-                col_rowSplit.prop(prefs, "gen_PT_meta_show_root")
-                col_rowSplit.label(text=obj.name if prefs.gen_PT_meta_show_root else selected.name)
+                col_rowSplit.prop(prefs, "all_PT_meta_show_root")
+                col_rowSplit.label(text=obj.name if prefs.all_PT_meta_show_root else selected.name)
 
 #-------------------------------------------------------------------
 
@@ -191,9 +195,7 @@ class MW_addon_PT(types.Panel):
         layout = self.layout
         col = layout.column()
 
-        ui.draw_propsToggle(prefs, prefs.prefs_meta_inspector, col)
-
-        open, box = ui.draw_toggleBox(prefs, "prefs_PT_meta_show_tmpDebug", layout)
+        open, box = ui.draw_toggleBox(prefs.prefs_PT_meta_inspector, "meta_show_debug", layout)
         if open:
             col = box.column()
             # check region width

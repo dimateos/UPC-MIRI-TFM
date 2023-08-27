@@ -31,39 +31,14 @@ prefs = None
 #-------------------------------------------------------------------
 
 class MW_prefs(bpy.types.AddonPreferences):
-    # XXX:: __name__ must be exaclty used for addon prefs, so check when deploying without the addon
     bl_idname = ADDON.mod_name_prefs
+    """ NOTE:: __name__ must be exaclty used for addon prefs, so check when deploying without the addon"""
 
     def draw(self, context):
+        """ Draw in preferences panel"""
         # Careful with circulare dependecies, maybe split the class with draw and props
         from .ui import draw_propsToggle
-        draw_propsToggle(self, prefs.prefs_meta_inspector, self.layout)
-
-    # meta filter for addon prefs
-    prefs_PT_meta_show_prefs: props.BoolProperty(
-        name="Show addon preferences...", description="Show addon preferences",
-        default=True,
-    )
-    prefs_PT_meta_propFilter: props.StringProperty(
-        name="FILTER", description="Separate values with commas, start with `-` for a excluding filter.",
-        default="-PT,",
-    )
-    prefs_PT_meta_propEdit: props.BoolProperty(
-        name="edit", description="Enable editting the props",
-        default=True,
-    )
-    prefs_PT_meta_propShowId: props.BoolProperty(
-        name="id", description="Show property id or its name",
-        default=True,
-    )
-
-    #debug
-    prefs_PT_meta_show_tmpDebug: props.BoolProperty(
-        name="Show debug...", description="WIP: Show some debug stuff",
-        default=True,
-    )
-
-    prefs_meta_inspector: props.PointerProperty(type=Prop_inspector)
+        draw_propsToggle(self, prefs.prefs_PT_meta_inspector, self.layout)
 
     #-------------------------------------------------------------------
 
@@ -98,38 +73,21 @@ class MW_prefs(bpy.types.AddonPreferences):
     #-------------------------------------------------------------------
 
     # meta filter for OP props
-    gen_PT_meta_show_summary: props.BoolProperty(
-        name="Show object summary...", description="Show fracture summary",
-        default=False,
-    )
-    gen_PT_meta_propFilter: props.StringProperty(
-        name="FILTER", description="Separate values with commas, start with `-` for a excluding filter.",
-        default="-show",
-    )
-    gen_PT_meta_propEdit: props.BoolProperty(
-        name="edit", description="Edit the props",
-        default=False,
-    )
-    get_PT_meta_propShowId: props.BoolProperty(
-        name="id", description="Show property id or its name",
-        default=True,
-    )
-    gen_PT_meta_show_root: props.BoolProperty(
-        name="Inspect root cfg", description="Root object cfg or the selected one?",
+    prefs_PT_meta_inspector: props.PointerProperty(type=Prop_inspector)
+    gen_PT_meta_inspector: props.PointerProperty(type=Prop_inspector)
+
+    all_PT_meta_show_root: props.BoolProperty(
+        name="Root props", description="Show root properties / selected child",
         default=True,
     )
 
+    # TODO:: replace for visual cfg ins
     gen_PT_meta_show_visuals: props.BoolProperty(
         name="Show visuals...", description="Tweak visual elements",
         default=False,
     )
-    gen_PT_meta_show_tmpDebug: props.BoolProperty(
-        name="Show debug...", description="WIP: Show some debug stuff",
-        default=False,
-    )
 
     #-------------------------------------------------------------------
-    # TODO:: what to store per object and what in prefs? could be in object but edit from panel
 
     ## IDEA:: global rnd needed?
     #calc_defaultSeed: props.IntProperty(
