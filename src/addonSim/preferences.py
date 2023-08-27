@@ -37,7 +37,7 @@ class MW_prefs(bpy.types.AddonPreferences):
     def draw(self, context):
         # Careful with circulare dependecies, maybe split the class with draw and props
         from .ui import draw_propsToggle
-        draw_propsToggle(self, self, "prefs_PT_meta_show_prefs", "prefs_PT_meta_propFilter", "prefs_PT_meta_propEdit", "prefs_PT_meta_propShowId", self.layout)
+        draw_propsToggle(self, prefs.prefs_meta_inspector, self.layout)
 
     # meta filter for addon prefs
     prefs_PT_meta_show_prefs: props.BoolProperty(

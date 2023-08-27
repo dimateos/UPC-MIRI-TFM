@@ -5,14 +5,13 @@ from .preferences import getPrefs
 from .properties import (
     MW_gen_cfg,
 )
-from .properties_utils import Prop_inspector
+from .properties_utils import Prop_inspector, getProps_namesFiltered, getProps_splitDebug
 
-from .utils_cfg import getProps_namesFiltered
 from .utils_dev import DEV
 
 class CONST_ICONS:
-    section_closed = "RIGHTARROW" # "RIGHTARROW" "DISCLOSURE_TRI_RIGHT"
-    section_opened = "DOWNARROW_HLT" # "DOWNARROW_HLT" "DISCLOSURE_TRI_DOWN"
+    section_closed = "RIGHTARROW"       # "RIGHTARROW" "DISCLOSURE_TRI_RIGHT"
+    section_opened = "DOWNARROW_HLT"    # "DOWNARROW_HLT" "DISCLOSURE_TRI_DOWN"
 
 
 #-------------------------------------------------------------------
@@ -29,17 +28,19 @@ def draw_toggleBox(metadata, propToggle_name:str, layout: types.UILayout, text:s
         box.prop(metadata, propToggle_name, toggle=True, icon=icon)
     return open, box
 
-def draw_props(data, propFilter:str, layout: types.UILayout, showId=False, showDefault=True):
-    """ Draw all properties of an object in a sub layout. """
-    # get the props filtered without the non prop ones
-    prop_names = getProps_namesFiltered(data, propFilter, exc_nonBlProp=True, showDefault=showDefault)
-
-    # all should be bl props
+def draw_props_raw(data, prop_names:list[str], layout: types.UILayout, showId=False):
+    """ Draw a list of object properties in a sub layout. """
     for prop_name in prop_names:
         if showId: layout.row().prop(data, prop_name, text=prop_name)
         else: layout.row().prop(data, prop_name)
 
-def draw_propsToggle(data, metadata, propToggle_name:str, propFilter_name:str, propEdit_name:str, propShowId_name:str, layout: types.UILayout) -> tuple[bool, types.UILayout]:
+def draw_props(data, propFilter:str, layout: types.UILayout, showId=False, showDefault=True):
+    """ Query and draw all properties of an object in a sub layout. """
+    # get the props filtered without the non prop ones
+    prop_names = getProps_namesFiltered(data, propFilter, exc_nonBlProp=True, showDefault=showDefault)
+    draw_props_raw(data, prop_names, layout, showId)
+
+def draw_propsToggle_old(data, metadata, propToggle_name:str, propFilter_name:str, propEdit_name:str, propShowId_name:str, layout: types.UILayout) -> tuple[bool, types.UILayout]:
     """ Draw all properties of an object under a toggleable layout. """
     open, box = draw_toggleBox(metadata, propToggle_name, layout)
     if open:
@@ -58,27 +59,49 @@ def draw_propsToggle(data, metadata, propToggle_name:str, propFilter_name:str, p
 
     return open, box
 
-
-def draw_propsToggle_new(data, data_inspector:Prop_inspector, layout:types.UILayout, text:str=None) -> tuple[bool, types.UILayout]:
+def draw_propsToggle(data, data_inspector:Prop_inspector, layout:types.UILayout, text:str="Properties") -> tuple[bool, types.UILayout]:
     """ Draw all properties of an object under a toggleable layout. """
+
+    # outer fold
     open, box = draw_toggleBox(data_inspector, "meta_show_props", layout, text)
+    open_debug, box_debug = False, None
     if open:
+
+        # top of filter
         split = box.split(factor=0.0)
         split.scale_y = 0.8
         split.prop(data_inspector, "meta_propShowId")
         split.prop(data_inspector, "meta_propDefault")
         split.prop(data_inspector, "meta_propEdit")
-
-        box.prop(data_inspector, "meta_propFilter", text="")
-
-        col = box.column()
-        showId = getattr(data_inspector, "meta_propShowId")
         showDefault = getattr(data_inspector, "meta_propDefault")
-        col.enabled = getattr(data_inspector, "meta_propEdit")
         propFilter = getattr(data_inspector, "meta_propFilter")
-        draw_props(data, propFilter, col, showId, showDefault)
+        showId = getattr(data_inspector, "meta_propShowId")
+        editable = getattr(data_inspector, "meta_propEdit")
 
-    open_debug, box_debug = False, False
+        # filter props
+        box.prop(data_inspector, "meta_propFilter", text="")
+        prop_names = getProps_namesFiltered(data, propFilter, exc_nonBlProp=True, showDefault=showDefault)
+
+        # split debug props
+        splitDebug = getattr(data_inspector, "meta_show_debug_split")
+        if splitDebug:
+            prop_names, debug_names = getProps_splitDebug(prop_names)
+        else:
+            debug_names = None
+
+        if (debug_names):
+            # debug inner fold
+            open_debug, box_debug = draw_toggleBox(data_inspector, "meta_show_debug_props", box)
+            if open_debug:
+                col = box_debug.column()
+                col.enabled = editable
+                draw_props_raw(data, debug_names, col, showId)
+
+        # draw the list of props
+        col         = box.column()
+        col.enabled = editable
+        draw_props_raw(data, prop_names, col, showId)
+
     return open, box, open_debug, box_debug
 
 #-------------------------------------------------------------------

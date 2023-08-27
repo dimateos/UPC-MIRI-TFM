@@ -86,10 +86,6 @@ class MW_gen_PT(types.Panel):
             col = layout.column()
             col.operator(ops.MW_gen_OT.bl_idname, text="GEN Fracture", icon="STICKY_UVS_DISABLE")
 
-            ## inspect props
-            #cfg = obj.mw_gen
-            #ui.draw_propsToggle(cfg, prefs, "gen_PT_meta_show_summary", "gen_PT_meta_propFilter", "gen_PT_meta_propEdit", "get_PT_meta_propShowId", layout)
-
         # Edit/info of selected
         else:
             # show info of root + selected
@@ -145,7 +141,10 @@ class MW_gen_PT(types.Panel):
             # inspect props
             if not prefs.gen_PT_meta_show_root:
                 cfg = selected.mw_gen
-            open, box = ui.draw_propsToggle(cfg, prefs, "gen_PT_meta_show_summary", "gen_PT_meta_propFilter", "gen_PT_meta_propEdit", "get_PT_meta_propShowId", layout)
+
+
+            open, box = ui.draw_propsToggle_old(cfg, prefs, "gen_PT_meta_show_summary", "gen_PT_meta_propFilter", "gen_PT_meta_propEdit", "get_PT_meta_propShowId", layout)
+            #open, box = ui.draw_propsToggle(prefs, prefs.prefs_meta_inspector, col)
             if open:
                 col_rowSplit = box.row().split()
                 col_rowSplit.prop(prefs, "gen_PT_meta_show_root")
@@ -192,8 +191,7 @@ class MW_addon_PT(types.Panel):
         layout = self.layout
         col = layout.column()
 
-        ui.draw_propsToggle(prefs, prefs, "prefs_PT_meta_show_prefs", "prefs_PT_meta_propFilter", "prefs_PT_meta_propEdit", "get_PT_meta_propShowId", col)
-        ui.draw_propsToggle_new(prefs, prefs.prefs_meta_inspector, col)
+        ui.draw_propsToggle(prefs, prefs.prefs_meta_inspector, col)
 
         open, box = ui.draw_toggleBox(prefs, "prefs_PT_meta_show_tmpDebug", layout)
         if open:
