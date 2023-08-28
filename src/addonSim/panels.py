@@ -121,7 +121,8 @@ class MW_gen_PT(types.Panel):
             col.prop(prefs, "links_wallExtraScale")
 
         # visuals inspect
-        open, box = ui.draw_propsToggle(vis_cfg, prefs.vis_PT_meta_inspector, layout, "visuals prop")
+        #open, box = ui.draw_propsToggle(vis_cfg, prefs.vis_PT_meta_inspector, layout, "Visuals...")
+        open, box = ui.draw_propsToggle_custom(vis_cfg, prefs.vis_PT_meta_inspector, layout, "Visuals...")
 
         # props inspect
         open, box = ui.draw_propsToggle(gen_cfg, prefs.gen_PT_meta_inspector, layout)
@@ -134,7 +135,7 @@ class MW_gen_PT(types.Panel):
     def draw_debug(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
 
-        open, box = ui.draw_toggleBox(prefs.gen_PT_meta_inspector, "meta_show_debug_props", layout)
+        open, box = ui.draw_toggleBox(prefs.gen_PT_meta_inspector, "meta_show_debug", layout)
         if open:
             # delete all fractures
             col_rowSplit = box.row().split(factor=0.66)

@@ -56,9 +56,9 @@ def draw_propsToggle(data, data_inspector:Prop_inspector, layout:types.UILayout,
         split.prop(data_inspector, "meta_propDefault")
         split.prop(data_inspector, "meta_propEdit")
         showDefault = getattr(data_inspector, "meta_propDefault")
-        propFilter = getattr(data_inspector, "meta_propFilter")
         showId = getattr(data_inspector, "meta_propShowId")
         editable = getattr(data_inspector, "meta_propEdit")
+        propFilter = getattr(data_inspector, "meta_propFilter")
 
         # filter props
         box.prop(data_inspector, "meta_propFilter", text="")
@@ -80,6 +80,20 @@ def draw_propsToggle(data, data_inspector:Prop_inspector, layout:types.UILayout,
                 draw_props_raw(data, debug_names, col, showId)
 
         # draw the list of props
+        col         = box.column()
+        col.enabled = editable
+        draw_props_raw(data, prop_names, col, showId)
+
+    return open, box
+
+def draw_propsToggle_custom(data, data_inspector:Prop_inspector, layout:types.UILayout, text:str="Properties",
+                            propFilter="", showDefault=True, showId=False, editable=True) -> tuple[bool, types.UILayout]:
+    """ Draw some properties of an object under a custom toggleable layout. """
+
+    # outer fold
+    open, box = draw_toggleBox(data_inspector, "meta_show_props", layout, text)
+    if open:
+        prop_names = getProps_namesFiltered(data, propFilter, exc_nonBlProp=True, showDefault=showDefault)
         col         = box.column()
         col.enabled = editable
         draw_props_raw(data, prop_names, col, showId)

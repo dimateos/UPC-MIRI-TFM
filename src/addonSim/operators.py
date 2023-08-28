@@ -12,7 +12,7 @@ from .properties import (
     MW_gen_cfg,
     MW_sim_cfg,
 )
-from .properties_utils import copyProps
+from .properties_utils import copyProps, skip_meta_show_toggled
 
 from .operators_utils import _StartRefresh_OT, util_classes_op
 
@@ -66,10 +66,12 @@ class MW_gen_OT(_StartRefresh_OT):
         self.start_op()
         self.obj_root = None
         self.ctx = context
+        prefs = getPrefs()
 
         # handle refresh
-        cancel = self.checkRefresh_cancel()
+        cancel = self.checkRefresh_cancel() or skip_meta_show_toggled(prefs.gen_PT_meta_inspector)
         if cancel: return self.end_op_refresh(skipLog=True)
+
 
         # TODO:: humm
         # Free existing link memory -> now purged on undo callback dynamically
