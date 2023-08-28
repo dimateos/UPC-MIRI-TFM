@@ -76,7 +76,7 @@ class MW_gen_OT(_StartRefresh_OT):
 
 
         # Potentially free existing storage -> now purged on undo callback dynamically
-        if self.last_storageID and not prefs.prefs_undoPurge:
+        if self.last_storageID and not prefs.prefs_autoPurge:
             MW_global_storage.freeFract(self.last_storageID)
 
 
@@ -219,11 +219,6 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
         obj_root = MW_global_selected.root
         cfg = obj_root.mw_gen
 
-        # TODO:: sure delete on recalc?
-        # delete current cont when found
-        if MW_global_storage.hasFract(obj_root):
-            MW_global_storage.freeFract_fromObj(obj_root)
-
 
         DEV.log_msg("Retrieving fracture data (objects and points)", {'SETUP'})
         if cfg.shape_useConvexHull:
@@ -257,41 +252,13 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
         if not links.initialized:
             return self.end_op_error("found no links... but could try recalculate!")
 
-        # use links storage
-        self.last_ptrID_links = cfg.ptrID_links = obj_root.name
-        LinkStorage.addLinks(links, cfg.ptrID_links, obj_root)
 
+        # use global storage
+        self.fract.cont = cont
+        self.fract.links = links
+        self.last_storageID = MW_global_storage.addFract(self.fract, obj_root)
 
         return self.end_op()
-
-
-    @staticmethod
-    def getRoot_links():
-        obj = MW_global_selected.root
-        cfg = obj.mw_gen
-        links = None
-
-        if not cfg.ptrID_links:
-            DEV.log_msg("Found no links in incomplete fracture", {'LINKS'})
-        else:
-            links = LinkStorage.getLinks(cfg.ptrID_links)
-            if not links:
-                DEV.log_msg("Found no links in storage", {'LINKS'})
-        return obj, cfg, links
-
-    @staticmethod
-    def getRoot_links_autoRecalc() -> tuple[types.Object, "MW_gen_cfg", LinkCollection|None]:
-        """ Retrieves links or recalculates them automatically """
-
-        # attempt to retrieve links
-        obj, cfg, links = MW_gen_recalc_OT.getRoot_links()
-
-        # call recalc op once
-        if not links and getPrefs().util_recalc_OT_auto:
-            bpy.ops.mw.gen_recalc()
-            obj, cfg, links = MW_gen_recalc_OT.getRoot_links()
-
-        return obj, cfg, links
 
 #-------------------------------------------------------------------
 
@@ -505,9 +472,9 @@ class MW_util_delete_OT(_StartRefresh_OT):
 
     def execute(self, context: types.Context):
         self.start_op()
+        prefs = getPrefs()
         obj = MW_global_selected.root
         cfg = obj.mw_gen
-        prefs = getPrefs()
 
         # optionally unhide the original object
         if (prefs.util_delete_OT_unhideSelect):
@@ -517,9 +484,9 @@ class MW_util_delete_OT(_StartRefresh_OT):
             else:
                 utils.select_unhideRec(obj_original, context, selectChildren=False)
 
-        # free memory from potential links map
-        if cfg.ptrID_links and prefs.prefs_undoPurge:
-            LinkStorage.freeLinks(cfg.ptrID_links)
+        # potentially free memory from storage
+        if prefs.prefs_autoPurge and MW_global_storage.hasFract(obj):
+            MW_global_storage.freeFract(obj)
 
         # finally delete the fracture object recusively
         utils.delete_objectRec(obj, logAmount=True)

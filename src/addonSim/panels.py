@@ -148,15 +148,14 @@ class MW_gen_PT(types.Panel):
             col_rowSplit.operator(ops.MW_gen_recalc_OT.bl_idname, icon="ZOOM_PREVIOUS")
             col_rowSplit.prop(prefs, "util_recalc_OT_auto")
 
-            # links storage
+            # global storage
             col_rowSplit = boxLinks.row().split(factor=0.66)
-            links = LinkStorage.bl_links
-            col_rowSplit.label(text=f"Storage links: {len(links)}", icon="FORCE_CURVE")
-            col_rowSplit.prop(prefs, "prefs_undoPurge")
+            col_rowSplit.label(text=f"Storage: {len(MW_global_storage.id_fracts)}", icon="FORCE_CURVE")
+            col_rowSplit.prop(prefs, "prefs_autoPurge")
 
             col = boxLinks.column()
-            for k,l in links.items():
-                col.label(text=f"{k}: {len(l.link_map)} links {len(l.cont)} cells", icon="THREE_DOTS")
+            for id,fract in MW_global_storage.id_fracts.items():
+                col.label(text=f"{id}: {len(fract.cont)} cells + {len(fract.links.link_map)} links", icon="THREE_DOTS")
 
 #-------------------------------------------------------------------
 

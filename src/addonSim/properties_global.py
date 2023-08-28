@@ -122,8 +122,8 @@ class MW_id_utils:
             raise ValueError("Storage id was already set!")
         return obj.mw_id.storage_id
 
+
 #-------------------------------------------------------------------
-# callbacks for selection / undo to keep track of selected root fracture
 
 class MW_global_selected:
     """  Keep a reference to the selected root with a callback on selection change """
@@ -172,13 +172,14 @@ class MW_global_selected:
 
 
 #-------------------------------------------------------------------
+
 class MW_global_storage:
     """  Blender properties are quite limited, ok for editting in the UI but for just data use python classes.
         # NOTE:: atm this storage is lost on file or module reload... could store in a .json as part of the .blend
     """
 
-    bl_fracts       = dict() # id:int -> MW_fract
-    bl_fracts_obj   = dict() # id:int -> Object
+    id_fracts       = dict() # id:int -> MW_fract
+    id_fracts_obj   = dict() # id:int -> Object
 
     @classmethod
     def addFract(cls, fract, obj):
@@ -186,49 +187,49 @@ class MW_global_storage:
         DEV.log_msg(f"Add: {obj.name} ({id})...", {"STORAGE", "FRACT"})
 
         # add the fract and the obj to the storage
-        if id in cls.bl_fracts:
+        if id in cls.id_fracts:
             DEV.log_msg(f"Replacing found fract", {"STORAGE", "FRACT", "ERROR"})
-        cls.bl_fracts[id] = fract
-        cls.bl_fracts_obj[id] = obj
+        cls.id_fracts[id] = fract
+        cls.id_fracts_obj[id] = obj
         return id
 
     @classmethod
-    def getFract(cls, id):
+    def getFract_fromID(cls, id):
         try:
-            return cls.bl_fracts[id]
+            return cls.id_fracts[id]
         except KeyError:
             DEV.log_msg(f"Not found {id}: probably reloaded the module?", {"STORAGE", "FRACT", "ERROR"})
 
     @classmethod
-    def getFract_fromObj(cls, obj):
+    def getFract(cls, obj):
         id = MW_id_utils.getStorageId_check(obj)
         DEV.log_msg(f"Get: {obj.name} ({id})...", {"STORAGE", "FRACT"})
-        return cls.getFract(id)
+        return cls.getFract_fromID(id)
 
     @classmethod
     def hasFract(cls, obj):
         id = MW_id_utils.getStorageId_check(obj)
-        return id in cls.bl_fracts
+        return id in cls.id_fracts
 
     @classmethod
-    def freeFract(cls, id):
+    def freeFract_fromID(cls, id):
         try:
             # delete the fract and only pop the obj
-            fract = cls.bl_fracts.pop(id)
+            fract = cls.id_fracts.pop(id)
             del fract
-            obj = cls.bl_fracts_obj.pop(id)
+            obj = cls.id_fracts_obj.pop(id)
         except KeyError:
             DEV.log_msg(f"Not found {id}: probably reloaded the module?", {"STORAGE", "FRACT", "ERROR"})
 
     @classmethod
-    def freeFract_fromObj(cls, obj):
+    def freeFract(cls, obj):
         id = MW_id_utils.getStorageId_check(obj)
         DEV.log_msg(f"Del: {obj.name} ({id})...", {"STORAGE", "FRACT"})
-        return cls.freeFract(id)
+        return cls.freeFract_fromID(id)
 
     # callback triggers
-    enable_undoPurge_default = False
-    enable_undoPurge = enable_undoPurge_default
+    enable_autoPurge_default = False
+    enable_autoPurge = enable_autoPurge_default
 
     @classmethod
     def purgeFracts(cls):
@@ -236,17 +237,17 @@ class MW_global_storage:
         toPurge = []
 
         # detect broken object references
-        for id,obj in cls.bl_fracts_obj.items():
+        for id,obj in cls.id_fracts_obj.items():
             if utils.needsSanitize_object(obj):
                 toPurge.append(id)
 
         DEV.log_msg(f"Purging {len(toPurge)}: {toPurge}", {"STORAGE", "FRACT"})
         for id in toPurge:
-            cls.freeFract(id)
+            cls.freeFract_fromID(id)
 
     @classmethod
     def purgeFracts_callback(cls, _scene_=None, _undo_name_=None):
-        if cls.enable_undoPurge:
+        if cls.enable_autoPurge:
             cls.purgeFracts()
 
 
