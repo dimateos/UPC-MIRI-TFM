@@ -55,7 +55,6 @@ class MW_id_utils:
         #DEV.log_msg(f"hasRoot check: {obj.name} -> {obj.mw_id.meta_type}", {"REC", "CFG"})
         return "NONE" not in obj.mw_id.meta_type
 
-
     @staticmethod
     def getRoot(obj: types.Object) -> types.Object | None:
         """ Retrieve the root object holding the config (MW_id forward declared)"""
@@ -87,7 +86,6 @@ class MW_id_utils:
         roots = [ obj for obj in scene.objects if MW_id_utils.isRoot(obj) ]
         return roots
 
-
     @staticmethod
     def setMetaType(obj: types.Object, type: set[str], skipParent = False, childrenRec = True):
         """ Set the property to the object and all its children (dictionary ies copied, not referenced)
@@ -102,13 +100,27 @@ class MW_id_utils:
         for child in toSet:
             child.mw_id.meta_type = type.copy()
 
+    #-------------------------------------------------------------------
+
     @staticmethod
     def setStorageId(obj: types.Object):
-        """ Set a new UUID for the storage """
+        """ Set a new UUID for the storage, usually best to use getStorageId """
         global storage_id_uuid
         obj.mw_id.storage_id = storage_id_uuid
         storage_id_uuid += 1
 
+    @staticmethod
+    def getStorageId(obj: types.Object):
+        """ Gets the storage id (assigns new uuid when needed) """
+        if obj.mw_id.storage_id == -1:
+            MW_id_utils.setStorageId(obj)
+        return obj.mw_id.storage_id
+
+    def getStorageId_check(obj: types.Object):
+        """ Gets the storage id (excepts when unset) """
+        if obj.mw_id.storage_id != -1:
+            raise ValueError("Storage id was already set!")
+        return obj.mw_id.storage_id
 
 #-------------------------------------------------------------------
 # callbacks for selection / undo to keep track of selected root fracture
@@ -165,12 +177,12 @@ class MW_global_storage:
         # NOTE:: atm this storage is lost on file or module reload... could store in a .json as part of the .blend
     """
 
-    bl_fracts = dict()
-    bl_fracts_obj = dict()
+    bl_fracts       = dict() # id:int -> MW_fract
+    bl_fracts_obj   = dict() # id:int -> Object
 
     @classmethod
     def addFract(cls, fract, obj):
-        id = obj.mw_id.storage_id
+        id = MW_id_utils.getStorageId(obj)
         DEV.log_msg(f"Add: {obj.name} ({id})...", {"STORAGE", "FRACT"})
 
         # add the fract and the obj to the storage
@@ -178,33 +190,45 @@ class MW_global_storage:
             DEV.log_msg(f"Replacing found fract", {"STORAGE", "FRACT", "ERROR"})
         cls.bl_fracts[id] = fract
         cls.bl_fracts_obj[id] = obj
+        return id
 
     @classmethod
-    def getFract(cls, obj):
-        id = obj.mw_id.storage_id
-        DEV.log_msg(f"Get: {obj.name} ({id})...", {"STORAGE", "FRACT"})
-
+    def getFract(cls, id):
         try:
             return cls.bl_fracts[id]
         except KeyError:
-            DEV.log_msg(f"Not found: probably reloaded the module?", {"STORAGE", "FRACT", "ERROR"})
+            DEV.log_msg(f"Not found {id}: probably reloaded the module?", {"STORAGE", "FRACT", "ERROR"})
 
     @classmethod
-    def freeFract(cls, obj):
-        id = obj.mw_id.storage_id
-        DEV.log_msg(f"Del: {obj.name} ({id})...", {"STORAGE", "FRACT"})
+    def getFract_fromObj(cls, obj):
+        id = MW_id_utils.getStorageId_check(obj)
+        DEV.log_msg(f"Get: {obj.name} ({id})...", {"STORAGE", "FRACT"})
+        return cls.getFract(id)
 
+    @classmethod
+    def hasFract(cls, obj):
+        id = MW_id_utils.getStorageId_check(obj)
+        return id in cls.bl_fracts
+
+    @classmethod
+    def freeFract(cls, id):
         try:
             # delete the fract and only pop the obj
             fract = cls.bl_fracts.pop(id)
             del fract
             obj = cls.bl_fracts_obj.pop(id)
         except KeyError:
-            DEV.log_msg(f"Not found: probably reloaded the module?", {"STORAGE", "FRACT", "ERROR"})
+            DEV.log_msg(f"Not found {id}: probably reloaded the module?", {"STORAGE", "FRACT", "ERROR"})
+
+    @classmethod
+    def freeFract_fromObj(cls, obj):
+        id = MW_id_utils.getStorageId_check(obj)
+        DEV.log_msg(f"Del: {obj.name} ({id})...", {"STORAGE", "FRACT"})
+        return cls.freeFract(id)
 
     # callback triggers
-    undoPurge_default = False
-    undoPurge_callback = undoPurge_default
+    enable_undoPurge_default = False
+    enable_undoPurge = enable_undoPurge_default
 
     @classmethod
     def purgeFracts(cls):
@@ -222,7 +246,7 @@ class MW_global_storage:
 
     @classmethod
     def purgeFracts_callback(cls, _scene_=None, _undo_name_=None):
-        if cls.undoPurge_callback:
+        if cls.enable_undoPurge:
             cls.purgeFracts()
 
 

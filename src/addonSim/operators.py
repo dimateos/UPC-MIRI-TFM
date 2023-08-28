@@ -5,8 +5,9 @@ import bpy.props as props
 from .preferences import getPrefs
 from .properties_global import (
     MW_id,
-    MW_global_selected,
     MW_id_utils,
+    MW_global_selected,
+    MW_global_storage
 )
 from .properties import (
     MW_gen_cfg,
@@ -18,8 +19,9 @@ from .operators_utils import _StartRefresh_OT, util_classes_op
 
 from . import mw_setup
 from . import mw_extraction
-from .mw_links import LinkCollection, LinkStorage
+from .mw_links import LinkCollection
 from .mw_cont import MW_Container
+from .mw_fract import MW_Fract
 from . import mw_sim
 
 from . import ui
@@ -56,8 +58,8 @@ class MW_gen_OT(_StartRefresh_OT):
     def invoke(self, context, event):
         # avoid last stored operation overide
         self.invoked_once = False
-        # clean memory ptr leftovers
-        self.last_ptrID_links = ""
+        # potentially clean memory ptr leftovers
+        self.last_storageID = None
         return super().invoke(context, event)
 
     #-------------------------------------------------------------------
@@ -73,11 +75,9 @@ class MW_gen_OT(_StartRefresh_OT):
         if cancel: return self.end_op_refresh(skipLog=True)
 
 
-        # TODO:: humm
-        # Free existing link memory -> now purged on undo callback dynamically
-        prefs = getPrefs()
-        if self.last_ptrID_links and not prefs.prefs_links_undoPurge:
-            LinkStorage.freeLinks(self.last_ptrID_links)
+        # Potentially free existing storage -> now purged on undo callback dynamically
+        if self.last_storageID and not prefs.prefs_undoPurge:
+            MW_global_storage.freeFract(self.last_storageID)
 
 
         # Retrieve root
@@ -115,6 +115,7 @@ class MW_gen_OT(_StartRefresh_OT):
 
 
     def execute_fresh(self, obj_root:types.Object, obj_original:types.Object ):
+        self.fract = MW_Fract()
         self.obj_root = obj_root
         utils.select_unhide(self.obj_root, self.ctx)
 
@@ -179,10 +180,11 @@ class MW_gen_OT(_StartRefresh_OT):
         if not links.initialized:
             return self.end_op_error("found no links... but could try recalculate!")
 
-        # use links storage
-        self.last_ptrID_links = cfg.ptrID_links = obj_root.name
-        LinkStorage.addLinks(links, cfg.ptrID_links, obj_root)
 
+        # use global storage
+        self.fract.cont = cont
+        self.fract.links = links
+        self.last_storageID = MW_global_storage.addFract(self.fract, obj_root)
 
         return self.end_op()
 
@@ -217,9 +219,10 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
         obj_root = MW_global_selected.root
         cfg = obj_root.mw_gen
 
+        # TODO:: sure delete on recalc?
         # delete current cont when found
-        if cfg.ptrID_links:
-            LinkStorage.freeLinks(cfg.ptrID_links)
+        if MW_global_storage.hasFract(obj_root):
+            MW_global_storage.freeFract_fromObj(obj_root)
 
 
         DEV.log_msg("Retrieving fracture data (objects and points)", {'SETUP'})
@@ -515,7 +518,7 @@ class MW_util_delete_OT(_StartRefresh_OT):
                 utils.select_unhideRec(obj_original, context, selectChildren=False)
 
         # free memory from potential links map
-        if cfg.ptrID_links and prefs.prefs_links_undoPurge:
+        if cfg.ptrID_links and prefs.prefs_undoPurge:
             LinkStorage.freeLinks(cfg.ptrID_links)
 
         # finally delete the fracture object recusively

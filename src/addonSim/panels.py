@@ -6,11 +6,11 @@ from .preferences import getPrefs, ADDON
 from .properties_global import (
     MW_global_selected,
     MW_id_utils,
+    MW_global_storage,
 )
+
 from . import operators as ops
 from .panels_utils import util_classes_pt
-
-from .mw_links import LinkStorage
 
 from . import ui
 from .utils_dev import DEV
@@ -152,7 +152,7 @@ class MW_gen_PT(types.Panel):
             col_rowSplit = boxLinks.row().split(factor=0.66)
             links = LinkStorage.bl_links
             col_rowSplit.label(text=f"Storage links: {len(links)}", icon="FORCE_CURVE")
-            col_rowSplit.prop(prefs, "prefs_links_undoPurge")
+            col_rowSplit.prop(prefs, "prefs_undoPurge")
 
             col = boxLinks.column()
             for k,l in links.items():

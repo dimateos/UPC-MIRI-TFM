@@ -40,10 +40,13 @@ class MW_prefs(bpy.types.AddonPreferences):
 
     #-------------------------------------------------------------------
 
-    prefs_links_undoPurge: props.BoolProperty(
+    def prefs_undoPurge_update(self, context):
+        MW_global_storage.enable_undoPurge = self.prefs_undoPurge
+
+    prefs_undoPurge: props.BoolProperty(
         name="purge", description="Keep purging on undo",
-        default=MW_global_storage.undoPurge_default,
-        update= lambda self, context: MW_global_storage.undoPurge_callback = self.prefs_links_undoPurge
+        default=MW_global_storage.enable_undoPurge_default,
+        update= prefs_undoPurge_update
     )
 
     #-------------------------------------------------------------------
