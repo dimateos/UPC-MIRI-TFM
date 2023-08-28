@@ -4,12 +4,10 @@ import bpy.props as props
 
 from . import handlers
 
-# OPT:: seems bad to reference this here tho
-from .mw_links import LinkStorage
-
 from .utils_dev import DEV
 
 from .properties_utils import Prop_inspector
+from .properties_global import MW_global_storage
 
 # Access from other modules to constants
 class ADDON:
@@ -39,6 +37,14 @@ class MW_prefs(bpy.types.AddonPreferences):
         # Careful with circulare dependecies, maybe split the class with draw and props
         from .ui import draw_propsToggle
         draw_propsToggle(self, prefs.prefs_PT_meta_inspector, self.layout)
+
+    #-------------------------------------------------------------------
+
+    prefs_links_undoPurge: props.BoolProperty(
+        name="purge", description="Keep purging on undo",
+        default=MW_global_storage.undoPurge_default,
+        update= lambda self, context: MW_global_storage.undoPurge_callback = self.prefs_links_undoPurge
+    )
 
     #-------------------------------------------------------------------
 
@@ -158,24 +164,6 @@ class MW_prefs(bpy.types.AddonPreferences):
     )
 
     #-------------------------------------------------------------------
-    # XXX:: fix storage problems callbacks?
-
-    def prefs_links_undoPurge_update(self, context):
-        if self.prefs_links_undoPurge:
-            handlers.callback_undo_actions.append(LinkStorage.purgeLinks_callback)
-            LinkStorage.purgeLinks()
-        else:
-            handlers.callback_undo_actions.remove(LinkStorage.purgeLinks_callback)
-
-    nbl_prefs_links_undoPurge_default = False
-    prefs_links_undoPurge: props.BoolProperty(
-        name="purge", description="Keep purging on undo",
-        default=nbl_prefs_links_undoPurge_default,
-        update=prefs_links_undoPurge_update,
-        #update= lambda self, context: MW_prefs.LinkStorage.purgeLinks()
-    )
-
-    #-------------------------------------------------------------------
 
     gen_duplicate_OT_hidePrev: props.BoolProperty(
         name="hide", description="Hide the original fractured object after duplication",
@@ -276,11 +264,6 @@ def register():
     #assert(MW_prefs.bl_idname == ADDON._bl_info["name"])
     assert(MW_prefs.bl_idname == ADDON._bl_name)
 
-    # NOTE:: sync with default state? cannot add static attrs to the addonprefs?
-    if MW_prefs.nbl_prefs_links_undoPurge_default:
-        handlers.callback_undo_actions.append(LinkStorage.purgeLinks_callback)
-    handlers.callback_loadFile_actions.append(LinkStorage.purgeLinks_callback)
-
     for cls in classes:
         bpy.utils.register_class(cls)
 
@@ -290,10 +273,6 @@ def register():
 
 def unregister():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})
-
-    # might end up set or not -> could access prefs and check
-    handlers.callback_undo_actions.removeCheck(LinkStorage.purgeLinks_callback)
-    handlers.callback_loadFile_actions.remove(LinkStorage.purgeLinks_callback)
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

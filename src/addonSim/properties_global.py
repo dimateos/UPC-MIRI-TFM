@@ -11,7 +11,7 @@ from .properties_utils import Prop_inspector
 #-------------------------------------------------------------------
 
 class MW_id(types.PropertyGroup):
-    """ Property stored in the objects to identify the roots """
+    """ Property stored in the objects to identify the root and other ID"""
 
     meta_type: props.EnumProperty(
         name="Type", description="Meta type added to the object to control some logic",
@@ -33,6 +33,9 @@ class MW_id(types.PropertyGroup):
         name="Cell id", description="Id that matches the voronoi cell index",
         default=-1,
     )
+
+storage_id_uuid = 0
+""" Simple counter as uuid"""
 
 #-------------------------------------------------------------------
 
@@ -65,7 +68,7 @@ class MW_id_utils:
             while "CHILD" in obj_chain.mw_id.meta_type:
                 obj_chain = obj_chain.parent
 
-            # NOTE:: check the root is actually root: could happen if an object is modified at some step by the user
+            # NOTE:: check the root is actually root: could happen if an object is modified at some step by the obj
             if "ROOT" not in obj_chain.mw_id.meta_type: raise ValueError("Chain ended with no root")
             #DEV.log_msg(f"getRoot chain end: {obj_chain.name}", {"RET", "CFG"})
             return obj_chain
@@ -85,11 +88,11 @@ class MW_id_utils:
         return roots
 
 
-    # OPT:: avoid using this and just set the children?
     @staticmethod
     def setMetaType(obj: types.Object, type: set[str], skipParent = False, childrenRec = True):
         """ Set the property to the object and all its children (dictionary ies copied, not referenced)
             # NOTE:: acessing obj children is O(len(bpy.data.objects)), so just call it on the root again
+            # OPT:: avoid using this and just set the children?
         """
         if not skipParent:
             obj.mw_id.meta_type = type.copy()
@@ -99,11 +102,19 @@ class MW_id_utils:
         for child in toSet:
             child.mw_id.meta_type = type.copy()
 
+    @staticmethod
+    def setStorageId(obj: types.Object):
+        """ Set a new UUID for the storage """
+        global storage_id_uuid
+        obj.mw_id.storage_id = storage_id_uuid
+        storage_id_uuid += 1
+
 
 #-------------------------------------------------------------------
 # callbacks for selection / undo to keep track of selected root fracture
 
 class MW_global_selected:
+    """  Keep a reference to the selected root with a callback on selection change """
     # OPT:: store the data in the scene/file to avoid losing it on reload? Still issues with global storage anyway
     #class MW_global_selected(types.PropertyGroup): + register the class etc
     #my_object: bpy.props.PointerProperty(type=bpy.types.Object)
@@ -149,6 +160,73 @@ class MW_global_selected:
 
 
 #-------------------------------------------------------------------
+class MW_global_storage:
+    """  Blender properties are quite limited, ok for editting in the UI but for just data use python classes.
+        # NOTE:: atm this storage is lost on file or module reload... could store in a .json as part of the .blend
+    """
+
+    bl_fracts = dict()
+    bl_fracts_obj = dict()
+
+    @classmethod
+    def addFract(cls, fract, obj):
+        id = obj.mw_id.storage_id
+        DEV.log_msg(f"Add: {obj.name} ({id})...", {"STORAGE", "FRACT"})
+
+        # add the fract and the obj to the storage
+        if id in cls.bl_fracts:
+            DEV.log_msg(f"Replacing found fract", {"STORAGE", "FRACT", "ERROR"})
+        cls.bl_fracts[id] = fract
+        cls.bl_fracts_obj[id] = obj
+
+    @classmethod
+    def getFract(cls, obj):
+        id = obj.mw_id.storage_id
+        DEV.log_msg(f"Get: {obj.name} ({id})...", {"STORAGE", "FRACT"})
+
+        try:
+            return cls.bl_fracts[id]
+        except KeyError:
+            DEV.log_msg(f"Not found: probably reloaded the module?", {"STORAGE", "FRACT", "ERROR"})
+
+    @classmethod
+    def freeFract(cls, obj):
+        id = obj.mw_id.storage_id
+        DEV.log_msg(f"Del: {obj.name} ({id})...", {"STORAGE", "FRACT"})
+
+        try:
+            # delete the fract and only pop the obj
+            fract = cls.bl_fracts.pop(id)
+            del fract
+            obj = cls.bl_fracts_obj.pop(id)
+        except KeyError:
+            DEV.log_msg(f"Not found: probably reloaded the module?", {"STORAGE", "FRACT", "ERROR"})
+
+    # callback triggers
+    undoPurge_default = False
+    undoPurge_callback = undoPurge_default
+
+    @classmethod
+    def purgeFracts(cls):
+        """ Remove fracts of deleted scene objects (that could appear again with UNDO etc)"""
+        toPurge = []
+
+        # detect broken object references
+        for id,obj in cls.bl_fracts_obj.items():
+            if utils.needsSanitize_object(obj):
+                toPurge.append(id)
+
+        DEV.log_msg(f"Purging {len(toPurge)}: {toPurge}", {"STORAGE", "FRACT"})
+        for id in toPurge:
+            cls.freeFract(id)
+
+    @classmethod
+    def purgeFracts_callback(cls, _scene_=None, _undo_name_=None):
+        if cls.undoPurge_callback:
+            cls.purgeFracts()
+
+
+#-------------------------------------------------------------------
 # Blender events
 
 classes = [
@@ -160,8 +238,11 @@ _name = f"{__name__[14:]}" #\t(...{__file__[-32:]})"
 def register():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "REG"})
 
+    # callbaks
     handlers.callback_selectionChange_actions.append(MW_global_selected.setSelected_callback)
     handlers.callback_loadFile_actions.append(MW_global_selected.sanitizeSelected_callback)
+    handlers.callback_undo_actions.append(MW_global_storage.purgeFracts_callback)
+    handlers.callback_loadFile_actions.append(MW_global_storage.purgeFracts_callback)
 
     for cls in classes:
         bpy.utils.register_class(cls)
@@ -169,13 +250,16 @@ def register():
     # appear as part of default object props
     bpy.types.Object.mw_id = props.PointerProperty(
         type=MW_id,
-        name="MW_id", description="MW fracture id")
+        name="MW_id", description="MW fracture ids")
 
 def unregister():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})
 
+    # callbacks (might end up set or not, use check)
     handlers.callback_selectionChange_actions.remove(MW_global_selected.setSelected_callback)
     handlers.callback_loadFile_actions.remove(MW_global_selected.sanitizeSelected_callback)
+    handlers.callback_undo_actions.removeCheck(MW_global_storage.purgeFracts_callback)
+    handlers.callback_loadFile_actions.remove(MW_global_storage.purgeFracts_callback)
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

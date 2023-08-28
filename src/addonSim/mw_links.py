@@ -419,22 +419,3 @@ class LinkStorage:
             user = LinkStorage.bl_links_users.pop(uniqueName)
         except KeyError:
             DEV.log_msg(f"Not found: probably reloaded the module?", {"STORAGE", "LINKS", "ERROR"})
-
-    #-------------------------------------------------------------------
-
-    @staticmethod
-    def purgeLinks():
-        toPurge = []
-
-        # detect broken object references
-        for name,obj in LinkStorage.bl_links_users.items():
-            if utils.needsSanitize_object(obj):
-                toPurge.append(name)
-
-        DEV.log_msg(f"Purging {len(toPurge)}: {toPurge}", {"STORAGE", "LINKS"})
-        for name in toPurge:
-            LinkStorage.freeLinks(name)
-
-    @staticmethod
-    def purgeLinks_callback(_scene_=None, _undo_name_=None):
-        LinkStorage.purgeLinks()
