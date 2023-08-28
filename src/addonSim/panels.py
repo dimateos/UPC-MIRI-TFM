@@ -3,8 +3,8 @@ import bpy.types as types
 import bpy.props as props
 
 from .preferences import getPrefs, ADDON
-from .properties_root import (
-    MW_root,
+from .properties_global import (
+    MW_global_selected,
     MW_id_utils,
 )
 from . import operators as ops
@@ -38,8 +38,8 @@ class MW_gen_PT(types.Panel):
 
     def draw_onSelected(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
-        selected = context.selected_objects[-1] if context.selected_objects else None
         col = layout.column()
+        selected = MW_global_selected.last
 
         # Something selected, not last active
         if not selected:
@@ -47,7 +47,7 @@ class MW_gen_PT(types.Panel):
             return
 
         # No fracture selected
-        if not MW_root.hasSelected():
+        if not MW_global_selected.root:
             col.label(text="Selected: " + selected.name, icon="INFO")
 
             # Check that it is a mesh
@@ -62,7 +62,7 @@ class MW_gen_PT(types.Panel):
 
         # Edit/info of selected
         else:
-            obj = MW_root.getSelected()
+            obj = MW_global_selected.root
 
             # show info of root + selected
             msg = f"Root: {obj.name}"
@@ -173,7 +173,6 @@ class MW_sim_PT(types.Panel):
 
     def draw(self, context):
         prefs = getPrefs()
-        #obj, cfg = MW_root.getSelected()
         col = self.layout.column()
 
         #col.label(text=f"...")

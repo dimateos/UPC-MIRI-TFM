@@ -103,40 +103,40 @@ class MW_id_utils:
 #-------------------------------------------------------------------
 # callbacks for selection / undo to keep track of selected root fracture
 
-class MW_root:
-    # TODO:: store the data in the scene/file to avoid losing it on reload? Still issues with global storage anyway
-    #class MW_root(types.PropertyGroup): + register the class etc
+class MW_global_selected:
+    # OPT:: store the data in the scene/file to avoid losing it on reload? Still issues with global storage anyway
+    #class MW_global_selected(types.PropertyGroup): + register the class etc
     #my_object: bpy.props.PointerProperty(type=bpy.types.Object)
 
-    nbl_selected_obj = None
+    # root fracture object
+    root = None
 
-    @classmethod
-    def hasSelected(cls) -> bool:
-        return cls.nbl_selected_obj is not None
-
-    @classmethod
-    def getSelected(cls) -> types.Object | None:
-        return cls.nbl_selected_obj
+    # common selection
+    selection = None
+    last = None
 
     @classmethod
     def setSelected(cls, selected):
-        # OPT:: multi-selection / root?
-        if selected:
-            cls.nbl_selected_obj = MW_id_utils.getRoot(selected[-1])
+        # OPT:: multi-selection / root inside selected?
+        cls.selection = selected
+
+        if cls.selection:
+            cls.last = cls.selection[-1]
+            cls.root = MW_id_utils.getRoot(cls.last)
         else:
             cls.resetSelected()
 
-
     @classmethod
     def resetSelected(cls):
-        cls.nbl_selected_obj = None
+        cls.selection = None
+        cls.last = None
+        cls.root = None
 
     @classmethod
     def sanitizeSelected(cls):
         """ Potentially sanitize objects no longer on the scene """
-        if utils.needsSanitize_object(cls.nbl_selected_obj):
+        if utils.needsSanitize_object(cls.root):
             cls.resetSelected()
-
 
     # callback triggers
     @classmethod
@@ -160,8 +160,8 @@ _name = f"{__name__[14:]}" #\t(...{__file__[-32:]})"
 def register():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "REG"})
 
-    handlers.callback_selectionChange_actions.append(MW_root.setSelected_callback)
-    handlers.callback_loadFile_actions.append(MW_root.sanitizeSelected_callback)
+    handlers.callback_selectionChange_actions.append(MW_global_selected.setSelected_callback)
+    handlers.callback_loadFile_actions.append(MW_global_selected.sanitizeSelected_callback)
 
     for cls in classes:
         bpy.utils.register_class(cls)
@@ -174,8 +174,8 @@ def register():
 def unregister():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})
 
-    handlers.callback_selectionChange_actions.remove(MW_root.setSelected_callback)
-    handlers.callback_loadFile_actions.remove(MW_root.sanitizeSelected_callback)
+    handlers.callback_selectionChange_actions.remove(MW_global_selected.setSelected_callback)
+    handlers.callback_loadFile_actions.remove(MW_global_selected.sanitizeSelected_callback)
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

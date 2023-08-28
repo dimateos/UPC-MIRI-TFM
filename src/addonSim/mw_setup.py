@@ -7,9 +7,9 @@ from math import radians
 # IDEA:: global prefs might not be so good
 #from .preferences import prefs
 from .preferences import getPrefs
-from .properties_root import (
+from .properties_global import (
     MW_id,
-    MW_root,
+    MW_global_selected,
     MW_id_utils,
 )
 from .properties import (
@@ -196,7 +196,7 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
 
         # TODO:: get root here?
         #obj_shard.scale = [cfg.struct_shardScale]*3
-        obj_shard.scale = [MW_root.getSelected().mw_vis.cell_scale]*3
+        obj_shard.scale = [MW_global_selected.root.mw_vis.cell_scale]*3
 
         # IDEA:: test visuals alternatives -> add to dm utils
         #if DEV.VISUAL_TESTS:

@@ -3,9 +3,9 @@ import bpy.types as types
 import bpy.props as props
 
 from .preferences import getPrefs
-from .properties_root import (
+from .properties_global import (
     MW_id,
-    MW_root,
+    MW_global_selected,
 )
 from .properties_utils import Prop_inspector
 
@@ -171,7 +171,7 @@ class MW_gen_cfg(types.PropertyGroup):
     #-------------------------------------------------------------------
 
     def struct_linksScale_update(self, context):
-        obj = MW_root.getSelected()
+        obj = MW_global_selected.root
         if not obj: return
         links = utils.get_child(obj, getPrefs().names.links)
         if links: utils.scale_objectChildren(links, self.struct_linksScale)
@@ -225,7 +225,7 @@ class MW_sim_cfg(types.PropertyGroup):
 #-------------------------------------------------------------------
 
 def cell_scale_update(self, context):
-    obj = MW_root.getSelected()
+    obj = MW_global_selected.root
     if not obj: return
     cells_root = utils.get_child(obj, getPrefs().names.shards)
     utils.scale_objectChildren(cells_root, self.cell_scale)

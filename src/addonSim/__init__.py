@@ -14,7 +14,7 @@ bl_info = {
 
 from . import handlers
 from . import preferences
-from . import properties_root
+from . import properties_global
 from . import properties
 from . import operators
 from . import panels
@@ -29,7 +29,7 @@ preferences.ADDON._bl_name = __name__
 
 submodules = [
     handlers,
-    properties_root,
+    properties_global,
     properties,
     preferences,
     operators,
