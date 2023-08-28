@@ -31,57 +31,27 @@ class MW_gen_PT(types.Panel):
 
     def draw(self, context):
         layoutCol = self.layout.column()
-        prefs = getPrefs()
 
         # draw the fracture generation ops
         self.draw_onSelected(context, layoutCol)
-
-        open, box = ui.draw_toggleBox(prefs.gen_PT_meta_inspector, "meta_show_debug_props", layoutCol)
-        if open:
-            # delete all fractures
-            col_rowSplit = box.row().split(factor=0.66)
-            col_rowSplit.operator(ops.MW_util_delete_all_OT.bl_idname, text="DELETE all", icon="CANCEL")
-            col_rowSplit.prop(prefs, "util_delete_OT_unhideSelect")
-
-            # recalculate fracture
-            boxLinks = box.box()
-            col_rowSplit = boxLinks.row().split(factor=0.66)
-            col_rowSplit.operator(ops.MW_gen_recalc_OT.bl_idname, icon="ZOOM_PREVIOUS")
-            col_rowSplit.prop(prefs, "util_recalc_OT_auto")
-
-            # links storage
-            col_rowSplit = boxLinks.row().split(factor=0.66)
-            links = LinkStorage.bl_links
-            col_rowSplit.label(text=f"Storage links: {len(links)}", icon="FORCE_CURVE")
-            col_rowSplit.prop(prefs, "prefs_links_undoPurge")
-
-            col = boxLinks.column()
-            for k,l in links.items():
-                col.label(text=f"{k}: {len(l.link_map)} links {len(l.cont)} cells", icon="THREE_DOTS")
+        self.draw_debug(context, layoutCol)
 
     def draw_onSelected(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
-        obj = context.selected_objects[-1] if context.selected_objects else None
+        selected = context.selected_objects[-1] if context.selected_objects else None
         col = layout.column()
 
         # Something selected, not last active
-        if not obj:
-            col.label(text="No object selected...", icon="ERROR")
+        if not selected:
+            col.label(text="No selectedect selected...", icon="ERROR")
             return
 
-        # check if there is a root selected
-        if MW_root.hasSelected():
-            obj = MW_root.getSelected()
-            cfg = obj.mw_gen
-        else:
-            cfg = None
-
         # No fracture selected
-        if not cfg:
-            col.label(text="Selected: " + obj.name, icon="INFO")
+        if not MW_root.hasSelected():
+            col.label(text="Selected: " + selected.name, icon="INFO")
 
             # Check that it is a mesh
-            if obj.type != 'MESH':
+            if selected.type != 'MESH':
                 col = layout.column()
                 col.label(text="Select a mesh...", icon="ERROR")
                 return
@@ -92,14 +62,12 @@ class MW_gen_PT(types.Panel):
 
         # Edit/info of selected
         else:
+            obj = MW_root.getSelected()
+
             # show info of root + selected
             msg = f"Root: {obj.name}"
-
-            # add selected obj name
-            if context.selected_objects:
-                selected = context.selected_objects[-1]
-                if selected.name != obj.name:
-                    msg += f" - {selected.name}"
+            if selected.name != obj.name:
+                msg += f" - {selected.name}"
 
             # button to bake the shard
             col_rowSplit = col.row().split(factor=0.90)
@@ -122,37 +90,72 @@ class MW_gen_PT(types.Panel):
             #layout.operator(ops.MW_util_bool_OT.bl_idname, icon="MOD_BOOLEAN")
             #layout.operator(ops.MW_util_comps_OT.bl_idname, icon="NODE_COMPOSITING")
 
-            # IDEA:: global slider mat alpha if found
+            self.draw_props(obj, selected, context, layout)
 
-            # visuals
-            open, box = ui.draw_toggleBox(prefs, "gen_PT_meta_show_visuals", layout)
-            if open:
-                col = box.column()
-                col.prop(cfg, "struct_shardScale")
-                col.prop(prefs, "gen_setup_matColors")
-                col.prop(prefs, "gen_setup_matAlpha")
-                col.prop(cfg, "struct_linksScale")
-                #col.prop(prefs, "links_matAlpha")
-                col.prop(prefs, "links_smoothShade")
-                col.prop(prefs, "links_depth")
-                col.prop(prefs, "links_width")
-                col.prop(prefs, "links_widthDead")
-                rowsub = col.row()
-                rowsub.prop(prefs, "links_widthModLife")
-                col.prop(prefs, "links_res")
-                col.prop(prefs, "links_wallExtraScale")
+    def draw_props(self, obj, selected, context: types.Context, layout: types.UILayout):
+        prefs = getPrefs()
 
-            # inspect root or selected?
-            if not prefs.all_PT_meta_show_root:
-                cfg = selected.mw_gen
+        # inspect root or selected?
+        if prefs.all_PT_meta_show_root:
+            gen_cfg = obj.mw_gen
+            vis_cfg = obj.mw_vis
+        else:
+            gen_cfg = selected.mw_gen
+            vis_cfg = selected.mw_vis
 
-            open, box = ui.draw_propsToggle(cfg, prefs.gen_PT_meta_inspector, layout)
+        # visuals
+        open, box = ui.draw_toggleBox(prefs, "gen_PT_meta_show_visuals", layout)
+        if open:
+            col = box.column()
+            col.prop(prefs, "gen_setup_matColors")
+            col.prop(prefs, "gen_setup_matAlpha")
+            col.prop(gen_cfg, "struct_linksScale")
+            #col.prop(prefs, "links_matAlpha")
+            col.prop(prefs, "links_smoothShade")
+            col.prop(prefs, "links_depth")
+            col.prop(prefs, "links_width")
+            col.prop(prefs, "links_widthDead")
+            rowsub = col.row()
+            rowsub.prop(prefs, "links_widthModLife")
+            col.prop(prefs, "links_res")
+            col.prop(prefs, "links_wallExtraScale")
 
-            if open:
-                # toggle inspect root
-                col_rowSplit = box.row().split()
-                col_rowSplit.prop(prefs, "all_PT_meta_show_root")
-                col_rowSplit.label(text=obj.name if prefs.all_PT_meta_show_root else selected.name)
+        # visuals inspect
+        open, box = ui.draw_propsToggle(vis_cfg, prefs.vis_PT_meta_inspector, layout, "visuals prop")
+
+        # props inspect
+        open, box = ui.draw_propsToggle(gen_cfg, prefs.gen_PT_meta_inspector, layout)
+
+        # toggle inspect root
+        col_rowSplit = layout.row().split()
+        col_rowSplit.prop(prefs, "all_PT_meta_show_root")
+        col_rowSplit.label(text=obj.name if prefs.all_PT_meta_show_root else selected.name)
+
+    def draw_debug(self, context: types.Context, layout: types.UILayout):
+        prefs = getPrefs()
+
+        open, box = ui.draw_toggleBox(prefs.gen_PT_meta_inspector, "meta_show_debug_props", layout)
+        if open:
+            # delete all fractures
+            col_rowSplit = box.row().split(factor=0.66)
+            col_rowSplit.operator(ops.MW_util_delete_all_OT.bl_idname, text="DELETE all", icon="CANCEL")
+            col_rowSplit.prop(prefs, "util_delete_OT_unhideSelect")
+
+            # recalculate fracture
+            boxLinks = box.box()
+            col_rowSplit = boxLinks.row().split(factor=0.66)
+            col_rowSplit.operator(ops.MW_gen_recalc_OT.bl_idname, icon="ZOOM_PREVIOUS")
+            col_rowSplit.prop(prefs, "util_recalc_OT_auto")
+
+            # links storage
+            col_rowSplit = boxLinks.row().split(factor=0.66)
+            links = LinkStorage.bl_links
+            col_rowSplit.label(text=f"Storage links: {len(links)}", icon="FORCE_CURVE")
+            col_rowSplit.prop(prefs, "prefs_links_undoPurge")
+
+            col = boxLinks.column()
+            for k,l in links.items():
+                col.label(text=f"{k}: {len(l.link_map)} links {len(l.cont)} cells", icon="THREE_DOTS")
 
 #-------------------------------------------------------------------
 

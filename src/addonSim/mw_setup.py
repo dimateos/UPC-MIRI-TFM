@@ -193,7 +193,10 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
         mesh.from_pydata(vertices=verts, edges=[], faces=faces_blender)
         obj_shard = utils.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showShards)
         obj_shard.location = pos
-        obj_shard.scale = [cfg.struct_shardScale]*3
+
+        # TODO:: get root here?
+        #obj_shard.scale = [cfg.struct_shardScale]*3
+        obj_shard.scale = [MW_root.getSelected().mw_vis.cell_scale]*3
 
         # IDEA:: test visuals alternatives -> add to dm utils
         #if DEV.VISUAL_TESTS:

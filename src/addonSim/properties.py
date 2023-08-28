@@ -16,46 +16,48 @@ from .utils_dev import DEV
 
 #-------------------------------------------------------------------
 
+# dynamic source options
+class MW_gen_source_options:
+    all=[
+        ('VERT_OWN', "Own Verts", "Use own vertices (also set by default when other options are disabled)"),
+        ('VERT_CHILD', "Child Verts", "Use child object vertices"),
+        ('PARTICLE_OWN', "Own Particles", "All particle systems of the source object"),
+        ('PARTICLE_CHILD', "Child Particles", "All particle systems of the child objects"),
+        #('PENCIL', "Pencil", "Annotation Grease Pencil (only touching/inside the volume)"),
+    ]
+    all_keys = [ k[0] for k in all ]
+    default_key = 'PARTICLE_CHILD'
+    fallback_key = 'VERT_OWN'
+    error_key = 'NONE'
+    error_option = [ (error_key, "No point found...", f"Options: {all_keys}") ]
+
+def source_update_items(self, context):
+    items = [
+        t for t in MW_gen_source_options.all
+            if t[0] in self.meta_source_enabled
+    ]
+    if items: return items
+    else: return MW_gen_source_options.error_option.copy()
+
+#-------------------------------------------------------------------
+
 class MW_gen_cfg(types.PropertyGroup):
 
     # TODO:: maybe move to id too -> final fract with the global storage
     ptrID_links: props.StringProperty(default="nullptr")
 
-    #-------------------------------------------------------------------
-
-    # dynamic source options
-    class sourceOptions:
-        all=[
-            ('VERT_OWN', "Own Verts", "Use own vertices (also set by default when other options are disabled)"),
-            ('VERT_CHILD', "Child Verts", "Use child object vertices"),
-            ('PARTICLE_OWN', "Own Particles", "All particle systems of the source object"),
-            ('PARTICLE_CHILD', "Child Particles", "All particle systems of the child objects"),
-            #('PENCIL', "Pencil", "Annotation Grease Pencil (only touching/inside the volume)"),
-        ]
-        all_keys = [ k[0] for k in all ]
-        default_key = 'PARTICLE_CHILD'
-        fallback_key = 'VERT_OWN'
-        error_key = 'NONE'
-        error_option = [ (error_key, "No point found...", f"Options: {all_keys}") ]
-
+    # Set all available gen extractions
     meta_source_enabled: props.EnumProperty(
         name="Source all types",
-        items=sourceOptions.all.copy(),
-        default={ sourceOptions.fallback_key },
+        items=MW_gen_source_options.all.copy(),
+        default={ MW_gen_source_options.fallback_key },
         options={'ENUM_FLAG'},
     )
 
-    def source_dynamic(self, context):
-        items = [
-            t for t in self.sourceOptions.all
-                if t[0] in self.meta_source_enabled
-        ]
-        if items: return items
-        else: return self.sourceOptions.error_option.copy()
-
+    # Picked extraction method
     source: props.EnumProperty(
         name="Source", description="Available source from where to retrieve points",
-        items=source_dynamic, # default with numberID doesnt seem to work
+        items=source_update_items, # default with numberID doesnt seem to work
         options={'ENUM_FLAG'},
     )
 
@@ -64,7 +66,7 @@ class MW_gen_cfg(types.PropertyGroup):
         default=100, min=0, max=10000,
     )
     source_noise: props.FloatProperty(
-        name="RND noise", description="Randomize point distribution",
+        name="RND jitter", description="Jitter input point positions",
         default=0.0, min=0.0, max=1.0,
     )
     rnd_seed: props.IntProperty(
@@ -75,7 +77,7 @@ class MW_gen_cfg(types.PropertyGroup):
     #-------------------------------------------------------------------
 
     shape_useConvexHull: props.BoolProperty(
-        name="WIP: Convex hull", description="Apply convex hull op beforehand",
+        name="Convex hull", description="Apply convex hull op beforehand",
         default=True,
     )
     shape_useWalls: props.BoolProperty(
@@ -83,7 +85,18 @@ class MW_gen_cfg(types.PropertyGroup):
         default=True,
     )
 
+    margin_box_bounds: props.FloatProperty(
+        name="Margin BB", description="Additional displacement of the box normal planes.",
+        default=0.05, min=0.001, max=1.0, step=1, precision=3
+    )
+    margin_face_bounds: props.FloatProperty(
+        name="Margin faces", description="Additional displacement of the face normal planes.",
+        default=0.025, min=0.001, max=1.0, step=1, precision=3
+    )
 
+    #-------------------------------------------------------------------
+
+    # TODO:: name here seems meh? + the functiuons
     # OPT:: example of having a per instance previous value of a property
     def struct_nameOriginal_update(self, context):
         #if self.struct_nameOriginal_prev == self.struct_nameOriginal: return # prev val is also reset on undo tho
@@ -156,21 +169,7 @@ class MW_gen_cfg(types.PropertyGroup):
     )
 
     #-------------------------------------------------------------------
-    # IDEA:: update to direclty modify the scene
 
-    def struct_shardScale_update(self, context):
-        obj = MW_root.getSelected()
-        if not obj: return
-        shards = utils.get_child(obj, getPrefs().names.shards)
-        utils.scale_objectChildren(shards, self.struct_shardScale)
-
-    struct_shardScale: props.FloatProperty(
-        name="Shard scale", description="Reduce some bits to be able to see the links better",
-        default=0.75, min=0.25, max=1.5,
-        update=struct_shardScale_update
-    )
-
-    # IDEA:: maybe keep attached to faces by having and ID or something? atm momment cannot scale like this need another pivot
     def struct_linksScale_update(self, context):
         obj = MW_root.getSelected()
         if not obj: return
@@ -186,18 +185,6 @@ class MW_gen_cfg(types.PropertyGroup):
         update=struct_linksScale_update
     )
 
-    #-------------------------------------------------------------------
-
-    # NOTE:: inter-spacing for physics is not possible atm
-    # IDEA:: could allow negative margins, but then handle 0 when points are on the wall?
-    margin_box_bounds: props.FloatProperty(
-        name="Margin BB", description="Additional displacement of the box normal planes",
-        default=0.05, min=0.001, max=1.0, step=1, precision=3
-    )
-    margin_face_bounds: props.FloatProperty(
-        name="Margin faces", description="Additional displacement of the face normal planes",
-        default=0.025, min=0.001, max=1.0, step=1, precision=3
-    )
 
 #-------------------------------------------------------------------
 # OPT:: maybe split files + some go to prefs + new propGroup to add to scene props_utils instead of prefs
@@ -234,8 +221,22 @@ class MW_sim_cfg(types.PropertyGroup):
         default=0, min=0, max=100,
     )
 
+
+#-------------------------------------------------------------------
+
+def cell_scale_update(self, context):
+    obj = MW_root.getSelected()
+    if not obj: return
+    cells_root = utils.get_child(obj, getPrefs().names.shards)
+    utils.scale_objectChildren(cells_root, self.cell_scale)
+
 class MW_vis_cfg(types.PropertyGroup):
-    pass
+
+    cell_scale: props.FloatProperty(
+        name="Cell scale", description="Reduce some bits to be able to see the links better",
+        default=0.75, min=0.25, max=1.5,
+        update=cell_scale_update
+    )
 
 
 #-------------------------------------------------------------------

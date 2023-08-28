@@ -75,6 +75,7 @@ class MW_prefs(bpy.types.AddonPreferences):
     # meta filter for OP props
     prefs_PT_meta_inspector: props.PointerProperty(type=Prop_inspector)
     gen_PT_meta_inspector: props.PointerProperty(type=Prop_inspector)
+    vis_PT_meta_inspector: props.PointerProperty(type=Prop_inspector)
 
     all_PT_meta_show_root: props.BoolProperty(
         name="Root props", description="Show root properties / selected child",

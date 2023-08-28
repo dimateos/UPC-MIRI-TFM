@@ -71,7 +71,7 @@ class MW_gen_OT(_StartRefresh_OT):
         cancel = self.checkRefresh_cancel()
         if cancel: return self.end_op_refresh(skipLog=True)
 
-
+        # TODO:: humm
         # Free existing link memory -> now purged on undo callback dynamically
         prefs = getPrefs()
         if self.last_ptrID_links and not prefs.prefs_links_undoPurge:
@@ -114,6 +114,9 @@ class MW_gen_OT(_StartRefresh_OT):
 
     def execute_fresh(self, obj_root:types.Object, obj_original:types.Object ):
         self.obj_root = obj_root
+        utils.select_unhide(self.obj_root, self.ctx)
+
+        # TODO:: cfg_vis?
         cfg: MW_gen_cfg = self.cfg
         cfg.rnd_seed = utils.rnd_seed(cfg.rnd_seed)
         prefs = getPrefs()
@@ -185,8 +188,6 @@ class MW_gen_OT(_StartRefresh_OT):
         """ OVERRIDE:: end_op to perform stuff at the end """
 
         if self.obj_root:
-            utils.select_unhide(self.obj_root, self.ctx)
-
             # copy any cfg that may have changed during execute
             self.cfg.name = self.obj_root.name
             copyProps(self.cfg, self.obj_root.mw_gen)

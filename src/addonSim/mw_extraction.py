@@ -8,6 +8,7 @@ INF_FLOAT = float("inf")
 from .preferences import getPrefs
 from .properties import (
     MW_gen_cfg,
+    MW_gen_source_options,
 )
 
 from . import utils
@@ -66,7 +67,7 @@ def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context: types
             break
 
     # grease pencil
-    if "PENCIL" in cfg.sourceOptions.all_keys:
+    if "PENCIL" in MW_gen_source_options.all_keys:
         def check_points_from_splines(gp):
             if not gp.layers.active:
                 return False
@@ -84,7 +85,7 @@ def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context: types
 
 def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     if not cfg.meta_source_enabled:
-        cfg.source = { cfg.sourceOptions.error_key }
+        cfg.source = { MW_gen_source_options.error_key }
         DEV.log_msg("No points found...", {"CALC", "SOURCE", "ERROR"})
         return []
 
@@ -98,9 +99,9 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context: types.Co
     """
     # try set default source or fallback
     if not cfg.source:
-        if cfg.sourceOptions.default_key in cfg.meta_source_enabled:
-            cfg.source = { cfg.sourceOptions.default_key }
-        else: cfg.source = { cfg.sourceOptions.fallback_key }
+        if MW_gen_source_options.default_key in cfg.meta_source_enabled:
+            cfg.source = { MW_gen_source_options.default_key }
+        else: cfg.source = { MW_gen_source_options.fallback_key }
 
     # return in local space
     points = []
