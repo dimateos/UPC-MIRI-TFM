@@ -13,7 +13,7 @@ from .properties import (
     MW_gen_cfg,
     MW_sim_cfg,
 )
-from .properties_utils import copyProps, skip_meta_show_toggled
+from .properties_utils import copyProps
 
 from .operators_utils import _StartRefresh_OT, util_classes_op
 
@@ -58,7 +58,9 @@ class MW_gen_OT(_StartRefresh_OT):
     def invoke(self, context, event):
         # avoid last stored operation overide
         self.invoked_once = False
-        # potentially clean memory ptr leftovers
+        getPrefs().gen_PT_meta_inspector.reset_meta_show_toggled()
+
+        # TODO:: potentially clean memory ptr leftovers?
         self.last_storageID = None
         return super().invoke(context, event)
 
@@ -71,7 +73,7 @@ class MW_gen_OT(_StartRefresh_OT):
         prefs = getPrefs()
 
         # handle refresh
-        cancel = self.checkRefresh_cancel() or skip_meta_show_toggled(prefs.gen_PT_meta_inspector)
+        cancel = self.checkRefresh_cancel() or prefs.gen_PT_meta_inspector.skip_meta_show_toggled()
         if cancel: return self.end_op_refresh(skipLog=True)
 
 
@@ -117,7 +119,6 @@ class MW_gen_OT(_StartRefresh_OT):
     def execute_fresh(self, obj_root:types.Object, obj_original:types.Object ):
         self.fract = MW_Fract()
         self.obj_root = obj_root
-        utils.select_unhide(self.obj_root, self.ctx)
 
         # TODO:: cfg_vis?
         cfg: MW_gen_cfg = self.cfg
@@ -173,7 +174,7 @@ class MW_gen_OT(_StartRefresh_OT):
         if DEV.LEGACY_CONT:
             mw_setup.gen_LEGACY_CONT(obj_shards, cont, cfg, self.ctx)
             return self.end_op("DEV.LEGACY_CONT stop...")
-        mw_setup.gen_shardsObjects(obj_shards, cont, cfg, self.ctx, invertOrientation=prefs.gen_setup_invertShardNormals)
+        mw_setup.gen_shardsObjects(obj_shards, cont, cfg, self.ctx, scale=obj_root.mw_vis.cell_scale, invertOrientation=prefs.gen_setup_invertShardNormals)
 
         # calculate links and store in the external storage
         links:LinkCollection = LinkCollection(cont, obj_shards)
@@ -197,13 +198,14 @@ class MW_gen_OT(_StartRefresh_OT):
             copyProps(self.cfg, self.obj_root.mw_gen)
             # set the meta type to all objects at once
             MW_id_utils.setMetaType(self.obj_root, {"CHILD"}, skipParent=True)
+            utils.select_unhide(self.obj_root, self.ctx)
 
         return super().end_op(msg, skipLog, retPass)
 
 
 class MW_gen_recalc_OT(_StartRefresh_OT):
     bl_idname = "mw.gen_recalc"
-    bl_label = "Recalculate links"
+    bl_label = "Recalculate facture"
     bl_description = "For selected root. Useful after a module reload etc..."
 
     # UNDO as part of bl_options will cancel any edit last operation pop up
@@ -277,14 +279,13 @@ class MW_gen_links_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_global_selected.root
+        return MW_global_selected.fract
 
     def execute(self, context: types.Context):
         self.start_op()
-
-        obj, cfg, links = MW_gen_recalc_OT.getRoot_links_autoRecalc()
-        if not links:
-            return self.end_op_error("No links storage found...")
+        obj = MW_global_selected.root
+        gen_cfg = obj.mw_gen
+        links = MW_global_selected.fract.links
 
         ## WIP:: per cell no need but atm cont ref is inside LinkCollection structure
         #obj_links_legacy = mw_setup.genWIP_linksEmptiesPerCell(obj, cfg, context)
@@ -294,8 +295,8 @@ class MW_gen_links_OT(_StartRefresh_OT):
         ##mw_setup.genWIP_linksObjects(obj_links, obj_links_air, links, cfg, context)
         #mw_setup.gen_linksSingleObject(obj_links, obj_links_air, links, cfg, context)
 
-        mw_setup.gen_linksObject(obj, links, cfg, context)
-        mw_setup.gen_linksWallObject(obj, links, cfg, context)
+        mw_setup.gen_linksObject(obj, links, gen_cfg, context)
+        mw_setup.gen_linksWallObject(obj, links, gen_cfg, context)
 
         return self.end_op()
 
@@ -330,41 +331,38 @@ class MW_sim_step_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_global_selected.root
+        return MW_global_selected.fract
 
     def invoke(self, context, event):
-        obj, cfgGen, self.links = MW_gen_recalc_OT.getRoot_links_autoRecalc()
-        if not self.links:
-            return self.end_op_error("No links storage found...")
-
         # create simulation object
+        self.links = MW_global_selected.fract.links
         self.sim = mw_sim.Simulation(self.links)
 
         return super().invoke(context, event)
 
     def execute(self, context: types.Context):
         self.start_op()
-        cfg : MW_sim_cfg= self.cfg
+        sim_cfg : MW_sim_cfg= self.cfg
 
         # handle refresh
         cancel = self.checkRefresh_cancel()
         if cancel: return self.end_op_refresh(skipLog=True)
 
         # achieve constructive results during adjust op menu
-        self.sim.resetSim(cfg.addSeed)
-        self.sim.set_deg(cfg.deg)
-        DEV.log_msg(f"steps({cfg.steps}) subSteps({cfg.subSteps}) deg({cfg.deg})", {'SETUP'})
+        self.sim.resetSim(sim_cfg.addSeed)
+        self.sim.set_deg(sim_cfg.deg)
+        DEV.log_msg(f"steps({sim_cfg.steps}) subSteps({sim_cfg.subSteps}) deg({sim_cfg.deg})", {'SETUP'})
 
-        for step in range(cfg.steps):
-            if cfg.steps_uniformDeg: self.sim.stepAll()
-            else: self.sim.step(cfg.subSteps)
+        for step in range(sim_cfg.steps):
+            if sim_cfg.steps_uniformDeg: self.sim.stepAll()
+            else: self.sim.step(sim_cfg.subSteps)
 
         # IDEA:: store copy or original or button to recalc links from start? -> set all life to 1 but handle any dynamic list
         obj = MW_global_selected.root
         if obj:
-            cfgGen = obj.mw_gen
-            mw_setup.gen_linksObject(obj, self.links, cfgGen, context)
-            mw_setup.gen_linksWallObject(obj, self.links, cfgGen, context, self.sim.step_trace.entryL_candidatesW if self.sim.trace else None)
+            gen_cfg = obj.mw_gen
+            mw_setup.gen_linksObject(obj, self.links, gen_cfg, context)
+            mw_setup.gen_linksWallObject(obj, self.links, gen_cfg, context, self.sim.step_trace.entryL_candidatesW if self.sim.trace else None)
 
         return self.end_op()
 
@@ -374,7 +372,6 @@ class MW_sim_reset_OT(_StartRefresh_OT):
     bl_description = "WIP: sim reset"
 
     bl_options = {'INTERNAL', 'UNDO'}
-    links: LinkCollection = None
 
     def __init__(self) -> None:
         super().__init__()
@@ -382,24 +379,20 @@ class MW_sim_reset_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_global_selected.root
-
-    def invoke(self, context, event):
-        obj, cfgGen, self.links = MW_gen_recalc_OT.getRoot_links()
-        if not self.links:
-            return self.end_op_error("No links storage found...")
-
-        return super().invoke(context, event)
+        return MW_global_selected.fract
 
     def execute(self, context: types.Context):
         self.start_op()
+
+        # TODO:: global sim atm
+        self.links = MW_global_selected.fract.links
         mw_sim.resetLife(self.links)
 
         obj = MW_global_selected.root
         if obj:
-            cfgGen = obj.mw_gen
-            mw_setup.gen_linksObject(obj, self.links, cfgGen, context)
-            mw_setup.gen_linksWallObject(obj, self.links, cfgGen, context)
+            gen_cfg = obj.mw_gen
+            mw_setup.gen_linksObject(obj, self.links, gen_cfg, context)
+            mw_setup.gen_linksWallObject(obj, self.links, gen_cfg, context)
         return self.end_op()
 
 #-------------------------------------------------------------------
@@ -417,18 +410,11 @@ class MW_util_comps_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_global_selected.root
-
-    def invoke(self, context, event):
-        obj, cfgGen, self.links = MW_gen_recalc_OT.getRoot_links()
-        if not self.links:
-            return self.end_op_error("No links storage found...")
-
-        return super().invoke(context, event)
+        return MW_global_selected.fract
 
     def execute(self, context: types.Context):
         self.start_op()
-        mw_extraction.get_connected_comps(self.links)
+        mw_extraction.get_connected_comps(MW_global_selected.fract.links)
         return self.end_op()
 
 class MW_util_bool_OT(_StartRefresh_OT):

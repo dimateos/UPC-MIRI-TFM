@@ -118,57 +118,9 @@ class MW_id_utils:
 
     def getStorageId_check(obj: types.Object):
         """ Gets the storage id (excepts when unset) """
-        if obj.mw_id.storage_id != -1:
-            raise ValueError("Storage id was already set!")
+        if obj.mw_id.storage_id == -1:
+            raise ValueError(f"{obj.name}: Invalid storage id (-1)!")
         return obj.mw_id.storage_id
-
-
-#-------------------------------------------------------------------
-
-class MW_global_selected:
-    """  Keep a reference to the selected root with a callback on selection change """
-    # OPT:: store the data in the scene/file to avoid losing it on reload? Still issues with global storage anyway
-    #class MW_global_selected(types.PropertyGroup): + register the class etc
-    #my_object: bpy.props.PointerProperty(type=bpy.types.Object)
-
-    # root fracture object
-    root = None
-
-    # common selection
-    selection = None
-    last = None
-
-    @classmethod
-    def setSelected(cls, selected):
-        # OPT:: multi-selection / root inside selected?
-        cls.selection = selected
-
-        if cls.selection:
-            cls.last = cls.selection[-1]
-            cls.root = MW_id_utils.getRoot(cls.last)
-        else:
-            cls.resetSelected()
-
-    @classmethod
-    def resetSelected(cls):
-        cls.selection = None
-        cls.last = None
-        cls.root = None
-
-    @classmethod
-    def sanitizeSelected(cls):
-        """ Potentially sanitize objects no longer on the scene """
-        if utils.needsSanitize_object(cls.root):
-            cls.resetSelected()
-
-    # callback triggers
-    @classmethod
-    def setSelected_callback(cls, _scene_=None, _selected_=None):
-        cls.setSelected(_selected_)
-
-    @classmethod
-    def sanitizeSelected_callback(cls, _scene_=None, _name_selected_=None):
-        cls.sanitizeSelected()
 
 
 #-------------------------------------------------------------------
@@ -249,6 +201,57 @@ class MW_global_storage:
     def purgeFracts_callback(cls, _scene_=None, _undo_name_=None):
         if cls.enable_autoPurge:
             cls.purgeFracts()
+
+
+#-------------------------------------------------------------------
+
+class MW_global_selected:
+    """  Keep a reference to the selected root with a callback on selection change """
+    # OPT:: store the data in the scene/file to avoid losing it on reload? Still issues with global storage anyway
+    #class MW_global_selected(types.PropertyGroup): + register the class etc
+    #my_object: bpy.props.PointerProperty(type=bpy.types.Object)
+
+    # root fracture object
+    root      : types.Object = None
+    fract                    = None
+
+    # common selection
+    selection : types.Object = None
+    last      : types.Object = None
+
+    @classmethod
+    def setSelected(cls, selected):
+        # OPT:: multi-selection / root inside selected?
+        cls.selection = selected
+
+        if cls.selection:
+            cls.last = cls.selection[-1]
+            cls.root = MW_id_utils.getRoot(cls.last)
+            cls.fract = MW_global_storage.getFract(cls.root) if cls.root else None
+        else:
+            cls.resetSelected()
+
+    @classmethod
+    def resetSelected(cls):
+        cls.root      = None
+        cls.fract     = None
+        cls.selection = None
+        cls.last      = None
+
+    @classmethod
+    def sanitizeSelected(cls):
+        """ Potentially sanitize objects no longer on the scene """
+        if utils.needsSanitize_object(cls.root):
+            cls.resetSelected()
+
+    # callback triggers
+    @classmethod
+    def setSelected_callback(cls, _scene_=None, _selected_=None):
+        cls.setSelected(_selected_)
+
+    @classmethod
+    def sanitizeSelected_callback(cls, _scene_=None, _name_selected_=None):
+        cls.sanitizeSelected()
 
 
 #-------------------------------------------------------------------

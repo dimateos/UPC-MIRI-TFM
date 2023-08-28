@@ -154,7 +154,7 @@ def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     obj_shardsEmpty = utils.gen_child(obj, getPrefs().names.shards, context, None, keepTrans=False, hide=not cfg.struct_showShards)
     return obj_shardsEmpty
 
-def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context, invertOrientation = False):
+def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context, scale = 1.0, invertOrientation = False):
     prefs = getPrefs()
     if not prefs.gen_setup_matColors:
         color3 = utils_render.COLORS.gray
@@ -193,10 +193,7 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
         mesh.from_pydata(vertices=verts, edges=[], faces=faces_blender)
         obj_shard = utils.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showShards)
         obj_shard.location = pos
-
-        # TODO:: get root here?
-        #obj_shard.scale = [cfg.struct_shardScale]*3
-        obj_shard.scale = [MW_global_selected.root.mw_vis.cell_scale]*3
+        obj_shard.scale = [scale]*3
 
         # IDEA:: test visuals alternatives -> add to dm utils
         #if DEV.VISUAL_TESTS:

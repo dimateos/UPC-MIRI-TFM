@@ -7,17 +7,21 @@ from .utils_dev import DEV
 
 #-------------------------------------------------------------------
 
-def set_meta_show_toggled(self, context):
-    self.meta_show_toggled = True
-
-def skip_meta_show_toggled(inspector):
-    if inspector.meta_show_toggled:
-        inspector.meta_show_toggled = False
-        return True
-    return False
-
 class Prop_inspector(types.PropertyGroup):
     """ Meta filters to display/edit a property group in a panel """
+
+    # NOTE:: few utils functions inside the class (could be outside)
+    def set_meta_show_toggled(self, context):
+        self.meta_show_toggled = True
+    def reset_meta_show_toggled(self):
+        self.meta_show_toggled = False
+
+    def skip_meta_show_toggled(self):
+        if self.meta_show_toggled:
+            self.meta_show_toggled = False
+            return True
+        return False
+
 
     # utility to avoid additional operator refreshes, set manually back to False after skip
     meta_show_toggled: props.BoolProperty(
