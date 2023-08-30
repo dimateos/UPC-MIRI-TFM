@@ -195,7 +195,7 @@ def copy_object(obj: types.Object, context: types.Context, link_mesh = False, ke
     obj_copy: types.Object = obj.copy()
     context.scene.collection.objects.link(obj_copy)
 
-    # make a raw copy of leave a linked mesh
+    # make a raw copy or leave a linked mesh
     if not link_mesh and obj.data:
         obj_copy.data = obj.data.copy()
         obj_copy.data.name = f"{namePreffix}{obj.data.name}{nameSuffix}"

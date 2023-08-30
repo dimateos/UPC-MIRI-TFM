@@ -76,6 +76,10 @@ class DEV:
         log_msg_last = msg,msgType
     log_msg_last = "",{"NONE"}
 
+    @staticmethod
+    def log_msg_sep(sep=logs_cutmsg):
+        print("-"*sep)
+
     # OPT:: not much use
     @staticmethod
     def draw_val(ui, msg, value):

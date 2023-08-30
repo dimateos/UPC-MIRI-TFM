@@ -42,6 +42,7 @@ class MW_prefs(bpy.types.AddonPreferences):
 
     def prefs_autoPurge_update(self, context):
         MW_global_storage.enable_autoPurge = self.prefs_autoPurge
+        MW_global_storage.purgeFracts()
 
     prefs_autoPurge: props.BoolProperty(
         name="purge", description="Keep purging on undo/delete/etc",
@@ -86,15 +87,19 @@ class MW_prefs(bpy.types.AddonPreferences):
     gen_PT_meta_inspector: props.PointerProperty(type=Prop_inspector)
     vis_PT_meta_inspector: props.PointerProperty(type=Prop_inspector)
 
-    all_PT_meta_show_root: props.BoolProperty(
-        name="Root props", description="Show root properties / selected child",
-        default=True,
-    )
+    # more PT toggles
 
     # TODO:: replace for visual cfg ins
     gen_PT_meta_show_visuals: props.BoolProperty(
         name="Show visuals...", description="Tweak visual elements",
         default=False,
+    )
+
+    #-------------------------------------------------------------------
+
+    all_PT_meta_show_root: props.BoolProperty(
+        name="Root props", description="Show root properties / selected child",
+        default=True,
     )
 
     #-------------------------------------------------------------------

@@ -4,9 +4,9 @@ import bpy.props as props
 
 from .preferences import getPrefs, ADDON
 from .properties_global import (
-    MW_global_selected,
     MW_id_utils,
     MW_global_storage,
+    MW_global_selected,
 )
 
 from . import operators as ops
@@ -154,6 +154,17 @@ class MW_gen_PT(types.Panel):
             col = boxLinks.column()
             for id,fract in MW_global_storage.id_fracts.items():
                 col.label(text=f"{id}: {len(fract.cont)} cells + {len(fract.links.link_map)} links", icon="THREE_DOTS")
+
+            # global selected
+            boxSelected = box.box().column()
+            col_rowSplit = boxSelected.row().split(factor=0.6)
+            col_rowSplit.label(text=f"Root: {MW_global_selected.root.name if MW_global_selected.root else '~'}", icon="RESTRICT_SELECT_ON")
+            col_rowSplit.label(text=f"{MW_global_selected.prev_root.name if MW_global_selected.prev_root else '~'}", icon="FRAME_PREV")
+            col_rowSplit = boxSelected.row().split(factor=0.6)
+            col_rowSplit.label(text=f"Last: {MW_global_selected.last.name if MW_global_selected.last else '~'}", icon="RESTRICT_SELECT_OFF")
+            col_rowSplit.label(text=f"{MW_global_selected.prev_last.name if MW_global_selected.prev_last else '~'}", icon="FRAME_PREV")
+            boxSelected.label(text=f"Selected: {len(MW_global_selected.selection) if MW_global_selected.selection else '~'}", icon="SELECT_SET")
+
 
 #-------------------------------------------------------------------
 

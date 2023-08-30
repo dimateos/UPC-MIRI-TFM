@@ -73,13 +73,12 @@ class MW_gen_OT(_StartRefresh_OT):
         prefs = getPrefs()
 
         # handle refresh
-        cancel = self.checkRefresh_cancel() or prefs.gen_PT_meta_inspector.skip_meta_show_toggled()
-        if cancel: return self.end_op_refresh(skipLog=True)
+        if self.checkRefresh_cancel() or prefs.gen_PT_meta_inspector.skip_meta_show_toggled():
+            return self.end_op_refresh(skipLog=True)
 
-
-        # Potentially free existing storage -> now purged on undo callback dynamically
-        if self.last_storageID and not prefs.prefs_autoPurge:
-            MW_global_storage.freeFract(self.last_storageID)
+        # Potentially free existing storage -> now purged on undo callback dynamically too
+        if self.last_storageID is not None:
+            MW_global_storage.freeFract_fromID(self.last_storageID)
 
 
         # Retrieve root

@@ -111,6 +111,7 @@ class _StartRefresh_OT(types.Operator):
 
         if self.start_log and not skipLog:
             if not msg: msg= f"{self.bl_label}"
+            DEV.log_msg_sep()
             DEV.log_msg(f"Op START: {msg} ({self.bl_idname})", {'OP_FLOW'})
 
         if self.start_logStats: stats.logDt(f"timing: ({self.bl_idname})...")

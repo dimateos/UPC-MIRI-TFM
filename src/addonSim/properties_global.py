@@ -100,6 +100,9 @@ class MW_id_utils:
         for child in toSet:
             child.mw_id.meta_type = type.copy()
 
+    def resetMetaType(obj: types.Object):
+        obj.mw_id.meta_type = {"NONE"}
+
     #-------------------------------------------------------------------
 
     @staticmethod
@@ -121,6 +124,9 @@ class MW_id_utils:
         if obj.mw_id.storage_id == -1:
             raise ValueError(f"{obj.name}: Invalid storage id (-1)!")
         return obj.mw_id.storage_id
+
+    def resetStorageId(obj: types.Object):
+        obj.mw_id.storage_id = -1
 
 
 #-------------------------------------------------------------------
@@ -147,6 +153,7 @@ class MW_global_storage:
 
     @classmethod
     def getFract_fromID(cls, id):
+        DEV.log_msg(f"Get: {id}", {"STORAGE", "FRACT"})
         try:
             return cls.id_fracts[id]
         except KeyError:
@@ -155,7 +162,6 @@ class MW_global_storage:
     @classmethod
     def getFract(cls, obj):
         id = MW_id_utils.getStorageId_check(obj)
-        DEV.log_msg(f"Get: {obj.name} ({id})...", {"STORAGE", "FRACT"})
         return cls.getFract_fromID(id)
 
     @classmethod
@@ -165,18 +171,21 @@ class MW_global_storage:
 
     @classmethod
     def freeFract_fromID(cls, id):
+        DEV.log_msg(f"Free: {id}", {"GLOBAL", "STORAGE"})
         try:
             # delete the fract and only pop the obj
             fract = cls.id_fracts.pop(id)
+            del fract.cont
+            del fract.links
+            del fract.sim
             del fract
             obj = cls.id_fracts_obj.pop(id)
         except KeyError:
-            DEV.log_msg(f"Not found {id}: probably reloaded the module?", {"STORAGE", "FRACT", "ERROR"})
+            DEV.log_msg(f"Not found {id}: probably reloaded the module?", {"GLOBAL", "STORAGE", "ERROR"})
 
     @classmethod
     def freeFract(cls, obj):
         id = MW_id_utils.getStorageId_check(obj)
-        DEV.log_msg(f"Del: {obj.name} ({id})...", {"STORAGE", "FRACT"})
         return cls.freeFract_fromID(id)
 
     # callback triggers
@@ -193,7 +202,7 @@ class MW_global_storage:
             if utils.needsSanitize_object(obj):
                 toPurge.append(id)
 
-        DEV.log_msg(f"Purging {len(toPurge)}: {toPurge}", {"STORAGE", "FRACT"})
+        DEV.log_msg(f"Purging {len(toPurge)}: {toPurge}", {"GLOBAL", "STORAGE"})
         for id in toPurge:
             cls.freeFract_fromID(id)
 
@@ -214,10 +223,13 @@ class MW_global_selected:
     # root fracture object
     root      : types.Object = None
     fract                    = None
+    prev_root : types.Object = None
+    prev_fract               = None
 
     # common selection
     selection : types.Object = None
     last      : types.Object = None
+    prev_last : types.Object = None
 
     @classmethod
     def setSelected(cls, selected):
@@ -225,18 +237,26 @@ class MW_global_selected:
         cls.selection = selected
 
         if cls.selection:
-            cls.last = cls.selection[-1]
-            cls.root = MW_id_utils.getRoot(cls.last)
-            cls.fract = MW_global_storage.getFract(cls.root) if cls.root else None
+            cls.last = cls.prev_last = cls.selection[-1]
+            cls.root = cls.prev_root = MW_id_utils.getRoot(cls.last)
+            cls.fract = cls.prev_fract = MW_global_storage.getFract(cls.root) if cls.root else None
         else:
             cls.resetSelected()
 
+        DEV.log_msg(f"root: {cls.root.name if cls.root else '...'} | last: {cls.last.name if cls.last else '...'}"
+                    f" | selection: {len(cls.selection) if cls.selection else '...'}", {"GLOBAL", "SELECTED"})
+
     @classmethod
     def resetSelected(cls):
+        """ Reset all to None but keep sanitized references to previous """
         cls.root      = None
         cls.fract     = None
         cls.selection = None
         cls.last      = None
+        cls.prev_root = utils.returnSanitized_object(cls.prev_root)
+        if cls.prev_root is None:
+            cls.prev_fract = None
+        cls.prev_last = utils.returnSanitized_object(cls.prev_last)
 
     @classmethod
     def sanitizeSelected(cls):
