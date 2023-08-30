@@ -133,8 +133,8 @@ class MW_Links():
         for idx_cell in cont.foundId:
 
             # XXX:: data to calculate global pos here or leave for links to do?
-            obj        = cont.shards_objs[idx_cell]
-            me         = cont.shards_meshes[idx_cell]
+            obj        = cont.cells_objs[idx_cell]
+            me         = cont.cells_meshes[idx_cell]
             m_toWorld  = utils.get_worldMatrix_unscaled(obj, update=True)
             mn_toWorld = utils.get_normalMatrix(m_toWorld)
 
@@ -228,7 +228,7 @@ class MW_Links():
 
                 # walls only add local faces from the same cell
                 if l.airLink:
-                    w_neighs = cont.shards_meshes_FtoF[idx_cell][idx_face]
+                    w_neighs = cont.cells_meshes_FtoF[idx_cell][idx_face]
                     w_neighs = [ keys_perFace[f] for f in w_neighs ]
                     l.addNeighs(w_neighs)
                     continue
@@ -236,8 +236,8 @@ class MW_Links():
                 # extract idx and geometry faces neighs
                 c1, c2 = l.key_cells
                 f1, f2 = l.key_faces
-                m1_neighs = cont.shards_meshes_FtoF[c1]
-                m2_neighs = cont.shards_meshes_FtoF[c2]
+                m1_neighs = cont.cells_meshes_FtoF[c1]
+                m2_neighs = cont.cells_meshes_FtoF[c2]
                 f1_neighs = m1_neighs[f1]
                 f2_neighs = m2_neighs[f2]
 
@@ -250,7 +250,7 @@ class MW_Links():
 
         stats.logDt("aggregated link neighbours")
 
-        self.comps = nx.connected_components(self.cells_grap)
+        self.comps = list(nx.connected_components(self.cells_graph))
         stats.logDt(f"calculated components: {len(self.comps)}")
 
         logType = {"CALC", "LINKS"}

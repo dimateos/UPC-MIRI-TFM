@@ -64,9 +64,8 @@ class MW_prefs(bpy.types.AddonPreferences):
         source_points = source+"_points"
         source_wallsBB = source+"_wallsBB"
 
-        shards = "shards"
+        cells = "cells"
 
-        # OPT:: too much redundant "shards.."
         links = "links"
         links_air = links+"_air"
         links_legacy = links+"_legacy"
@@ -117,16 +116,16 @@ class MW_prefs(bpy.types.AddonPreferences):
     )
 
     gen_setup_invertShardNormals: props.BoolProperty(
-        name="Invert final shards face normals", description="Seems like they end up reversed due to voro face ordering.",
+        name="Invert final cells face normals", description="Seems like they end up reversed due to voro face ordering.",
         default=True,
     )
 
     gen_setup_matColors: props.BoolProperty(
-        name="WIP: Add shard color mats", description="Materials aded on generation",
+        name="WIP: Add cell color mats", description="Materials aded on generation",
         default=False,
     )
     gen_setup_matAlpha: props.FloatProperty(
-        name="WIP: Shard mat alpha", description="See the links through",
+        name="WIP: Cell mat alpha", description="See the links through",
         default=0.66, min=0.1, max=1
     )
 

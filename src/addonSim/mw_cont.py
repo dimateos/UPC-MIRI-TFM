@@ -49,7 +49,7 @@ class MW_Container:
         if self.voro_cont is not None:
             self.initialized = False
 
-    def precalculate_data(self, obj_root_shards : types.Object, shards : list[types.Object]):
+    def precalculate_data(self, obj_cells_root : types.Object, cells_list : list[types.Object]):
         """ Precalculate/query data such as valid neighbours and mapping faces """
         stats = getStats()
 
@@ -67,13 +67,13 @@ class MW_Container:
         self.neighs    : list[list[int]|int] = [ERROR_IDX.MISSING]*len(self.voro_cont)
         """ NOTE:: missing cells are filled with a placeholder id to preserve original position idx """
 
-        for idx_cell,cell in enumerate(self.voro_cont):
-            if cell is None:
+        for idx_cell, obj_cell in enumerate(self.voro_cont):
+            if obj_cell is None:
                 self.missingId.append(idx_cell)
                 self.keys_perCell[idx_cell] = ERROR_IDX.MISSING
             else:
                 self.foundId.append(idx_cell)
-                neighs_cell = cell.neighbors()
+                neighs_cell = obj_cell.neighbors()
                 self.neighs[idx_cell] = neighs_cell
                 # prefill with asymmetry keys too
                 key = (ERROR_IDX.ASYMMETRY, idx_cell)
@@ -83,21 +83,21 @@ class MW_Container:
         if self.missingId: msg += f" {str(self.missingId[:20])}"
         stats.logDt(msg) # uncut=True
 
-        # retrieve objs, meshes -> dicts per shard
-        self.shards_parent = obj_root_shards
-        self.shards_objs        : list[types.Object|int] = [ERROR_IDX.MISSING]* len(self.voro_cont)
-        self.shards_meshes      : list[types.Mesh|int]   = [ERROR_IDX.MISSING]* len(self.voro_cont)
-        self.shards_meshes_FtoF : list[dict|int]         = [ERROR_IDX.MISSING]* len(self.voro_cont)
+        # retrieve objs, meshes -> dicts per cell
+        self.cells_parent = obj_cells_root
+        self.cells_objs        : list[types.Object|int] = [ERROR_IDX.MISSING]* len(self.voro_cont)
+        self.cells_meshes      : list[types.Mesh|int]   = [ERROR_IDX.MISSING]* len(self.voro_cont)
+        self.cells_meshes_FtoF : list[dict|int]         = [ERROR_IDX.MISSING]* len(self.voro_cont)
 
-        for idx_found,shard in enumerate(shards):
+        for idx_found, obj_cell in enumerate(cells_list):
             idx_cell = self.foundId[idx_found]
-            self.shards_objs[idx_cell] = shard
-            mesh = shard.data
-            self.shards_meshes[idx_cell] = mesh
-            #self.shards_meshes_FtoF[idx_cell] = utils_geo.get_meshDicts(mesh)["FtoF"]
-            self.shards_meshes_FtoF[idx_cell] = utils_geo.map_FtoF(mesh)
+            self.cells_objs[idx_cell] = obj_cell
+            mesh = obj_cell.data
+            self.cells_meshes[idx_cell] = mesh
+            #self.cells_meshes_FtoF[idx_cell] = utils_geo.get_meshDicts(mesh)["FtoF"]
+            self.cells_meshes_FtoF[idx_cell] = utils_geo.map_FtoF(mesh)
 
-        stats.logDt("calculated shards mesh dicts (interleaved missing cells)")
+        stats.logDt("calculated cells mesh dicts (interleaved missing cells)")
 
         # build symmetric face map of the found cells
         self.keys_asymmetry    : list[link_key_t]  = []
@@ -187,13 +187,13 @@ class MW_Container:
     def getMeshes(self, idx: list[int]|int) -> list[types.Mesh]|types.Mesh:
         """ return a mesh or list of meshes given idx  """
         try:
-            return self.shards_meshes[idx]
+            return self.cells_meshes[idx]
         except TypeError:
-            return [ self.shards_meshes[i] for i in idx ]
+            return [ self.cells_meshes[i] for i in idx ]
 
     def getFaces(self, midx: list[int]|int, fidx: list[int]|int) -> list[types.MeshPolygon]|types.MeshPolygon:
         """ return a face or list of faces given idx  """
         try:
-            return self.shards_meshes[midx].polygons[fidx]
+            return self.cells_meshes[midx].polygons[fidx]
         except TypeError:
-            return [ self.shards_meshes[i].polygons[j] for i,j in zip(midx,fidx) ]
+            return [ self.cells_meshes[i].polygons[j] for i,j in zip(midx,fidx) ]

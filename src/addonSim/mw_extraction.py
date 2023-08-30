@@ -215,15 +215,15 @@ def points_transformCfg(points: list[Vector], cfg: MW_gen_cfg, bb_radius: float)
 #-------------------------------------------------------------------
 
 # TODO:: check already have it + apply
-def boolean_mod_add(obj_original: types.Object, obj_shardsRoot: types.Object, context: types.Context):
-    c = obj_shardsRoot.children
-    for shard in c:
-        mod = shard.modifiers.new(name="Boolean", type='BOOLEAN')
+def boolean_mod_add(obj_original: types.Object, obj_cells_root: types.Object, context: types.Context):
+    c = obj_cells_root.children
+    for obj_cell in c:
+        mod = obj_cell.modifiers.new(name="Boolean", type='BOOLEAN')
         mod.object = obj_original
         mod.operation = 'INTERSECT'
         mod.solver = "FAST"
 
-    DEV.log_msg(f"Applied boolean to {len(c)} shards)", {"CALC", "MOD"})
+    DEV.log_msg(f"Applied boolean to {len(c)} cells)", {"CALC", "MOD"})
 
     # Calculates all booleans at once (faster).
     depsgraph = context.evaluated_depsgraph_get()

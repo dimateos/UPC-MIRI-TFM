@@ -69,7 +69,7 @@ class MW_gen_PT(types.Panel):
             if selected.name != obj.name:
                 msg += f" - {selected.name}"
 
-            # button to bake the shard
+            # button to bake the cell
             col_rowSplit = col.row().split(factor=0.90)
             col_rowSplit.label(text=msg, icon="INFO")
             col_rowSplit.operator(ops.MW_util_bake_OT.bl_idname, text="", icon="UNLINKED")

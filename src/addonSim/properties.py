@@ -124,8 +124,8 @@ class MW_gen_cfg(types.PropertyGroup):
     # NOTE:: now the elements can be properly hidden while the last operator panel is open...
     # IDEA:: use for actually adding to the scene or not, otherwise not worth the recalculation
 
-    struct_showShards: props.BoolProperty(
-        name="Shards", description="Voronoi cells",
+    struct_showCells: props.BoolProperty(
+        name="Cells", description="Voronoi cells",
         default=True,
     )
 
@@ -227,7 +227,7 @@ class MW_sim_cfg(types.PropertyGroup):
 def cell_scale_update(self, context):
     obj = MW_global_selected.root
     if not obj: return
-    cells_root = utils.get_child(obj, getPrefs().names.shards)
+    cells_root = utils.get_child(obj, getPrefs().names.cells)
     utils.scale_objectChildren(cells_root, self.cell_scale)
 
 class MW_vis_cfg(types.PropertyGroup):

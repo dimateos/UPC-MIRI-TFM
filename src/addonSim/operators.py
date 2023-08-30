@@ -170,17 +170,17 @@ class MW_gen_OT(_StartRefresh_OT):
         if not cont:
             return self.end_op_error("found no cont... but could try recalculate!")
 
-        # shards are always added to the scene
-        obj_root_shards = mw_setup.gen_shardsEmpty(obj_root, cfg, self.ctx)
+        # cells are always added to the scene
+        obj_cells_root = mw_setup.gen_cellsEmpty(obj_root, cfg, self.ctx)
 
         #test some legacy or statistics cont stuff
         if DEV.LEGACY_CONT:
-            mw_setup.gen_LEGACY_CONT(obj_root_shards, cont.voro_cont, cfg, self.ctx)
+            mw_setup.gen_LEGACY_CONT(obj_cells_root, cont.voro_cont, cfg, self.ctx)
             return self.end_op("DEV.LEGACY_CONT stop...")
-        shards = mw_setup.gen_shardsObjects(obj_root_shards, cont, cfg, self.ctx, scale=obj_root.mw_vis.cell_scale, invertOrientation=prefs.gen_setup_invertShardNormals)
+        cells = mw_setup.gen_cellsObjects(obj_cells_root, cont, cfg, self.ctx, scale=obj_root.mw_vis.cell_scale, invertOrientation=prefs.gen_setup_invertShardNormals)
 
         # precalculate/query neighs and other data
-        cont.precalculate_data(obj_root_shards, shards)
+        cont.precalculate_data(obj_cells_root, cells)
 
         # calculate links and store in the external storage
         links:MW_Links = MW_Links(cont)
@@ -193,7 +193,6 @@ class MW_gen_OT(_StartRefresh_OT):
         fract.cont = cont
         fract.links = links
         self.last_storageID = MW_global_storage.addFract(fract, obj_root)
-
         return self.end_op()
 
     def end_op(self, msg="", skipLog=False, retPass=False):
@@ -207,6 +206,7 @@ class MW_gen_OT(_StartRefresh_OT):
             MW_id_utils.setMetaType(self.obj_root, {"CHILD"}, skipParent=True)
             utils.select_unhide(self.obj_root, self.ctx)
 
+        MW_global_selected.recheckSelected()
         return super().end_op(msg, skipLog, retPass)
 
 
@@ -240,9 +240,9 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
         if not points:
             return self.end_op_error("found no points...")
 
-        obj_shards = utils.get_child(obj_root, prefs.names.shards)
-        if not obj_shards:
-            return self.end_op_error("found no shards...")
+        obj_cells_root = utils.get_child(obj_root, prefs.names.cells)
+        if not obj_cells_root:
+            return self.end_op_error("found no cells...")
 
         # Get more data from the points
         bb, bb_center, bb_radius = utils.get_bb_data(obj_toFrac, gen_cfg.margin_box_bounds)
@@ -253,13 +253,16 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
         getStats().logDt(f"calc faces4D: {len(faces4D)} (n_disp {gen_cfg.margin_face_bounds:.4f})")
 
 
-        DEV.log_msg("Calc cont and links (shards not regenerated!)", {'CALC'})
+        DEV.log_msg("Calc cont and links (cells not regenerated!)", {'CALC'})
         cont = MW_Container(points, bb, faces4D, precision=prefs.gen_calc_precisionWalls)
         if not cont:
             return self.end_op_error("found no cont... but could try recalculate!")
 
+        # precalculate/query neighs and other data
+        cont.precalculate_data(obj_cells_root, obj_cells_root.children)
+
         # calculate links and store in the external storage
-        links:MW_Links = MW_Links(cont, obj_shards)
+        links:MW_Links = MW_Links(cont)
         if not links.initialized:
             return self.end_op_error("found no links... but could try recalculate!")
 
@@ -269,8 +272,12 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
         fract.cont = cont
         fract.links = links
         self.last_storageID = MW_global_storage.addFract(fract, obj_root)
-
         return self.end_op()
+
+    def end_op(self, msg="", skipLog=False, retPass=False):
+        """ OVERRIDE:: end_op to perform stuff at the end """
+        MW_global_selected.recheckSelected()
+        return super().end_op(msg, skipLog, retPass)
 
 #-------------------------------------------------------------------
 
@@ -449,8 +456,8 @@ class MW_util_bool_OT(_StartRefresh_OT):
         if obj:
             prefs = getPrefs()
             obj_original = utils.get_child(obj, prefs.names.original_copy + prefs.names.original)
-            obj_shards = utils.get_child(obj, prefs.names.shards)
-            mw_extraction.boolean_mod_add(obj_original, obj_shards, context)
+            obj_cells = utils.get_child(obj, prefs.names.cells)
+            mw_extraction.boolean_mod_add(obj_original, obj_cells, context)
 
         return self.end_op()
 
@@ -514,7 +521,7 @@ class MW_util_delete_all_OT(_StartRefresh_OT):
 class MW_util_bake_OT(_StartRefresh_OT):
     bl_idname = "mw.util_bake"
     bl_label = "Bake"
-    bl_description = "Unlink the shard from the fracture, e.g. to recursive fracture it"
+    bl_description = "Unlink the cell from the fracture, e.g. to recursive fracture it"
 
     # UNDO as part of bl_options will cancel any edit last operation pop up
     bl_options = {'INTERNAL', 'UNDO'}

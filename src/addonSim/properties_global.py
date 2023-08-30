@@ -254,10 +254,8 @@ class MW_global_selected:
         """ Update global selection status and query fract root
         # OPT:: multi-root selection?
         """
-        if not isinstance(selected, list): selected = [selected]
-        cls.selection = selected
-
-        if cls.selection:
+        if selected:
+            cls.selection = selected.copy() if isinstance(selected, list) else [selected]
             cls.last = cls.prev_last = cls.selection[-1]
             cls.root = cls.prev_root = MW_id_utils.getRoot(cls.last)
             cls.fract = cls.prev_fract = MW_global_storage.getFract(cls.root) if cls.root else None
@@ -265,6 +263,10 @@ class MW_global_selected:
             cls.resetSelected()
 
         cls.logSelected()
+
+    @classmethod
+    def recheckSelected(cls):
+        cls.setSelected(cls.selection)
 
     @classmethod
     def logSelected(cls):

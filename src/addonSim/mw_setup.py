@@ -153,22 +153,22 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, co
 
 #-------------------------------------------------------------------
 
-def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_shardsEmpty = utils.gen_child(obj, getPrefs().names.shards, context, None, keepTrans=False, hide=not cfg.struct_showShards)
-    return obj_shardsEmpty
+def gen_cellsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
+    obj_cellsEmpty = utils.gen_child(obj, getPrefs().names.cells, context, None, keepTrans=False, hide=not cfg.struct_showCells)
+    return obj_cellsEmpty
 
-def gen_shardsObjects(obj: types.Object, cont: MW_Container, cfg: MW_gen_cfg, context: types.Context, scale = 1.0, invertOrientation = False):
+def gen_cellsObjects(obj: types.Object, cont: MW_Container, cfg: MW_gen_cfg, context: types.Context, scale = 1.0, invertOrientation = False):
     prefs = getPrefs()
     if not prefs.gen_setup_matColors:
         color3 = utils_render.COLORS.gray
-        matShards = utils_render.get_colorMat(color3, alpha=prefs.gen_setup_matAlpha, matName=prefs.names.shards+"Mat")
+        matCells = utils_render.get_colorMat(color3, alpha=prefs.gen_setup_matAlpha, matName=prefs.names.cells+"Mat")
 
-    shards = []
+    cells = []
     for cell in cont.voro_cont:
         # skip none cells (computation error)
         if cell is None: continue
         source_id = cont.voro_cont.source_idx[cell.id]
-        name= f"{prefs.names.shards}_{prefs.names.get_IdFormated(source_id)}"
+        name= f"{prefs.names.cells[0]}{prefs.names.get_IdFormated(source_id)}"
 
         # assert some voro properties, the more varied test cases the better: center of mass at the center of volume
         if DEV.ASSERT_CELL_POS:
@@ -195,8 +195,8 @@ def gen_shardsObjects(obj: types.Object, cont: MW_Container, cfg: MW_gen_cfg, co
         # build the static mesh and child object
         mesh = bpy.data.meshes.new(name)
         mesh.from_pydata(vertices=verts, edges=[], faces=faces_blender)
-        obj_shard = utils.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showShards)
-        shards.append(obj_shard)
+        obj_shard = utils.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showCells)
+        cells.append(obj_shard)
         obj_shard.location = pos
         obj_shard.scale = [scale]*3
 
@@ -205,14 +205,14 @@ def gen_shardsObjects(obj: types.Object, cont: MW_Container, cfg: MW_gen_cfg, co
         if prefs.gen_setup_matColors:
             gen_test_colors(obj_shard, mesh, alpha=prefs.gen_setup_matAlpha, matName=name)
         else:
-            obj_shard.active_material = matShards
+            obj_shard.active_material = matCells
 
             # WIP:: additional attr to visualize in the view mode -> alpha is not visualized...
             # TODO:: just change all colors to be vec4...
             utils_render.gen_meshAttr(mesh, utils_render.COLORS.assure_4d_alpha(color3, prefs.gen_setup_matAlpha), 1, "FLOAT_COLOR", "POINT", "alphaColor")
 
-    getStats().logDt("generated shards objects")
-    return shards
+    getStats().logDt("generated cells objects")
+    return cells
 
 def gen_test_colors(obj, mesh, alpha, matName):
     # NOTE:: materials can also by aded to the object instead of the data?
@@ -269,12 +269,12 @@ def gen_LEGACY_CONT(obj: types.Object, voro_cont: VORO_Container, cfg: MW_gen_cf
         neighbors += [ns]
 
         # build the static mesh and child object just at the origin
-        name= f"{getPrefs().names.shards}_{cell.id}"
+        name= f"{getPrefs().names.cells}_{cell.id}"
         mesh = bpy.data.meshes.new(name)
         mesh.from_pydata(vertices=vs, edges=[], faces=f)
-        obj_shard = utils.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showShards)
+        obj_shard = utils.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showCells)
         pass
-    getStats().logDt("generated LEGACY shards objects")
+    getStats().logDt("generated LEGACY cells objects")
 
     numVerts = [ len(vs) for vs in vertices ]
     numFaces = [ len(fs) for fs in face_vertices ]
@@ -285,7 +285,7 @@ def gen_LEGACY_CONT(obj: types.Object, voro_cont: VORO_Container, cfg: MW_gen_cf
     getStats().logDt("calculated stats (use breakpoints to see)")
 
 #-------------------------------------------------------------------
-# WIP:: maybe links to go from face to face of scaled down shards?
+# WIP:: maybe links to go from face to face of scaled down cells?
 # TODO:: to walls, show damage, etc
 # TODO:: single face tube -> code per face instead of vert? see in table
 # TODO:: fix misalgined origin...
@@ -432,7 +432,7 @@ def genWIP_linksEmptiesPerCell(obj: types.Object, cfg: MW_gen_cfg, context: type
 def genWIP_linksCellObjects(objParent: types.Object, voro_cont: VORO_Container, cfg: MW_gen_cfg, context: types.Context):
     # WIP:: links better generated from map isntead of cont? + done in a separate op
     # WIP:: atm just hiding reps -> maybe generate using a different map instead of iterating the raw cont
-    #   maybe merge shard/link loop
+    #   maybe merge cell/link loop
     neigh_set = set()
 
     for cell in voro_cont:

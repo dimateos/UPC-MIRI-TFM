@@ -176,7 +176,7 @@ def draw_gen_cfgDebug(cfg: MW_gen_cfg, layout: types.UILayout):
         col = box.column()
         col.label(text="Show:")
         rowsub = col.row(align=True)
-        rowsub.prop(cfg, "struct_showShards")
+        rowsub.prop(cfg, "struct_showCells")
         rowsub.prop(cfg, "struct_showLinks_legacy")
 
         rowsub = col.row(align=True)
