@@ -34,8 +34,6 @@ class MW_id(types.PropertyGroup):
         default=-1,
     )
 
-storage_id_uuid = 0
-""" Simple counter as uuid"""
 
 #-------------------------------------------------------------------
 
@@ -105,26 +103,34 @@ class MW_id_utils:
 
     #-------------------------------------------------------------------
 
+    storage_uuid = 0
+    """ Simple counter as uuid"""
+
     @staticmethod
     def setStorageId(obj: types.Object):
         """ Set a new UUID for the storage, usually best to use getStorageId """
-        global storage_id_uuid
-        obj.mw_id.storage_id = storage_id_uuid
-        storage_id_uuid += 1
+        obj.mw_id.storage_id = MW_id_utils.storage_uuid
+        MW_id_utils.storage_uuid += 1
+
+    @staticmethod
+    def validStorageId(obj: types.Object):
+        return obj.mw_id.storage_id != -1
 
     @staticmethod
     def getStorageId(obj: types.Object):
         """ Gets the storage id (assigns new uuid when needed) """
-        if obj.mw_id.storage_id == -1:
+        if not MW_id_utils.validStorageId(obj):
             MW_id_utils.setStorageId(obj)
         return obj.mw_id.storage_id
 
-    def getStorageId_check(obj: types.Object):
+    @staticmethod
+    def getStorageId_assert(obj: types.Object):
         """ Gets the storage id (excepts when unset) """
-        if obj.mw_id.storage_id == -1:
+        if not MW_id_utils.validStorageId(obj):
             raise ValueError(f"{obj.name}: Invalid storage id (-1)!")
         return obj.mw_id.storage_id
 
+    @staticmethod
     def resetStorageId(obj: types.Object):
         obj.mw_id.storage_id = -1
 
@@ -161,12 +167,12 @@ class MW_global_storage:
 
     @classmethod
     def getFract(cls, obj):
-        id = MW_id_utils.getStorageId_check(obj)
+        id = MW_id_utils.getStorageId_assert(obj)
         return cls.getFract_fromID(id)
 
     @classmethod
     def hasFract(cls, obj):
-        id = MW_id_utils.getStorageId_check(obj)
+        id = MW_id_utils.getStorageId_assert(obj)
         return id in cls.id_fracts
 
     @classmethod
@@ -185,8 +191,20 @@ class MW_global_storage:
 
     @classmethod
     def freeFract(cls, obj):
-        id = MW_id_utils.getStorageId_check(obj)
+        id = MW_id_utils.getStorageId_assert(obj)
         return cls.freeFract_fromID(id)
+
+    @classmethod
+    def freeFract(cls, obj):
+        id = MW_id_utils.getStorageId_assert(obj)
+        return cls.freeFract_fromID(id)
+
+    @classmethod
+    def freeFract_attempt(cls, obj):
+        if MW_id_utils.validStorageId(obj):
+            id = obj.mw_id.storage_id
+            if id in cls.id_fracts:
+                cls.freeFract_fromID(id)
 
     # callback triggers
     enable_autoPurge_default = False
@@ -233,7 +251,10 @@ class MW_global_selected:
 
     @classmethod
     def setSelected(cls, selected):
-        # OPT:: multi-selection / root inside selected?
+        """ Update global selection status and query fract root
+        # OPT:: multi-root selection?
+        """
+        if not isinstance(selected, list): selected = [selected]
         cls.selection = selected
 
         if cls.selection:

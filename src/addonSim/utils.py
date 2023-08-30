@@ -325,6 +325,9 @@ def get_child(obj: types.Object, name: str, rec=False, exactMatch = False) -> ty
 
 #-------------------------------------------------------------------
 
+def select_nothing():
+    bpy.ops.object.select_all(action='DESELECT')
+
 def select_unhide(obj: types.Object, context: types.Context, select=True):
     obj.hide_set(False)
 

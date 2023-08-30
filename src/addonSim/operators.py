@@ -116,13 +116,12 @@ class MW_gen_OT(_StartRefresh_OT):
 
 
     def execute_fresh(self, obj_root:types.Object, obj_original:types.Object ):
-        self.fract = MW_Fract()
         self.obj_root = obj_root
+        prefs = getPrefs()
 
         # TODO:: cfg_vis?
         cfg: MW_gen_cfg = self.cfg
         cfg.rnd_seed = utils.rnd_seed(cfg.rnd_seed)
-        prefs = getPrefs()
 
 
         DEV.log_msg("Initial object setup", {'SETUP'})
@@ -182,9 +181,10 @@ class MW_gen_OT(_StartRefresh_OT):
 
 
         # use global storage
-        self.fract.cont = cont
-        self.fract.links = links
-        self.last_storageID = MW_global_storage.addFract(self.fract, obj_root)
+        fract = MW_Fract()
+        fract.cont = cont
+        fract.links = links
+        self.last_storageID = MW_global_storage.addFract(fract, obj_root)
 
         return self.end_op()
 
@@ -218,15 +218,17 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
         self.start_op()
         prefs = getPrefs()
         obj_root = MW_global_selected.root
-        cfg = obj_root.mw_gen
+        gen_cfg = obj_root.mw_gen
 
+        # Potentially free existing storage (less max memory)
+        MW_global_storage.freeFract_attempt(obj_root)
 
         DEV.log_msg("Retrieving fracture data (objects and points)", {'SETUP'})
-        if cfg.shape_useConvexHull:
+        if gen_cfg.shape_useConvexHull:
             obj_toFrac = utils.get_child(obj_root, prefs.names.original_dissolve)
         else: obj_toFrac = utils.get_child(obj_root, prefs.names.original_copy)
 
-        points = mw_extraction.get_points_from_fracture(obj_root, cfg)
+        points = mw_extraction.get_points_from_fracture(obj_root, gen_cfg)
         if not points:
             return self.end_op_error("found no points...")
 
@@ -235,12 +237,12 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
             return self.end_op_error("found no shards...")
 
         # Get more data from the points
-        bb, bb_center, bb_radius = utils.get_bb_data(obj_toFrac, cfg.margin_box_bounds)
-        getStats().logDt(f"calc bb: [{bb_center[:]}] r {bb_radius:.3f} (margin {cfg.margin_box_bounds:.4f})")
-        if cfg.shape_useWalls:
-            faces4D = utils.get_faces_4D(obj_toFrac, cfg.margin_face_bounds)
+        bb, bb_center, bb_radius = utils.get_bb_data(obj_toFrac, gen_cfg.margin_box_bounds)
+        getStats().logDt(f"calc bb: [{bb_center[:]}] r {bb_radius:.3f} (margin {gen_cfg.margin_box_bounds:.4f})")
+        if gen_cfg.shape_useWalls:
+            faces4D = utils.get_faces_4D(obj_toFrac, gen_cfg.margin_face_bounds)
         else: faces4D = []
-        getStats().logDt(f"calc faces4D: {len(faces4D)} (n_disp {cfg.margin_face_bounds:.4f})")
+        getStats().logDt(f"calc faces4D: {len(faces4D)} (n_disp {gen_cfg.margin_face_bounds:.4f})")
 
 
         DEV.log_msg("Calc cont and links (shards not regenerated!)", {'CALC'})
@@ -255,9 +257,10 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
 
 
         # use global storage
-        self.fract.cont = cont
-        self.fract.links = links
-        self.last_storageID = MW_global_storage.addFract(self.fract, obj_root)
+        fract = MW_Fract()
+        fract.cont = cont
+        fract.links = links
+        self.last_storageID = MW_global_storage.addFract(fract, obj_root)
 
         return self.end_op()
 
@@ -510,14 +513,16 @@ class MW_util_bake_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return context.selected_objects and MW_id_utils.isChild(context.selected_objects[-1])
+        return MW_global_selected.last and MW_id_utils.isChild(MW_global_selected.last)
 
     def execute(self, context: types.Context):
         self.start_op(skipStats=True)
-        obj = context.selected_objects[-1]
-        obj.parent = None
-        MW_id_utils.setMetaType(obj, {"NONE"})
-        MW_global_selected.setSelected(context.selected_objects)
+        cell = utils.copy_object(MW_global_selected.last, context)
+
+        cell.parent = None
+        MW_id_utils.resetMetaType(cell)
+        utils.select_nothing()
+        utils.select_unhide(cell, context)
         return self.end_op(skipLog=True)
 
 #-------------------------------------------------------------------
