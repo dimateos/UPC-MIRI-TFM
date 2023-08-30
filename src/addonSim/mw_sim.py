@@ -5,7 +5,6 @@ import random as rnd
 from .preferences import getPrefs
 
 from .mw_links import LinkCollection, Link
-from tess import Container, Cell
 
 from . import utils
 from .utils_dev import DEV

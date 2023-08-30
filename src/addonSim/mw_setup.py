@@ -16,8 +16,8 @@ from .properties import (
     MW_gen_cfg,
 )
 
+from .mw_cont import MW_Container, VORO_Container
 from .mw_links import LinkCollection
-from tess import Container
 
 from . import utils
 from . import utils_render
@@ -157,16 +157,17 @@ def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     obj_shardsEmpty = utils.gen_child(obj, getPrefs().names.shards, context, None, keepTrans=False, hide=not cfg.struct_showShards)
     return obj_shardsEmpty
 
-def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context, scale = 1.0, invertOrientation = False):
+def gen_shardsObjects(obj: types.Object, cont: MW_Container, cfg: MW_gen_cfg, context: types.Context, scale = 1.0, invertOrientation = False):
     prefs = getPrefs()
     if not prefs.gen_setup_matColors:
         color3 = utils_render.COLORS.gray
         matShards = utils_render.get_colorMat(color3, alpha=prefs.gen_setup_matAlpha, matName=prefs.names.shards+"Mat")
 
-    for cell in cont:
+    shards = []
+    for cell in cont.voro_cont:
         # skip none cells (computation error)
         if cell is None: continue
-        source_id = cont.source_idx[cell.id]
+        source_id = cont.voro_cont.source_idx[cell.id]
         name= f"{prefs.names.shards}_{prefs.names.get_IdFormated(source_id)}"
 
         # assert some voro properties, the more varied test cases the better: center of mass at the center of volume
@@ -195,38 +196,14 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
         mesh = bpy.data.meshes.new(name)
         mesh.from_pydata(vertices=verts, edges=[], faces=faces_blender)
         obj_shard = utils.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showShards)
+        shards.append(obj_shard)
         obj_shard.location = pos
         obj_shard.scale = [scale]*3
 
         # IDEA:: test visuals alternatives -> add to dm utils
         #if DEV.VISUAL_TESTS:
         if prefs.gen_setup_matColors:
-            # test uv and if attr float 2d is mapped to UV too
-            uv = utils_render.gen_meshUV(mesh, [Vector([0.66, 0.66]), Vector([0.33, 0.33])])
-            utils_render.set_meshUV_rnd(mesh, uv.name)
-            auv = utils_render.gen_meshAttr(mesh, Vector([0.33,0.66]), adomain="CORNER", atype="FLOAT2", name="AUVtest")
-
-            # test vertex colors
-            vc_old = utils_render.gen_meshVC_legacy(mesh, utils_render.COLORS.pink)
-            utils_render.set_meshVC_legacy(mesh, vc_old, utils_render.COLORS.list_gray)
-            utils_render.set_meshVC_legacy_rnd(mesh, vc_old)
-            vc = utils_render.gen_meshVC(mesh, utils_render.COLORS.list_rgb4D )
-            vcFace = utils_render.gen_meshVC(mesh, utils_render.COLORS.list_rgb4D, adomain="CORNER")
-
-            # test attr color
-            ac = utils_render.gen_meshAC(mesh, utils_render.COLORS.list_fade, adomain="CORNER", name="ACtestcolor")
-            ac2 = utils_render.gen_meshAC(mesh, adomain="FACE")
-            ac3 = utils_render.gen_meshAC(mesh, utils_render.COLORS.red, adomain="EDGE")
-
-            # test non color attr
-            at = utils_render.gen_meshAttr(mesh, adomain="FACE")
-            utils_render.set_meshAttr_rnd(mesh, at)
-            atc = utils_render.gen_meshAttr(mesh, utils_render.COLORS.blue.to_4d(), adomain="CORNER", atype="FLOAT_COLOR", name="ATtestcolor")
-            utils_render.set_meshAttr_rnd(mesh, atc)
-
-            # NOTE:: materials can also by aded to the object instead of the data?
-            obj_shard.active_material = utils_render.get_randomMat(alpha=prefs.gen_setup_matAlpha, matName=name)
-
+            gen_test_colors(obj_shard, mesh, alpha=prefs.gen_setup_matAlpha, matName=name)
         else:
             obj_shard.active_material = matShards
 
@@ -235,8 +212,36 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
             utils_render.gen_meshAttr(mesh, utils_render.COLORS.assure_4d_alpha(color3, prefs.gen_setup_matAlpha), 1, "FLOAT_COLOR", "POINT", "alphaColor")
 
     getStats().logDt("generated shards objects")
+    return shards
 
-def gen_LEGACY_CONT(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
+def gen_test_colors(obj, mesh, alpha, matName):
+    # NOTE:: materials can also by aded to the object instead of the data?
+    obj.active_material = utils_render.get_randomMat(alpha=alpha, matName=matName)
+
+    # test uv and if attr float 2d is mapped to UV too
+    uv = utils_render.gen_meshUV(mesh, [Vector([0.66, 0.66]), Vector([0.33, 0.33])])
+    utils_render.set_meshUV_rnd(mesh, uv.name)
+    auv = utils_render.gen_meshAttr(mesh, Vector([0.33,0.66]), adomain="CORNER", atype="FLOAT2", name="AUVtest")
+
+    # test vertex colors
+    vc_old = utils_render.gen_meshVC_legacy(mesh, utils_render.COLORS.pink)
+    utils_render.set_meshVC_legacy(mesh, vc_old, utils_render.COLORS.list_gray)
+    utils_render.set_meshVC_legacy_rnd(mesh, vc_old)
+    vc = utils_render.gen_meshVC(mesh, utils_render.COLORS.list_rgb4D )
+    vcFace = utils_render.gen_meshVC(mesh, utils_render.COLORS.list_rgb4D, adomain="CORNER")
+
+    # test attr color
+    ac = utils_render.gen_meshAC(mesh, utils_render.COLORS.list_fade, adomain="CORNER", name="ACtestcolor")
+    ac2 = utils_render.gen_meshAC(mesh, adomain="FACE")
+    ac3 = utils_render.gen_meshAC(mesh, utils_render.COLORS.red, adomain="EDGE")
+
+    # test non color attr
+    at = utils_render.gen_meshAttr(mesh, adomain="FACE")
+    utils_render.set_meshAttr_rnd(mesh, at)
+    atc = utils_render.gen_meshAttr(mesh, utils_render.COLORS.blue.to_4d(), adomain="CORNER", atype="FLOAT_COLOR", name="ATtestcolor")
+    utils_render.set_meshAttr_rnd(mesh, atc)
+
+def gen_LEGACY_CONT(obj: types.Object, voro_cont: VORO_Container, cfg: MW_gen_cfg, context: types.Context):
     centroids = []
     vertices = []
     volume = []
@@ -245,7 +250,7 @@ def gen_LEGACY_CONT(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context
     normals = []
     neighbors = []
 
-    for cell in cont:
+    for cell in voro_cont:
         if cell is None: continue
         c = cell.centroid()
         vs = cell.vertices()
@@ -424,13 +429,13 @@ def genWIP_linksEmptiesPerCell(obj: types.Object, cfg: MW_gen_cfg, context: type
     obj_links_legacy = utils.gen_childClean(obj, getPrefs().names.links_legacy, context, None, keepTrans=False, hide=not cfg.struct_showLinks_legacy)
     return obj_links_legacy
 
-def genWIP_linksCellObjects(objParent: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
+def genWIP_linksCellObjects(objParent: types.Object, voro_cont: VORO_Container, cfg: MW_gen_cfg, context: types.Context):
     # WIP:: links better generated from map isntead of cont? + done in a separate op
     # WIP:: atm just hiding reps -> maybe generate using a different map instead of iterating the raw cont
     #   maybe merge shard/link loop
     neigh_set = set()
 
-    for cell in cont:
+    for cell in voro_cont:
         # NOTE:: in the case of directly iterating the cont there could be missing ones
         if cell is None: continue
 
@@ -453,7 +458,7 @@ def genWIP_linksCellObjects(objParent: types.Object, cont: Container, cfg: MW_ge
                 continue
 
             # TODO:: so some cells actually connect with the missing ones...
-            if cont[n_id] is None:
+            if voro_cont[n_id] is None:
                 continue
 
             # neighbour link -> check rep
@@ -463,7 +468,7 @@ def genWIP_linksCellObjects(objParent: types.Object, cont: Container, cfg: MW_ge
 
             # custom ordered name
             name= f"s{cell.id}_n{n_id}"
-            neigh_centroid = Vector(cont[n_id].centroid())
+            neigh_centroid = Vector(voro_cont[n_id].centroid())
 
             curve = utils_render.get_curveData([cell_centroid, neigh_centroid], name, cfg.links_width, cfg.links_res)
             obj_link = utils.gen_child(obj_group, name, context, curve, keepTrans=False, hide=not cfg.struct_showLinks)

@@ -171,16 +171,19 @@ class MW_gen_OT(_StartRefresh_OT):
             return self.end_op_error("found no cont... but could try recalculate!")
 
         # shards are always added to the scene
-        obj_shards = mw_setup.gen_shardsEmpty(obj_root, cfg, self.ctx)
+        obj_root_shards = mw_setup.gen_shardsEmpty(obj_root, cfg, self.ctx)
 
         #test some legacy or statistics cont stuff
         if DEV.LEGACY_CONT:
-            mw_setup.gen_LEGACY_CONT(obj_shards, cont, cfg, self.ctx)
+            mw_setup.gen_LEGACY_CONT(obj_root_shards, cont.voro_cont, cfg, self.ctx)
             return self.end_op("DEV.LEGACY_CONT stop...")
-        mw_setup.gen_shardsObjects(obj_shards, cont, cfg, self.ctx, scale=obj_root.mw_vis.cell_scale, invertOrientation=prefs.gen_setup_invertShardNormals)
+        shards = mw_setup.gen_shardsObjects(obj_root_shards, cont, cfg, self.ctx, scale=obj_root.mw_vis.cell_scale, invertOrientation=prefs.gen_setup_invertShardNormals)
+
+        # precalculate/query neighs and other data
+        cont.precalculate_data(obj_root_shards, shards)
 
         # calculate links and store in the external storage
-        links:LinkCollection = LinkCollection(cont, obj_shards)
+        links:LinkCollection = LinkCollection(cont)
         if not links.initialized:
             return self.end_op_error("found no links... but could try recalculate!")
 
