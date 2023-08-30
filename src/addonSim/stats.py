@@ -93,7 +93,7 @@ class Stats:
         DEV.log_msg(msg, Stats.logType, msgStart, DEV.logs_stats_sep, cut=not uncut)
 
     def logDt(self, msg: str = "", uncut=False):
-        if not DEV.logs_stats: return
+        if not DEV.logs_stats_dt: return
         t = self.time()
         dt = self.time_diff()
 
@@ -101,7 +101,7 @@ class Stats:
         DEV.log_msg(msg, Stats.logType, msgStart, DEV.logs_stats_sep, cut=not uncut)
 
     def logT(self, msg: str = "", uncut=False):
-        if not DEV.logs_stats: return
+        if not DEV.logs_stats_dt: return
         t = self.time()
 
         msgStart = f"{self.name}// total time:    ({t:>10.6f}s)"
@@ -109,7 +109,7 @@ class Stats:
 
     # OPT:: single line or something like log
     def logMem(self, msg: str = "", uncut=False):
-        if not DEV.logs_stats: return
+        if not DEV.logs_stats_dt: return
         m = self.memory_max()
         lm = self.memory_last()
         dm = self.diffmem
@@ -118,8 +118,13 @@ class Stats:
         DEV.log_msg(msg, Stats.logType, msgStart, DEV.logs_stats_sep, cut=not uncut)
 
     def logFull(self, msg: str = "", uncut=False):
+        if not DEV.logs_stats_total: return
+        tmp = DEV.logs_stats_dt
+        DEV.logs_stats_dt = DEV.logs_stats_total
+
         self.logT(msg, uncut=uncut)
         self.logMem("", uncut=uncut)
+        DEV.logs_stats_dt = tmp
 
 
 #-------------------------------------------------------------------

@@ -49,11 +49,16 @@ class MW_gen_OT(_StartRefresh_OT):
         self.refresh_log = True
         self.end_log     = True
 
-    # NOTE:: no poll because the button is removed from ui in draw instead
-
     def draw(self, context: types.Context):
         super().draw(context)
         ui.draw_gen_cfg(self.cfg, self.layout, context)
+
+    # NOTE:: no poll because the button is removed from ui in draw instead
+    #@classmethod
+    #def poll(cls, context):
+    #    # XXX:: required achieve edit last op but MW_global_selected is none?
+    #    MW_global_selected.logSelected()
+    #    return MW_global_selected.last
 
     def invoke(self, context, event):
         # avoid last stored operation overide

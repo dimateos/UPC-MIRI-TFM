@@ -8,33 +8,41 @@ class DEV:
     CALLBACK_REGISTER_ALL = False   # inspect when all available callbacks are triggered
 
     DEBUG_MODEL           = True    # fake 2D so ignore some directional links (at sim)
-    DEBUG_COMPS           = False    # break links at the middle of the model to test comps (at link gen)
+    DEBUG_COMPS           = False   # break links at the middle of the model to test comps (at link gen)
 
     ASSERT_CELL_POS       = True    # assert some local and global pos match
     LEGACY_CONT           = False   # check some stats of legacy cont
     VISUAL_TESTS          = True    # testing some visual props
 
     # IDEA:: profiling levels instead of just bool, or stats log uisng log_msg with tags
-    logs = True
-    logs_stats = True
-    ui_vals = True
+    # OPT:: but string messages are being constructed anyway: slow? -> if type -> log...
+    logs             = True
+    logs_stats_dt    = True
+    logs_stats_total = True
+    ui_vals          = True
 
     # IDEA:: better list of sets to use combinations
-    # OPT:: use list instead of set to preserve type order
+    # OPT:: use list instead of set to preserve type order?
     logs_type_skipped = {
-        'NONE', #except when empty, parsed as dict?
-        'UPDATE',
-        'INIT', "PARSED"
-        #'OP_FLOW',
-        #'CALLBACK',
+        #"# NOTE:: parsed as set when empty?",
+        "UPDATE",           # callback and scene graph update
+        "CALLBACK",
+        "INIT",             # addon reloading
+        "PARSED",
+        #"GLOBAL",           # global storage/selection
+    }
+    logs_type_whitelist = {
+        "STATS",
+        "OP_FLOW",
+        "SELECTION",
     }
 
     # IDEA:: separators per type?
-    logs_type_sep = " :: "
+    logs_type_sep  = " :: "
     logs_stats_sep = "    - "
 
-    logs_cutcol = 40
-    logs_cutmsg = 110
+    logs_cutcol  = 40
+    logs_cutmsg  = 110
     logs_cutpath = 30
 
     #-------------------------------------------------------------------
@@ -56,8 +64,9 @@ class DEV:
     @staticmethod
     def log_msg(msg, msgType = {'DEV'}, msgStart=None, sep=logs_type_sep, cut=True):
         """ Log to console if DEV.logs and type not filtered by DEV.logs_type_skipped """
-        if not DEV.logs: return
-        if msgType & DEV.logs_type_skipped: return
+        if not msgType & DEV.logs_type_whitelist:
+            if not DEV.logs: return
+            if msgType & DEV.logs_type_skipped: return
 
         # use type as msg start ot not
         if not msgStart:

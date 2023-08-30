@@ -148,22 +148,22 @@ class MW_global_storage:
     @classmethod
     def addFract(cls, fract, obj):
         id = MW_id_utils.getStorageId(obj)
-        DEV.log_msg(f"Add: {obj.name} ({id})...", {"STORAGE", "FRACT"})
+        DEV.log_msg(f"Add: {obj.name} ({id})...", {"GLOBAL", "STORAGE"})
 
         # add the fract and the obj to the storage
         if id in cls.id_fracts:
-            DEV.log_msg(f"Replacing found fract", {"STORAGE", "FRACT", "ERROR"})
+            DEV.log_msg(f"Replacing found fract", {"GLOBAL", "STORAGE", "ERROR"})
         cls.id_fracts[id] = fract
         cls.id_fracts_obj[id] = obj
         return id
 
     @classmethod
     def getFract_fromID(cls, id):
-        DEV.log_msg(f"Get: {id}", {"STORAGE", "FRACT"})
+        #DEV.log_msg(f"Get: {id}", {"GLOBAL", "STORAGE"})
         try:
             return cls.id_fracts[id]
         except KeyError:
-            DEV.log_msg(f"Not found {id}: probably reloaded the module?", {"STORAGE", "FRACT", "ERROR"})
+            DEV.log_msg(f"Not found {id}: probably reloaded the module?", {"GLOBAL", "STORAGE", "ERROR"})
 
     @classmethod
     def getFract(cls, obj):
@@ -264,6 +264,10 @@ class MW_global_selected:
         else:
             cls.resetSelected()
 
+        cls.logSelected()
+
+    @classmethod
+    def logSelected(cls):
         DEV.log_msg(f"root: {cls.root.name if cls.root else '...'} | last: {cls.last.name if cls.last else '...'}"
                     f" | selection: {len(cls.selection) if cls.selection else '...'}", {"GLOBAL", "SELECTED"})
 
