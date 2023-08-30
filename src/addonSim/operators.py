@@ -19,7 +19,7 @@ from .operators_utils import _StartRefresh_OT, util_classes_op
 
 from . import mw_setup
 from . import mw_extraction
-from .mw_links import LinkCollection
+from .mw_links import MW_Links
 from .mw_cont import MW_Container
 from .mw_fract import MW_Fract
 from . import mw_sim
@@ -183,7 +183,7 @@ class MW_gen_OT(_StartRefresh_OT):
         cont.precalculate_data(obj_root_shards, shards)
 
         # calculate links and store in the external storage
-        links:LinkCollection = LinkCollection(cont)
+        links:MW_Links = MW_Links(cont)
         if not links.initialized:
             return self.end_op_error("found no links... but could try recalculate!")
 
@@ -259,7 +259,7 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
             return self.end_op_error("found no cont... but could try recalculate!")
 
         # calculate links and store in the external storage
-        links:LinkCollection = LinkCollection(cont, obj_shards)
+        links:MW_Links = MW_Links(cont, obj_shards)
         if not links.initialized:
             return self.end_op_error("found no links... but could try recalculate!")
 
@@ -326,7 +326,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
     bl_options = {'PRESET', 'REGISTER', 'UNDO'}
     cfg: props.PointerProperty(type=MW_sim_cfg)
     sim: mw_sim.Simulation = None
-    links: LinkCollection = None
+    links: MW_Links = None
 
     def __init__(self) -> None:
         super().__init__()

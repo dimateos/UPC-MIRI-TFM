@@ -17,7 +17,7 @@ from .properties import (
 )
 
 from .mw_cont import MW_Container, VORO_Container
-from .mw_links import LinkCollection
+from .mw_links import MW_Links
 
 from . import utils
 from . import utils_render
@@ -290,7 +290,7 @@ def gen_LEGACY_CONT(obj: types.Object, voro_cont: VORO_Container, cfg: MW_gen_cf
 # TODO:: single face tube -> code per face instead of vert? see in table
 # TODO:: fix misalgined origin...
 
-def gen_linksObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cfg, context: types.Context):
+def gen_linksObject(obj: types.Object, links: MW_Links, cfg: MW_gen_cfg, context: types.Context):
     prefs = getPrefs()
     name = prefs.names.links
     baseColor = utils_render.COLORS.red
@@ -299,7 +299,7 @@ def gen_linksObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cfg, c
     verts: list[tuple[Vector,Vector]] = []
     lifeWidths: list[float] = []
     lifeColor: list[Vector] = []
-    for l in links.links_Cell_Cell:
+    for l in links.internal:
         life = l.life_clamped
 
         verts.append((l.pos-l.dir*prefs.links_depth, l.pos+l.dir*prefs.links_depth))
@@ -324,7 +324,7 @@ def gen_linksObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cfg, c
     getStats().logDt("generated links object")
     return obj_links
 
-def gen_linksWallObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cfg, context: types.Context, weights : list[float] = None):
+def gen_linksWallObject(obj: types.Object, links: MW_Links, cfg: MW_gen_cfg, context: types.Context, weights : list[float] = None):
     prefs = getPrefs()
     name = prefs.names.links_air
     wallsExtraScale = prefs.links_wallExtraScale
@@ -332,7 +332,7 @@ def gen_linksWallObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cf
     # iterate the global map and store vert pairs for the tube mesh generation
     verts: list[tuple[Vector,Vector]] = []
     lifeWidth: list[float] = []
-    for i,l in enumerate(links.links_Air_Cell):
+    for i,l in enumerate(links.external):
         #DEV.log_msg(f"life {l.life}")
 
         # skip drawing entry links with no probability
@@ -371,7 +371,7 @@ def genWIP_linksEmpties(obj: types.Object, cfg: MW_gen_cfg, context: types.Conte
     obj_links_air = utils.gen_childClean(obj, getPrefs().names.links_air, context, None, keepTrans=False, hide=not cfg.struct_showLinks_airLinks)
     return obj_links, obj_links_air
 
-def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: LinkCollection, cfg: MW_gen_cfg, context: types.Context):
+def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: MW_Links, cfg: MW_gen_cfg, context: types.Context):
     prefs = getPrefs()
     wallsMat = utils_render.get_colorMat(utils_render.COLORS.blue+utils_render.COLORS.white * 0.33, 1.0, "linkWallsMat")
     #objLinks = None

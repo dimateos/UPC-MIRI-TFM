@@ -4,7 +4,7 @@ import random as rnd
 
 from .preferences import getPrefs
 
-from .mw_links import LinkCollection, Link
+from .mw_links import MW_Links, Link
 
 from . import utils
 from .utils_dev import DEV
@@ -76,15 +76,15 @@ class SIM_CFG:
 #-------------------------------------------------------------------
 
 class Simulation:
-    def __init__(self, links_initial: LinkCollection, deg = 0.05, log = True):
+    def __init__(self, links_initial: MW_Links, deg = 0.05, log = True):
         self.storeRnd()
 
         if DEV.DEBUG_MODEL:
             DEV.log_msg(f" > init : DEBUG_MODEL flag set", {"SIM", "LOG", "STEP"})
 
         self.links             = links_initial
-        self.links_iniLife     = [ l.life for l in self.links.links_Cell_Cell ]
-        self.links_iniLife_air = [ l.life for l in self.links.links_Air_Cell  ]
+        self.links_iniLife     = [ l.life for l in self.links.internal ]
+        self.links_iniLife_air = [ l.life for l in self.links.external  ]
         self.deg               = deg
 
         self.resetCurrent()
@@ -102,10 +102,10 @@ class Simulation:
         self.restoreRnd(addSeed)
 
         # WIP:: should use reset function etc
-        for i,l in enumerate(self.links.links_Cell_Cell):
+        for i,l in enumerate(self.links.internal):
             l.reset(self.links_iniLife[i])
         if initialAirToo:
-            for i,l in enumerate(self.links.links_Air_Cell):
+            for i,l in enumerate(self.links.external):
                 l.reset(self.links_iniLife_air[i])
 
         self.resetCurrent()
@@ -133,11 +133,11 @@ class Simulation:
     #-------------------------------------------------------------------
 
     def setAll(self, life= 1.0):
-        for l in self.links.links_Cell_Cell:
+        for l in self.links.internal:
             l.reset(life)
 
     def stepAll(self):
-        for l in self.links.links_Cell_Cell:
+        for l in self.links.internal:
             l.degrade(self.deg)
 
     #-------------------------------------------------------------------
@@ -204,7 +204,7 @@ class Simulation:
     #  https://docs.python.org/dev/library/random.html#random.choices
 
     def get_entryLink(self):
-        candidates = self.links.links_Air_Cell
+        candidates = self.links.external
 
         # candidates not found
         if not candidates:
@@ -361,6 +361,6 @@ class Simulation:
 
 
 # WIP:: simulation instance only resides in the OP -> move to MWcont and share across OP invokes
-def resetLife(links: LinkCollection, life = 1.0):
+def resetLife(links: MW_Links, life = 1.0):
     for l in links.link_map.values():
         l.reset()

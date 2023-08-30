@@ -153,7 +153,7 @@ class MW_gen_PT(types.Panel):
 
             col = boxLinks.column()
             for id,fract in MW_global_storage.id_fracts.items():
-                col.label(text=f"{id}: {len(fract.cont)} cells + {len(fract.links.link_map)} links", icon="THREE_DOTS")
+                col.label(text=f"{id}: {len(fract.cont.voro_cont)} cells + {len(fract.links.link_map)} links", icon="THREE_DOTS")
 
             # global selected
             boxSelected = box.box().column()

@@ -26,13 +26,13 @@ class ERROR_IDX:
     """
     _zerosForHighlight = 1000000
 
-    missing = -7 *_zerosForHighlight
+    MISSING = -7 *_zerosForHighlight
     """ Missing a whole cell / object"""
-    asymmetry = -8 *_zerosForHighlight
+    ASYMMETRY = -8 *_zerosForHighlight
     """ Missing connection at in the supposed neighbour """
 
     e3 = -9 *_zerosForHighlight
-    all = [ missing, asymmetry ]
+    all = [ MISSING, ASYMMETRY ]
 
 #-------------------------------------------------------------------
 
@@ -40,7 +40,9 @@ class MW_Container:
 
     def __init__(self, points: list[Vector], bb: list[Vector, 6], faces4D: list[Vector], precision: int):
         self.initialized = False
+        """ Set to true after succesfully inserted all points in the voro cointainer """
         self.precalculated = False
+        """ Set to true after succesfully precalculated all the data """
 
         # construct voro++ cont
         self.voro_cont = self.build_cont(points, bb, faces4D, precision)
@@ -62,19 +64,19 @@ class MW_Container:
         # calculate missing cells and query neighs
         self.foundId   : list[int]           = []
         self.missingId : list[int]           = []
-        self.neighs    : list[list[int]|int] = [ERROR_IDX.missing]*len(self.voro_cont)
+        self.neighs    : list[list[int]|int] = [ERROR_IDX.MISSING]*len(self.voro_cont)
         """ NOTE:: missing cells are filled with a placeholder id to preserve original position idx """
 
         for idx_cell,cell in enumerate(self.voro_cont):
             if cell is None:
                 self.missingId.append(idx_cell)
-                self.keys_perCell[idx_cell] = ERROR_IDX.missing
+                self.keys_perCell[idx_cell] = ERROR_IDX.MISSING
             else:
                 self.foundId.append(idx_cell)
                 neighs_cell = cell.neighbors()
                 self.neighs[idx_cell] = neighs_cell
                 # prefill with asymmetry keys too
-                key = (ERROR_IDX.asymmetry, idx_cell)
+                key = (ERROR_IDX.ASYMMETRY, idx_cell)
                 self.keys_perCell[idx_cell] = [key]*len(neighs_cell)
 
         msg = f"calculated voro cell neighs: {len(self.missingId)} / {len(self.voro_cont)} missing"
@@ -83,9 +85,9 @@ class MW_Container:
 
         # retrieve objs, meshes -> dicts per shard
         self.shards_parent = obj_root_shards
-        self.shards_objs        : list[types.Object|int] = [ERROR_IDX.missing]* len(self.voro_cont)
-        self.shards_meshes      : list[types.Mesh|int]   = [ERROR_IDX.missing]* len(self.voro_cont)
-        self.shards_meshes_FtoF : list[dict|int]         = [ERROR_IDX.missing]* len(self.voro_cont)
+        self.shards_objs        : list[types.Object|int] = [ERROR_IDX.MISSING]* len(self.voro_cont)
+        self.shards_meshes      : list[types.Mesh|int]   = [ERROR_IDX.MISSING]* len(self.voro_cont)
+        self.shards_meshes_FtoF : list[dict|int]         = [ERROR_IDX.MISSING]* len(self.voro_cont)
 
         for idx_found,shard in enumerate(shards):
             idx_cell = self.foundId[idx_found]
@@ -100,13 +102,13 @@ class MW_Container:
         # build symmetric face map of the found cells
         self.keys_asymmetry    : list[link_key_t]  = []
         self.keys_missing      : list[link_key_t]  = []
-        self.neighs_faces : list[list[int]|int] = [ERROR_IDX.missing]*len(self.voro_cont)
+        self.neighs_faces : list[list[int]|int] = [ERROR_IDX.MISSING]*len(self.voro_cont)
         """ NOTE:: missing cells and neigh asymmetries are filled with a placeholder id too """
 
         for idx_cell in self.foundId:
             neighs_cell = self.neighs[idx_cell]
 
-            faces: list[int] = [ERROR_IDX.asymmetry] * len(neighs_cell)
+            faces: list[int] = [ERROR_IDX.ASYMMETRY] * len(neighs_cell)
             for idx_face,idx_neigh in enumerate(neighs_cell):
                 # wall connection always ok, so simply add its index
                 if idx_neigh < 0: faces.append(idx_neigh)
@@ -116,11 +118,11 @@ class MW_Container:
                     neighs_other = self.neighs[idx_neigh]
 
                     # check missing whole cell -> alter neighs acording to found error
-                    if neighs_other == ERROR_IDX.missing:
+                    if neighs_other == ERROR_IDX.MISSING:
                         self.keys_missing.append((idx_cell,idx_neigh))
-                        neighs_cell[idx_face] = ERROR_IDX.missing
+                        neighs_cell[idx_face] = ERROR_IDX.MISSING
                         # also reasign the exact error code in the keys_perCell structure too (started as asymmetry)
-                        self.keys_perCell[idx_cell][idx_face] = (ERROR_IDX.missing, idx_cell)
+                        self.keys_perCell[idx_cell][idx_face] = (ERROR_IDX.MISSING, idx_cell)
 
                     # try to find valid face matching index
                     else:
@@ -131,7 +133,7 @@ class MW_Container:
                         # symmetry checked with .index exception -> also alter neighs
                         except ValueError:
                             self.keys_asymmetry.append((idx_cell,idx_neigh))
-                            neighs_cell[idx_face] = ERROR_IDX.asymmetry
+                            neighs_cell[idx_face] = ERROR_IDX.ASYMMETRY
 
             self.neighs_faces[idx_cell] = faces
 
@@ -185,13 +187,13 @@ class MW_Container:
     def getMeshes(self, idx: list[int]|int) -> list[types.Mesh]|types.Mesh:
         """ return a mesh or list of meshes given idx  """
         try:
-            return self.shard_meshes[idx]
+            return self.shards_meshes[idx]
         except TypeError:
-            return [ self.shard_meshes[i] for i in idx ]
+            return [ self.shards_meshes[i] for i in idx ]
 
     def getFaces(self, midx: list[int]|int, fidx: list[int]|int) -> list[types.MeshPolygon]|types.MeshPolygon:
         """ return a face or list of faces given idx  """
         try:
-            return self.shard_meshes[midx].polygons[fidx]
+            return self.shards_meshes[midx].polygons[fidx]
         except TypeError:
-            return [ self.shard_meshes[i].polygons[j] for i,j in zip(midx,fidx) ]
+            return [ self.shards_meshes[i].polygons[j] for i,j in zip(midx,fidx) ]

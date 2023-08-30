@@ -5,6 +5,7 @@ INF_FLOAT = float("inf")
 from .mw_cont import MW_Container, ERROR_IDX, link_key_t
 
 from . import utils
+import networkx as nx
 from . import mw_resistance
 from .utils_dev import DEV
 from .stats import getStats
@@ -14,11 +15,11 @@ from .stats import getStats
 # OPT:: could use a class or an array of props? pyhton already slow so ok class?
 # IDEA:: augmented cell class instead of array of props? cont -> cell -> link... less key map indirections
 class Link():
-    def __init__(self, col: "LinkCollection", key_cells: link_key_t, key_faces: tuple[int, int], pos_world:Vector, dir_world:Vector, face_area:float, airLink=False):
+    def __init__(self, col: "MW_Links", key_cells: link_key_t, key_faces: tuple[int, int], pos_world:Vector, dir_world:Vector, face_area:float, airLink=False):
         # no directionality but tuple key instead of set
         self.key_cells : link_key_t       = key_cells
         self.key_faces : link_key_t       = key_faces
-        self.collection: "LinkCollection" = col
+        self.collection: "MW_Links" = col
 
         # neighs populated afterwards
         self.neighs_Cell_Cell: list[Link] = list()
@@ -91,20 +92,27 @@ class Link():
 
 #-------------------------------------------------------------------
 
-class LinkCollection():
+class MW_Links():
 
     def __init__(self, cont: MW_Container):
         stats = getStats()
         self.initialized = False
-        """ Set to true only at the end of a complete LinkCollection initialization """
+        """ Set to true after succesfully computed the link map """
 
-        # TODO:: unionfind joined components + manually delete links
-        # IDEA:: dynamic lists of broken?
+        self.cells_graph = nx.Graph()
+        """ Graph connecting the cells to find connected components """
+        self.comps = []
+        """ List of sets with connected components cells id """
+
         self.link_map: dict[link_key_t, Link] = dict()
-        self.links_Cell_Cell : list[Link] = list()
-        self.links_Air_Cell : list[Link] = list()
+        """ Static global link map storage, indexed by key with no repetitions """
 
-        # TODO:: accumulate pos and area to calculate relative ones later?
+        self.external : list[Link] = list()
+        """ Dynamic list of external links: AIR to CELL, mainly used as entry points in the simulation """
+        self.internal : list[Link] = list()
+        """ Dynamic list of internal links: CELL to CELL, mainly used for rendering of the links """
+
+        # TODO:: accumulate pos and area to calculate relative ones later? atm informative
         # OPT:: maybe voro++ face area is faster?
         self.min_pos = Vector([INF_FLOAT]*3)
         self.max_pos = Vector([-INF_FLOAT]*3)
@@ -112,6 +120,7 @@ class LinkCollection():
         self.max_area = -INF_FLOAT
         self.avg_area = 0
 
+        # key is always sorted numerically -> negative walls id go at the beginning
         def getKey_swap(k1,k2) -> tuple[link_key_t,bool]:
             swap = k1 > k2
             key = (k1, k2) if not swap else (k2, k1)
@@ -142,7 +151,7 @@ class LinkCollection():
                 if DEV.DEBUG_COMPS and abs(pos.x) < 0.5: continue
                 normal = mn_toWorld @ face.normal
                 area = face.area
-                # NOTE:: potentially rotated normals may have a length of 1.0 +- 1e-8 but not worth normalizing
+                # NOTE:: rotated normals may potentially have a length of 1.0 +- 1e-8 but not worth normalizing
                 #DEV.log_msg(f"face.normal {face.normal} (l: {face.normal.length}) -> world {normal} (l: {normal.length})", cut=False)
 
                 # check min/max
@@ -165,7 +174,7 @@ class LinkCollection():
 
                     # add to mappings per wall and cell
                     self.link_map[key] = l
-                    self.links_Air_Cell.append(l)
+                    self.external.append(l)
                     cont.keys_perWall[idx_neighCell].append(key)
                     cont.keys_perCell[idx_cell][idx_face] = key
                     continue
@@ -184,13 +193,16 @@ class LinkCollection():
 
                 # add to mappings for both per cells
                 self.link_map[key] = l
-                self.links_Cell_Cell.append(l)
+                self.internal.append(l)
                 cont.keys_perCell[idx_cell][idx_face] = key
                 cont.keys_perCell[idx_neighCell][idx_neighFace] = key
 
-        # WIP:: maybe could use model BB instead of calculating the position
-        stats.logDt(f"created link map")
+                # add to graph
+                self.cells_graph.add_edge(*key)
+
         self.avg_area /= float(len(self.link_map))
+
+        stats.logDt(f"created link map")
         DEV.log_msg(f"Pos limits: {utils.vec3_to_string(self.min_pos)}, {utils.vec3_to_string(self.max_pos)}"
                     f" | Area limits: ({self.min_area:.2f},{self.max_area:.2f}) avg:{self.avg_area:.2f}",
                     {"CALC", "LINKS", "LIMITS"}, cut=False)
@@ -237,7 +249,11 @@ class LinkCollection():
                 l.setNeighs(c1_neighs + c2_neighs)
 
         stats.logDt("aggregated link neighbours")
+
+        self.comps = nx.connected_components(self.cells_grap)
+        stats.logDt(f"calculated components: {len(self.comps)}")
+
         logType = {"CALC", "LINKS"}
         if not self.link_map: logType |= {"ERROR"}
-        DEV.log_msg(f"Found {len(self.links_Cell_Cell)} links to cells + {len(self.links_Air_Cell)} links to walls (total {len(self.link_map)})", logType)
+        DEV.log_msg(f"Found {len(self.link_map)} links: {len(self.external)} external | {len(self.internal)} internal", logType)
         self.initialized = True
