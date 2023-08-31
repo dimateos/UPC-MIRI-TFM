@@ -11,12 +11,12 @@ from .properties import (
     MW_gen_source_options,
 )
 
-from . import utils
-from .utils_dev import DEV
-from .stats import getStats
-
 from .mw_fract import MW_Fract
 from .unionfind import UnionFind
+
+from . import utils_scene, utils_trans
+from .utils_dev import DEV
+from .stats import getStats
 
 
 # OPT:: not recursive + query obj.children a lot
@@ -110,7 +110,7 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context: types.Co
     def points_from_verts(ob: types.Object, isChild=False):
         """Takes points from _any_ object with geometry"""
         if ob.type == 'MESH':
-            verts = utils.get_verts(ob, worldSpace=False)
+            verts = utils_trans.get_verts(ob, worldSpace=False)
         else:
             # NOTE:: unused because atm limited to mesh in ui/operator anyway
             depsgraph = context.evaluated_depsgraph_get()
@@ -130,7 +130,7 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context: types.Co
         if isChild:
             matrix = world_toLocal @ ob.matrix_world
             #matrix = ob.matrix_parent_inverse @ ob.matrix_basis
-            utils.transform_points(verts, matrix)
+            utils_trans.transform_points(verts, matrix)
         points.extend(verts)
 
     # geom own
@@ -179,9 +179,9 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context: types.Co
 
 def get_points_from_fracture(obj_root: types.Object, cfg: MW_gen_cfg):
     prefs = getPrefs()
-    obj_points = utils.get_child(obj_root, prefs.names.source_points)
+    obj_points = utils_scene.get_child(obj_root, prefs.names.source_points)
 
-    points = utils.get_verts(obj_points, worldSpace=False)
+    points = utils_trans.get_verts(obj_points, worldSpace=False)
     getStats().logDt(f"retrieved points: {len(points)} (from {obj_points.name})")
     return points
 
@@ -235,5 +235,5 @@ def get_connected_comps(fract: MW_Fract):
     for l in fract.links.internal:
         cell_union.union(*l.key_cells)
 
-    DEV.log_msg(f"Extracted {cell_union.num_components} components)", {"CALC", "COMP"})
+    DEV.log_msg(f"Extracted {cell_union.num_components} components", {"CALC", "COMP"})
     return cell_union

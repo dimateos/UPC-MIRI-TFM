@@ -3,14 +3,9 @@ import bpy.types as types
 import bpy.props as props
 
 from .preferences import getPrefs
-from .properties_global import (
-    MW_id,
-    MW_global_selected,
-)
-from .properties_utils import Prop_inspector
+from .properties_global import MW_global_selected
 
-from . import handlers
-from . import utils
+from . import utils_scene, utils_trans
 from .utils_dev import DEV
 
 
@@ -173,10 +168,10 @@ class MW_gen_cfg(types.PropertyGroup):
     def struct_linksScale_update(self, context):
         obj = MW_global_selected.root
         if not obj: return
-        links = utils.get_child(obj, getPrefs().names.links)
-        if links: utils.scale_objectChildren(links, self.struct_linksScale)
-        links_Air_Cell = utils.get_child(obj, getPrefs().names.links_air)
-        if links_Air_Cell: utils.scale_objectChildren(links_Air_Cell, self.struct_linksScale)
+        links = utils_scene.get_child(obj, getPrefs().names.links)
+        if links: utils_trans.scale_objectChildren(links, self.struct_linksScale)
+        links_Air_Cell = utils_scene.get_child(obj, getPrefs().names.links_air)
+        if links_Air_Cell: utils_trans.scale_objectChildren(links_Air_Cell, self.struct_linksScale)
 
 
     struct_linksScale: props.FloatProperty(
@@ -227,14 +222,14 @@ class MW_sim_cfg(types.PropertyGroup):
 def cell_scale_update(self, context):
     obj = MW_global_selected.root
     if not obj: return
-    cells_root = utils.get_child(obj, getPrefs().names.cells)
-    utils.scale_objectChildren(cells_root, self.cell_scale)
+    cells_root = utils_scene.get_child(obj, getPrefs().names.cells)
+    utils_trans.scale_objectChildren(cells_root, self.cell_scale)
 
 class MW_vis_cfg(types.PropertyGroup):
 
     cell_scale: props.FloatProperty(
         name="Cell scale", description="Reduce some bits to be able to see the links better",
-        default=0.75, min=0.25, max=1.5,
+        default=0.75, min=0.25, max=1.0,
         update=cell_scale_update
     )
 

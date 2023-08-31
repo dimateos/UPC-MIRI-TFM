@@ -3,12 +3,13 @@ from mathutils import Vector, Matrix
 INF_FLOAT = float("inf")
 
 from .mw_cont import MW_Container, ERROR_IDX, link_key_t
-
-from . import utils
-import networkx as nx
 from . import mw_resistance
+import networkx as nx
+
+from . import utils, utils_trans
 from .utils_dev import DEV
 from .stats import getStats
+
 
 #-------------------------------------------------------------------
 
@@ -41,7 +42,7 @@ class Link():
         self.resistance = mw_resistance.get2D(self.pos.x, self.pos.y)
 
     def __str__(self):
-        s = f"k{utils.link_key_to_string(self.key_cells)} a({self.areaFactor:.3f},{self.area:.3f}) life({self.life:.3f},{self.picks})"
+        s = f"k{utils.key_to_string(self.key_cells)} a({self.areaFactor:.3f},{self.area:.3f}) life({self.life:.3f},{self.picks})"
         if self.airLink_initial:
             s += f" [AIR-WALL] dir{self.dir.to_tuple(2)}"
         elif self.airLink: s += f" [AIR]"
@@ -136,8 +137,8 @@ class MW_Links():
             # XXX:: data to calculate global pos here or leave for links to do?
             obj        = cont.cells_objs[idx_cell]
             me         = cont.cells_meshes[idx_cell]
-            m_toWorld  = utils.get_worldMatrix_unscaled(obj, update=True)
-            mn_toWorld = utils.get_normalMatrix(m_toWorld)
+            m_toWorld  = utils_trans.get_worldMatrix_unscaled(obj, update=True)
+            mn_toWorld = utils_trans.get_normalMatrix(m_toWorld)
 
             # iterate all faces including asymmetry placeholders (missing cells already ignored with cont_foundId)
             for idx_face, idx_neighCell in enumerate(cont.neighs[idx_cell]):

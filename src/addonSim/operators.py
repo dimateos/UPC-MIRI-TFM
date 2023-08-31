@@ -14,18 +14,16 @@ from .properties import (
     MW_sim_cfg,
 )
 from .properties_utils import copyProps
-
 from .operators_utils import _StartRefresh_OT, util_classes_op
 
-from . import mw_setup
-from . import mw_extraction
+from . import mw_setup, mw_extraction
 from .mw_links import MW_Links
 from .mw_cont import MW_Container
 from .mw_fract import MW_Fract
 from . import mw_sim
 
 from . import ui
-from . import utils
+from . import utils, utils_scene, utils_trans
 from .utils_dev import DEV
 from .stats import getStats
 
@@ -108,7 +106,7 @@ class MW_gen_OT(_StartRefresh_OT):
                 # optionally unhide the original fracture object but always unselect
                 obj.select_set(False)
                 if (prefs.gen_duplicate_OT_hidePrev):
-                    utils.hide_objectRec(obj)
+                    utils_scene.hide_objectRec(obj)
 
                 DEV.log_msg("cfg found: duplicating frac", {'SETUP'})
                 obj_root, obj_original = mw_setup.copy_originalPrev(obj, self.cfg, context)
@@ -143,10 +141,10 @@ class MW_gen_OT(_StartRefresh_OT):
             return self.end_op_error("found no points...")
 
         # Get more data from the points
-        bb, bb_center, bb_radius = utils.get_bb_data(obj_toFrac, cfg.margin_box_bounds)
+        bb, bb_center, bb_radius = utils_trans.get_bb_data(obj_toFrac, cfg.margin_box_bounds)
         getStats().logDt(f"calc bb: [{bb_center[:]}] r {bb_radius:.3f} (margin {cfg.margin_box_bounds:.4f})")
         if cfg.shape_useWalls:
-            faces4D = utils.get_faces_4D(obj_toFrac, cfg.margin_face_bounds)
+            faces4D = utils_trans.get_faces_4D(obj_toFrac, cfg.margin_face_bounds)
         else: faces4D = []
         getStats().logDt(f"calc faces4D: {len(faces4D)} (n_disp {cfg.margin_face_bounds:.4f})")
 
@@ -204,7 +202,7 @@ class MW_gen_OT(_StartRefresh_OT):
             copyProps(self.cfg, self.obj_root.mw_gen)
             # set the meta type to all objects at once
             MW_id_utils.setMetaType(self.obj_root, {"CHILD"}, skipParent=True)
-            utils.select_unhide(self.obj_root, self.ctx)
+            utils_scene.select_unhide(self.obj_root, self.ctx)
 
         MW_global_selected.recheckSelected()
         return super().end_op(msg, skipLog, retPass)
@@ -233,22 +231,22 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
 
         DEV.log_msg("Retrieving fracture data (objects and points)", {'SETUP'})
         if gen_cfg.shape_useConvexHull:
-            obj_toFrac = utils.get_child(obj_root, prefs.names.original_dissolve)
-        else: obj_toFrac = utils.get_child(obj_root, prefs.names.original_copy)
+            obj_toFrac = utils_scene.get_child(obj_root, prefs.names.original_dissolve)
+        else: obj_toFrac = utils_scene.get_child(obj_root, prefs.names.original_copy)
 
         points = mw_extraction.get_points_from_fracture(obj_root, gen_cfg)
         if not points:
             return self.end_op_error("found no points...")
 
-        obj_cells_root = utils.get_child(obj_root, prefs.names.cells)
+        obj_cells_root = utils_scene.get_child(obj_root, prefs.names.cells)
         if not obj_cells_root:
             return self.end_op_error("found no cells...")
 
         # Get more data from the points
-        bb, bb_center, bb_radius = utils.get_bb_data(obj_toFrac, gen_cfg.margin_box_bounds)
+        bb, bb_center, bb_radius = utils_trans.get_bb_data(obj_toFrac, gen_cfg.margin_box_bounds)
         getStats().logDt(f"calc bb: [{bb_center[:]}] r {bb_radius:.3f} (margin {gen_cfg.margin_box_bounds:.4f})")
         if gen_cfg.shape_useWalls:
-            faces4D = utils.get_faces_4D(obj_toFrac, gen_cfg.margin_face_bounds)
+            faces4D = utils_trans.get_faces_4D(obj_toFrac, gen_cfg.margin_face_bounds)
         else: faces4D = []
         getStats().logDt(f"calc faces4D: {len(faces4D)} (n_disp {gen_cfg.margin_face_bounds:.4f})")
 
@@ -455,8 +453,8 @@ class MW_util_bool_OT(_StartRefresh_OT):
 
         if obj:
             prefs = getPrefs()
-            obj_original = utils.get_child(obj, prefs.names.original_copy + prefs.names.original)
-            obj_cells = utils.get_child(obj, prefs.names.cells)
+            obj_original = utils_scene.get_child(obj, prefs.names.original_copy + prefs.names.original)
+            obj_cells = utils_scene.get_child(obj, prefs.names.cells)
             mw_extraction.boolean_mod_add(obj_original, obj_cells, context)
 
         return self.end_op()
@@ -481,18 +479,18 @@ class MW_util_delete_OT(_StartRefresh_OT):
 
         # optionally unhide the original object
         if (prefs.util_delete_OT_unhideSelect):
-            obj_original = utils.get_object_fromScene(context.scene, cfg.struct_nameOriginal)
+            obj_original = utils_scene.get_object_fromScene(context.scene, cfg.struct_nameOriginal)
             if not obj_original:
                 self.logReport("obj_original not found -> wont unhide")
             else:
-                utils.select_unhideRec(obj_original, context, selectChildren=False)
+                utils_scene.select_unhideRec(obj_original, context, selectChildren=False)
 
         # potentially free memory from storage
         if prefs.prefs_autoPurge and MW_global_storage.hasFract(obj):
             MW_global_storage.freeFract(obj)
 
         # finally delete the fracture object recusively
-        utils.delete_objectRec(obj, logAmount=True)
+        utils_scene.delete_objectRec(obj, logAmount=True)
         return self.end_op()
 
 class MW_util_delete_all_OT(_StartRefresh_OT):
@@ -532,12 +530,12 @@ class MW_util_bake_OT(_StartRefresh_OT):
 
     def execute(self, context: types.Context):
         self.start_op(skipStats=True)
-        cell = utils.copy_object(MW_global_selected.last, context)
+        cell = utils_scene.copy_object(MW_global_selected.last, context)
 
         cell.parent = None
         MW_id_utils.resetMetaType(cell)
-        utils.select_nothing()
-        utils.select_unhide(cell, context)
+        utils_scene.select_nothing()
+        utils_scene.select_unhide(cell, context)
         return self.end_op(skipLog=True)
 
 #-------------------------------------------------------------------

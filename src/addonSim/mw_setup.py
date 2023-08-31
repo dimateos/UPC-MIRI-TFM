@@ -6,9 +6,7 @@ from math import radians
 
 from .preferences import getPrefs
 from .properties_global import (
-    MW_id,
-    MW_global_selected,
-    MW_id_utils,
+    MW_id, MW_id_utils,
 )
 from .properties import (
     MW_gen_cfg,
@@ -17,7 +15,7 @@ from .properties import (
 from .mw_cont import MW_Container, VORO_Container
 from .mw_links import MW_Links
 
-from . import utils, utils_mat, utils_mesh
+from . import utils, utils_scene, utils_mat, utils_mesh
 from .utils_dev import DEV
 from .stats import getStats
 
@@ -36,18 +34,18 @@ def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
 
     # Duplicate the original object
     prefs.names.original = obj.name
-    obj_copy = utils.copy_objectRec(obj, context, namePreffix=prefs.names.original_copy)
+    obj_copy = utils_scene.copy_objectRec(obj, context, namePreffix=prefs.names.original_copy)
     #MW_id_utils.setMetaType(obj_copy, {"CHILD"})
 
     # Scene viewport
     obj.select_set(False)
-    utils.hide_objectRec(obj, not cfg.struct_showOrignal_scene)
-    utils.hide_objectRec(obj_copy, not cfg.struct_showOrignal)
+    utils_scene.hide_objectRec(obj, not cfg.struct_showOrignal_scene)
+    utils_scene.hide_objectRec(obj_copy, not cfg.struct_showOrignal)
     obj_copy.show_bounds = True
 
     # Set the transform to the empty and parent keeping the transform of the copy
     obj_root.matrix_world = obj.matrix_world.copy()
-    utils.set_child(obj_copy, obj_root)
+    utils_scene.set_child(obj_copy, obj_root)
 
     # Rename with prefix?
     get_renamed(obj_root, cfg, context)
@@ -57,15 +55,15 @@ def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
 
 def copy_originalPrev(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     # Copy the root objects including its mw_cfg
-    obj_root = utils.copy_object(obj, context)
+    obj_root = utils_scene.copy_object(obj, context)
 
     # TODO:: reset more metadata?
     MW_id_utils.resetStorageId(obj_root)
 
     # copy the original from the previous root withou suffix
-    obj_original = utils.get_child(obj, getPrefs().names.original_copy+cfg.struct_nameOriginal)
-    obj_copy = utils.copy_objectRec(obj_original, context)
-    utils.set_child(obj_copy, obj_root)
+    obj_original = utils_scene.get_child(obj, getPrefs().names.original_copy+cfg.struct_nameOriginal)
+    obj_copy = utils_scene.copy_objectRec(obj_original, context)
+    utils_scene.set_child(obj_copy, obj_root)
 
     getStats().logDt("generated copy object from prev frac")
     return obj_root, obj_copy
@@ -85,10 +83,10 @@ def get_renamed(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
 
 def copy_convex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, context: types.Context):
     # Duplicate again the copy and set child too
-    obj_c = utils.copy_objectRec(obj_copy, context, keep_mods=False)
+    obj_c = utils_scene.copy_objectRec(obj_copy, context, keep_mods=False)
     obj_c.name = getPrefs().names.original_convex
     #MW_id_utils.setMetaType(obj_c, {"CHILD"})
-    utils.set_child(obj_c, obj)
+    utils_scene.set_child(obj_c, obj)
 
     # XXX:: need to mesh update? + decimate before more perf? but need to change EDIT/OBJ modes?
     # NOTE:: not recursive hull...
@@ -106,18 +104,18 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, cont
     bm.to_mesh(obj_c.data)
 
     # Second copy with the face dissolve
-    obj_d = utils.copy_objectRec(obj_c, context, keep_mods=False)
+    obj_d = utils_scene.copy_objectRec(obj_c, context, keep_mods=False)
     obj_d.name = getPrefs().names.original_dissolve
     #MW_id_utils.setMetaType(obj_d, {"CHILD"})
-    utils.set_child(obj_d, obj)
+    utils_scene.set_child(obj_d, obj)
 
     # dissolve faces based on angle limit
     bmesh.ops.dissolve_limit(bm, angle_limit=radians(1.7), use_dissolve_boundaries=True, verts=bm.verts, edges=bm.edges)
     bm.to_mesh(obj_d.data)
 
     # Scene viewport
-    utils.hide_objectRec(obj_c)
-    utils.hide_objectRec(obj_d, not cfg.struct_showConvex)
+    utils_scene.hide_objectRec(obj_c)
+    utils_scene.hide_objectRec(obj_d, not cfg.struct_showConvex)
 
     bm.free()
     getStats().logDt("generated convex object")
@@ -131,7 +129,7 @@ def gen_pointsObject(obj: types.Object, points: list[Vector], cfg: MW_gen_cfg, c
     mesh.from_pydata(points, [], [])
     #mesh.update()
 
-    obj_points = utils.gen_child(obj, getPrefs().names.source_points, context, mesh, keepTrans=False, hide=not cfg.struct_showPoints)
+    obj_points = utils_scene.gen_child(obj, getPrefs().names.source_points, context, mesh, keepTrans=False, hide=not cfg.struct_showPoints)
 
     getStats().logDt("generated points object")
     return obj_points
@@ -142,7 +140,7 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, co
     mesh.from_pydata(bb, [], [])
 
     # Generate it taking the transform as it is (points already in local space)
-    obj_bb = utils.gen_child(obj, getPrefs().names.source_wallsBB, context, mesh, keepTrans=False, hide=not cfg.struct_showBB)
+    obj_bb = utils_scene.gen_child(obj, getPrefs().names.source_wallsBB, context, mesh, keepTrans=False, hide=not cfg.struct_showBB)
     obj_bb.show_bounds = True
 
     getStats().logDt("generated bounds object")
@@ -151,7 +149,7 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, co
 #-------------------------------------------------------------------
 
 def gen_cellsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_cellsEmpty = utils.gen_child(obj, getPrefs().names.cells, context, None, keepTrans=False, hide=not cfg.struct_showCells)
+    obj_cellsEmpty = utils_scene.gen_child(obj, getPrefs().names.cells, context, None, keepTrans=False, hide=not cfg.struct_showCells)
     return obj_cellsEmpty
 
 def gen_cellsObjects(obj: types.Object, cont: MW_Container, cfg: MW_gen_cfg, context: types.Context, scale = 1.0, invertOrientation = False):
@@ -192,7 +190,7 @@ def gen_cellsObjects(obj: types.Object, cont: MW_Container, cfg: MW_gen_cfg, con
         # build the static mesh and child object
         mesh = bpy.data.meshes.new(name)
         mesh.from_pydata(vertices=verts, edges=[], faces=faces_blender)
-        obj_shard = utils.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showCells)
+        obj_shard = utils_scene.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showCells)
         cells.append(obj_shard)
         obj_shard.location = pos
         obj_shard.scale = [scale]*3
@@ -235,7 +233,7 @@ def gen_LEGACY_CONT(obj: types.Object, voro_cont: VORO_Container, cfg: MW_gen_cf
         name= f"{getPrefs().names.cells}_{cell.id}"
         mesh = bpy.data.meshes.new(name)
         mesh.from_pydata(vertices=vs, edges=[], faces=f)
-        obj_shard = utils.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showCells)
+        obj_shard = utils_scene.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showCells)
         pass
     getStats().logDt("generated LEGACY cells objects")
 
@@ -280,7 +278,7 @@ def gen_linksObject(obj: types.Object, links: MW_Links, cfg: MW_gen_cfg, context
     utils_mat.gen_meshAttr(mesh, lifeColor, resFaces*2, "FLOAT_COLOR", "POINT", "life")
 
     # potentially reuse child
-    obj_links = utils.gen_childReuse(obj, name, context, mesh, keepTrans=True, hide=not cfg.struct_showLinks)
+    obj_links = utils_scene.gen_childReuse(obj, name, context, mesh, keepTrans=True, hide=not cfg.struct_showLinks)
     mesh.name = name
 
     MW_id_utils.setMetaType(obj_links, {"CHILD"}, childrenRec=False)
@@ -311,7 +309,7 @@ def gen_linksWallObject(obj: types.Object, links: MW_Links, cfg: MW_gen_cfg, con
     mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidth, name, 1+prefs.links_width*wallsExtraScale, resFaces, prefs.links_smoothShade)
 
     # potentially reuse child
-    obj_wallLinks = utils.gen_childReuse(obj, name, context, mesh, keepTrans=True, hide=not cfg.struct_showLinks_airLinks)
+    obj_wallLinks = utils_scene.gen_childReuse(obj, name, context, mesh, keepTrans=True, hide=not cfg.struct_showLinks_airLinks)
     mesh.name = name
 
     # set global material
@@ -381,7 +379,7 @@ def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: MW
 
         res = utils_mesh.get_resFaces_fromCurveRes(res)
         curve= utils_mesh.get_tubeMesh_pairsQuad([(p1, p2)], None, name, width, res)
-        obj_link = utils.gen_child(obj, name, context, curve, keepTrans=True, hide=not cfg.struct_showLinks)
+        obj_link = utils_scene.gen_child(obj, name, context, curve, keepTrans=True, hide=not cfg.struct_showLinks)
         obj_link.location = l.pos
         obj_link.active_material = mat
 
@@ -404,7 +402,7 @@ def genWIP_linksCellObjects(objParent: types.Object, voro_cont: VORO_Container, 
 
         # group the links by cell using a parent
         nameGroup= f"{getPrefs().names.links_group}_{getPrefs().names.get_IdFormated(cell.id)}"
-        obj_group = utils.gen_child(objParent, nameGroup, context, None, keepTrans=False, hide=False)
+        obj_group = utils_scene.gen_child(objParent, nameGroup, context, None, keepTrans=False, hide=False)
         #obj_group.matrix_world = Matrix.Identity(4)
         #obj_group.location = cell.centroid()
 
@@ -417,7 +415,7 @@ def genWIP_linksCellObjects(objParent: types.Object, voro_cont: VORO_Container, 
             # wall link
             if n_id < 0:
                 name= f"s{cell.id}_w{-n_id}"
-                obj_link = utils.gen_child(obj_group, name, context, None, keepTrans=False, hide=not cfg.struct_showLinks_airLinks)
+                obj_link = utils_scene.gen_child(obj_group, name, context, None, keepTrans=False, hide=not cfg.struct_showLinks_airLinks)
                 continue
 
             # TODO:: so some cells actually connect with the missing ones...
@@ -434,7 +432,7 @@ def genWIP_linksCellObjects(objParent: types.Object, voro_cont: VORO_Container, 
             neigh_centroid = Vector(voro_cont[n_id].centroid())
 
             curve = utils_mesh.get_curveData([cell_centroid, neigh_centroid], name, cfg.links_width, cfg.links_res)
-            obj_link = utils.gen_child(obj_group, name, context, curve, keepTrans=False, hide=not cfg.struct_showLinks)
+            obj_link = utils_scene.gen_child(obj_group, name, context, curve, keepTrans=False, hide=not cfg.struct_showLinks)
 
             obj_link.hide_set(key_rep or not cfg.struct_showLinks_legacy)
             #obj_link.location = cell.centroid()

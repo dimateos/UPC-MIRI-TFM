@@ -2,12 +2,13 @@ import bpy
 import bpy.types as types
 import bpy.props as props
 
-from . import handlers
+from .properties_utils import Prop_inspector
+from .properties_global import MW_global_storage
 
 from .utils_dev import DEV
 
-from .properties_utils import Prop_inspector
-from .properties_global import MW_global_storage
+
+#-------------------------------------------------------------------
 
 # Access from other modules to constants
 class ADDON:

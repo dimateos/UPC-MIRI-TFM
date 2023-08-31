@@ -3,10 +3,11 @@ import bpy.types as types
 import bpy.props as props
 
 from . import handlers
-from . import utils
+from .properties_utils import Prop_inspector
+
+from . import utils_scene
 from .utils_dev import DEV
 
-from .properties_utils import Prop_inspector
 
 #-------------------------------------------------------------------
 
@@ -217,7 +218,7 @@ class MW_global_storage:
 
         # detect broken object references
         for id,obj in cls.id_fracts_obj.items():
-            if utils.needsSanitize_object(obj):
+            if utils_scene.needsSanitize_object(obj):
                 toPurge.append(id)
 
         DEV.log_msg(f"Purging {len(toPurge)}: {toPurge}", {"GLOBAL", "STORAGE"})
@@ -299,15 +300,15 @@ class MW_global_selected:
     @classmethod
     def sanitize(cls):
         """ Potentially sanitize objects no longer on the scene """
-        if utils.needsSanitize_object(cls.last):
+        if utils_scene.needsSanitize_object(cls.last):
             cls.reset()
         else:
             cls.prevalid_sanitize()
 
     @classmethod
     def prevalid_sanitize(cls):
-        cls.prevalid_last = utils.returnSanitized_object(cls.prevalid_last)
-        cls.prevalid_root = utils.returnSanitized_object(cls.prevalid_root)
+        cls.prevalid_last = utils_scene.returnSanitized_object(cls.prevalid_last)
+        cls.prevalid_root = utils_scene.returnSanitized_object(cls.prevalid_root)
         if cls.prevalid_root is None:
             cls.prevalid_fract = None
 

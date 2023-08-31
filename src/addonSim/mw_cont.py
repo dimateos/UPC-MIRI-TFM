@@ -10,7 +10,6 @@ from .properties import (
 # Using tess voro++ adaptor
 from tess import Container as VORO_Container
 
-from . import utils
 from . import utils_geo
 from .utils_dev import DEV
 from .stats import getStats

@@ -6,7 +6,7 @@ from mathutils import Vector, Matrix
 from .preferences import getPrefs, ADDON
 
 from . import ui
-from . import utils, utils_geo, utils_mat, utils_mesh
+from . import utils, utils_scene, utils_trans, utils_geo, utils_mat, utils_mesh
 from . import utils_mat
 from .utils_dev import DEV
 from .stats import getStats
@@ -284,8 +284,8 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
 
         obj = context.active_object
         if self.obj_replace:
-            child_empty = utils.gen_childClean(obj, self.CONST_NAMES.empty, context, None, keepTrans=False)
-        else: child_empty = utils.get_child(obj, self.CONST_NAMES.empty)
+            child_empty = utils_scene.gen_childClean(obj, self.CONST_NAMES.empty, context, None, keepTrans=False)
+        else: child_empty = utils_scene.get_child(obj, self.CONST_NAMES.empty)
 
         # optional grayscale common color mat
         gray3 = utils_mat.COLORS.white * self.color_gray
@@ -310,10 +310,10 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
             else: verts = utils.get_filtered(obj.data.vertices, self.index_filter)
 
             # spawn as children
-            parent = utils.gen_child(child_empty, self.CONST_NAMES.verts, context, None, keepTrans=False)
+            parent = utils_scene.gen_child(child_empty, self.CONST_NAMES.verts, context, None, keepTrans=False)
             for v in verts:
                 name = f"{self.namePrefix}.v{v.index}"
-                child = utils.gen_child(parent, name, context, mesh, keepTrans=False)
+                child = utils_scene.gen_child(parent, name, context, mesh, keepTrans=False)
                 child.location = v.co
                 child.scale = scaleV
                 child.active_material = mat
@@ -340,10 +340,10 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
             else: edges = utils.get_filtered(obj.data.edges, self.index_filter)
 
             # spawn as children
-            parent = utils.gen_child(child_empty, self.CONST_NAMES.edges, context, None, keepTrans=False)
+            parent = utils_scene.gen_child(child_empty, self.CONST_NAMES.edges, context, None, keepTrans=False)
             for e in edges:
                 name = f"{self.namePrefix}.e{e.index}"
-                child = utils.gen_child(parent, name, context, mesh, keepTrans=False)
+                child = utils_scene.gen_child(parent, name, context, mesh, keepTrans=False)
                 child.location = utils_geo.edge_center(obj.data, e)
                 child.scale = scaleV
                 child.active_material = mat
@@ -370,10 +370,10 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
             else: faces = utils.get_filtered(obj.data.polygons, self.index_filter)
 
             # spawn as children
-            parent = utils.gen_child(child_empty, self.CONST_NAMES.faces, context, None, keepTrans=False)
+            parent = utils_scene.gen_child(child_empty, self.CONST_NAMES.faces, context, None, keepTrans=False)
             for f in faces:
                 name = f"{self.namePrefix}.f{f.index}"
-                child = utils.gen_child(parent, name, context, mesh, keepTrans=False)
+                child = utils_scene.gen_child(parent, name, context, mesh, keepTrans=False)
                 child.location = f.center + f.normal*0.1*scaleV[0]
                 child.scale = scaleV
                 child.active_material = mat
@@ -402,7 +402,7 @@ class Util_deleteIndices_OT(_StartRefresh_OT):
             return False
 
         # look for the child
-        obj = utils.get_child(context.active_object, Util_spawnIndices_OT.CONST_NAMES.empty)
+        obj = utils_scene.get_child(context.active_object, Util_spawnIndices_OT.CONST_NAMES.empty)
 
         Util_deleteIndices_OT._obj = obj
         return obj
@@ -410,7 +410,7 @@ class Util_deleteIndices_OT(_StartRefresh_OT):
     def execute(self, context: types.Context):
         self.start_op()
         obj = Util_deleteIndices_OT._obj
-        utils.delete_objectRec(obj, logAmount=True)
+        utils_scene.delete_objectRec(obj, logAmount=True)
         return self.end_op()
 
 #-------------------------------------------------------------------
@@ -424,7 +424,7 @@ class Util_deleteOrphanData_OT(_StartRefresh_OT):
     def execute(self, context: types.Context):
         self.start_op()
         collections = getPrefs().dm_PT_orphans_collection.split(",")
-        utils.delete_orphanData(collections, logAmount=True)
+        utils_scene.delete_orphanData(collections, logAmount=True)
         return self.end_op()
 
 #-------------------------------------------------------------------
@@ -443,7 +443,7 @@ class Info_printMatrices_OT(types.Operator):
     def execute(self, context: types.Context):
         obj = bpy.context.active_object
         DEV.log_msg_sep()
-        utils.trans_printMatrices(obj)
+        utils_trans.trans_printMatrices(obj)
         return {'FINISHED'}
 
 class Info_printData_OT(types.Operator):
@@ -558,7 +558,7 @@ class Debug_testCode_OT(types.Operator):
         from . import sv_geom_primitives
         mesh = bpy.data.meshes.new(name)
         verts, edges, faces = sv_geom_primitives.grid(side,side,sideResV,sideResV)
-        utils.transform_points(verts, trans)
+        utils_trans.transform_points(verts, trans)
         mesh.from_pydata(verts, edges, faces)
         obj = bpy.data.objects.new(name, mesh)
         context.scene.collection.objects.link(obj)

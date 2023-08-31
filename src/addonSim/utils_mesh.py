@@ -3,7 +3,8 @@ import bpy.types as types
 from mathutils import Vector, Matrix
 from math import pi as PI, cos, sin, radians
 
-from . import utils
+from . import utils_trans
+
 
 #-------------------------------------------------------------------
 
@@ -105,7 +106,7 @@ def get_tubeMesh_pairsQuad(src_verts_pairs:list[tuple[Vector]], src_scale:list[f
     # directly work on each face
     for vid, vPair in enumerate(src_verts_pairs):
         normal = vPair[1] - vPair[0]
-        u,v = utils.getPerpendicularBase_stable(normal)
+        u,v = utils_trans.getPerpendicularBase_stable(normal)
         r = radii*src_scale[vid] if src_scale else radii
         get_ringVerts_interleaved(vPair, r, resFaces, res_step, verts, u,v)
 

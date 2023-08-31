@@ -5,6 +5,7 @@ from random import uniform
 
 from . import utils
 
+
 #-------------------------------------------------------------------
 
 class COLORS:

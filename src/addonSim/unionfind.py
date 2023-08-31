@@ -1,5 +1,5 @@
 # ref: Diego Mateos (UPC) - MIRI-A3DM
-# TODO:: use networkx for alternative algorithms...
+# OPT:: use networkx for alternative algorithms...
 
 class UnionFind:
     """ Simple union-find to count connected components w/ path compression

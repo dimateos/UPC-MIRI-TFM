@@ -1,5 +1,6 @@
-from math import sin
 from mathutils import Vector
+from math import sin
+
 
 #-------------------------------------------------------------------
 

@@ -4,6 +4,7 @@ import bpy.props as props
 
 from .utils_dev import DEV
 
+
 # NOTE:: foldable ui sections should use some kind of id global storage like IMGUI frameworks, using a predefined blender prop is SO cumbersome...
 #-------------------------------------------------------------------
 

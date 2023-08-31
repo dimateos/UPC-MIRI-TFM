@@ -1,14 +1,12 @@
 import bpy
 import bpy.types as types
-import bpy.props as props
 from mathutils import Vector, Matrix
 
 from .preferences import getPrefs, ADDON
 from . import operators_utils as ops_util
 
 from . import ui
-from . import utils
-from . import utils_geo
+from . import utils, utils_geo
 from .utils_dev import DEV
 
 
