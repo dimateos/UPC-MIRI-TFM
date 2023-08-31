@@ -103,6 +103,7 @@ class MW_Links():
         """ Graph connecting the cells to find connected components """
         self.comps = []
         """ List of sets with connected components cells id """
+        self.cells_graph.add_nodes_from(cont.foundId)
 
         self.link_map: dict[link_key_t, Link] = dict()
         """ Static global link map storage, indexed by key with no repetitions """

@@ -15,11 +15,14 @@ class CONST_ICONS:
 
 #-------------------------------------------------------------------
 
-def draw_toggleBox(metadata, propToggle_name:str, layout: types.UILayout, text:str=None) -> tuple[bool, types.UILayout]:
-    """ Create a box with a toggle. Return the state of the toggle and the created layout """
+def draw_toggleBox(metadata, propToggle_name:str, layout: types.UILayout, text:str=None, scaleOpen=0.9) -> tuple[bool, types.UILayout]:
+    """ Create a box with a toggle, scales down recursively inner widgets by default. Return the state of the toggle and the created layout."""
     box = layout.box()
     open = getattr(metadata, propToggle_name)
     icon = CONST_ICONS.section_opened if open else CONST_ICONS.section_closed
+
+    if open:
+        box.scale_y = scaleOpen
 
     if text:
         box.prop(metadata, propToggle_name, toggle=True, icon=icon, text=text)
@@ -47,10 +50,8 @@ def draw_propsToggle(data, data_inspector:Prop_inspector, layout:types.UILayout,
     # outer fold
     open, box = draw_toggleBox(data_inspector, "meta_show_props", layout, text)
     if open:
-
         # top of filter
         split = box.split(factor=0.0)
-        split.scale_y = 0.8
         split.prop(data_inspector, "meta_propShowId")
         split.prop(data_inspector, "meta_propDefault")
         split.prop(data_inspector, "meta_propEdit")

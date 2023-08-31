@@ -15,7 +15,7 @@ from . import utils
 from .utils_dev import DEV
 from .stats import getStats
 
-from .mw_links import MW_Links
+from .mw_fract import MW_Fract
 from .unionfind import UnionFind
 
 
@@ -229,10 +229,10 @@ def boolean_mod_add(obj_original: types.Object, obj_cells_root: types.Object, co
     depsgraph = context.evaluated_depsgraph_get()
 
 # TODO:: test with sep comps -> random remove?
-def get_connected_comps(links: MW_Links):
-    cell_union = UnionFind(len(links.cont_foundId))
+def get_connected_comps(fract: MW_Fract):
+    cell_union = UnionFind(len(fract.cont.foundId))
 
-    for l in links.internal:
+    for l in fract.links.internal:
         cell_union.union(*l.key_cells)
 
     DEV.log_msg(f"Extracted {cell_union.num_components} components)", {"CALC", "COMP"})

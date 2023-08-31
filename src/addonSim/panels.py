@@ -85,11 +85,7 @@ class MW_gen_PT(types.Panel):
             col_rowSplit.operator(ops.MW_gen_OT.bl_idname, text="DUPLICATE Fracture", icon="DUPLICATE")
             col_rowSplit.prop(prefs, "gen_duplicate_OT_hidePrev")
 
-            # WIP:: testing
             layout.operator(ops.MW_gen_links_OT.bl_idname, icon="OUTLINER_DATA_GREASEPENCIL")
-            #layout.operator(ops.MW_util_bool_OT.bl_idname, icon="MOD_BOOLEAN")
-            #layout.operator(ops.MW_util_comps_OT.bl_idname, icon="NODE_COMPOSITING")
-
             self.draw_props(obj, selected, context, layout)
 
     def draw_props(self, obj, selected, context: types.Context, layout: types.UILayout):
@@ -159,11 +155,17 @@ class MW_gen_PT(types.Panel):
             boxSelected = box.box().column()
             col_rowSplit = boxSelected.row().split(factor=0.6)
             col_rowSplit.label(text=f"Root: {MW_global_selected.root.name if MW_global_selected.root else '~'}", icon="RESTRICT_SELECT_ON")
-            col_rowSplit.label(text=f"{MW_global_selected.prev_root.name if MW_global_selected.prev_root else '~'}", icon="FRAME_PREV")
+            col_rowSplit.label(text=f"{MW_global_selected.prevalid_root.name if MW_global_selected.prevalid_root else '~'}", icon="FRAME_PREV")
             col_rowSplit = boxSelected.row().split(factor=0.6)
             col_rowSplit.label(text=f"Last: {MW_global_selected.last.name if MW_global_selected.last else '~'}", icon="RESTRICT_SELECT_OFF")
-            col_rowSplit.label(text=f"{MW_global_selected.prev_last.name if MW_global_selected.prev_last else '~'}", icon="FRAME_PREV")
-            boxSelected.label(text=f"Selected: {len(MW_global_selected.selection) if MW_global_selected.selection else '~'}", icon="SELECT_SET")
+            col_rowSplit.label(text=f"{MW_global_selected.prevalid_last.name if MW_global_selected.prevalid_last else '~'}", icon="FRAME_PREV")
+            col_rowSplit = boxSelected.row().split(factor=0.6)
+            col_rowSplit.label(text=f"Selected: {len(MW_global_selected.selection) if MW_global_selected.selection else '~'}", icon="SELECT_SET")
+            col_rowSplit.label(text=f"{context.active_object.name if context.active_object else '~'}", icon="SELECT_INTERSECT")
+
+            # more stuff
+            box.operator(ops.MW_util_bool_OT.bl_idname, icon="MOD_BOOLEAN")
+            box.operator(ops.MW_util_comps_OT.bl_idname, icon="NODE_COMPOSITING")
 
 
 #-------------------------------------------------------------------

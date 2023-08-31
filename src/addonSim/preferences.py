@@ -40,18 +40,6 @@ class MW_prefs(bpy.types.AddonPreferences):
 
     #-------------------------------------------------------------------
 
-    def prefs_autoPurge_update(self, context):
-        MW_global_storage.enable_autoPurge = self.prefs_autoPurge
-        MW_global_storage.purgeFracts()
-
-    prefs_autoPurge: props.BoolProperty(
-        name="purge", description="Keep purging on undo/delete/etc",
-        default=MW_global_storage.enable_autoPurge_default,
-        update= prefs_autoPurge_update
-    )
-
-    #-------------------------------------------------------------------
-
     # TODO:: move to common place + also properties utils -> use a sub property group?
     # IDEA:: add .to filter or something to idicate match only the beginning
     class names:
@@ -81,20 +69,29 @@ class MW_prefs(bpy.types.AddonPreferences):
 
     #-------------------------------------------------------------------
 
-    # meta filter for OP props
+    # workaround undo/redo system to keep alive the data in memory or not
+    def prefs_autoPurge_update(self, context):
+        MW_global_storage.enable_autoPurge = self.prefs_autoPurge
+        MW_global_storage.purgeFracts()
+
+    prefs_autoPurge: props.BoolProperty(
+        name="purge", description="Keep purging on undo/delete/etc",
+        default=MW_global_storage.enable_autoPurge_default,
+        update= prefs_autoPurge_update
+    )
+
+    #-------------------------------------------------------------------
+
+    # meta inspectors for OP props
     prefs_PT_meta_inspector: props.PointerProperty(type=Prop_inspector)
     gen_PT_meta_inspector: props.PointerProperty(type=Prop_inspector)
     vis_PT_meta_inspector: props.PointerProperty(type=Prop_inspector)
-
-    # more PT toggles
 
     # TODO:: replace for visual cfg ins
     gen_PT_meta_show_visuals: props.BoolProperty(
         name="Show visuals...", description="Tweak visual elements",
         default=False,
     )
-
-    #-------------------------------------------------------------------
 
     all_PT_meta_show_root: props.BoolProperty(
         name="Root props", description="Show root properties / selected child",

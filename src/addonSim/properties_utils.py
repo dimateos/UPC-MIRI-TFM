@@ -10,7 +10,12 @@ from .utils_dev import DEV
 class Prop_inspector(types.PropertyGroup):
     """ Meta filters to display/edit a property group in a panel """
 
-    # NOTE:: few utils functions inside the class (could be outside)
+    # utility to avoid additional operator refreshes, set manually back to False after skip
+    meta_show_toggled: props.BoolProperty(
+        description="Meta flag to indicate no config change",
+        default=False,
+    )
+
     def set_meta_show_toggled(self, context):
         self.meta_show_toggled = True
     def reset_meta_show_toggled(self):
@@ -22,13 +27,9 @@ class Prop_inspector(types.PropertyGroup):
             return True
         return False
 
+    #-------------------------------------------------------------------
 
-    # utility to avoid additional operator refreshes, set manually back to False after skip
-    meta_show_toggled: props.BoolProperty(
-        description="Meta flag to indicate no config change",
-        default=False,
-    )
-
+    # main toggle to fold the property inspector
     meta_show_props: props.BoolProperty(
         # NOTE:: text name to be replaced in the ui
         description="Show properties",
@@ -36,6 +37,7 @@ class Prop_inspector(types.PropertyGroup):
         update=set_meta_show_toggled
     )
 
+    # options for interacting with the props
     meta_propFilter: props.StringProperty(
         name="Filter id", description="Separate values with commas, start with `-` for a excluding filter.",
         default="",
@@ -44,7 +46,6 @@ class Prop_inspector(types.PropertyGroup):
         name="default", description="Include default unchanged props",
         default=True,
     )
-
     meta_propEdit: props.BoolProperty(
         name="edit", description="Enable editting the props",
         default=False,
@@ -54,7 +55,7 @@ class Prop_inspector(types.PropertyGroup):
         default=True,
     )
 
-    # will group foldable sections with "debug" as part of its name
+    # group foldable sections with "debug" as part of its name
     meta_show_debug_split: props.BoolProperty(
         name="Split debug", description="Show debug props apart",
         default=True,
@@ -64,6 +65,8 @@ class Prop_inspector(types.PropertyGroup):
         default=False,
         update=set_meta_show_toggled
     )
+
+    # additional debug prop for a different toggle
     meta_show_debug: props.BoolProperty(
         name="Show debug...", description="Development stuff...",
         default=False,
@@ -83,7 +86,7 @@ class CONST_FILTERS:
         "name",            # blender adds name to everything?
         "layout",          # preferences panel adds an implicit layout
     ]
-    # IDEA:: add some prefix to mark as exact match e.g. *, make optional etc
+    """ More blender props with a short full name """
 
     filter_nonBlProp = [
         "nbl_"             # mw meta non props

@@ -33,7 +33,7 @@ class Info_inpect_PT(types.Panel):
         layout = self.layout
 
         # inspect panel
-        open, box = ui.draw_toggleBox(prefs, "dm_PT_meta_show_info", layout)
+        open, box = ui.draw_toggleBox(prefs, "dm_PT_meta_show_info", layout, scaleOpen=1)
         if open:
             # Something selected + check last active
             if not context.selected_objects:
@@ -50,7 +50,7 @@ class Info_inpect_PT(types.Panel):
                 mainCol, mainBox = self.draw_inspectObject(obj, box)
 
                 # draw specific mode detailed info
-                open, box = ui.draw_toggleBox(prefs, "dm_PT_meta_show_full", mainCol)
+                open, box = ui.draw_toggleBox(prefs, "dm_PT_meta_show_full", mainCol, scaleOpen=0.8)
                 if open:
                     if bpy.context.mode == 'OBJECT':        self.drawMode_object(context, obj, box)
                     elif bpy.context.mode == 'EDIT_MESH':   self.drawMode_edit(context, obj, box)
@@ -148,7 +148,7 @@ class Info_inpect_PT(types.Panel):
             col.label(text=f" V: {len(mesh.vertices)}   E: {len(mesh.edges)}   F: {len(mesh.polygons)}   T: {len(mesh.loop_triangles)}") # icon="DOT"
 
         mainCol = mainBox.column()
-        mainCol.scale_y = 0.8
+        #mainCol.scale_y = 0.8
         return mainCol, mainBox
 
     def draw_precision(self, layout: types.UILayout):

@@ -90,8 +90,12 @@ class MW_Container:
         self.cells_meshes_FtoF : list[dict|int]         = [ERROR_IDX.MISSING]* len(self.voro_cont)
 
         for idx_found, obj_cell in enumerate(cells_list):
+            # asign idx cell managing missing ones
             idx_cell = self.foundId[idx_found]
             self.cells_objs[idx_cell] = obj_cell
+            obj_cell.mw_id.cell_id = idx_cell
+
+            # store mesh and faces map
             mesh = obj_cell.data
             self.cells_meshes[idx_cell] = mesh
             #self.cells_meshes_FtoF[idx_cell] = utils_geo.get_meshDicts(mesh)["FtoF"]
@@ -100,9 +104,9 @@ class MW_Container:
         stats.logDt("calculated cells mesh dicts (interleaved missing cells)")
 
         # build symmetric face map of the found cells
-        self.keys_asymmetry    : list[link_key_t]  = []
-        self.keys_missing      : list[link_key_t]  = []
-        self.neighs_faces : list[list[int]|int] = [ERROR_IDX.MISSING]*len(self.voro_cont)
+        self.keys_asymmetry : list[link_key_t]    = []
+        self.keys_missing   : list[link_key_t]    = []
+        self.neighs_faces   : list[list[int]|int] = [ERROR_IDX.MISSING]*len(self.voro_cont)
         """ NOTE:: missing cells and neigh asymmetries are filled with a placeholder id too """
 
         for idx_cell in self.foundId:
@@ -165,7 +169,6 @@ class MW_Container:
 
         # XXX:: container creation might fail do to some voro++ config params... hard to tweak for all? NOT DYNAMIC needs recompile
         # XXX:: some tiny intersection between cells might happen due to tolerance -> check or not worth it, we shrink then would not be noticeable
-
         try:
             # Build the container and cells
             voro_cont = VORO_Container(points=points, limits=bb_tuples, walls=faces4D)

@@ -415,7 +415,7 @@ class MW_sim_reset_OT(_StartRefresh_OT):
 #-------------------------------------------------------------------
 
 class MW_util_comps_OT(_StartRefresh_OT):
-    bl_idname = "mw.util_omps"
+    bl_idname = "mw.util_comps"
     bl_label = "check comps"
     bl_description = "WIP: check connected components"
 
@@ -431,7 +431,7 @@ class MW_util_comps_OT(_StartRefresh_OT):
 
     def execute(self, context: types.Context):
         self.start_op()
-        mw_extraction.get_connected_comps(MW_global_selected.fract.links)
+        mw_extraction.get_connected_comps(MW_global_selected.fract)
         return self.end_op()
 
 class MW_util_bool_OT(_StartRefresh_OT):

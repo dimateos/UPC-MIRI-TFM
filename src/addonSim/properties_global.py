@@ -239,26 +239,39 @@ class MW_global_selected:
     #my_object: bpy.props.PointerProperty(type=bpy.types.Object)
 
     # root fracture object
-    root      : types.Object = None
-    fract                    = None
-    prev_root : types.Object = None
-    prev_fract               = None
+    root            : types.Object = None
+    fract                          = None
+    prevalid_root   : types.Object = None
+    prevalid_fract                 = None
+    """ prevalid are the previous ones and always valid (not at the start) """
 
     # common selection
-    selection : types.Object = None
-    last      : types.Object = None
-    prev_last : types.Object = None
+    selection       : types.Object = None
+    last            : types.Object = None
+    prevalid_last   : types.Object = None
 
     @classmethod
     def setSelected(cls, selected):
         """ Update global selection status and query fract root
-        # OPT:: multi-root selection?
+        # OPT:: multi-root selection? work with current active?
         """
         if selected:
+            if cls.last:
+                cls.prevalid_last = cls.last
             cls.selection = selected.copy() if isinstance(selected, list) else [selected]
-            cls.last = cls.prev_last = cls.selection[-1]
-            cls.root = cls.prev_root = MW_id_utils.getRoot(cls.last)
-            cls.fract = cls.prev_fract = MW_global_storage.getFract(cls.root) if cls.root else None
+            cls.last = cls.selection[-1]
+
+            newRoot = MW_id_utils.getRoot(cls.last)
+            if newRoot:
+                if cls.root:
+                    cls.prevalid_root  = cls.root
+                    cls.prevalid_fract = cls.fract
+                cls.root  = newRoot
+                cls.fract = MW_global_storage.getFract(newRoot)
+            else:
+                cls.root = None
+                cls.fract = None
+
         else:
             cls.resetSelected()
 
@@ -275,15 +288,16 @@ class MW_global_selected:
 
     @classmethod
     def resetSelected(cls):
-        """ Reset all to None but keep sanitized references to previous """
-        cls.root      = None
-        cls.fract     = None
+        """ Reset all to None but keep sanitized references to prevalid """
         cls.selection = None
         cls.last      = None
-        cls.prev_root = utils.returnSanitized_object(cls.prev_root)
-        if cls.prev_root is None:
-            cls.prev_fract = None
-        cls.prev_last = utils.returnSanitized_object(cls.prev_last)
+        cls.prevalid_last = utils.returnSanitized_object(cls.prevalid_last)
+
+        cls.root      = None
+        cls.fract     = None
+        cls.prevalid_root = utils.returnSanitized_object(cls.prevalid_root)
+        if cls.prevalid_root is None:
+            cls.prevalid_fract = None
 
     @classmethod
     def sanitizeSelected(cls):
@@ -312,6 +326,9 @@ _name = f"{__name__[14:]}" #\t(...{__file__[-32:]})"
 
 def register():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "REG"})
+
+    # sanitize in case of reload module
+    MW_global_selected.sanitizeSelected()
 
     # callbaks
     handlers.callback_selectionChange_actions.append(MW_global_selected.setSelected_callback)

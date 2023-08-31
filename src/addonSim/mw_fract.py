@@ -6,6 +6,9 @@ from .properties import (
     MW_gen_cfg,
 )
 
+from .mw_cont import MW_Container
+from .mw_links import MW_Links
+
 from .utils_dev import DEV
 from .stats import getStats
 
@@ -17,8 +20,8 @@ class MW_Fract:
 
     def __init__(self):
 
-        self.cont = None
-        self.links = None
-        self.sim = None
+        # TODO:: reference to root?
 
-        pass
+        self.cont  : MW_Container = None
+        self.links : MW_Links     = None
+        self.sim = None
