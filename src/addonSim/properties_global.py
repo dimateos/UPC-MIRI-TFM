@@ -273,8 +273,9 @@ class MW_global_selected:
                 cls.fract = None
 
         else:
-            cls.resetSelected()
+            cls.reset()
 
+        cls.prevalid_sanitize()
         cls.logSelected()
 
     @classmethod
@@ -287,23 +288,28 @@ class MW_global_selected:
                     f" | selection: {len(cls.selection) if cls.selection else '...'}", {"GLOBAL", "SELECTED"})
 
     @classmethod
-    def resetSelected(cls):
+    def reset(cls):
         """ Reset all to None but keep sanitized references to prevalid """
         cls.selection = None
         cls.last      = None
-        cls.prevalid_last = utils.returnSanitized_object(cls.prevalid_last)
-
         cls.root      = None
         cls.fract     = None
+        cls.prevalid_sanitize()
+
+    @classmethod
+    def sanitize(cls):
+        """ Potentially sanitize objects no longer on the scene """
+        if utils.needsSanitize_object(cls.last):
+            cls.reset()
+        else:
+            cls.prevalid_sanitize()
+
+    @classmethod
+    def prevalid_sanitize(cls):
+        cls.prevalid_last = utils.returnSanitized_object(cls.prevalid_last)
         cls.prevalid_root = utils.returnSanitized_object(cls.prevalid_root)
         if cls.prevalid_root is None:
             cls.prevalid_fract = None
-
-    @classmethod
-    def sanitizeSelected(cls):
-        """ Potentially sanitize objects no longer on the scene """
-        if utils.needsSanitize_object(cls.root):
-            cls.resetSelected()
 
     # callback triggers
     @classmethod
@@ -312,7 +318,8 @@ class MW_global_selected:
 
     @classmethod
     def sanitizeSelected_callback(cls, _scene_=None, _name_selected_=None):
-        cls.sanitizeSelected()
+        cls.sanitize()
+        cls.prevalid_sanitize()
 
 
 #-------------------------------------------------------------------
@@ -328,7 +335,7 @@ def register():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "REG"})
 
     # sanitize in case of reload module
-    MW_global_selected.sanitizeSelected()
+    MW_global_selected.sanitize()
 
     # callbaks
     handlers.callback_selectionChange_actions.append(MW_global_selected.setSelected_callback)

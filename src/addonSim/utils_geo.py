@@ -245,6 +245,7 @@ def queryLogAll_mesh(me: types.Mesh):
     genus_mesh(me, log=True)
     calc_area_mesh(me, log=True)
     calc_volume_centerMass(me, log=True)
+    print()
 
 ## EXERCISE 1
 def centroid_mesh(me: types.Mesh, log=True):

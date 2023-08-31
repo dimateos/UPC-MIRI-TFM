@@ -171,7 +171,6 @@ def trans_reset(obj: types.Object, locally = True, log=False):
 
 def trans_printMatrices(obj: types.Object, printName=True):
     """ Print all transform matrices, read the code for behavior description! """
-    print()
     if printName:
         print(f"> (matrices) {obj.name}")
         print(f"> (parent)   {obj.parent}")
@@ -186,6 +185,7 @@ def trans_printMatrices(obj: types.Object, printName=True):
 
     # calculated on pos/rot/scale update and also when world/local is modified
     print(obj.matrix_basis, "matrix_basis\n")
+    print()
 
 #-------------------------------------------------------------------
 # XXX:: all access to obj.children take O(n) where n is ALL objects of the scene...

@@ -74,6 +74,7 @@ class Info_inpect_PT(types.Panel):
                 col.label(text=f"{colName}: {len(collection)}", icon="LIBRARY_DATA_OVERRIDE_NONEDITABLE")
 
             box.operator(ops_util.Debug_testCode_OT.bl_idname, icon="MATSHADERBALL")
+            box.operator(ops_util.Debug_testColors_OT.bl_idname, icon="RESTRICT_COLOR_ON")
 
     def drawMode_object(self, context, obj, box):
         # draw tranforms with specific precision
@@ -90,6 +91,7 @@ class Info_inpect_PT(types.Panel):
             col = box.column()
             col.operator(ops_util.Info_printData_OT.bl_idname, icon="SPREADSHEET")
             col.operator(ops_util.Info_printQueries_OT.bl_idname, icon="SPREADSHEET")
+            col.operator(ops_util.Info_printMappings_OT.bl_idname, icon="UV_DATA")
             col.operator(ops_util.Info_printAPI_OT.bl_idname, icon="HELP")
 
     def drawMode_edit(self, context, obj, box):

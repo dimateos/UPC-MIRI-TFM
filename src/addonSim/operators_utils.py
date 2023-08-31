@@ -6,9 +6,8 @@ from mathutils import Vector, Matrix
 from .preferences import getPrefs, ADDON
 
 from . import ui
-from . import utils
-from . import utils_geo
-from . import utils_render
+from . import utils, utils_geo, utils_mat, utils_mesh
+from . import utils_mat
 from .utils_dev import DEV
 from .stats import getStats
 
@@ -289,9 +288,9 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
         else: child_empty = utils.get_child(obj, self.CONST_NAMES.empty)
 
         # optional grayscale common color mat
-        gray3 = utils_render.COLORS.white * self.color_gray
+        gray3 = utils_mat.COLORS.white * self.color_gray
         if self.color_useGray:
-            mat_gray = utils_render.get_colorMat(gray3, self.color_alpha, "spawnIndices_shared")
+            mat_gray = utils_mat.get_colorMat(gray3, self.color_alpha, "spawnIndices_shared")
 
         # IDEA:: add more info as suffix + rename after delete so no .001 + also applied to some setup
 
@@ -299,9 +298,9 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
             # verts use a red octahedron for rep
             scaleV = Vector([self.verts_scale * self.mesh_scale]*3)
             if self.mesh_useShape:
-                mesh = utils_render.SHAPES.get_octahedron(f"{self.namePrefix}.vert")
+                mesh = utils_mesh.SHAPES.get_octahedron(f"{self.namePrefix}.vert")
                 if self.color_useGray: mat = mat_gray
-                else: mat = utils_render.get_colorMat(utils_render.COLORS.red+gray3, self.color_alpha, "spawnIndices_VERT")
+                else: mat = utils_mat.get_colorMat(utils_mat.COLORS.red+gray3, self.color_alpha, "spawnIndices_VERT")
             else:
                 mesh= None
                 mat = None
@@ -329,9 +328,9 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
             # edges use a green cuboid  for rep
             scaleV = Vector([self.edge_scale * self.mesh_scale]*3)
             if self.mesh_useShape:
-                mesh = utils_render.SHAPES.get_cuboid(f"{self.namePrefix}.edge")
+                mesh = utils_mesh.SHAPES.get_cuboid(f"{self.namePrefix}.edge")
                 if self.color_useGray: mat = mat_gray
-                else: mat = utils_render.get_colorMat(utils_render.COLORS.green+gray3, self.color_alpha, "spawnIndices_EDGE")
+                else: mat = utils_mat.get_colorMat(utils_mat.COLORS.green+gray3, self.color_alpha, "spawnIndices_EDGE")
             else:
                 mesh= None
                 mat = None
@@ -359,9 +358,9 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
             # faces use a blue tetrahedron for rep
             scaleV = Vector([self.faces_scale * self.mesh_scale]*3)
             if self.mesh_useShape:
-                mesh = utils_render.SHAPES.get_tetrahedron(f"{self.namePrefix}.face")
+                mesh = utils_mesh.SHAPES.get_tetrahedron(f"{self.namePrefix}.face")
                 if self.color_useGray: mat = mat_gray
-                else: mat = utils_render.get_colorMat(utils_render.COLORS.blue+gray3, self.color_alpha, "spawnIndices_FACE")
+                else: mat = utils_mat.get_colorMat(utils_mat.COLORS.blue+gray3, self.color_alpha, "spawnIndices_FACE")
             else:
                 mesh= None
                 mat = None
@@ -430,6 +429,23 @@ class Util_deleteOrphanData_OT(_StartRefresh_OT):
 
 #-------------------------------------------------------------------
 
+class Info_printMatrices_OT(types.Operator):
+    bl_idname = "dm.info_print_matrices"
+    bl_label = "Print obj matrices"
+    bl_description = "DEBUG print in the console the matrices etc"
+    bl_options = {'INTERNAL'}
+
+    @classmethod
+    def poll(cls, context):
+        obj = bpy.context.active_object
+        return obj
+
+    def execute(self, context: types.Context):
+        obj = bpy.context.active_object
+        DEV.log_msg_sep()
+        utils.trans_printMatrices(obj)
+        return {'FINISHED'}
+
 class Info_printData_OT(types.Operator):
     bl_idname = "dm.info_print_data"
     bl_label = "Print mesh data"
@@ -444,6 +460,7 @@ class Info_printData_OT(types.Operator):
     def execute(self, context: types.Context):
         obj = bpy.context.active_object
         from . import info_mesh
+        DEV.log_msg_sep()
         info_mesh.desc_mesh_data(obj.data)
         return {'FINISHED'}
 
@@ -460,7 +477,28 @@ class Info_printQueries_OT(types.Operator):
 
     def execute(self, context: types.Context):
         obj = bpy.context.active_object
+        DEV.log_msg_sep()
         utils_geo.queryLogAll_mesh(obj.data)
+        return {'FINISHED'}
+
+class Info_printMappings_OT(types.Operator):
+    bl_idname = "dm.info_print_mappings"
+    bl_label = "Print mesh mappings"
+    bl_description = "DEBUG print in the console mesh mappings life FtoF etc"
+    bl_options = {'INTERNAL'}
+
+    @classmethod
+    def poll(cls, context):
+        obj = bpy.context.active_object
+        return (obj and obj.type == 'MESH')
+
+    def execute(self, context: types.Context):
+        obj = bpy.context.active_object
+        mappings = utils_geo.get_meshDicts(obj.data)
+        DEV.log_msg_sep()
+        for key,m in mappings.items():
+            print(f"> {key} [{len(m)}] :\n", m)
+        print()
         return {'FINISHED'}
 
 class Info_printAPI_OT(types.Operator):
@@ -477,29 +515,29 @@ class Info_printAPI_OT(types.Operator):
     def execute(self, context: types.Context):
         obj = bpy.context.active_object
         from . import info_mesh
+        DEV.log_msg_sep()
         info_mesh.desc_mesh_inspect(obj.data)
         return {'FINISHED'}
 
-class Info_printMatrices_OT(types.Operator):
-    bl_idname = "dm.info_print_matrices"
-    bl_label = "Print obj matrices"
-    bl_description = "DEBUG print in the console the matrices etc"
+#-------------------------------------------------------------------
+
+class Debug_testColors_OT(types.Operator):
+    bl_idname = "dm.debug_test_colors"
+    bl_label = "DEBUG: test color props"
+    bl_description = "Add a bunch of mesh and color properties"
     bl_options = {'INTERNAL'}
 
     @classmethod
     def poll(cls, context):
         obj = bpy.context.active_object
-        return obj
+        return (obj and obj.type == 'MESH')
 
     def execute(self, context: types.Context):
         obj = bpy.context.active_object
-        utils.trans_printMatrices(obj)
+        utils_mat.gen_test_colors(obj, obj.data, 0.5, "mat")
         return {'FINISHED'}
 
-#-------------------------------------------------------------------
-
-from . import mw_resistance
-
+# WIP:: resistance field drawn
 class Debug_testCode_OT(types.Operator):
     bl_idname = "dm.debug_test_code"
     bl_label = "DEBUG: run test code"
@@ -525,8 +563,9 @@ class Debug_testCode_OT(types.Operator):
         obj = bpy.data.objects.new(name, mesh)
         context.scene.collection.objects.link(obj)
 
+        from . import mw_resistance
         rest_colors = [ mw_resistance.get2D_color4D(v.co.x, v.co.y) for v in mesh.vertices ]
-        utils_render.gen_meshAttr(mesh, rest_colors, 1, "FLOAT_COLOR", "POINT", "resistance")
+        utils_mat.gen_meshAttr(mesh, rest_colors, 1, "FLOAT_COLOR", "POINT", "resistance")
 
         return {'FINISHED'}
 
@@ -540,10 +579,12 @@ util_classes_op = [
 
     Util_deleteOrphanData_OT,
 
+    Info_printMatrices_OT,
     Info_printData_OT,
     Info_printQueries_OT,
+    Info_printMappings_OT,
     Info_printAPI_OT,
-    Info_printMatrices_OT,
 
-    Debug_testCode_OT
+    Debug_testColors_OT,
+    Debug_testCode_OT,
 ]

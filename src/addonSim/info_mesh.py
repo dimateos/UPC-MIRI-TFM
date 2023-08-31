@@ -42,6 +42,7 @@ def desc_mesh_inspect(me: bpy.types.Mesh):
     print("\n? poly attributes", poly)
     ins.print_attributes(poly)
     #ins.print_data(poly)
+    print()
 
 def desc_mesh_data(me: bpy.types.Mesh, limit=8, skipLoops=True):
     """ Description of the mesh data, with samples per collection type """
@@ -76,4 +77,5 @@ def desc_mesh_data(me: bpy.types.Mesh, limit=8, skipLoops=True):
         for i in me.loops:
             print(i.vertex_index)
 
-    print("\nEnd of Data for mesh " + me.name + "\n\n")
+    print("\nEnd of Data for mesh " + me.name)
+    print()

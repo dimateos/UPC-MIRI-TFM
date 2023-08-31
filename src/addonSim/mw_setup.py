@@ -4,8 +4,6 @@ import bmesh
 from mathutils import Vector, Matrix
 from math import radians
 
-# IDEA:: global prefs might not be so good
-#from .preferences import prefs
 from .preferences import getPrefs
 from .properties_global import (
     MW_id,
@@ -19,8 +17,7 @@ from .properties import (
 from .mw_cont import MW_Container, VORO_Container
 from .mw_links import MW_Links
 
-from . import utils
-from . import utils_render
+from . import utils, utils_mat, utils_mesh
 from .utils_dev import DEV
 from .stats import getStats
 
@@ -160,8 +157,8 @@ def gen_cellsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
 def gen_cellsObjects(obj: types.Object, cont: MW_Container, cfg: MW_gen_cfg, context: types.Context, scale = 1.0, invertOrientation = False):
     prefs = getPrefs()
     if not prefs.gen_setup_matColors:
-        color3 = utils_render.COLORS.gray
-        matCells = utils_render.get_colorMat(color3, alpha=prefs.gen_setup_matAlpha, matName=prefs.names.cells+"Mat")
+        color3 = utils_mat.COLORS.gray
+        matCells = utils_mat.get_colorMat(color3, alpha=prefs.gen_setup_matAlpha, matName=prefs.names.cells+"Mat")
 
     cells = []
     for cell in cont.voro_cont:
@@ -200,46 +197,12 @@ def gen_cellsObjects(obj: types.Object, cont: MW_Container, cfg: MW_gen_cfg, con
         obj_shard.location = pos
         obj_shard.scale = [scale]*3
 
-        # IDEA:: test visuals alternatives -> add to dm utils
-        #if DEV.VISUAL_TESTS:
-        if prefs.gen_setup_matColors:
-            gen_test_colors(obj_shard, mesh, alpha=prefs.gen_setup_matAlpha, matName=name)
-        else:
-            obj_shard.active_material = matCells
-
-            # WIP:: additional attr to visualize in the view mode -> alpha is not visualized...
-            # TODO:: just change all colors to be vec4...
-            utils_render.gen_meshAttr(mesh, utils_render.COLORS.assure_4d_alpha(color3, prefs.gen_setup_matAlpha), 1, "FLOAT_COLOR", "POINT", "alphaColor")
+        # TODO:: just change all colors to be vec4...
+        obj_shard.active_material = matCells
+        utils_mat.gen_meshAttr(mesh, utils_mat.COLORS.assure_4d_alpha(color3, prefs.gen_setup_matAlpha), 1, "FLOAT_COLOR", "POINT", "alphaColor")
 
     getStats().logDt("generated cells objects")
     return cells
-
-def gen_test_colors(obj, mesh, alpha, matName):
-    # NOTE:: materials can also by aded to the object instead of the data?
-    obj.active_material = utils_render.get_randomMat(alpha=alpha, matName=matName)
-
-    # test uv and if attr float 2d is mapped to UV too
-    uv = utils_render.gen_meshUV(mesh, [Vector([0.66, 0.66]), Vector([0.33, 0.33])])
-    utils_render.set_meshUV_rnd(mesh, uv.name)
-    auv = utils_render.gen_meshAttr(mesh, Vector([0.33,0.66]), adomain="CORNER", atype="FLOAT2", name="AUVtest")
-
-    # test vertex colors
-    vc_old = utils_render.gen_meshVC_legacy(mesh, utils_render.COLORS.pink)
-    utils_render.set_meshVC_legacy(mesh, vc_old, utils_render.COLORS.list_gray)
-    utils_render.set_meshVC_legacy_rnd(mesh, vc_old)
-    vc = utils_render.gen_meshVC(mesh, utils_render.COLORS.list_rgb4D )
-    vcFace = utils_render.gen_meshVC(mesh, utils_render.COLORS.list_rgb4D, adomain="CORNER")
-
-    # test attr color
-    ac = utils_render.gen_meshAC(mesh, utils_render.COLORS.list_fade, adomain="CORNER", name="ACtestcolor")
-    ac2 = utils_render.gen_meshAC(mesh, adomain="FACE")
-    ac3 = utils_render.gen_meshAC(mesh, utils_render.COLORS.red, adomain="EDGE")
-
-    # test non color attr
-    at = utils_render.gen_meshAttr(mesh, adomain="FACE")
-    utils_render.set_meshAttr_rnd(mesh, at)
-    atc = utils_render.gen_meshAttr(mesh, utils_render.COLORS.blue.to_4d(), adomain="CORNER", atype="FLOAT_COLOR", name="ATtestcolor")
-    utils_render.set_meshAttr_rnd(mesh, atc)
 
 def gen_LEGACY_CONT(obj: types.Object, voro_cont: VORO_Container, cfg: MW_gen_cfg, context: types.Context):
     centroids = []
@@ -293,7 +256,7 @@ def gen_LEGACY_CONT(obj: types.Object, voro_cont: VORO_Container, cfg: MW_gen_cf
 def gen_linksObject(obj: types.Object, links: MW_Links, cfg: MW_gen_cfg, context: types.Context):
     prefs = getPrefs()
     name = prefs.names.links
-    baseColor = utils_render.COLORS.red
+    baseColor = utils_mat.COLORS.red
 
     # iterate the global map and store vert pairs for the tube mesh generation
     verts: list[tuple[Vector,Vector]] = []
@@ -310,11 +273,11 @@ def gen_linksObject(obj: types.Object, links: MW_Links, cfg: MW_gen_cfg, context
         elif prefs.links_widthModLife == {"BINARY"}:
             lifeWidths.append(prefs.links_widthDead if life<1 else prefs.links_width)
 
-    resFaces = utils_render.get_resFaces_fromCurveRes(prefs.links_res)
-    mesh = utils_render.get_tubeMesh_pairsQuad(verts, lifeWidths, name, 1.0, resFaces, prefs.links_smoothShade)
+    resFaces = utils_mesh.get_resFaces_fromCurveRes(prefs.links_res)
+    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidths, name, 1.0, resFaces, prefs.links_smoothShade)
 
     # color encoded attributes for viewing in viewport edit mode
-    utils_render.gen_meshAttr(mesh, lifeColor, resFaces*2, "FLOAT_COLOR", "POINT", "life")
+    utils_mat.gen_meshAttr(mesh, lifeColor, resFaces*2, "FLOAT_COLOR", "POINT", "life")
 
     # potentially reuse child
     obj_links = utils.gen_childReuse(obj, name, context, mesh, keepTrans=True, hide=not cfg.struct_showLinks)
@@ -344,20 +307,20 @@ def gen_linksWallObject(obj: types.Object, links: MW_Links, cfg: MW_gen_cfg, con
         lifeWidth.append(prefs.links_width*wallsExtraScale*l.life)
         verts.append((l.pos, l.pos+l.dir*prefs.links_depth))
 
-    resFaces = utils_render.get_resFaces_fromCurveRes(prefs.links_res+3)
-    mesh = utils_render.get_tubeMesh_pairsQuad(verts, lifeWidth, name, 1+prefs.links_width*wallsExtraScale, resFaces, prefs.links_smoothShade)
+    resFaces = utils_mesh.get_resFaces_fromCurveRes(prefs.links_res+3)
+    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidth, name, 1+prefs.links_width*wallsExtraScale, resFaces, prefs.links_smoothShade)
 
     # potentially reuse child
     obj_wallLinks = utils.gen_childReuse(obj, name, context, mesh, keepTrans=True, hide=not cfg.struct_showLinks_airLinks)
     mesh.name = name
 
     # set global material
-    color3 = utils_render.COLORS.blue+utils_render.COLORS.white * 0.33
-    wallsMat = utils_render.get_colorMat(color3, 1.0, "linkWallsMat")
+    color3 = utils_mat.COLORS.blue+utils_mat.COLORS.white * 0.33
+    wallsMat = utils_mat.get_colorMat(color3, 1.0, "linkWallsMat")
     obj_wallLinks.active_material = wallsMat
 
     # WIP:: additional attr to visualize in the ame view mode
-    utils_render.gen_meshAttr(mesh, color3.to_4d(), 1, "FLOAT_COLOR", "POINT", "blueColor")
+    utils_mat.gen_meshAttr(mesh, color3.to_4d(), 1, "FLOAT_COLOR", "POINT", "blueColor")
 
     MW_id_utils.setMetaType(obj_wallLinks, {"CHILD"}, childrenRec=False)
     getStats().logDt("generated wall links object")
@@ -373,7 +336,7 @@ def genWIP_linksEmpties(obj: types.Object, cfg: MW_gen_cfg, context: types.Conte
 
 def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: MW_Links, cfg: MW_gen_cfg, context: types.Context):
     prefs = getPrefs()
-    wallsMat = utils_render.get_colorMat(utils_render.COLORS.blue+utils_render.COLORS.white * 0.33, 1.0, "linkWallsMat")
+    wallsMat = utils_mat.get_colorMat(utils_mat.COLORS.blue+utils_mat.COLORS.white * 0.33, 1.0, "linkWallsMat")
     #objLinks = None
     #objWall = None
 
@@ -414,10 +377,10 @@ def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: MW
             res = prefs.links_res
             width = prefs.links_widthDead * (1-l.life) + prefs.links_width * l.life
             alpha = l.life+0.1 if prefs.links_matAlpha else 1.0
-            mat = utils_render.get_colorMat(utils_render.COLORS.red*l.life, alpha, name)
+            mat = utils_mat.get_colorMat(utils_mat.COLORS.red*l.life, alpha, name)
 
-        res = utils_render.get_resFaces_fromCurveRes(res)
-        curve= utils_render.get_tubeMesh_pairsQuad([(p1, p2)], None, name, width, res)
+        res = utils_mesh.get_resFaces_fromCurveRes(res)
+        curve= utils_mesh.get_tubeMesh_pairsQuad([(p1, p2)], None, name, width, res)
         obj_link = utils.gen_child(obj, name, context, curve, keepTrans=True, hide=not cfg.struct_showLinks)
         obj_link.location = l.pos
         obj_link.active_material = mat
@@ -470,7 +433,7 @@ def genWIP_linksCellObjects(objParent: types.Object, voro_cont: VORO_Container, 
             name= f"s{cell.id}_n{n_id}"
             neigh_centroid = Vector(voro_cont[n_id].centroid())
 
-            curve = utils_render.get_curveData([cell_centroid, neigh_centroid], name, cfg.links_width, cfg.links_res)
+            curve = utils_mesh.get_curveData([cell_centroid, neigh_centroid], name, cfg.links_width, cfg.links_res)
             obj_link = utils.gen_child(obj_group, name, context, curve, keepTrans=False, hide=not cfg.struct_showLinks)
 
             obj_link.hide_set(key_rep or not cfg.struct_showLinks_legacy)
