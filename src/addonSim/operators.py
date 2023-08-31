@@ -14,7 +14,7 @@ from .properties import (
     MW_sim_cfg,
 )
 from .properties_utils import copyProps
-from .operators_utils import _StartRefresh_OT, util_classes_op
+from .operators_dm import _StartRefresh_OT, util_classes_op
 
 from . import mw_setup, mw_extraction
 from .mw_links import MW_Links

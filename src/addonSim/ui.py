@@ -14,6 +14,7 @@ class CONST_ICONS:
     section_opened = "DOWNARROW_HLT"    # "DOWNARROW_HLT" "DISCLOSURE_TRI_DOWN"
 
 
+# Ui common functions
 #-------------------------------------------------------------------
 
 def draw_toggleBox(metadata, propToggle_name:str, layout: types.UILayout, text:str=None, scaleOpen=0.9) -> tuple[bool, types.UILayout]:

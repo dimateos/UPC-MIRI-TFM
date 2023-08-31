@@ -12,7 +12,7 @@ from .utils_dev import DEV
 from .stats import getStats
 
 
-# OPT:: add operators to search bars
+# Misc utility operators (dimateos)
 #-------------------------------------------------------------------
 
 class _StartRefresh_OT(types.Operator):

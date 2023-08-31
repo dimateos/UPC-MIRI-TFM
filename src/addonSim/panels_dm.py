@@ -3,15 +3,14 @@ import bpy.types as types
 from mathutils import Vector, Matrix
 
 from .preferences import getPrefs, ADDON
-from . import operators_utils as ops_util
+from . import operators_dm as ops_util
 
 from . import ui
 from . import utils, utils_geo
 from .utils_dev import DEV
 
 
-# OPT:: coherent poll to disable OT vs not spawning the ui
-# OPT:: add deps graph calc check + also for mesh indices spawn
+# Misc utility panels (dimateos)
 #-------------------------------------------------------------------
 
 class Info_inpect_PT(types.Panel):

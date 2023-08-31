@@ -10,7 +10,7 @@ from .properties_global import (
 )
 
 from . import operators as ops
-from .panels_utils import util_classes_pt
+from .panels_dm import util_classes_pt
 
 from . import ui
 from .utils_dev import DEV
