@@ -265,6 +265,7 @@ def gen_linksObject(obj: types.Object, links: MW_Links, cfg: MW_gen_cfg, context
 
         verts.append((l.pos-l.dir*prefs.links_depth, l.pos+l.dir*prefs.links_depth))
         lifeColor.append( (baseColor*life).to_4d() )
+        #lifeColor[-1].w = 0.5
 
         if prefs.links_widthModLife == {"UNIFORM"}:
             lifeWidths.append(prefs.links_widthDead * (1-life) + prefs.links_width * life)

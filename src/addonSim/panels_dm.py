@@ -6,7 +6,7 @@ from .preferences import getPrefs, ADDON
 from . import operators_dm as ops_util
 
 from . import ui
-from . import utils, utils_geo
+from . import utils, utils_trans, utils_geo
 from .utils_dev import DEV
 
 
@@ -161,8 +161,18 @@ class Info_inpect_PT(types.Panel):
         return f">5.{prefs.dm_PT_info_showPrecision}f"
 
     def draw_tranforms(self, obj: types.Object, layout: types.UILayout, fmt = ">6.3f"):
-        fmt_vec = f"({{:{fmt}}}, {{:{fmt}}}, {{:{fmt}}})"
+        fmt_single = f"{{:{fmt}}}"
+        fmt_vec = f"({fmt_single}, {fmt_single}, {fmt_single})"
         from math import degrees
+
+        # bb
+        box0 = layout.box()
+        col0 = box0.column()
+        col0.label(text="Bounding box")
+        bb, bb_center, bb_radius = utils_trans.get_bb_data(obj, worldSpace=True)
+        col0.label(text=f"World radius: {fmt_single}".format(bb_radius))
+        bb, bb_center, bb_radius = utils_trans.get_bb_data(obj)
+        col0.label(text=f"Local radius: {fmt_single}".format(bb_radius))
 
         # group world
         box1 = layout.box()

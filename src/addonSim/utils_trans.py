@@ -63,7 +63,9 @@ def get_verts(obj: types.Object, worldSpace=False) -> list[Vector, 6]:
     return verts
 
 def get_bb_data(obj: types.Object, margin_disp = 0.0, worldSpace=False) -> tuple[list[Vector], float, float]:
-    """ Get the object bounding box MIN/MAX Vector pair in world space """
+    """ Get the object bounding box MIN/MAX Vector pair in world space
+    # NOTE:: atm limited to mesh, otherwise check and use depsgraph
+    """
     disp = Vector([margin_disp]*3)
 
     if worldSpace:
@@ -78,7 +80,6 @@ def get_bb_data(obj: types.Object, margin_disp = 0.0, worldSpace=False) -> tuple
     #bb_diag = (bb[0] - bb[1])
     #bb_radius = (bb_diag.length / 2.0)
 
-    # NOTE:: atm limited to mesh, otherwise check and use depsgraph
     return bb, bb_center, bb_radius
 
 def get_faces_4D(obj: types.Object, n_disp = 0.0, worldSpace=False) -> list[Vector, Vector]:

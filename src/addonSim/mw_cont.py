@@ -46,7 +46,7 @@ class MW_Container:
         # construct voro++ cont
         self.voro_cont = self.build_cont(points, bb, faces4D, precision)
         if self.voro_cont is not None:
-            self.initialized = False
+            self.initialized = True
 
     def precalculate_data(self, obj_cells_root : types.Object, cells_list : list[types.Object]):
         """ Precalculate/query data such as valid neighbours and mapping faces """
@@ -166,15 +166,15 @@ class MW_Container:
         else:
             VORO_Container.custom_walls_precision = VORO_Container.custom_walls_precision_default
 
-        # XXX:: container creation might fail do to some voro++ config params... hard to tweak for all? NOT DYNAMIC needs recompile
+        # XXX:: container creation might fail do to some voro++ config params... hard to tweak for all? NOT DYNAMIC, requires recompilation
         # XXX:: some tiny intersection between cells might happen due to tolerance -> check or not worth it, we shrink then would not be noticeable
         try:
             # Build the container and cells
             voro_cont = VORO_Container(points=points, limits=bb_tuples, walls=faces4D)
-            # TODO:: log verts outside/ cell not calculated? init in two phases: define walls and then insert points?
+            # OPT:: init in two phases: define walls and then insert points?
 
             # Check non empty
-            getStats().logDt("calculated cont")
+            getStats().logDt("built voro container")
             logType = {"CALC", "CONT"}
             if not len(voro_cont): logType |= {"ERROR"}
             DEV.log_msg(f"Found {len(voro_cont)} cells ({len(voro_cont.walls)} walls from {len(faces4D)} faces)", logType)

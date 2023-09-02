@@ -202,7 +202,8 @@ class MW_Links():
                 # add to graph
                 self.cells_graph.add_edge(*key)
 
-        self.avg_area /= float(len(self.link_map))
+        if (self.link_map):
+            self.avg_area /= float(len(self.link_map))
 
         stats.logDt(f"created link map")
         DEV.log_msg(f"Pos limits: {utils.vec3_to_string(self.min_pos)}, {utils.vec3_to_string(self.max_pos)}"

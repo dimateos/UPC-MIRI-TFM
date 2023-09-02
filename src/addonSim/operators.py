@@ -122,25 +122,18 @@ class MW_gen_OT(_StartRefresh_OT):
         self.obj_root = obj_root
         prefs = getPrefs()
 
-        # TODO:: cfg_vis?
         cfg: MW_gen_cfg = self.cfg
         cfg.rnd_seed = utils.rnd_seed(cfg.rnd_seed)
 
 
         DEV.log_msg("Initial object setup", {'SETUP'})
-        # NOTE:: convex hull triangulates the faces... e.g. UV sphere ends with more!
         if cfg.shape_useConvexHull:
+            # NOTE:: convex hull triangulates the faces... e.g. UV sphere ends with more!
             obj_toFrac = mw_setup.copy_convex(obj_root, obj_original, cfg, self.ctx)
         else: obj_toFrac = obj_original
 
-        DEV.log_msg("Start calc points", {'CALC'})
-        # Get the points and transform to local space when needed
-        mw_extraction.detect_points_from_object(obj_original, cfg, self.ctx)
-        points = mw_extraction.get_points_from_object_fallback(obj_original, cfg, self.ctx)
-        if not points:
-            return self.end_op_error("found no points...")
 
-        # Get more data from the points
+        DEV.log_msg("Start calc faces", {'CALC'})
         bb, bb_center, bb_radius = utils_trans.get_bb_data(obj_toFrac, cfg.margin_box_bounds)
         getStats().logDt(f"calc bb: [{bb_center[:]}] r {bb_radius:.3f} (margin {cfg.margin_box_bounds:.4f})")
         if cfg.shape_useWalls:
@@ -148,8 +141,12 @@ class MW_gen_OT(_StartRefresh_OT):
         else: faces4D = []
         getStats().logDt(f"calc faces4D: {len(faces4D)} (n_disp {cfg.margin_face_bounds:.4f})")
 
-        # XXX:: 2D objects should use the boundary? limits walls per axis
-        # XXX:: limit particles axis too?
+
+        DEV.log_msg("Start calc points", {'CALC'})
+        mw_extraction.detect_points_from_object(obj_original, cfg, self.ctx)
+        points = mw_extraction.get_points_from_object_fallback(obj_original, cfg, self.ctx)
+        if not points:
+            return self.end_op_error("found no points...")
 
         # Limit and rnd a bit the points
         mw_extraction.points_transformCfg(points, cfg, bb_radius)
@@ -159,31 +156,31 @@ class MW_gen_OT(_StartRefresh_OT):
         mw_setup.gen_boundsObject(obj_root, bb, self.cfg, self.ctx)
 
 
-        DEV.log_msg("Start calc cont and links", {'CALC'})
-        # IDEA:: mesh conecting input points + use single mesh instead of one per link?
-        # IDEA:: generate in phases? only cont, then links, etc...
-        # XXX:: detect meshes with no volume? test basic shape for crashes...
 
+        DEV.log_msg("Start calc cont", {'CALC', 'CONT'})
         cont = MW_Container(points, bb, faces4D, precision=prefs.gen_calc_precisionWalls)
-        if not cont:
-            return self.end_op_error("found no cont... but could try recalculate!")
-
-        # cells are always added to the scene
-        obj_cells_root = mw_setup.gen_cellsEmpty(obj_root, cfg, self.ctx)
+        if not cont.initialized:
+            return self.end_op_error("found no cont... recalc different params?")
 
         #test some legacy or statistics cont stuff
         if DEV.LEGACY_CONT:
             mw_setup.gen_LEGACY_CONT(obj_cells_root, cont.voro_cont, cfg, self.ctx)
             return self.end_op("DEV.LEGACY_CONT stop...")
+
+        # cells are always added to the scene
+        obj_cells_root = mw_setup.gen_cellsEmpty(obj_root, cfg, self.ctx)
         cells = mw_setup.gen_cellsObjects(obj_cells_root, cont, cfg, self.ctx, scale=obj_root.mw_vis.cell_scale, invertOrientation=prefs.gen_setup_invertShardNormals)
 
         # precalculate/query neighs and other data
         cont.precalculate_data(obj_cells_root, cells)
+        if not cont.precalculated:
+            return self.end_op_error("error during container precalculations!")
 
-        # calculate links and store in the external storage
+
+        DEV.log_msg("Start calc links", {'CALC', 'LINKS'})
         links:MW_Links = MW_Links(cont)
         if not links.initialized:
-            return self.end_op_error("found no links... but could try recalculate!")
+            return self.end_op_error("found no links... recalc different params?")
 
 
         # use global storage
@@ -204,6 +201,7 @@ class MW_gen_OT(_StartRefresh_OT):
             MW_id_utils.setMetaType(self.obj_root, {"CHILD"}, skipParent=True)
             utils_scene.select_unhide(self.obj_root, self.ctx)
 
+        # keep the panel updated
         MW_global_selected.recheckSelected()
         return super().end_op(msg, skipLog, retPass)
 

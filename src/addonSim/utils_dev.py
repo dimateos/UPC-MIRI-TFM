@@ -11,7 +11,6 @@ class DEV:
     ASSERT_CELL_POS       = False   # assert some local and global pos match
     LEGACY_CONT           = False   # check some stats of legacy cont
 
-    # TODO:: some access from UI to toggle dynamically?
     # OPT:: generated string messages are being constructed anyway: slow? -> if type: log()
     logs             = True
     logs_stats_dt    = True

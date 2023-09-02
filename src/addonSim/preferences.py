@@ -7,9 +7,6 @@ from .properties_global import MW_global_storage
 
 from .utils_dev import DEV
 
-
-#-------------------------------------------------------------------
-
 # Access from other modules to constants
 class ADDON:
     _bl_info = None
@@ -17,15 +14,34 @@ class ADDON:
     _bl_loaded = False
     mod_name = __name__
     mod_name_prefs = mod_name.split(".")[0]
-
     panel_cat = "Dev"
 
 def getPrefs() -> "MW_prefs":
     """ Get addon preferences from blender """
     return bpy.context.preferences.addons[MW_prefs.bl_idname].preferences
 
-# OPT:: maybe direclty an access to it instead of getter? need some setup per module to avoid parsing before register
-prefs = None
+
+#-------------------------------------------------------------------
+
+class MW_dev(types.PropertyGroup):
+    meta_show_props: props.BoolProperty(
+        description="Show DEV cfg",
+        default=True,
+    )
+
+    DEBUG_MODEL : props.BoolProperty(
+        default=DEV.DEBUG_MODEL,
+        update=lambda self, context: setattr(DEV, "DEBUG_MODEL", self.DEBUG_MODEL)
+    )
+
+    logs : props.BoolProperty(
+        default=DEV.logs,
+        update=lambda self, context: setattr(DEV, "logs", self.logs)
+    )
+    logs_stats_dt : props.BoolProperty(
+        default=DEV.logs_stats_dt,
+        update=lambda self, context: setattr(DEV, "logs_stats_dt", self.logs_stats_dt)
+    )
 
 #-------------------------------------------------------------------
 
@@ -41,8 +57,6 @@ class MW_prefs(bpy.types.AddonPreferences):
 
     #-------------------------------------------------------------------
 
-    # TODO:: move to common place + also properties utils -> use a sub property group?
-    # IDEA:: add .to filter or something to idicate match only the beginning
     class names:
         original = "original"
         original_copy = original+"_0_"
@@ -82,6 +96,9 @@ class MW_prefs(bpy.types.AddonPreferences):
     )
 
     #-------------------------------------------------------------------
+
+    # edit some DEV params
+    dev_PT_meta_cfg: props.PointerProperty(type=MW_dev)
 
     # meta inspectors for OP props
     prefs_PT_meta_inspector: props.PointerProperty(type=Prop_inspector)
@@ -252,6 +269,7 @@ class MW_prefs(bpy.types.AddonPreferences):
 # Blender events
 
 classes = [
+    MW_dev,
     MW_prefs,
 ]
 _name = f"{__name__[14:]}" #\t(...{__file__[-32:]})"

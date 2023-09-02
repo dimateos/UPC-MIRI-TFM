@@ -89,7 +89,7 @@ def draw_propsToggle(data, data_inspector:Prop_inspector, layout:types.UILayout,
     return open, box
 
 def draw_propsToggle_custom(data, data_inspector:Prop_inspector, layout:types.UILayout, text:str="Properties",
-                            propFilter="", showDefault=True, showId=False, editable=True) -> tuple[bool, types.UILayout]:
+                            propFilter="-meta", showDefault=True, showId=False, editable=True) -> tuple[bool, types.UILayout]:
     """ Draw some properties of an object under a custom toggleable layout. """
 
     # outer fold
@@ -142,8 +142,8 @@ def draw_gen_cfg(cfg: MW_gen_cfg, layout: types.UILayout, context: types.Context
     rowsub.prop(cfg, "source_limit")
     # IDEA:: show current num found? could do 1 frame delayed stored somewhere
     rowsub = col.row()
+    rowsub.prop(cfg, "source_shuffle")
     rowsub.prop(cfg, "source_noise")
-    rowsub.prop(cfg, "rnd_seed")
 
     # OPT:: limit avaialble e.g. show convex when available
     box = layout.box()
@@ -157,6 +157,8 @@ def draw_gen_cfg(cfg: MW_gen_cfg, layout: types.UILayout, context: types.Context
     rowsub.prop(cfg, "margin_face_bounds")
 
     draw_gen_cfgDebug(cfg, layout)
+
+    layout.prop(cfg, "rnd_seed")
 
     box = layout.box()
     col = box.column()

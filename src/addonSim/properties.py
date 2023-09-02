@@ -21,7 +21,7 @@ class MW_gen_source_options:
         #('PENCIL', "Pencil", "Annotation Grease Pencil (only touching/inside the volume)"),
     ]
     all_keys = [ k[0] for k in all ]
-    default_key = 'PARTICLE_CHILD'
+    default_key = 'PARTICLE_OWN'
     fallback_key = 'VERT_OWN'
     error_key = 'NONE'
     error_option = [ (error_key, "No point found...", f"Options: {all_keys}") ]
@@ -60,16 +60,14 @@ class MW_gen_cfg(types.PropertyGroup):
         name="Limit points", description="Limit the number of input points, 0 for unlimited",
         default=100, min=0, max=10000,
     )
+    source_shuffle: props.BoolProperty(
+        name="RND order", description="Shuffle input points",
+        default=True,
+    )
     source_noise: props.FloatProperty(
         name="RND jitter", description="Jitter input point positions",
-        default=0.0, min=0.0, max=1.0,
+        default=0.1, min=0.0, max=1.0,
     )
-    rnd_seed: props.IntProperty(
-        name="RND seed", description="Seed the random generator, -1 to unseed it",
-        default=64, min=-1,
-    )
-
-    #-------------------------------------------------------------------
 
     shape_useConvexHull: props.BoolProperty(
         name="Convex hull", description="Apply convex hull op beforehand",
@@ -82,11 +80,11 @@ class MW_gen_cfg(types.PropertyGroup):
 
     margin_box_bounds: props.FloatProperty(
         name="Margin BB", description="Additional displacement of the box normal planes.",
-        default=0.05, min=0.001, max=1.0, step=1, precision=3
+        default=0.1, min=0.001, max=1.0, step=1, precision=3
     )
     margin_face_bounds: props.FloatProperty(
-        name="Margin faces", description="Additional displacement of the face normal planes.",
-        default=0.025, min=0.001, max=1.0, step=1, precision=3
+        name="Margin F", description="Additional displacement of the face normal planes.",
+        default=0.1, min=0.001, max=1.0, step=1, precision=3
     )
 
     #-------------------------------------------------------------------
@@ -118,6 +116,11 @@ class MW_gen_cfg(types.PropertyGroup):
     #-------------------------------------------------------------------
     # NOTE:: now the elements can be properly hidden while the last operator panel is open...
     # IDEA:: use for actually adding to the scene or not, otherwise not worth the recalculation
+
+    rnd_seed: props.IntProperty(
+        name="RND seed", description="Seed the random generator, -1 to unseed it",
+        default=64, min=-1,
+    )
 
     struct_showCells: props.BoolProperty(
         name="Cells", description="Voronoi cells",

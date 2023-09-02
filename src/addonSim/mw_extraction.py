@@ -191,30 +191,38 @@ def points_limitNum(points: list[Vector], cfg: MW_gen_cfg):
     source_limit = cfg.source_limit
 
     if source_limit > 0 and source_limit < len(points):
-        rnd.shuffle(points)
+        if cfg.source_shuffle:
+            rnd.shuffle(points)
         points[source_limit:] = []
-
-def points_noDoubles(points: list[Vector], cfg: MW_gen_cfg):
-    points_set = {Vector.to_tuple(p, 4) for p in points}
-    points = list(points_set)
 
 def points_addNoise(points: list[Vector], cfg: MW_gen_cfg, bb_radius: float):
     noise = cfg.source_noise
 
     if noise:
-        scalar = noise * bb_radius # boundbox radius to aprox scale
+        # aprox the random max displacement
+        approxR = bb_radius**3 / len(points)
+        scalar = noise * approxR
         points[:] = [p + (bl_rnd.random_unit_vector() * scalar * rnd.random()) for p in points]
 
+    if DEV.DEBUG_MODEL:
+        # collapse to the plane (non uniform random side effect)
+        points[:] = [p * Vector((1,1,0)) for p in points]
+
+def points_noDoubles(points: list[Vector], cfg: MW_gen_cfg):
+    points_set = {Vector.to_tuple(p, 4) for p in points}
+    points = list(points_set)
+
+# OPT:: quite bad to extract ALL to then limit the amount (transformed to world etc)
 def points_transformCfg(points: list[Vector], cfg: MW_gen_cfg, bb_radius: float):
     """ Applies all transformations to the set of points obtained """
     points_limitNum(points, cfg)
-    points_noDoubles(points, cfg)
     points_addNoise(points, cfg, bb_radius)
+    points_noDoubles(points, cfg)
     getStats().logDt(f"transform/limit points: {len(points)} (noise {cfg.source_noise:.4f})")
 
 #-------------------------------------------------------------------
 
-# TODO:: check already have it + apply
+# TODO:: check already have it? faster to add to all at once too
 def boolean_mod_add(obj_original: types.Object, obj_cells_root: types.Object, context: types.Context):
     c = obj_cells_root.children
     for obj_cell in c:
@@ -228,8 +236,8 @@ def boolean_mod_add(obj_original: types.Object, obj_cells_root: types.Object, co
     # Calculates all booleans at once (faster).
     depsgraph = context.evaluated_depsgraph_get()
 
-# TODO:: test with sep comps -> random remove?
 def get_connected_comps(fract: MW_Fract):
+    """ NOTE:: old method, now donw with networkx """
     cell_union = UnionFind(len(fract.cont.foundId))
 
     for l in fract.links.internal:

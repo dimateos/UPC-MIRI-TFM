@@ -2,6 +2,7 @@ import bpy
 import bpy.types as types
 import bpy.props as props
 from mathutils import Vector, Matrix
+from math import ceil
 
 from .preferences import getPrefs, ADDON
 
@@ -540,7 +541,7 @@ class Debug_testColors_OT(types.Operator):
 # WIP:: resistance field drawn
 class Debug_testCode_OT(types.Operator):
     bl_idname = "dm.debug_test_code"
-    bl_label = "DEBUG: run test code"
+    bl_label = "DEBUG: auto add particle system"
     bl_description = "Run TMP test code"
     bl_options = {'INTERNAL'}
 
@@ -549,6 +550,44 @@ class Debug_testCode_OT(types.Operator):
         return True
 
     def execute(self, context: types.Context):
+        #self.resistField(context)
+        self.particleSystem(context)
+        return {'FINISHED'}
+
+    def particleSystem(self, context: types.Context):
+        if not context.active_object:
+            return
+        obj = context.active_object
+        mod = obj.modifiers.new("ParticleSystem", 'PARTICLE_SYSTEM')
+        system : types.ParticleSystem = obj.particle_systems[-1]
+
+        # Seed it
+        system.seed = 0
+
+        # Config
+        cfg : types.ParticleSettings = obj.particle_systems[-1].settings
+        cfg.type = 'EMITTER'
+        cfg.count = 5000 # high enough
+        cfg.lifetime = 0
+        cfg.render_type = 'HALO'
+        #cfg.particle_size = 0.01
+
+        # see distribution but lags the scene tho
+        #cfg.show_unborn = True
+
+        # Source
+        cfg.emit_from = "VOLUME"
+        ## random
+        #cfg.distribution = "RAND"
+        #cfg.use_emit_random = True
+        #cfg.use_even_distribution = True
+        # grid? whatever is used many end up outside
+        cfg.distribution = "GRID"
+        bb, bb_center, bb_radius = utils_trans.get_bb_data(obj, worldSpace=True)
+        cfg.grid_resolution = ceil(bb_radius) *5
+        cfg.grid_random = 0
+
+    def resistField(self, context: types.Context):
         side = 12
         sideResV = 100
         name = "TestGrid"
@@ -566,9 +605,6 @@ class Debug_testCode_OT(types.Operator):
         from . import mw_resistance
         rest_colors = [ mw_resistance.get2D_color4D(v.co.x, v.co.y) for v in mesh.vertices ]
         utils_mat.gen_meshAttr(mesh, rest_colors, 1, "FLOAT_COLOR", "POINT", "resistance")
-
-        return {'FINISHED'}
-
 
 #-------------------------------------------------------------------
 # Blender events
