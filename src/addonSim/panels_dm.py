@@ -14,7 +14,7 @@ from .utils_dev import DEV
 #-------------------------------------------------------------------
 
 class Info_inpect_PT(types.Panel):
-    bl_idname = "DM_PT_info_inpect"
+    bl_idname = "DM_PT_info"
     """ PT bl_idname must have _PT_ e.g. TEST_PT_addon"""
 
     bl_space_type = "VIEW_3D"
@@ -30,7 +30,7 @@ class Info_inpect_PT(types.Panel):
         layout = self.layout
 
         # inspect panel
-        open, box = ui.draw_toggleBox(prefs, "dm_PT_meta_show_info", layout, scaleOpen=1)
+        open, box = ui.draw_toggleBox(prefs.dm_prefs, "meta_show_info", layout, scaleOpen=1)
         if open:
             # Something selected + check last active
             if not context.selected_objects:
@@ -47,24 +47,24 @@ class Info_inpect_PT(types.Panel):
                 mainCol, mainBox = self.draw_inspectObject(obj, box)
 
                 # draw specific mode detailed info
-                open, box = ui.draw_toggleBox(prefs, "dm_PT_meta_show_full", mainCol, scaleOpen=0.8)
+                open, box = ui.draw_toggleBox(prefs.dm_prefs, "meta_show_full", mainCol, scaleOpen=0.8)
                 if open:
                     if bpy.context.mode == 'OBJECT':        self.drawMode_object(context, obj, box)
                     elif bpy.context.mode == 'EDIT_MESH':   self.drawMode_edit(context, obj, box)
 
         # debug options
-        open, box = ui.draw_toggleBox(prefs, "dm_PT_meta_show_tmpDebug", layout)
+        open, box = ui.draw_toggleBox(prefs.dm_prefs, "meta_show_tmpDebug", layout)
         if open:
             # fix orphan meshes
             col_rowSplit = box.row().split(factor=0.8)
             col_rowSplit.label(text=f"Scene DATA - orphans", icon="SCENE_DATA")
             col_rowSplit.operator(ops_util.Util_deleteOrphanData_OT.bl_idname, icon="UNLINKED", text="")
 
-            box.prop(prefs, "dm_PT_orphans_collection")
+            box.prop(prefs.dm_prefs, "orphans_collection")
             col = box.column()
 
             # dynamically check it has the collection
-            for colName in prefs.dm_PT_orphans_collection.split(","):
+            for colName in prefs.dm_prefs.orphans_collection.split(","):
                 colName = colName.strip()
                 if not hasattr(bpy.data, colName): continue
                 collection = getattr(bpy.data, colName)
@@ -97,12 +97,12 @@ class Info_inpect_PT(types.Panel):
         # Use selected data or input it
         col_rowSplit = box.row().split(factor=0.5)
         col_rowSplit.scale_y = 1.2
-        col_rowSplit.prop(prefs, "dm_PT_edit_useSelected")
-        col_rowSplit.prop(prefs, "dm_PT_edit_showLimit")
+        col_rowSplit.prop(prefs.dm_prefs, "edit_useSelected")
+        col_rowSplit.prop(prefs.dm_prefs, "edit_showLimit")
         col = box.column()
 
         # tip about not updated
-        if prefs.dm_PT_edit_useSelected:
+        if prefs.dm_prefs.edit_useSelected:
             col.enabled = False
             col.alignment = 'LEFT'
             #col.scale_y = 0.8
@@ -110,7 +110,7 @@ class Info_inpect_PT(types.Panel):
             #col.label(text=f"[Object Mode]: spawn indices", icon="LIGHT")
         # filter for manual selection
         else:
-            col.prop(prefs, "dm_PT_edit_indexFilter")
+            col.prop(prefs.dm_prefs, "edit_indexFilter")
 
         # get format precision
         fmt = self.draw_precision(box)
@@ -157,8 +157,8 @@ class Info_inpect_PT(types.Panel):
         row.alignment= "LEFT"
         row.scale_y = 0.9
         row.label(text=f"Precision", icon="TRACKING_FORWARDS_SINGLE")
-        row.prop(prefs, "dm_PT_info_showPrecision")
-        return f">5.{prefs.dm_PT_info_showPrecision}f"
+        row.prop(prefs.dm_prefs, "info_showPrecision")
+        return f">5.{prefs.dm_prefs.info_showPrecision}f"
 
     def draw_tranforms(self, obj: types.Object, layout: types.UILayout, fmt = ">6.3f"):
         fmt_single = f"{{:{fmt}}}"
@@ -214,31 +214,31 @@ class Info_inpect_PT(types.Panel):
     def draw_inspectData(self, obj: types.Object, layout: types.UILayout, fmt = ">6.3f"):
         prefs = getPrefs()
         fmt_vec = f"({{:{fmt}}}, {{:{fmt}}}, {{:{fmt}}})"
-        limit = prefs.dm_PT_edit_showLimit
+        limit = prefs.dm_prefs.edit_showLimit
         mesh = obj.data
 
         # verts with optional world space toggle
-        open, box = ui.draw_toggleBox(prefs, "dm_PT_edit_showVerts", layout)
+        open, box = ui.draw_toggleBox(prefs.dm_prefs, "edit_showVerts", layout)
         if open:
-            if prefs.dm_PT_edit_useSelected: selected_verts = [v for v in mesh.vertices if v.select]
-            else: selected_verts = utils.get_filtered(mesh.vertices, prefs.dm_PT_edit_indexFilter)
+            if prefs.dm_prefs.edit_useSelected: selected_verts = [v for v in mesh.vertices if v.select]
+            else: selected_verts = utils.get_filtered(mesh.vertices, prefs.dm_prefs.edit_indexFilter)
 
             col = box.column()
             row = col.row()
             row.alignment= "LEFT"
             row.label(text=f"verts: {len(selected_verts)}")
-            row.prop(prefs, "dm_PT_info_edit_showWorld")
+            row.prop(prefs.dm_prefs, "info_edit_showWorld")
             for v in selected_verts[:limit]:
-                if prefs.dm_PT_info_edit_showWorld: pos = obj.matrix_world @ v.co
+                if prefs.dm_prefs.info_edit_showWorld: pos = obj.matrix_world @ v.co
                 else: pos = v.co
                 col.label(text=f"{v.index}: " + f"{fmt_vec}".format(*pos))
             if len(selected_verts) > limit: col.label(text=f"...")
 
         # edges
-        open, box = ui.draw_toggleBox(prefs, "dm_PT_edit_showEdges", layout)
+        open, box = ui.draw_toggleBox(prefs.dm_prefs, "edit_showEdges", layout)
         if open:
-            if prefs.dm_PT_edit_useSelected: selected_edges = [e for e in mesh.edges if e.select]
-            else: selected_edges = utils.get_filtered(mesh.edges, prefs.dm_PT_edit_indexFilter)
+            if prefs.dm_prefs.edit_useSelected: selected_edges = [e for e in mesh.edges if e.select]
+            else: selected_edges = utils.get_filtered(mesh.edges, prefs.dm_prefs.edit_indexFilter)
 
             col = box.column()
             col.label(text=f"edges: {len(selected_edges)}")
@@ -246,19 +246,19 @@ class Info_inpect_PT(types.Panel):
             if len(selected_edges) > limit: col.label(text=f"...")
 
         # faces with option too
-        open, box = ui.draw_toggleBox(prefs, "dm_PT_edit_showFaces", layout)
+        open, box = ui.draw_toggleBox(prefs.dm_prefs, "edit_showFaces", layout)
         if open:
-            if prefs.dm_PT_edit_useSelected: selected_faces = [f for f in mesh.polygons if f.select]
-            else: selected_faces = utils.get_filtered(mesh.polygons, prefs.dm_PT_edit_indexFilter)
+            if prefs.dm_prefs.edit_useSelected: selected_faces = [f for f in mesh.polygons if f.select]
+            else: selected_faces = utils.get_filtered(mesh.polygons, prefs.dm_prefs.edit_indexFilter)
 
             col = box.column()
             row = col.row()
             row.alignment= "LEFT"
             row.label(text=f"faces: {len(selected_faces)}")
-            row.prop(prefs, "dm_PT_edit_showFaceCenters")
-            if (prefs.dm_PT_edit_showFaceCenters):
+            row.prop(prefs.dm_prefs, "edit_showFaceCenters")
+            if (prefs.dm_prefs.edit_showFaceCenters):
                 for f in selected_faces[:limit]:
-                    if prefs.dm_PT_info_edit_showWorld: pos = obj.matrix_world @ f.center
+                    if prefs.dm_prefs.info_edit_showWorld: pos = obj.matrix_world @ f.center
                     else: pos = f.center
                     col.label(text=f"{f.index}: " + f"{fmt_vec}".format(*pos))
             else:

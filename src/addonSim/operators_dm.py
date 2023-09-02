@@ -424,7 +424,7 @@ class Util_deleteOrphanData_OT(_StartRefresh_OT):
 
     def execute(self, context: types.Context):
         self.start_op()
-        collections = getPrefs().dm_PT_orphans_collection.split(",")
+        collections = getPrefs().dm_prefs.orphans_collection.split(",")
         utils_scene.delete_orphanData(collections, logAmount=True)
         return self.end_op()
 

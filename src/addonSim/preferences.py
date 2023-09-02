@@ -24,6 +24,7 @@ def getPrefs() -> "MW_prefs":
 #-------------------------------------------------------------------
 
 class MW_dev(types.PropertyGroup):
+    """ Toggle some DEV flags in runtime """
     meta_show_props: props.BoolProperty(
         description="Show DEV cfg",
         default=True,
@@ -41,6 +42,71 @@ class MW_dev(types.PropertyGroup):
     logs_stats_dt : props.BoolProperty(
         default=DEV.logs_stats_dt,
         update=lambda self, context: setattr(DEV, "logs_stats_dt", self.logs_stats_dt)
+    )
+
+
+class DM_utils(types.PropertyGroup):
+    """ Global prefs for the dm utils (all part of PT) """
+
+    meta_show_info: props.BoolProperty(
+        name="Show inspect...", description="Show the object info",
+        default=True,
+    )
+    meta_show_full: props.BoolProperty(
+        name="Show full...", description="Show all the info",
+        default=False,
+    )
+    meta_show_tmpDebug: props.BoolProperty(
+        name="Show debug...", description="WIP: Show some debug stuff",
+        default=False,
+    )
+
+    # filters
+    edit_useSelected: props.BoolProperty(
+        name="Use selected", description="Show the selected mesh data (NOT UPDATED LIVE)",
+        default=True,
+    )
+    edit_showLimit: props.IntProperty(
+        name="limit", description="Max number of items shown per type (blender has a limit size of scrollable UI area)",
+        default=20, min=1, max=50,
+    )
+    edit_indexFilter: props.StringProperty(
+        name="Indices", description="Range '2_20' (20 not included). Specifics '2,6,7'. Both '0_10,-1' ('-' for negative indices)",
+        default="0_3,-1",
+    )
+
+    # edit options
+    edit_showVerts: props.BoolProperty(
+        name="Show verts...", description="Show long list of verts with its pos",
+        default=False,
+    )
+    edit_showEdges: props.BoolProperty(
+        name="Show edges...", description="Show long list of edges with its key (v1, v2)",
+        default=False,
+    )
+    edit_showFaces: props.BoolProperty(
+        name="Show faces...", description="Show long list of faces with its verts id / center",
+        default=True,
+    )
+    edit_showFaceCenters: props.BoolProperty(
+        name="show center", description="Show face center position instead of vertex indices",
+        default=False,
+    )
+
+    # toggle visual
+    info_showPrecision: props.IntProperty(
+        name="decimals", description="Number of decimals shown, will make colum wider.",
+        default=2, min=0, max=16,
+    )
+    info_edit_showWorld: props.BoolProperty(
+        name="world", description="Show vertices positions in world space",
+        default=False,
+    )
+
+    # data
+    orphans_collection: props.StringProperty(
+        name="", description="E.g. meshes, mats, curves, etc",
+        default="meshes, materials, curves",
     )
 
 #-------------------------------------------------------------------
@@ -74,13 +140,18 @@ class MW_prefs(bpy.types.AddonPreferences):
         links_legacy = links+"_legacy"
         links_group = "L"
 
-        # OPT:: dynamic depending on number of cells
-        child_idFormat = "04"
-
-        @staticmethod
-        def get_IdFormated(idx:int):
+        @classmethod
+        def get_IdFormated(cls, idx:int):
             """ Pad with a certain amount of zeroes to achieve a correct lexicographic order """
-            return f"{{:{MW_prefs.names.child_idFormat}}}".format(idx)
+            return f"{{:{cls.child_idFormat}}}".format(idx)
+
+        child_idFormat = "04"
+        @classmethod
+        def set_IdFormated_amount(cls, n:int):
+            """ Dynamically adjust based on number of cells """
+            from math import ceil
+            digits = len(str(n))
+            cls.child_idFormat = f"0{digits}"
 
     #-------------------------------------------------------------------
 
@@ -99,11 +170,15 @@ class MW_prefs(bpy.types.AddonPreferences):
 
     # edit some DEV params
     dev_PT_meta_cfg: props.PointerProperty(type=MW_dev)
+    # dm utils prefs
+    dm_prefs: props.PointerProperty(type=DM_utils)
 
     # meta inspectors for OP props
     prefs_PT_meta_inspector: props.PointerProperty(type=Prop_inspector)
     gen_PT_meta_inspector: props.PointerProperty(type=Prop_inspector)
     vis_PT_meta_inspector: props.PointerProperty(type=Prop_inspector)
+
+    #-------------------------------------------------------------------
 
     # TODO:: replace for visual cfg ins
     gen_PT_meta_show_visuals: props.BoolProperty(
@@ -111,18 +186,7 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=False,
     )
 
-    all_PT_meta_show_root: props.BoolProperty(
-        name="Root props", description="Show root properties / selected child. Children should have most default values.",
-        default=True,
-    )
-
     #-------------------------------------------------------------------
-
-    ## IDEA:: global rnd needed?
-    #calc_defaultSeed: props.IntProperty(
-    #    name="Default random seed", description="Leave <0 for random",
-    #    default=64, min=-1,
-    #)
 
     gen_setup_matColors: props.BoolProperty(
         name="WIP: Add cell color mats", description="Materials aded on generation",
@@ -176,6 +240,11 @@ class MW_prefs(bpy.types.AddonPreferences):
 
     #-------------------------------------------------------------------
 
+    all_PT_meta_show_root: props.BoolProperty(
+        name="Root props", description="Show root properties / selected child. Children should have most default values.",
+        default=True,
+    )
+
     gen_duplicate_OT_hidePrev: props.BoolProperty(
         name="hide", description="Hide the original fractured object after duplication",
         default=True,
@@ -186,79 +255,13 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=True,
     )
 
-    #-------------------------------------------------------------------
-    # NOTE:: panels alone cannot store properties... here mixing dm panels with mw stuff, could separate the addons
-    # OPT:: quite similar options as the spawn indices OP
-
-    dm_PT_meta_show_info: props.BoolProperty(
-        name="Show inspect...", description="Show the object info",
-        default=True,
-    )
-    dm_PT_meta_show_full: props.BoolProperty(
-        name="Show full...", description="Show all the info",
-        default=False,
-    )
-
-    # filters
-    dm_PT_edit_useSelected: props.BoolProperty(
-        name="Use selected", description="Show the selected mesh data (NOT UPDATED LIVE)",
-        default=True,
-    )
-    dm_PT_edit_showLimit: props.IntProperty(
-        name="limit", description="Max number of items shown per type (blender has a limit size of scrollable UI area)",
-        default=20, min=1, max=50,
-    )
-    dm_PT_edit_indexFilter: props.StringProperty(
-        name="Indices", description="Range '2_20' (20 not included). Specifics '2,6,7'. Both '0_10,-1' ('-' for negative indices)",
-        default="0_3,-1",
-    )
-
-    # edit options
-    dm_PT_edit_showVerts: props.BoolProperty(
-        name="Show verts...", description="Show long list of verts with its pos",
-        default=False,
-    )
-    dm_PT_edit_showEdges: props.BoolProperty(
-        name="Show edges...", description="Show long list of edges with its key (v1, v2)",
-        default=False,
-    )
-    dm_PT_edit_showFaces: props.BoolProperty(
-        name="Show faces...", description="Show long list of faces with its verts id / center",
-        default=True,
-    )
-    dm_PT_edit_showFaceCenters: props.BoolProperty(
-        name="show center", description="Show face center position instead of vertex indices",
-        default=False,
-    )
-
-    # toggle visual
-    dm_PT_info_showPrecision: props.IntProperty(
-        name="decimals", description="Number of decimals shown, will make colum wider.",
-        default=2, min=0, max=16,
-    )
-    dm_PT_info_edit_showWorld: props.BoolProperty(
-        name="world", description="Show vertices positions in world space",
-        default=False,
-    )
-
-    #-------------------------------------------------------------------
-    #debug
-
-    dm_PT_meta_show_tmpDebug: props.BoolProperty(
-        name="Show debug...", description="WIP: Show some debug stuff",
-        default=False,
-    )
-    dm_PT_orphans_collection: props.StringProperty(
-        name="", description="E.g. meshes, mats, curves, etc",
-        default="meshes, materials, curves",
-    )
-
 
 #-------------------------------------------------------------------
 # Blender events
 
 classes = [
     MW_dev,
+    DM_utils,
     MW_prefs,
 ]
 _name = f"{__name__[14:]}" #\t(...{__file__[-32:]})"

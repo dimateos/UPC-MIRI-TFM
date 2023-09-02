@@ -116,7 +116,6 @@ class MW_gen_PT(types.Panel):
             col = box.column()
             col.prop(prefs, "gen_setup_matColors")
             col.prop(prefs, "gen_setup_matAlpha")
-            col.prop(gen_cfg, "struct_linksScale")
             #col.prop(prefs, "links_matAlpha")
             col.prop(prefs, "links_smoothShade")
             col.prop(prefs, "links_depth")
@@ -157,7 +156,7 @@ class MW_gen_PT(types.Panel):
             # global selected
             boxSelected = box.box().column()
             col_rowSplit = boxSelected.row().split(factor=0.6)
-            col_rowSplit.label(text=f"Root: {MW_global_selected.root.name if MW_global_selected.root else '~'}", icon="RESTRICT_SELECT_ON")
+            col_rowSplit.label(text=f"Root:  {MW_global_selected.root.name if MW_global_selected.root else '~'}", icon="RESTRICT_SELECT_ON")
             col_rowSplit.label(text=f"{MW_global_selected.prevalid_root.name if MW_global_selected.prevalid_root else '~'}", icon="FRAME_PREV")
             col_rowSplit = boxSelected.row().split(factor=0.6)
             col_rowSplit.label(text=f"Last: {MW_global_selected.last.name if MW_global_selected.last else '~'}", icon="RESTRICT_SELECT_OFF")

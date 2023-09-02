@@ -9,7 +9,10 @@ from . import utils
 #-------------------------------------------------------------------
 
 class COLORS:
-    """ Common colors and generators """
+    """ Common colors and generators
+        # OPT:: just change all colors to be vec4...
+    """
+
     red   = Vector([1.0, 0.0, 0.0])
     green = Vector([0.0, 1.0, 0.0])
     blue  = Vector([0.0, 0.0, 1.0])

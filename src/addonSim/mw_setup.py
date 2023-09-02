@@ -21,7 +21,7 @@ from .utils_dev import DEV
 from .stats import getStats
 
 
-# OPT:: more docu on methods
+# OPT:: more docu on some methods
 #-------------------------------------------------------------------
 
 def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
@@ -58,7 +58,7 @@ def copy_originalPrev(obj: types.Object, cfg: MW_gen_cfg, context: types.Context
     # Copy the root objects including its mw_cfg
     obj_root = utils_scene.copy_object(obj, context)
 
-    # TODO:: reset more metadata?
+    # XXX:: reset more metadata?
     MW_id_utils.resetStorageId(obj_root)
 
     # copy the original from the previous root withou suffix
@@ -84,14 +84,15 @@ def get_renamed(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
 #-------------------------------------------------------------------
 
 def copy_convex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, context: types.Context):
+    """ Make a copy and find its convex hull
+    # NOTE:: not recursive
+    """
+
     # Duplicate again the copy and set child too
     obj_c = utils_scene.copy_objectRec(obj_copy, context, keep_mods=False)
     obj_c.name = getPrefs().names.original_convex
     #MW_id_utils.setMetaType(obj_c, {"CHILD"})
     utils_scene.set_child(obj_c, obj)
-
-    # XXX:: need to mesh update? + decimate before more perf? but need to change EDIT/OBJ modes?
-    # NOTE:: not recursive hull...
 
     # build convex hull with only verts
     bm = bmesh.new()
@@ -156,6 +157,8 @@ def gen_cellsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
 
 def gen_cellsObjects(obj: types.Object, cont: MW_Container, cfg: MW_gen_cfg, context: types.Context, scale = 1.0, flipN = False):
     prefs = getPrefs()
+    prefs.names.set_IdFormated_amount(len(cont.voro_cont))
+
     if not prefs.gen_setup_matColors:
         color3 = utils_mat.COLORS.gray
         matCells = utils_mat.get_colorMat(color3, alpha=prefs.gen_setup_matAlpha, matName=prefs.names.cells+"Mat")
@@ -197,9 +200,8 @@ def gen_cellsObjects(obj: types.Object, cont: MW_Container, cfg: MW_gen_cfg, con
         obj_shard.location = pos
         obj_shard.scale = [scale]*3
 
-        # TODO:: just change all colors to be vec4...
         obj_shard.active_material = matCells
-        utils_mat.gen_meshAttr(mesh, utils_mat.COLORS.assure_4d_alpha(color3, prefs.gen_setup_matAlpha), 1, "FLOAT_COLOR", "POINT", "alphaColor")
+        #utils_mat.gen_meshAttr(mesh, utils_mat.COLORS.assure_4d_alpha(color3, prefs.gen_setup_matAlpha), 1, "FLOAT_COLOR", "POINT", "alphaColor")
 
     getStats().logDt("generated cells objects")
     return cells
@@ -248,10 +250,6 @@ def gen_LEGACY_CONT(obj: types.Object, voro_cont: VORO_Container, cfg: MW_gen_cf
     getStats().logDt("calculated stats (use breakpoints to see)")
 
 #-------------------------------------------------------------------
-# WIP:: maybe links to go from face to face of scaled down cells?
-# TODO:: to walls, show damage, etc
-# TODO:: single face tube -> code per face instead of vert? see in table
-# TODO:: fix misalgined origin...
 
 def gen_linksObject(obj: types.Object, links: MW_Links, cfg: MW_gen_cfg, context: types.Context):
     prefs = getPrefs()
@@ -328,7 +326,7 @@ def gen_linksWallObject(obj: types.Object, links: MW_Links, cfg: MW_gen_cfg, con
     return obj_wallLinks
 
 #-------------------------------------------------------------------
-# WIP:: links empties etc... final generation/visual not set
+# TODO:: too many gen links...
 
 def genWIP_linksEmpties(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     obj_links = utils.gen_childClean(obj, getPrefs().names.links, context, None, keepTrans=False)
@@ -394,6 +392,9 @@ def genWIP_linksEmptiesPerCell(obj: types.Object, cfg: MW_gen_cfg, context: type
     return obj_links_legacy
 
 def genWIP_linksCellObjects(objParent: types.Object, voro_cont: VORO_Container, cfg: MW_gen_cfg, context: types.Context):
+    prefs = getPrefs()
+    prefs.names.set_IdFormated_amount(len(voro_cont))
+
     # WIP:: links better generated from map isntead of cont? + done in a separate op
     # WIP:: atm just hiding reps -> maybe generate using a different map instead of iterating the raw cont
     #   maybe merge cell/link loop
@@ -404,7 +405,7 @@ def genWIP_linksCellObjects(objParent: types.Object, voro_cont: VORO_Container, 
         if cell is None: continue
 
         # group the links by cell using a parent
-        nameGroup= f"{getPrefs().names.links_group}_{getPrefs().names.get_IdFormated(cell.id)}"
+        nameGroup= f"{getPrefs().names.links_group}_{prefs.names.get_IdFormated(cell.id)}"
         obj_group = utils_scene.gen_child(objParent, nameGroup, context, None, keepTrans=False, hide=False)
         #obj_group.matrix_world = Matrix.Identity(4)
         #obj_group.location = cell.centroid()

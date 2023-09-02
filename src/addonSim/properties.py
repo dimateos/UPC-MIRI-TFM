@@ -134,22 +134,6 @@ class MW_gen_cfg(types.PropertyGroup):
     meta_nameOriginal_prevRep: props.StringProperty()
     meta_nameOriginal_prev: props.StringProperty()
 
-    #-------------------------------------------------------------------
-
-    def struct_linksScale_update(self, context):
-        obj = MW_global_selected.root
-        if not obj: return
-        links = utils_scene.get_child(obj, getPrefs().names.links)
-        if links: utils_trans.scale_objectChildren(links, self.struct_linksScale)
-        links_Air_Cell = utils_scene.get_child(obj, getPrefs().names.links_air)
-        if links_Air_Cell: utils_trans.scale_objectChildren(links_Air_Cell, self.struct_linksScale)
-
-    struct_linksScale: props.FloatProperty(
-        name="Links scale", description="Reduce some bits to be able to see the links better",
-        default=1, min=0.25, max=3,
-        update=struct_linksScale_update
-    )
-
 
 #-------------------------------------------------------------------
 
@@ -159,12 +143,26 @@ def cell_scale_update(self, context):
     cells_root = utils_scene.get_child(obj, getPrefs().names.cells)
     utils_trans.scale_objectChildren(cells_root, self.cell_scale)
 
+def struct_linksScale_update(self, context):
+    obj = MW_global_selected.root
+    if not obj: return
+    links = utils_scene.get_child(obj, getPrefs().names.links)
+    if links: utils_trans.scale_objectChildren(links, self.struct_linksScale)
+    links_Air_Cell = utils_scene.get_child(obj, getPrefs().names.links_air)
+    if links_Air_Cell: utils_trans.scale_objectChildren(links_Air_Cell, self.struct_linksScale)
+
 class MW_vis_cfg(types.PropertyGroup):
 
     cell_scale: props.FloatProperty(
         name="Cell scale", description="Reduce some bits to be able to see the links better",
         default=0.75, min=0.25, max=1.0,
         update=cell_scale_update
+    )
+
+    struct_linksScale: props.FloatProperty(
+        name="Links scale", description="Reduce some bits to be able to see the links better",
+        default=1, min=0.25, max=3,
+        update=struct_linksScale_update
     )
 
 
