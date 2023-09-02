@@ -41,7 +41,7 @@ class Prop_inspector(types.PropertyGroup):
     # options for interacting with the props
     meta_propFilter: props.StringProperty(
         name="Filter id", description="Separate values with commas, start with `-` for a excluding filter.",
-        default="",
+        default="-meta",
     )
     meta_propDefault: props.BoolProperty(
         name="default", description="Include default unchanged props",

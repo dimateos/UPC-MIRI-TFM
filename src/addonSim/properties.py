@@ -34,12 +34,24 @@ def source_update_items(self, context):
     if items: return items
     else: return MW_gen_source_options.error_option.copy()
 
+
+# dynamic naming
+def struct_nameOriginal_update(self, context):
+    # NOTE:: unused example of having a per instance previous value of a property
+    #if self.meta_nameOriginal_prev == self.meta_nameOriginal: return # prev val is also reset on undo tho
+    self.meta_nameOriginal_prev = self.meta_nameOriginal_prevRep
+    self.meta_nameOriginal_prevRep = self.struct_nameOriginal
+    DEV.log_msg(f"struct_nameOriginal: {self.struct_nameOriginal} - prev: {self.meta_nameOriginal_prev}", {"CALLBACK", "CFG", "PREV"})
+
+def get_struct_name(cfg):
+    return f"{cfg.struct_namePrefix}_{cfg.struct_nameOriginal}"
+def get_struct_nameNew(cfg, newName):
+    #self.struct_nameOriginal = newName
+    return f"{cfg.struct_namePrefix}_{newName}"
+
 #-------------------------------------------------------------------
 
 class MW_gen_cfg(types.PropertyGroup):
-
-    # TODO:: maybe move to id too -> final fract with the global storage
-    ptrID_links: props.StringProperty(default="nullptr")
 
     # Set all available gen extractions
     meta_source_enabled: props.EnumProperty(
@@ -59,6 +71,7 @@ class MW_gen_cfg(types.PropertyGroup):
         name="Found points", description="Number of points found",
     )
 
+    # mod source input points
     source_limit: props.IntProperty(
         name="Limit points", description="Limit the number of input points, 0 for unlimited",
         default=100, min=0, max=10000,
@@ -72,6 +85,7 @@ class MW_gen_cfg(types.PropertyGroup):
         default=0.1, min=0.0, max=1.0,
     )
 
+    # mod faces container shape
     shape_useConvexHull: props.BoolProperty(
         name="Convex hull", description="Apply convex hull op beforehand",
         default=True,
@@ -80,7 +94,6 @@ class MW_gen_cfg(types.PropertyGroup):
         name="Wall planes", description="Keep the object faces as container walls (kind of like boolean op)",
         default=True,
     )
-
     margin_box_bounds: props.FloatProperty(
         name="Margin BB", description="Additional displacement of the box normal planes.",
         default=0.1, min=0.001, max=1.0, step=1, precision=3
@@ -110,29 +123,16 @@ class MW_gen_cfg(types.PropertyGroup):
 
     #-------------------------------------------------------------------
 
-    # TODO:: name here seems meh? + the functiuons
-    # OPT:: example of having a per instance previous value of a property
-    def struct_nameOriginal_update(self, context):
-        #if self.struct_nameOriginal_prev == self.struct_nameOriginal: return # prev val is also reset on undo tho
-        self.struct_nameOriginal_prev = self.struct_nameOriginal_prevRep
-        self.struct_nameOriginal_prevRep = self.struct_nameOriginal
-        DEV.log_msg(f"struct_nameOriginal: {self.struct_nameOriginal} - prev: {self.struct_nameOriginal_prev}", {"CALLBACK", "CFG", "PREV"})
-    struct_nameOriginal: props.StringProperty(
-        update= struct_nameOriginal_update
-    )
-    struct_nameOriginal_prevRep: props.StringProperty()
-    struct_nameOriginal_prev: props.StringProperty()
-
+    # mod final fract object name
     struct_namePrefix: props.StringProperty(
         name="Prefix",
         default="MW",
     )
-
-    def get_struct_name(self):
-        return f"{self.struct_namePrefix}_{self.struct_nameOriginal}"
-    def get_struct_nameNew(self, newName):
-        #self.struct_nameOriginal = newName
-        return f"{self.struct_namePrefix}_{newName}"
+    struct_nameOriginal: props.StringProperty(
+        update= struct_nameOriginal_update
+    )
+    meta_nameOriginal_prevRep: props.StringProperty()
+    meta_nameOriginal_prev: props.StringProperty()
 
     #-------------------------------------------------------------------
 
@@ -144,11 +144,27 @@ class MW_gen_cfg(types.PropertyGroup):
         links_Air_Cell = utils_scene.get_child(obj, getPrefs().names.links_air)
         if links_Air_Cell: utils_trans.scale_objectChildren(links_Air_Cell, self.struct_linksScale)
 
-
     struct_linksScale: props.FloatProperty(
         name="Links scale", description="Reduce some bits to be able to see the links better",
         default=1, min=0.25, max=3,
         update=struct_linksScale_update
+    )
+
+
+#-------------------------------------------------------------------
+
+def cell_scale_update(self, context):
+    obj = MW_global_selected.root
+    if not obj: return
+    cells_root = utils_scene.get_child(obj, getPrefs().names.cells)
+    utils_trans.scale_objectChildren(cells_root, self.cell_scale)
+
+class MW_vis_cfg(types.PropertyGroup):
+
+    cell_scale: props.FloatProperty(
+        name="Cell scale", description="Reduce some bits to be able to see the links better",
+        default=0.75, min=0.25, max=1.0,
+        update=cell_scale_update
     )
 
 
@@ -189,29 +205,12 @@ class MW_sim_cfg(types.PropertyGroup):
 
 
 #-------------------------------------------------------------------
-
-def cell_scale_update(self, context):
-    obj = MW_global_selected.root
-    if not obj: return
-    cells_root = utils_scene.get_child(obj, getPrefs().names.cells)
-    utils_trans.scale_objectChildren(cells_root, self.cell_scale)
-
-class MW_vis_cfg(types.PropertyGroup):
-
-    cell_scale: props.FloatProperty(
-        name="Cell scale", description="Reduce some bits to be able to see the links better",
-        default=0.75, min=0.25, max=1.0,
-        update=cell_scale_update
-    )
-
-
-#-------------------------------------------------------------------
 # Blender events
 
 classes = [
     MW_gen_cfg,
-    MW_sim_cfg,
     MW_vis_cfg,
+    MW_sim_cfg,
 ]
 _name = f"{__name__[14:]}" #\t(...{__file__[-32:]})"
 

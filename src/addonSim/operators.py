@@ -10,7 +10,7 @@ from .properties_global import (
     MW_global_storage
 )
 from .properties import (
-    MW_gen_cfg,
+    MW_gen_cfg, get_struct_name,
     MW_sim_cfg,
 )
 from .properties_utils import copyProps
@@ -70,7 +70,7 @@ class MW_gen_OT(_StartRefresh_OT):
         split = rowsub.split()
         split.enabled = False
         split.alignment = "LEFT"
-        split.label(text=cfg.get_struct_name())
+        split.label(text=get_struct_name(cfg))
 
         rowsub = col.row()
         rowsub.prop(cfg, "source")

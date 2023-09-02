@@ -10,6 +10,7 @@ from .properties_global import (
 )
 from .properties import (
     MW_gen_cfg,
+    get_struct_name, get_struct_nameNew
 )
 
 from .mw_cont import MW_Container, VORO_Container
@@ -28,7 +29,7 @@ def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     prefs = getPrefs()
 
     # Empty object to hold all of them set at the original obj trans
-    obj_root = bpy.data.objects.new(cfg.get_struct_name(), None)
+    obj_root = bpy.data.objects.new(get_struct_name(cfg), None)
     obj_root.mw_id.meta_type = {"ROOT"}
     context.scene.collection.objects.link(obj_root)
 
@@ -48,7 +49,7 @@ def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     utils_scene.set_child(obj_copy, obj_root)
 
     # Rename with prefix?
-    get_renamed(obj_root, cfg, context)
+    #get_renamed(obj_root, cfg, context)
 
     getStats().logDt(f"generated copy object ({1+len(obj_copy.children_recursive)} object/s)")
     return obj_root, obj_copy
@@ -68,16 +69,17 @@ def copy_originalPrev(obj: types.Object, cfg: MW_gen_cfg, context: types.Context
     getStats().logDt("generated copy object from prev frac")
     return obj_root, obj_copy
 
-# OPT:: not robust...
 def get_renamed(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    # split by first _
+    """ split by first _
+    # NOTE:: not robust... also not used?
+    """
     try:
         prefix, name = obj.name.split("_",1)
     except ValueError:
         prefix, name = "", obj.name
 
     # use new prefix preserving name
-    obj.name = cfg.get_struct_nameNew(name)
+    obj.name = get_struct_nameNew(cfg, name)
 
 #-------------------------------------------------------------------
 
