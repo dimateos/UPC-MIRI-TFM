@@ -49,7 +49,76 @@ class MW_gen_OT(_StartRefresh_OT):
 
     def draw(self, context: types.Context):
         super().draw(context)
-        ui.draw_gen_cfg(self.cfg, self.layout, context)
+        cfg : MW_gen_cfg = self.cfg
+        layout = self.layout
+        box = layout.box()
+        col = box.column()
+
+        # source points
+        factor = 0.4
+        rowsub = col.row().split(factor=factor)
+        rowsub.alignment = "LEFT"
+        rowsub.label(text="Point Source:")
+        split = rowsub.split()
+        split.enabled = False
+        split.alignment = "LEFT"
+        split.label(text=cfg.struct_nameOriginal)
+
+        rowsub = col.row().split(factor=factor)
+        rowsub.alignment = "LEFT"
+        rowsub.prop(cfg, "struct_namePrefix")
+        split = rowsub.split()
+        split.enabled = False
+        split.alignment = "LEFT"
+        split.label(text=cfg.get_struct_name())
+
+        rowsub = col.row()
+        rowsub.prop(cfg, "source")
+
+        rowsub = col.row().split(factor=0.8)
+        rowsub.prop(cfg, "source_limit")
+        rowsub.label(text=f"/ {cfg.source_numFound}")
+
+        rowsub = col.row()
+        rowsub.prop(cfg, "source_noise")
+        rowsub.prop(cfg, "source_shuffle")
+
+        # container faces
+        box = layout.box()
+        col = box.column()
+        col.label(text="Generation:")
+        rowsub = col.row(align=True)
+        rowsub.prop(cfg, "shape_useConvexHull")
+        rowsub.prop(cfg, "shape_useWalls")
+        rowsub = col.row(align=True)
+        rowsub.prop(cfg, "margin_box_bounds")
+        rowsub.prop(cfg, "margin_face_bounds")
+
+        open, box = ui.draw_toggleBox(getPrefs().gen_PT_meta_inspector, "meta_show_debug_props", layout)
+        if open:
+            box.prop(cfg, "debug_rnd_seed")
+            box.prop(cfg, "debug_precisionWalls")
+            box.prop(cfg, "debug_flipCellNormals")
+
+        #    col = box.column()
+        #    col.label(text="Show:")
+        #    rowsub = col.row(align=True)
+        #    rowsub.prop(cfg, "struct_showCells")
+        #    rowsub.prop(cfg, "struct_showLinks_legacy")
+
+        #    rowsub = col.row(align=True)
+        #    rowsub.prop(cfg, "struct_showLinks")
+        #    rowsub.prop(cfg, "struct_showLinks_airLinks")
+
+        #    rowsub = col.row(align=True)
+        #    rowsub.prop(cfg, "struct_showPoints")
+        #    rowsub.prop(cfg, "struct_showBB")
+        #    rowsub.prop(cfg, "struct_showOrignal_scene")
+
+        #    rowsub = col.row(align=True)
+        #    rowsub.prop(cfg, "struct_showOrignal")
+        #    rowsub.prop(cfg, "struct_showConvex")
+        #    rowsub.prop(cfg, "struct_showLow")
 
     # NOTE:: no poll because the button is removed from ui in draw instead
     #@classmethod
@@ -122,8 +191,9 @@ class MW_gen_OT(_StartRefresh_OT):
         self.obj_root = obj_root
         prefs = getPrefs()
 
+        #assert(isinstance(self.cfg, MW_gen_cfg))
         cfg: MW_gen_cfg = self.cfg
-        cfg.rnd_seed = utils.rnd_seed(cfg.rnd_seed)
+        cfg.debug_rnd_seed = utils.debug_rnd_seed(cfg.debug_rnd_seed)
 
 
         DEV.log_msg("Initial object setup", {'SETUP'})
@@ -145,6 +215,7 @@ class MW_gen_OT(_StartRefresh_OT):
         DEV.log_msg("Start calc points", {'CALC'})
         mw_extraction.detect_points_from_object(obj_original, cfg, self.ctx)
         points = mw_extraction.get_points_from_object_fallback(obj_original, cfg, self.ctx)
+        cfg.source_numFound = len(points)
         if not points:
             return self.end_op_error("found no points...")
 
@@ -152,13 +223,13 @@ class MW_gen_OT(_StartRefresh_OT):
         mw_extraction.points_transformCfg(points, cfg, bb_radius)
 
         # Add some reference of the points to the scene
-        mw_setup.gen_pointsObject(obj_root, points, self.cfg, self.ctx)
-        mw_setup.gen_boundsObject(obj_root, bb, self.cfg, self.ctx)
+        mw_setup.gen_pointsObject(obj_root, points, cfg, self.ctx)
+        mw_setup.gen_boundsObject(obj_root, bb, cfg, self.ctx)
 
 
 
         DEV.log_msg("Start calc cont", {'CALC', 'CONT'})
-        cont = MW_Container(points, bb, faces4D, precision=prefs.gen_calc_precisionWalls)
+        cont = MW_Container(points, bb, faces4D, precision=cfg.debug_precisionWalls)
         if not cont.initialized:
             return self.end_op_error("found no cont... recalc different params?")
 
@@ -169,7 +240,7 @@ class MW_gen_OT(_StartRefresh_OT):
 
         # cells are always added to the scene
         obj_cells_root = mw_setup.gen_cellsEmpty(obj_root, cfg, self.ctx)
-        cells = mw_setup.gen_cellsObjects(obj_cells_root, cont, cfg, self.ctx, scale=obj_root.mw_vis.cell_scale, invertOrientation=prefs.gen_setup_invertShardNormals)
+        cells = mw_setup.gen_cellsObjects(obj_cells_root, cont, cfg, self.ctx, scale=obj_root.mw_vis.cell_scale, flipN=cfg.debug_flipCellNormals)
 
         # precalculate/query neighs and other data
         cont.precalculate_data(obj_cells_root, cells)
@@ -250,7 +321,7 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
 
 
         DEV.log_msg("Calc cont and links (cells not regenerated!)", {'CALC'})
-        cont = MW_Container(points, bb, faces4D, precision=prefs.gen_calc_precisionWalls)
+        cont = MW_Container(points, bb, faces4D, precision=gen_cfg.debug_precisionWalls)
         if not cont:
             return self.end_op_error("found no cont... but could try recalculate!")
 

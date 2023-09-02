@@ -124,17 +124,6 @@ class MW_prefs(bpy.types.AddonPreferences):
     #    default=64, min=-1,
     #)
 
-    gen_calc_precisionWalls: props.IntProperty(
-        # OPT:: read voro++ config from python? API/file system
-        name="Wall precision", description="Number of decimals used to round and cluster wall planes",
-        default=4, min=0, max=10,
-    )
-
-    gen_setup_invertShardNormals: props.BoolProperty(
-        name="Invert final cells face normals", description="Seems like they end up reversed due to voro face ordering.",
-        default=True,
-    )
-
     gen_setup_matColors: props.BoolProperty(
         name="WIP: Add cell color mats", description="Materials aded on generation",
         default=False,

@@ -55,6 +55,9 @@ class MW_gen_cfg(types.PropertyGroup):
         items=source_update_items, # default with numberID doesnt seem to work
         options={'ENUM_FLAG'},
     )
+    source_numFound: props.IntProperty(
+        name="Found points", description="Number of points found",
+    )
 
     source_limit: props.IntProperty(
         name="Limit points", description="Limit the number of input points, 0 for unlimited",
@@ -89,6 +92,24 @@ class MW_gen_cfg(types.PropertyGroup):
 
     #-------------------------------------------------------------------
 
+    debug_rnd_seed: props.IntProperty(
+        name="RND seed", description="Seed the random generator, -1 to unseed it",
+        default=64, min=-1,
+    )
+
+    debug_precisionWalls: props.IntProperty(
+        # OPT:: edit more voro configs? even recompile like with test scripts?
+        name="Wall precision", description="Number of decimals used to round and cluster wall planes",
+        default=4, min=0, max=10,
+    )
+
+    debug_flipCellNormals: props.BoolProperty(
+        name="Invert final cells face normals", description="Seems like they end up reversed due to voro face ordering.",
+        default=True,
+    )
+
+    #-------------------------------------------------------------------
+
     # TODO:: name here seems meh? + the functiuons
     # OPT:: example of having a per instance previous value of a property
     def struct_nameOriginal_update(self, context):
@@ -116,11 +137,6 @@ class MW_gen_cfg(types.PropertyGroup):
     #-------------------------------------------------------------------
     # NOTE:: now the elements can be properly hidden while the last operator panel is open...
     # IDEA:: use for actually adding to the scene or not, otherwise not worth the recalculation
-
-    rnd_seed: props.IntProperty(
-        name="RND seed", description="Seed the random generator, -1 to unseed it",
-        default=64, min=-1,
-    )
 
     struct_showCells: props.BoolProperty(
         name="Cells", description="Voronoi cells",

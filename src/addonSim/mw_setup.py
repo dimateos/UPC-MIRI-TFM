@@ -152,7 +152,7 @@ def gen_cellsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     obj_cellsEmpty = utils_scene.gen_child(obj, getPrefs().names.cells, context, None, keepTrans=False, hide=not cfg.struct_showCells)
     return obj_cellsEmpty
 
-def gen_cellsObjects(obj: types.Object, cont: MW_Container, cfg: MW_gen_cfg, context: types.Context, scale = 1.0, invertOrientation = False):
+def gen_cellsObjects(obj: types.Object, cont: MW_Container, cfg: MW_gen_cfg, context: types.Context, scale = 1.0, flipN = False):
     prefs = getPrefs()
     if not prefs.gen_setup_matColors:
         color3 = utils_mat.COLORS.gray
@@ -185,7 +185,7 @@ def gen_cellsObjects(obj: types.Object, cont: MW_Container, cfg: MW_gen_cfg, con
 
         # maybe reorient faces
         faces_voro = cell.face_vertices()
-        faces_blender = [ f_indices[::-1] for f_indices in faces_voro ] if invertOrientation else faces_voro
+        faces_blender = [ f_indices[::-1] for f_indices in faces_voro ] if flipN else faces_voro
 
         # build the static mesh and child object
         mesh = bpy.data.meshes.new(name)

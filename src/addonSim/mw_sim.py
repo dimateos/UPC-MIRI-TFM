@@ -126,7 +126,7 @@ class Simulation:
         self.rndState = rnd.getstate()
     def restoreRnd(self, addState=0):
         """ NOTE:: just call some amount of randoms to modify seed, could modify state but requires copying a 600 elemnt tuple """
-        utils.rnd_seed(addState)
+        utils.debug_rnd_seed(addState)
         #rnd.setstate(self.rndState)
         #for i in range(addState): rnd.random()
 
