@@ -135,54 +135,6 @@ class MW_gen_cfg(types.PropertyGroup):
         return f"{self.struct_namePrefix}_{newName}"
 
     #-------------------------------------------------------------------
-    # NOTE:: now the elements can be properly hidden while the last operator panel is open...
-    # IDEA:: use for actually adding to the scene or not, otherwise not worth the recalculation
-
-    struct_showCells: props.BoolProperty(
-        name="Cells", description="Voronoi cells",
-        default=True,
-    )
-
-    struct_showLinks: props.BoolProperty(
-        name="WIP: Links", description="Voronoi cells links per face",
-        default=True,
-    )
-    struct_showLinks_airLinks: props.BoolProperty(
-        name="WIP: Links to walls", description="Voronoi cells links per face to walls",
-        default=True,
-    )
-    struct_showLinks_legacy: props.BoolProperty(
-        name="Cell links (centroid)", description="Links from centroids to neigh cells",
-        default=False,
-    )
-
-    struct_showPoints: props.BoolProperty(
-        name="Points", description="The ones used for the cells generation",
-        default=True,
-    )
-    struct_showBB: props.BoolProperty(
-        name="BB", description="The extended BB min max points, tobble show bounding box in viewport",
-        default=True,
-    )
-    struct_showOrignal_scene: props.BoolProperty(
-        name="Source Obj", description="The original object in the scene",
-        default=False,
-    )
-
-    struct_showOrignal: props.BoolProperty(
-        name="Original", description="The original object backup child",
-        default=False,
-    )
-    struct_showConvex: props.BoolProperty(
-        name="Convex", description="The original object convex hull",
-        default=False,
-    )
-    struct_showLow: props.BoolProperty(
-        name="WIP: Low", description="The convex hull decimated",
-        default=False,
-    )
-
-    #-------------------------------------------------------------------
 
     def struct_linksScale_update(self, context):
         obj = MW_global_selected.root

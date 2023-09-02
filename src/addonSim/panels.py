@@ -34,7 +34,10 @@ class MW_gen_PT(types.Panel):
 
         # draw the fracture generation ops
         self.draw_onSelected(context, layoutCol)
+
+        # more options
         self.draw_debug(context, layoutCol)
+        layoutCol.operator(ops.MW_util_bool_OT.bl_idname, icon="MOD_BOOLEAN")
 
     def draw_onSelected(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
@@ -85,7 +88,6 @@ class MW_gen_PT(types.Panel):
             col_rowSplit.operator(ops.MW_gen_OT.bl_idname, text="DUPLICATE Fracture", icon="DUPLICATE")
             col_rowSplit.prop(prefs, "gen_duplicate_OT_hidePrev")
 
-            layout.operator(ops.MW_gen_links_OT.bl_idname, icon="OUTLINER_DATA_GREASEPENCIL")
             self.draw_props(obj, selected, context, layout)
 
     def draw_props(self, obj, selected, context: types.Context, layout: types.UILayout):
@@ -98,6 +100,15 @@ class MW_gen_PT(types.Panel):
         else:
             gen_cfg = selected.mw_gen
             vis_cfg = selected.mw_vis
+
+        open, box = ui.draw_propsToggle(gen_cfg, prefs.gen_PT_meta_inspector, layout, text="container props")
+        if open:
+            col_rowSplit = layout.row().split()
+            col_rowSplit.prop(prefs, "all_PT_meta_show_root", text="Root props:" if prefs.all_PT_meta_show_root else "Child props:")
+            col_rowSplit.label(text=obj.name if prefs.all_PT_meta_show_root else selected.name)
+
+        # more actions
+        layout.operator(ops.MW_gen_links_OT.bl_idname, icon="OUTLINER_DATA_GREASEPENCIL")
 
         # visuals
         open, box = ui.draw_toggleBox(prefs, "gen_PT_meta_show_visuals", layout)
@@ -119,14 +130,6 @@ class MW_gen_PT(types.Panel):
         # visuals inspect
         #open, box = ui.draw_propsToggle(vis_cfg, prefs.vis_PT_meta_inspector, layout, "Visuals...")
         open, box = ui.draw_propsToggle_custom(vis_cfg, prefs.vis_PT_meta_inspector, layout, "Visuals...")
-
-        # props inspect
-        open, box = ui.draw_propsToggle(gen_cfg, prefs.gen_PT_meta_inspector, layout)
-
-        # toggle inspect root
-        col_rowSplit = layout.row().split()
-        col_rowSplit.prop(prefs, "all_PT_meta_show_root")
-        col_rowSplit.label(text=obj.name if prefs.all_PT_meta_show_root else selected.name)
 
     def draw_debug(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
@@ -164,7 +167,6 @@ class MW_gen_PT(types.Panel):
             col_rowSplit.label(text=f"{context.active_object.name if context.active_object else '~'}", icon="SELECT_INTERSECT")
 
             # more stuff
-            box.operator(ops.MW_util_bool_OT.bl_idname, icon="MOD_BOOLEAN")
             box.operator(ops.MW_util_comps_OT.bl_idname, icon="NODE_COMPOSITING")
 
 

@@ -39,8 +39,8 @@ def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
 
     # Scene viewport
     obj.select_set(False)
-    utils_scene.hide_objectRec(obj, not cfg.struct_showOrignal_scene)
-    utils_scene.hide_objectRec(obj_copy, not cfg.struct_showOrignal)
+    utils_scene.hide_objectRec(obj)
+    utils_scene.hide_objectRec(obj_copy)
     obj_copy.show_bounds = True
 
     # Set the transform to the empty and parent keeping the transform of the copy
@@ -115,7 +115,7 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, cont
 
     # Scene viewport
     utils_scene.hide_objectRec(obj_c)
-    utils_scene.hide_objectRec(obj_d, not cfg.struct_showConvex)
+    utils_scene.hide_objectRec(obj_d)
 
     bm.free()
     getStats().logDt("generated convex object")
@@ -129,7 +129,7 @@ def gen_pointsObject(obj: types.Object, points: list[Vector], cfg: MW_gen_cfg, c
     mesh.from_pydata(points, [], [])
     #mesh.update()
 
-    obj_points = utils_scene.gen_child(obj, getPrefs().names.source_points, context, mesh, keepTrans=False, hide=not cfg.struct_showPoints)
+    obj_points = utils_scene.gen_child(obj, getPrefs().names.source_points, context, mesh, keepTrans=False)
 
     getStats().logDt("generated points object")
     return obj_points
@@ -140,7 +140,7 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, co
     mesh.from_pydata(bb, [], [])
 
     # Generate it taking the transform as it is (points already in local space)
-    obj_bb = utils_scene.gen_child(obj, getPrefs().names.source_wallsBB, context, mesh, keepTrans=False, hide=not cfg.struct_showBB)
+    obj_bb = utils_scene.gen_child(obj, getPrefs().names.source_wallsBB, context, mesh, keepTrans=False)
     obj_bb.show_bounds = True
 
     getStats().logDt("generated bounds object")
@@ -149,7 +149,7 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, co
 #-------------------------------------------------------------------
 
 def gen_cellsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_cellsEmpty = utils_scene.gen_child(obj, getPrefs().names.cells, context, None, keepTrans=False, hide=not cfg.struct_showCells)
+    obj_cellsEmpty = utils_scene.gen_child(obj, getPrefs().names.cells, context, None, keepTrans=False)
     return obj_cellsEmpty
 
 def gen_cellsObjects(obj: types.Object, cont: MW_Container, cfg: MW_gen_cfg, context: types.Context, scale = 1.0, flipN = False):
@@ -190,7 +190,7 @@ def gen_cellsObjects(obj: types.Object, cont: MW_Container, cfg: MW_gen_cfg, con
         # build the static mesh and child object
         mesh = bpy.data.meshes.new(name)
         mesh.from_pydata(vertices=verts, edges=[], faces=faces_blender)
-        obj_shard = utils_scene.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showCells)
+        obj_shard = utils_scene.gen_child(obj, name, context, mesh, keepTrans=False)
         cells.append(obj_shard)
         obj_shard.location = pos
         obj_shard.scale = [scale]*3
@@ -233,7 +233,7 @@ def gen_LEGACY_CONT(obj: types.Object, voro_cont: VORO_Container, cfg: MW_gen_cf
         name= f"{getPrefs().names.cells}_{cell.id}"
         mesh = bpy.data.meshes.new(name)
         mesh.from_pydata(vertices=vs, edges=[], faces=f)
-        obj_shard = utils_scene.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showCells)
+        obj_shard = utils_scene.gen_child(obj, name, context, mesh, keepTrans=False)
         pass
     getStats().logDt("generated LEGACY cells objects")
 
@@ -279,7 +279,7 @@ def gen_linksObject(obj: types.Object, links: MW_Links, cfg: MW_gen_cfg, context
     utils_mat.gen_meshAttr(mesh, lifeColor, resFaces*2, "FLOAT_COLOR", "POINT", "life")
 
     # potentially reuse child
-    obj_links = utils_scene.gen_childReuse(obj, name, context, mesh, keepTrans=True, hide=not cfg.struct_showLinks)
+    obj_links = utils_scene.gen_childReuse(obj, name, context, mesh, keepTrans=True)
     mesh.name = name
 
     MW_id_utils.setMetaType(obj_links, {"CHILD"}, childrenRec=False)
@@ -310,7 +310,7 @@ def gen_linksWallObject(obj: types.Object, links: MW_Links, cfg: MW_gen_cfg, con
     mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidth, name, 1+prefs.links_width*wallsExtraScale, resFaces, prefs.links_smoothShade)
 
     # potentially reuse child
-    obj_wallLinks = utils_scene.gen_childReuse(obj, name, context, mesh, keepTrans=True, hide=not cfg.struct_showLinks_airLinks)
+    obj_wallLinks = utils_scene.gen_childReuse(obj, name, context, mesh, keepTrans=True)
     mesh.name = name
 
     # set global material
@@ -329,8 +329,8 @@ def gen_linksWallObject(obj: types.Object, links: MW_Links, cfg: MW_gen_cfg, con
 # WIP:: links empties etc... final generation/visual not set
 
 def genWIP_linksEmpties(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_links = utils.gen_childClean(obj, getPrefs().names.links, context, None, keepTrans=False, hide=not cfg.struct_showLinks)
-    obj_links_air = utils.gen_childClean(obj, getPrefs().names.links_air, context, None, keepTrans=False, hide=not cfg.struct_showLinks_airLinks)
+    obj_links = utils.gen_childClean(obj, getPrefs().names.links, context, None, keepTrans=False)
+    obj_links_air = utils.gen_childClean(obj, getPrefs().names.links_air, context, None, keepTrans=False)
     return obj_links, obj_links_air
 
 def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: MW_Links, cfg: MW_gen_cfg, context: types.Context):
@@ -380,7 +380,7 @@ def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: MW
 
         res = utils_mesh.get_resFaces_fromCurveRes(res)
         curve= utils_mesh.get_tubeMesh_pairsQuad([(p1, p2)], None, name, width, res)
-        obj_link = utils_scene.gen_child(obj, name, context, curve, keepTrans=True, hide=not cfg.struct_showLinks)
+        obj_link = utils_scene.gen_child(obj, name, context, curve, keepTrans=True)
         obj_link.location = l.pos
         obj_link.active_material = mat
 
@@ -388,7 +388,7 @@ def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: MW
     getStats().logDt("generated links to walls objects")
 
 def genWIP_linksEmptiesPerCell(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_links_legacy = utils.gen_childClean(obj, getPrefs().names.links_legacy, context, None, keepTrans=False, hide=not cfg.struct_showLinks_legacy)
+    obj_links_legacy = utils.gen_childClean(obj, getPrefs().names.links_legacy, context, None, keepTrans=False)
     return obj_links_legacy
 
 def genWIP_linksCellObjects(objParent: types.Object, voro_cont: VORO_Container, cfg: MW_gen_cfg, context: types.Context):
@@ -416,7 +416,7 @@ def genWIP_linksCellObjects(objParent: types.Object, voro_cont: VORO_Container, 
             # wall link
             if n_id < 0:
                 name= f"s{cell.id}_w{-n_id}"
-                obj_link = utils_scene.gen_child(obj_group, name, context, None, keepTrans=False, hide=not cfg.struct_showLinks_airLinks)
+                obj_link = utils_scene.gen_child(obj_group, name, context, None, keepTrans=False)
                 continue
 
             # TODO:: so some cells actually connect with the missing ones...
@@ -433,9 +433,9 @@ def genWIP_linksCellObjects(objParent: types.Object, voro_cont: VORO_Container, 
             neigh_centroid = Vector(voro_cont[n_id].centroid())
 
             curve = utils_mesh.get_curveData([cell_centroid, neigh_centroid], name, cfg.links_width, cfg.links_res)
-            obj_link = utils_scene.gen_child(obj_group, name, context, curve, keepTrans=False, hide=not cfg.struct_showLinks)
+            obj_link = utils_scene.gen_child(obj_group, name, context, curve, keepTrans=False)
 
-            obj_link.hide_set(key_rep or not cfg.struct_showLinks_legacy)
+            obj_link.hide_set(key_rep)
             #obj_link.location = cell.centroid()
 
     MW_id_utils.setMetaType(objParent, {"CHILD"}, skipParent=False)

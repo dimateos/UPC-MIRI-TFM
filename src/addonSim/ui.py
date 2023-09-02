@@ -58,7 +58,7 @@ def draw_propsToggle(data, data_inspector:Prop_inspector, layout:types.UILayout,
     open, box = draw_toggleBox(data_inspector, "meta_show_props", layout, text)
     if open:
         # top of filter
-        split = box.split(factor=0.0)
+        split = box.split(factor=0.25)
         split.prop(data_inspector, "meta_propShowId")
         split.prop(data_inspector, "meta_propDefault")
         split.prop(data_inspector, "meta_propEdit")

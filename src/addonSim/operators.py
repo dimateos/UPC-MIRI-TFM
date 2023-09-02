@@ -100,26 +100,6 @@ class MW_gen_OT(_StartRefresh_OT):
             box.prop(cfg, "debug_precisionWalls")
             box.prop(cfg, "debug_flipCellNormals")
 
-        #    col = box.column()
-        #    col.label(text="Show:")
-        #    rowsub = col.row(align=True)
-        #    rowsub.prop(cfg, "struct_showCells")
-        #    rowsub.prop(cfg, "struct_showLinks_legacy")
-
-        #    rowsub = col.row(align=True)
-        #    rowsub.prop(cfg, "struct_showLinks")
-        #    rowsub.prop(cfg, "struct_showLinks_airLinks")
-
-        #    rowsub = col.row(align=True)
-        #    rowsub.prop(cfg, "struct_showPoints")
-        #    rowsub.prop(cfg, "struct_showBB")
-        #    rowsub.prop(cfg, "struct_showOrignal_scene")
-
-        #    rowsub = col.row(align=True)
-        #    rowsub.prop(cfg, "struct_showOrignal")
-        #    rowsub.prop(cfg, "struct_showConvex")
-        #    rowsub.prop(cfg, "struct_showLow")
-
     # NOTE:: no poll because the button is removed from ui in draw instead
     #@classmethod
     #def poll(cls, context):

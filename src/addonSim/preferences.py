@@ -112,7 +112,7 @@ class MW_prefs(bpy.types.AddonPreferences):
     )
 
     all_PT_meta_show_root: props.BoolProperty(
-        name="Root props", description="Show root properties / selected child",
+        name="Root props", description="Show root properties / selected child. Children should have most default values.",
         default=True,
     )
 
