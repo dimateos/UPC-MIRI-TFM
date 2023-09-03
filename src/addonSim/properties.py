@@ -172,11 +172,13 @@ class MW_sim_cfg(types.PropertyGroup):
 #-------------------------------------------------------------------
 
 class MW_vis_cfg(types.PropertyGroup):
+    # use prefs editor in the panel but edit the selected root
+    nbl_prefsProxy: props.BoolProperty(default=False)
 
     cell_scale: props.FloatProperty(
         name="Cell scale", description="Reduce some bits to be able to see the links better",
         default=0.75, min=0.25, max=1.0,
-        update= lambda self, context: mw_setup_props.set_cells_scale(self.cell_scale)
+        update= lambda self, context: mw_setup_props.set_cells_scale(self.cell_scale, self.nbl_prefsProxy)
     )
 
     cell_matAlpha: props.FloatProperty(

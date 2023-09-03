@@ -14,10 +14,15 @@ from .utils_dev import DEV
 # includes callbacks from props: visual edit... avoid circular deps
 #-------------------------------------------------------------------
 
-def set_cells_scale(scale):
+def set_cells_scale(scale, proxy=False):
     obj = MW_global_selected.root
-    #DEV.log_msg(f"Scaling cell {obj.name if obj else '...'} -> {scale}", {'CALLBACK', 'SCENE'})
+    DEV.log_msg(f"Scaling cell {obj.name if obj else '...'} -> {scale} {'(proxy)' if proxy else ''}", {'CALLBACK', 'VIS'})
     if not obj: return
+
+    if proxy:
+        obj.mw_vis.cell_scale = scale
+        return
+
     cells_root = utils_scene.get_child(obj, getPrefs().names.cells)
     utils_trans.scale_objectChildren(cells_root, scale)
 

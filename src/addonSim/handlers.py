@@ -21,6 +21,9 @@ class Actions(list):
         try: self.remove(c)
         except ValueError: DEV.log_msg(f"Remove: {c} not found", {"CALLBACK", "ACTIONS", "ERROR"})
 
+    def dispatch(self, params):
+        for c in self: c(*params)
+
 def registerAllHandlers():
     """ Check whenever they are called etc"""
     handler_names = getProps_namesFiltered(bpy.app.handlers, "-n_")
@@ -57,7 +60,7 @@ def callback_updatePost(scene=None):
         DEV.log_msg(f"Selection change: (active: {activeName}) \t{selectedNames}", {"CALLBACK", "SELECTION"})
 
         global callback_selectionChange_actions
-        for c in callback_selectionChange_actions: c(scene, callback_selectionChange_current)
+        callback_selectionChange_actions.dispatch([scene, callback_selectionChange_current])
 
 callback_selectionChange_actions = Actions()
 """ Function actions to be called on selection change: c(scene, last_op) """
@@ -76,7 +79,7 @@ def callback_undo(scene=None):
     DEV.log_msg(f"callback_undo: {last_op}", {"CALLBACK", "UNDO"})
 
     global callback_undo_actions
-    for c in callback_undo_actions: c(scene, last_op)
+    callback_undo_actions.dispatch([scene, last_op])
 
 callback_undo_actions = Actions()
 """ Function actions to be called on callback undo: c(scene, last_op) """
@@ -93,7 +96,7 @@ def callback_loadFile(scene=None):
     DEV.log_msg(f"callback_loadFile: {name}", {"CALLBACK", "LOAD"})
 
     global callback_loadFile_actions
-    for c in callback_loadFile_actions: c(scene, name)
+    callback_loadFile_actions.dispatch([scene, name])
 
 callback_loadFile_actions = Actions()
 """ Function actions to be called on callback undo: c(scene, fileName) """

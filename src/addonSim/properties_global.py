@@ -256,6 +256,8 @@ class MW_global_selected:
         """ Update global selection status and query fract root
         # OPT:: multi-root selection? work with current active?
         """
+        rootChange = False
+
         if selected:
             if cls.last:
                 cls.prevalid_last = cls.last
@@ -267,8 +269,17 @@ class MW_global_selected:
                 if cls.root:
                     cls.prevalid_root  = cls.root
                     cls.prevalid_fract = cls.fract
+                else:
+                    # going from none to something triggers the callback
+                    rootChange = True
+
                 cls.root  = newRoot
                 cls.fract = MW_global_storage.getFract(newRoot)
+
+                # new root selected callback
+                if cls.root != cls.prevalid_root:
+                    rootChange = True
+
             else:
                 cls.root = None
                 cls.fract = None
@@ -278,6 +289,9 @@ class MW_global_selected:
 
         cls.prevalid_sanitize()
         cls.logSelected()
+        if rootChange:
+            DEV.log_msg(f"Selection ROOT change: {cls.root.name}", {"CALLBACK", "SELECTION", "ROOT"})
+            cls.callback_rootChange_actions.dispatch([cls.root])
 
     @classmethod
     def recheckSelected(cls):
@@ -321,6 +335,9 @@ class MW_global_selected:
     def sanitizeSelected_callback(cls, _scene_=None, _name_selected_=None):
         cls.sanitize()
         cls.prevalid_sanitize()
+
+    # callback serviced
+    callback_rootChange_actions = handlers.Actions()
 
 
 #-------------------------------------------------------------------

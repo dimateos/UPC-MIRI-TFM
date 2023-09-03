@@ -21,7 +21,7 @@ class DEV:
     logs_type_skipped = {
         #"# NOTE:: parsed as set when empty?",
         "UPDATE",           # callback and scene graph update
-        #"CALLBACK",
+        "CALLBACK",
         "INIT",             # addon reloading
         "PARSED",
         #"GLOBAL",           # global storage/selection

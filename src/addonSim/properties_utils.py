@@ -101,7 +101,7 @@ class CONST_FILTERS:
 
 #-------------------------------------------------------------------
 
-def getProps_names(data, addDefault=True):
+def getProps_names(data, addDefault=True, exc_nonBlProp=True):
     """ Get all properties names of an object, e.g. not just the modified ones in PropertyGroup.keys()
         # NOTE:: skip read only prop groups
     """
@@ -114,20 +114,24 @@ def getProps_names(data, addDefault=True):
         if callable(prop_ref): continue
         if isinstance(prop_ref, types.PropertyGroup): continue
 
+        # ignore non bl props
+        if exc_nonBlProp:
+            mask_nbl = [ prop_name.startswith(f) for f in CONST_FILTERS.filter_nonBlProp]
+            if any(mask_nbl): continue
+
         # minumun filter of read only props
         filterMask = [ prop_name.startswith(f) for f in CONST_FILTERS.filter_readOnly]
         if any(filterMask): continue
-
         filterMask = [ prop_name == f for f in CONST_FILTERS.filterExact_readOnly]
         if any(filterMask): continue
 
         props_names.append(prop_name)
     return props_names
 
-def getProps_namesFiltered(data, propFilter:str=None, exc_nonBlProp=False, showDefault=True):
+def getProps_namesFiltered(data, propFilter:str=None, exc_nonBlProp=True, showDefault=True):
     """ Get all properties names filtered """
     # build dynamic filter prop
-    prop_names = getProps_names(data, showDefault)
+    prop_names = getProps_names(data, showDefault, exc_nonBlProp)
     if propFilter:
         propFilter_clean = propFilter.replace(" ","").lower()
         filters =  [ f for f in propFilter_clean.split(",") if f]
@@ -139,11 +143,6 @@ def getProps_namesFiltered(data, propFilter:str=None, exc_nonBlProp=False, showD
     # iterate the props and check agains all filters
     prop_namesFiltered = []
     for prop_name in prop_names:
-        # ignore non bl props
-        if exc_nonBlProp:
-            mask_nbl = [ prop_name.startswith(f) for f in CONST_FILTERS.filter_nonBlProp]
-            if any(mask_nbl): continue
-
         # apply excluding/including filter on clean name
         prop_name_clean = prop_name.strip().lower()
         if (filters_inc):
@@ -173,9 +172,9 @@ def getProps_splitDebug(prop_namesFiltered):
     return prop_names, debug_names
 
 
-def copyProps(src, dest, copyDefault=True):
+def copyProps(src, dest, copyDefault=True, exc_nonBlProp=True):
     """ Copy all props of an object, e.g. potentially not just the modified ones in PropertyGroup.keys() """
     # The whole property is read-only but its values can be modified, avoid writing it one by one...
-    props_names = getProps_names(src, copyDefault)
+    props_names = getProps_names(src, copyDefault, exc_nonBlProp)
     for prop_name in props_names:
         setattr(dest, prop_name, getattr(src, prop_name))

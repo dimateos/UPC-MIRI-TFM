@@ -2,8 +2,8 @@ import bpy
 import bpy.types as types
 import bpy.props as props
 
-from .properties_utils import Prop_inspector
-from .properties_global import MW_global_storage
+from .properties_utils import Prop_inspector, copyProps
+from .properties_global import MW_global_storage, MW_global_selected
 
 from .utils_dev import DEV
 
@@ -133,7 +133,7 @@ class MW_prefs(bpy.types.AddonPreferences):
         """ Draw in preferences panel"""
         # Careful with circulare dependecies, maybe split the class with draw and props
         from .ui import draw_propsToggle
-        draw_propsToggle(self, prefs.prefs_PT_meta_inspector, self.layout)
+        draw_propsToggle(self, getPrefs().prefs_PT_meta_inspector, self.layout)
 
     #-------------------------------------------------------------------
 
@@ -192,11 +192,14 @@ class MW_prefs(bpy.types.AddonPreferences):
     gen_PT_meta_inspector: props.PointerProperty(type=Prop_inspector)
     vis_PT_meta_inspector: props.PointerProperty(type=Prop_inspector)
 
-    #-------------------------------------------------------------------
-
     # edit default vis (being in prefs avoids undo stack)
     from .properties import MW_vis_cfg
     mw_vis: props.PointerProperty(type=MW_vis_cfg)
+    def mw_vis_newSelected_update(newRoot):
+        """ Copy the new config to the prefs to show up in the panel """
+        copyProps(newRoot.mw_vis, getPrefs().mw_vis)
+
+    #-------------------------------------------------------------------
 
     all_PT_meta_show_root: props.BoolProperty(
         name="Root props", description="Show root properties / selected child. Children should have most default values.",
@@ -234,14 +237,16 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-    # OPT:: some global init that has acess to bpy context after reloading extensions? e.g. open draw debug panel? not
-    global prefs
-    prefs = getPrefs()
+    # keeping the pane with visual settings up to date
+    getPrefs().mw_vis.nbl_prefsProxy = True
+    MW_global_selected.callback_rootChange_actions.append(MW_prefs.mw_vis_newSelected_update)
 
 def unregister():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
+
+    MW_global_selected.callback_rootChange_actions.remove(MW_prefs.mw_vis_newSelected_update)
 
 DEV.log_msg(f"{_name}", {"ADDON", "PARSED"})
