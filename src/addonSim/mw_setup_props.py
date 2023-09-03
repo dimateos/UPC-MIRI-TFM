@@ -14,16 +14,29 @@ from .utils_dev import DEV
 # includes callbacks from props: visual edit... avoid circular deps
 #-------------------------------------------------------------------
 
-def set_cells_scale(scale, proxy=False):
+def getRoot_checkProxy(cfg, cfg_name:str, prop_name:str):
+    """ Check common prefs proxy flag and return the object when the update is required"""
     obj = MW_global_selected.root
-    DEV.log_msg(f"Scaling cell {obj.name if obj else '...'} -> {scale} {'(proxy)' if proxy else ''}", {'CALLBACK', 'VIS'})
-    if not obj: return
+    proxy = getattr(cfg, "nbl_prefsProxy")
 
+    DEV.log_msg(f"Scaling cell {obj.name if obj else '...'} -> {prop_name} {'(proxy)' if proxy else ''}", {'CALLBACK', 'PROP', 'PROXY'})
+    if not obj:
+        return None,None
+
+    obj_cfg = getattr(obj, cfg_name)
     if proxy:
-        obj.mw_vis.cell_scale = scale
-        return
+        setattr(obj_cfg, prop_name, getattr(cfg, prop_name))
+        return None,None
 
-    cells_root = utils_scene.get_child(obj, getPrefs().names.cells)
+    return obj, getattr(obj_cfg, prop_name)
+
+#-------------------------------------------------------------------
+
+def cell_scale_update(cfg):
+    root, scale = getRoot_checkProxy(cfg, "mw_vis", "cell_scale")
+    if root is None: return
+
+    cells_root = utils_scene.get_child(root, getPrefs().names.cells)
     utils_trans.scale_objectChildren(cells_root, scale)
 
 #def struct_linksScale_update(self, context):

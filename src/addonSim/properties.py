@@ -178,7 +178,7 @@ class MW_vis_cfg(types.PropertyGroup):
     cell_scale: props.FloatProperty(
         name="Cell scale", description="Reduce some bits to be able to see the links better",
         default=0.75, min=0.25, max=1.0,
-        update= lambda self, context: mw_setup_props.set_cells_scale(self.cell_scale, self.nbl_prefsProxy)
+        update= lambda self, context: mw_setup_props.cell_scale_update(self)
     )
 
     cell_matAlpha: props.FloatProperty(
