@@ -70,8 +70,9 @@ class Info_inpect_PT(types.Panel):
                 collection = getattr(bpy.data, colName)
                 col.label(text=f"{colName}: {len(collection)}", icon="LIBRARY_DATA_OVERRIDE_NONEDITABLE")
 
-            box.operator(ops_util.Debug_testCode_OT.bl_idname, icon="MATSHADERBALL")
             box.operator(ops_util.Debug_testColors_OT.bl_idname, icon="RESTRICT_COLOR_ON")
+
+        layout.operator(ops_util.Debug_testCode_OT.bl_idname, icon="MATSHADERBALL")
 
     def drawMode_object(self, context, obj, box):
         # draw tranforms with specific precision

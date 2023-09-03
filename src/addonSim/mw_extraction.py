@@ -212,9 +212,10 @@ def points_noDoubles(points: list[Vector], cfg: MW_gen_cfg):
     points_set = {Vector.to_tuple(p, 4) for p in points}
     points = list(points_set)
 
-# OPT:: quite bad to extract ALL to then limit the amount (transformed to world etc)
 def points_transformCfg(points: list[Vector], cfg: MW_gen_cfg, bb_radius: float):
-    """ Applies all transformations to the set of points obtained """
+    """ Applies all transformations to the set of points obtained
+    # OPT:: do it while extracting to limit operations on unused data -> also check valid inside cont
+    """
     points_limitNum(points, cfg)
     points_addNoise(points, cfg, bb_radius)
     points_noDoubles(points, cfg)

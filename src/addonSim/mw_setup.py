@@ -9,8 +9,8 @@ from .properties_global import (
     MW_id, MW_id_utils,
 )
 from .properties import (
-    MW_gen_cfg,
-    get_struct_name, get_struct_nameNew
+    MW_gen_cfg, get_struct_name, get_struct_nameNew,
+    MW_vis_cfg,
 )
 
 from .mw_cont import MW_Container, VORO_Container
@@ -158,10 +158,12 @@ def gen_cellsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
 def gen_cellsObjects(obj: types.Object, cont: MW_Container, cfg: MW_gen_cfg, context: types.Context, scale = 1.0, flipN = False):
     prefs = getPrefs()
     prefs.names.set_IdFormated_amount(len(cont.voro_cont))
+    vis_cfg : MW_vis_cfg= obj.parent.mw_vis
 
-    #color3 = utils_mat.COLORS.gray
-    #matCells = utils_mat.get_colorMat(color3, alpha=cfg.cell_matAlpha, matName=prefs.names.cells+"Mat")
-    matCells = None
+    # create shared material and add it to the root of shards too
+    color3 = utils_mat.COLORS.gray
+    matCells = utils_mat.get_colorMat(color3, alpha=vis_cfg.cell_matAlpha, matName=prefs.names.cells+"Mat")
+    obj.active_material = matCells
 
     cells = []
     for cell in cont.voro_cont:

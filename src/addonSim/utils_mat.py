@@ -210,6 +210,11 @@ def set_meshUV_rnd(mesh: types.Mesh, uv: types.MeshUVLoopLayer|str, minC=0.0, ma
     for i, faceL in enumerate(mesh.loops):
         uv.data[i].uv = ATTRS.get_deferred_inType("FLOAT2", minC, maxC, i)
 
+def delete_meshUV(mesh: types.Mesh):
+    while mesh.uv_layers:
+        uv_layer = mesh.uv_layers[0]
+        mesh.uv_layers.remove(uv_layer)
+
 #-------------------------------------------------------------------
 
 def gen_meshVC_legacy(mesh: types.Mesh, color_base:Vector|list[Vector] = None, joinFaces=True, name="VC_legacy") -> types.MeshLoopColorLayer:

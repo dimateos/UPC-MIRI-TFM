@@ -80,7 +80,7 @@ class MW_gen_cfg(types.PropertyGroup):
     )
     source_noise: props.FloatProperty(
         name="RND jitter", description="Jitter input point positions",
-        default=0.1, min=0.0, max=1.0,
+        default=0.1, min=0.0, max=1.0, precision=2, step=1
     )
 
     # mod faces container shape

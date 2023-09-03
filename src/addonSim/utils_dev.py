@@ -39,7 +39,7 @@ class DEV:
         "STATS",
         "OP_FLOW",
         #"SELECTION",
-        "PROXY",
+        #"PROXY",
     }
     @classmethod
     def get_logs_type_whitelist(cls):
