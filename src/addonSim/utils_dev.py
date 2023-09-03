@@ -21,16 +21,32 @@ class DEV:
     logs_type_skipped = {
         #"# NOTE:: parsed as set when empty?",
         "UPDATE",           # callback and scene graph update
-        "CALLBACK",
+        #"CALLBACK",
         "INIT",             # addon reloading
         "PARSED",
         #"GLOBAL",           # global storage/selection
     }
+    @classmethod
+    def get_logs_type_skipped(cls):
+        return ", ".join(cls.logs_type_skipped)
+    @classmethod
+    def set_logs_type_skipped(cls, filter:str):
+        filter = filter.replace(" ","").upper()
+        cls.logs_type_skipped = set(filter.split(","))
+
+    # preference over skipped
     logs_type_whitelist = {
         "STATS",
         "OP_FLOW",
         #"SELECTION",
     }
+    @classmethod
+    def get_logs_type_whitelist(cls):
+        return ", ".join(cls.logs_type_whitelist)
+    @classmethod
+    def set_logs_type_whitelist(cls, filter:str):
+        filter = filter.replace(" ","").upper()
+        cls.logs_type_whitelist = set(filter.split(","))
 
     # general format for the message
     logs_type_sep  = " :: "

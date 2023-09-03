@@ -141,6 +141,7 @@ class MW_gen_OT(_StartRefresh_OT):
             if obj is None:
                 DEV.log_msg("cfg NOT found: new frac", {'SETUP'})
                 obj_root, obj_original = mw_setup.copy_original(context.selected_objects[-1], self.cfg, context)
+                copyProps(prefs.mw_vis, obj_root.mw_vis, copyDefault=False)
                 return self.execute_fresh(obj_root, obj_original)
 
             # Fracture the same original object, copy props for a duplicated result to tweak parameters

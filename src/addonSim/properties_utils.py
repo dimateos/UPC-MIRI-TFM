@@ -69,7 +69,7 @@ class Prop_inspector(types.PropertyGroup):
 
     # additional debug prop for a different toggle
     meta_show_debug: props.BoolProperty(
-        name="Show debug...", description="Development stuff...",
+        name="debug...", description="Development stuff...",
         default=False,
         update=set_meta_show_toggled
     )

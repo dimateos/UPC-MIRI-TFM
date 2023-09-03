@@ -32,18 +32,32 @@ class MW_dev(types.PropertyGroup):
 
     DEBUG_MODEL : props.BoolProperty(
         default=DEV.DEBUG_MODEL,
-        update=lambda self, context: setattr(DEV, "DEBUG_MODEL", self.DEBUG_MODEL)
+        update=lambda self, context: setattr(DEV, "DEBUG_MODEL", self.DEBUG_MODEL),
     )
 
     logs : props.BoolProperty(
         default=DEV.logs,
-        update=lambda self, context: setattr(DEV, "logs", self.logs)
+        update=lambda self, context: setattr(DEV, "logs", self.logs),
     )
     logs_stats_dt : props.BoolProperty(
         default=DEV.logs_stats_dt,
-        update=lambda self, context: setattr(DEV, "logs_stats_dt", self.logs_stats_dt)
+        update=lambda self, context: setattr(DEV, "logs_stats_dt", self.logs_stats_dt),
     )
 
+    # toggle logging types
+    logs_type_skipped : props.StringProperty(
+        default= DEV.get_logs_type_skipped(),
+        update=lambda self, context: DEV.set_logs_type_skipped(self.logs_type_skipped),
+    )
+    logs_type_whitelist : props.StringProperty(
+        default= DEV.get_logs_type_whitelist(),
+        update=lambda self, context: DEV.set_logs_type_whitelist(self.logs_type_whitelist),
+    )
+    logs_cutmsg : props.IntProperty(
+        default=DEV.logs_cutmsg,
+        update=lambda self, context: setattr(DEV, "logs_cutmsg", self.logs_cutmsg),
+        min=50, max=300
+    )
 
 class DM_utils(types.PropertyGroup):
     """ Global prefs for the dm utils (all part of PT) """
@@ -57,7 +71,7 @@ class DM_utils(types.PropertyGroup):
         default=False,
     )
     meta_show_tmpDebug: props.BoolProperty(
-        name="Show debug...", description="WIP: Show some debug stuff",
+        name="debug...", description="WIP: Show some debug stuff",
         default=False,
     )
 
@@ -180,65 +194,9 @@ class MW_prefs(bpy.types.AddonPreferences):
 
     #-------------------------------------------------------------------
 
-    # TODO:: replace for visual cfg ins
-    gen_PT_meta_show_visuals: props.BoolProperty(
-        name="Show visuals...", description="Tweak visual elements",
-        default=False,
-    )
-
-    #-------------------------------------------------------------------
-
-    gen_setup_matColors: props.BoolProperty(
-        name="WIP: Add cell color mats", description="Materials aded on generation",
-        default=False,
-    )
-    gen_setup_matAlpha: props.FloatProperty(
-        name="WIP: Cell mat alpha", description="See the links through",
-        default=0.66, min=0.1, max=1
-    )
-
-    links_matAlpha: props.BoolProperty(
-        name="WIP: Link alpha mod", description="Degrade alpha with life",
-        default=False,
-    )
-    links_smoothShade: props.BoolProperty(
-        name="WIP: Link smooth shade",
-        default=True,
-    )
-    links_depth: props.FloatProperty(
-        name="WIP: Const link depth", description="Constant link d",
-        default=0.15, min=0.01, max=0.4, step=0.05, precision=4
-    )
-    links_width: props.FloatProperty(
-        name="WIP: Link width", description="Max link w",
-        default=0.05, min=0.01, max=0.2, step=0.05, precision=4
-    )
-    links_widthDead: props.FloatProperty(
-        name="WIP: Dead link width", description="Min link w",
-        default=0.005, min=0.001, max=0.01, step=0.05, precision=4
-    )
-
-    links_widthModLife: props.EnumProperty(
-        name="WIP: Life affects width",
-        items=(
-            ('DISABLED', "Disabled", "No effect on width"),
-            ('UNIFORM', "Uniform effect", "Uniform effect on width"),
-            ('BINARY', "Binary", "Any differece from full life affects drastically"),
-        ),
-        options={'ENUM_FLAG'},
-        default={'BINARY'},
-    )
-
-    links_res: props.IntProperty(
-        name="WIP: Link res", description="WIP: curve res -> faces",
-        default=0, min=-1, max=8,
-    )
-    links_wallExtraScale: props.FloatProperty(
-        name="WIP: Link walls extra", description="WIP: extra scaling",
-        default=1.25, min=0.25, max=3,
-    )
-
-    #-------------------------------------------------------------------
+    # edit default vis (being in prefs avoids undo stack)
+    from .properties import MW_vis_cfg
+    mw_vis: props.PointerProperty(type=MW_vis_cfg)
 
     all_PT_meta_show_root: props.BoolProperty(
         name="Root props", description="Show root properties / selected child. Children should have most default values.",

@@ -2,10 +2,8 @@ import bpy
 import bpy.types as types
 import bpy.props as props
 
-from .preferences import getPrefs
-from .properties_global import MW_global_selected
+from . import mw_setup_props
 
-from . import utils_scene, utils_trans
 from .utils_dev import DEV
 
 
@@ -136,37 +134,6 @@ class MW_gen_cfg(types.PropertyGroup):
 
 
 #-------------------------------------------------------------------
-
-def cell_scale_update(self, context):
-    obj = MW_global_selected.root
-    if not obj: return
-    cells_root = utils_scene.get_child(obj, getPrefs().names.cells)
-    utils_trans.scale_objectChildren(cells_root, self.cell_scale)
-
-def struct_linksScale_update(self, context):
-    obj = MW_global_selected.root
-    if not obj: return
-    links = utils_scene.get_child(obj, getPrefs().names.links)
-    if links: utils_trans.scale_objectChildren(links, self.struct_linksScale)
-    links_Air_Cell = utils_scene.get_child(obj, getPrefs().names.links_air)
-    if links_Air_Cell: utils_trans.scale_objectChildren(links_Air_Cell, self.struct_linksScale)
-
-class MW_vis_cfg(types.PropertyGroup):
-
-    cell_scale: props.FloatProperty(
-        name="Cell scale", description="Reduce some bits to be able to see the links better",
-        default=0.75, min=0.25, max=1.0,
-        update=cell_scale_update
-    )
-
-    struct_linksScale: props.FloatProperty(
-        name="Links scale", description="Reduce some bits to be able to see the links better",
-        default=1, min=0.25, max=3,
-        update=struct_linksScale_update
-    )
-
-
-#-------------------------------------------------------------------
 # OPT:: maybe split files + some go to prefs + new propGroup to add to scene props_utils instead of prefs
 # IDEA:: vis cfg part of each gen and sim, or subpart with another group?
 # IDEA:: using animation frame handler to see the simulaion play?
@@ -203,12 +170,78 @@ class MW_sim_cfg(types.PropertyGroup):
 
 
 #-------------------------------------------------------------------
+
+class MW_vis_cfg(types.PropertyGroup):
+
+    cell_scale: props.FloatProperty(
+        name="Cell scale", description="Reduce some bits to be able to see the links better",
+        default=0.75, min=0.25, max=1.0,
+        update= lambda self, context: mw_setup_props.set_cells_scale(self.cell_scale)
+    )
+
+    cell_matAlpha: props.FloatProperty(
+        name="Cell alpha [mat]", description="See through the links (needs active render color material)",
+        default=0.66, min=0.1, max=1
+    )
+
+    struct_linksScale: props.FloatProperty(
+        name="Links scale", description="Reduce some bits to be able to see the links better",
+        default=1, min=0.25, max=3,
+        #update=struct_linksScale_update
+    )
+
+    #-------------------------------------------------------------------
+
+
+    links_matAlpha: props.BoolProperty(
+        name="WIP: Link alpha mod", description="Degrade alpha with life",
+        default=False,
+    )
+    links_smoothShade: props.BoolProperty(
+        name="WIP: Link smooth shade",
+        default=True,
+    )
+    links_depth: props.FloatProperty(
+        name="WIP: Const link depth", description="Constant link d",
+        default=0.15, min=0.01, max=0.4, step=0.05, precision=4
+    )
+    links_width: props.FloatProperty(
+        name="WIP: Link width", description="Max link w",
+        default=0.05, min=0.01, max=0.2, step=0.05, precision=4
+    )
+    links_widthDead: props.FloatProperty(
+        name="WIP: Dead link width", description="Min link w",
+        default=0.005, min=0.001, max=0.01, step=0.05, precision=4
+    )
+
+    links_widthModLife: props.EnumProperty(
+        name="WIP: Life affects width",
+        items=(
+            ('DISABLED', "Disabled", "No effect on width"),
+            ('UNIFORM', "Uniform effect", "Uniform effect on width"),
+            ('BINARY', "Binary", "Any differece from full life affects drastically"),
+        ),
+        options={'ENUM_FLAG'},
+        default={'BINARY'},
+    )
+
+    links_res: props.IntProperty(
+        name="WIP: Link res", description="WIP: curve res -> faces",
+        default=0, min=-1, max=8,
+    )
+    links_wallExtraScale: props.FloatProperty(
+        name="WIP: Link walls extra", description="WIP: extra scaling",
+        default=1.25, min=0.25, max=3,
+    )
+
+
+#-------------------------------------------------------------------
 # Blender events
 
 classes = [
     MW_gen_cfg,
-    MW_vis_cfg,
     MW_sim_cfg,
+    MW_vis_cfg,
 ]
 _name = f"{__name__[14:]}" #\t(...{__file__[-32:]})"
 
@@ -233,11 +266,18 @@ def register():
         type=MW_vis_cfg,
         name="MW_Visualization", description="MW visualization properties")
 
+    # add as scene to overwrite default values (kind of like OP having cfg)
+    # NOTE:: affected by undo stack! so better to store in prefs
+    #bpy.types.Scene.mw_vis = props.PointerProperty(type=MW_vis_cfg)
+
 
 def unregister():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
+
+    #del bpy.types.Scene.mw_vis
+
 
 DEV.log_msg(f"{_name}", {"ADDON", "PARSED"})

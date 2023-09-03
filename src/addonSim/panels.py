@@ -94,14 +94,9 @@ class MW_gen_PT(types.Panel):
         prefs = getPrefs()
 
         # inspect root or selected?
-        if prefs.all_PT_meta_show_root:
-            gen_cfg = obj.mw_gen
-            vis_cfg = obj.mw_vis
-        else:
-            gen_cfg = selected.mw_gen
-            vis_cfg = selected.mw_vis
+        gen_cfg = obj.mw_gen if prefs.all_PT_meta_show_root else selected.mw_gen
 
-        open, box = ui.draw_propsToggle(gen_cfg, prefs.gen_PT_meta_inspector, layout, text="container props")
+        open, box = ui.draw_propsToggle(gen_cfg, prefs.gen_PT_meta_inspector, layout, text="Container props")
         if open:
             col_rowSplit = layout.row().split()
             col_rowSplit.prop(prefs, "all_PT_meta_show_root", text="Root props:" if prefs.all_PT_meta_show_root else "Child props:")
@@ -110,24 +105,9 @@ class MW_gen_PT(types.Panel):
         # more actions
         layout.operator(ops.MW_gen_links_OT.bl_idname, icon="OUTLINER_DATA_GREASEPENCIL")
 
-        # visuals
-        open, box = ui.draw_toggleBox(prefs, "gen_PT_meta_show_visuals", layout)
-        if open:
-            col = box.column()
-            col.prop(prefs, "gen_setup_matColors")
-            col.prop(prefs, "gen_setup_matAlpha")
-            #col.prop(prefs, "links_matAlpha")
-            col.prop(prefs, "links_smoothShade")
-            col.prop(prefs, "links_depth")
-            col.prop(prefs, "links_width")
-            col.prop(prefs, "links_widthDead")
-            rowsub = col.row()
-            rowsub.prop(prefs, "links_widthModLife")
-            col.prop(prefs, "links_res")
-            col.prop(prefs, "links_wallExtraScale")
-
         # visuals inspect
-        #open, box = ui.draw_propsToggle(vis_cfg, prefs.vis_PT_meta_inspector, layout, "Visuals...")
+        #vis_cfg = context.scene.mw_vis -> scene data is affected by operator undo
+        vis_cfg = prefs.mw_vis
         open, box = ui.draw_propsToggle_custom(vis_cfg, prefs.vis_PT_meta_inspector, layout, "Visuals...")
 
     def draw_debug(self, context: types.Context, layout: types.UILayout):

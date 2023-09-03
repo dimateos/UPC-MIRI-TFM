@@ -159,9 +159,9 @@ def gen_cellsObjects(obj: types.Object, cont: MW_Container, cfg: MW_gen_cfg, con
     prefs = getPrefs()
     prefs.names.set_IdFormated_amount(len(cont.voro_cont))
 
-    if not prefs.gen_setup_matColors:
-        color3 = utils_mat.COLORS.gray
-        matCells = utils_mat.get_colorMat(color3, alpha=prefs.gen_setup_matAlpha, matName=prefs.names.cells+"Mat")
+    #color3 = utils_mat.COLORS.gray
+    #matCells = utils_mat.get_colorMat(color3, alpha=cfg.cell_matAlpha, matName=prefs.names.cells+"Mat")
+    matCells = None
 
     cells = []
     for cell in cont.voro_cont:
