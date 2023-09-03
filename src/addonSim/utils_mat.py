@@ -9,51 +9,40 @@ from . import utils
 #-------------------------------------------------------------------
 
 class COLORS:
-    """ Common colors and generators
-        # OPT:: just change all colors to be vec4...
-    """
+    """ Common colors and generators, using vec4 with alpha"""
+    default_alpha = 1.0
 
-    red   = Vector([1.0, 0.0, 0.0])
-    green = Vector([0.0, 1.0, 0.0])
-    blue  = Vector([0.0, 0.0, 1.0])
+    red   = Vector([1.0, 0.0, 0.0, default_alpha])
+    green = Vector([0.0, 1.0, 0.0, default_alpha])
+    blue  = Vector([0.0, 0.0, 1.0, default_alpha])
     list_rgb = [red, green, blue]
-    list_rgb4D = [ c.to_4d() for c in list_rgb ]
 
     yellow  = (red+green) * 0.5
     orange  = (red+yellow) * 0.5
     pink    = (red+blue) * 0.5
     aqua    = (green+blue) * 0.5
     list_fade = [red, orange, yellow, green, aqua, blue, pink]
-    list_fade4D = [ c.to_4d() for c in list_fade ]
 
-    black   = Vector([0.0, 0.0, 0.0])
-    white   = Vector([1.0, 1.0, 1.0])
+    black   = Vector([0.0, 0.0, 0.0, default_alpha])
+    white   = Vector([1.0, 1.0, 1.0, default_alpha])
     gray   = white * 0.5
     list_gray = [black, gray, white]
-    list_gray4D = [ c.to_4d() for c in list_gray ]
 
     default_name = "colorMat"
     default_precision = 1
     def rounded(c: Vector, precision=default_precision, alphaToo = False):
-        cc = Vector()
+        cc = Vector().to_4d()
         cc.x = round(c.x, precision)
         cc.y = round(c.y, precision)
         cc.z = round(c.z, precision)
-        if len(c) > 3: cc.w = round(c.w, precision) if alphaToo else c.w
+        cc.w = round(c.w, precision) if alphaToo else c.w
         return cc
 
-    def assure_4d_alpha(c: Vector, a=1.0):
-        if len(c) > 3: return c
-        c = c.to_4d()
-        c.w = a
+    def get_random(minC=0.0, maxC=1.0, alpha=default_alpha) -> Vector:
+        c = Vector( [uniform(minC,maxC), uniform(minC,maxC), uniform(minC,maxC), alpha] )
         return c
 
-    def get_random(minC=0.0, maxC=1.0, alpha=0.0) -> Vector:
-        c = Vector( [uniform(minC,maxC), uniform(minC,maxC), uniform(minC,maxC)] )
-        if alpha: c = COLORS.assure_4d_alpha(c, alpha)
-        return c
-
-    def get_ramp(start = 0.1, stop = 0.9, step = 0.2, alpha=0.0) -> list[Vector]:
+    def get_ramp(start = 0.1, stop = 0.9, step = 0.2, alpha=default_alpha) -> list[Vector]:
         startV = Vector( [start]*3 )
         stepV = Vector( [step]*3 )
 
@@ -62,27 +51,27 @@ class COLORS:
             for y in range(int((stop - start) / step) + 1):
                 for z in range(int((stop - start) / step) + 1):
                     c = startV + Vector( [x,y,z] ) *stepV
-                    if alpha: c = COLORS.toColor4D(c, alpha)
+                    c.to_4d()
+                    c.w = alpha
                     colors.append(c)
         return colors
 
-def get_colorMat(color3=COLORS.red, alpha=1.0, matName: str=None):
+def get_colorMat(color=COLORS.red, matName: str=None):
     if not matName: matName = COLORS.default_name
     mat = bpy.data.materials.new(matName)
     mat.use_nodes = False
 
-    color3 = COLORS.rounded(color3)
-    mat.diffuse_color[0] = color3[0]
-    mat.diffuse_color[1] = color3[1]
-    mat.diffuse_color[2] = color3[2]
-    mat.diffuse_color[3] = alpha
+    color = COLORS.rounded(color)
+    mat.diffuse_color[0] = color[0]
+    mat.diffuse_color[1] = color[1]
+    mat.diffuse_color[2] = color[2]
+    mat.diffuse_color[3] = color[3]
     return mat
 
-def get_randomMat(minC=0.0, maxC=1.0, alpha=1.0, matName: str=None):
-    # OPT:: could do a single mat that shows a random color per object ID using a ramp
+def get_randomMat(minC=0.0, maxC=1.0, alpha=COLORS.default_alpha, matName: str=None):
     if not matName: matName = "randomMat"
-    color = COLORS.get_random(minC, maxC)
-    mat = get_colorMat(color, alpha, matName)
+    color = COLORS.get_random(minC, maxC, alpha)
+    mat = get_colorMat(color, matName)
     return mat
 
 #-------------------------------------------------------------------
@@ -104,13 +93,13 @@ class ATTRS:
         else: raise TypeError(f"{adomain} not in {ATTRS.attrs_adomain}")
 
     @staticmethod
-    def get_value_inType(atype:str, v):
+    def get_value_inType(atype:str, v, alpha = COLORS.default_alpha):
         """ Get a value of the type aprox """
         if   atype == "FLOAT"       : val= v
-        elif atype == "FLOAT_COLOR" : val= Vector((v,v,v, 1.0))
+        elif atype == "FLOAT_COLOR" : val= Vector((v,v,v, alpha))
         elif atype == "FLOAT2"      : val= Vector((v,v))
         elif atype == "FLOAT_VECTOR": val= Vector((v,v,v))
-        elif atype == "BYTE_COLOR"  : val= Vector((v,v,v, 1.0)) * 256
+        elif atype == "BYTE_COLOR"  : val= Vector((v,v,v, alpha)) * 256
         elif atype == "BOOL"        : val= bool(v)
         elif atype == "INT"         : val= round(v)
         elif atype == "INT8"        : val= round(v * 256)
@@ -144,13 +133,13 @@ class ATTRS:
     #-------------------------------------------------------------------
 
     @staticmethod
-    def get_rnd_inType(atype:str, minC = 0.0, maxC = 1.0):
+    def get_rnd_inType(atype:str, minC = 0.0, maxC = 1.0, alpha = COLORS.default_alpha):
         """ Get a random value of the type aprox """
         if   atype == "FLOAT"       : rnd= uniform(minC, maxC)
-        elif atype == "FLOAT_COLOR" : rnd= COLORS.get_random(minC, maxC, 1.0)
+        elif atype == "FLOAT_COLOR" : rnd= COLORS.get_random(minC, maxC, alpha)
         elif atype == "FLOAT2"      : rnd= Vector((uniform(minC, maxC), uniform(minC, maxC)))
         elif atype == "FLOAT_VECTOR": rnd= COLORS.get_random(minC, maxC)
-        elif atype == "BYTE_COLOR"  : rnd= COLORS.get_random(minC, maxC, 1.0) * 256
+        elif atype == "BYTE_COLOR"  : rnd= COLORS.get_random(minC, maxC, alpha) * 256
         elif atype == "BOOL"        : rnd= round(uniform(minC,maxC))
         elif atype == "INT"         : rnd= round(minC + uniform(0,1) * maxC)
         elif atype == "INT8"        : rnd= round(uniform(0,1) * 256)
@@ -159,20 +148,20 @@ class ATTRS:
         return rnd
 
     @staticmethod
-    def get_periodic_inType(atype:str, minC = 0.0, maxC = 1.0, period_id:int = None, period = 2):
+    def get_periodic_inType(atype:str, minC = 0.0, maxC = 1.0, period_id:int = None, period = 2, alpha = COLORS.default_alpha):
         """ Get periodic value in the type (building a ramp from 0-1 in period)"""
         step = int((period_id % period) / period) + 1
         stepVal = minC + step * maxC
-        val = ATTRS.get_value_inType(atype, stepVal)
+        val = ATTRS.get_value_inType(atype, stepVal, alpha)
         return val
 
     rndRep_vals = { atype: list() for atype in attrs_atype }
     rndRep_count = { atype: 0 for atype in attrs_atype }
     @staticmethod
-    def get_rnd_periodic_inType(atype:str, minC = 0.0, maxC = 1.0, period = 2):
+    def get_rnd_periodic_inType(atype:str, minC = 0.0, maxC = 1.0, period = 2, alpha = COLORS.default_alpha):
         """ Get a random value of the type with certain periodicity (limit rnd values) """
         if len(ATTRS.rndRep_vals[atype]) < period:
-            ATTRS.rndRep_vals[atype].append(ATTRS.get_rnd_inType(atype, minC, maxC))
+            ATTRS.rndRep_vals[atype].append(ATTRS.get_rnd_inType(atype, minC, maxC, alpha))
 
         vid = ATTRS.rndRep_count[atype] % period
         rndRep = ATTRS.rndRep_vals[atype][vid]
@@ -180,17 +169,15 @@ class ATTRS:
         return rndRep
 
     @staticmethod
-    def get_deferred_inType(atype:str, minC = 0.0, maxC = 1.0, period_id:int = None, period = 2):
+    def get_deferred_inType(atype:str, minC = 0.0, maxC = 1.0, period_id:int = None, period = 2, alpha=COLORS.default_alpha):
         """ Proxy function to pick the random method used in other functions"""
-        return ATTRS.get_rnd_inType(atype, minC, maxC)
-        #return ATTRS.get_periodic_inType(atype, minC, maxC, period_id, period)
-        #return ATTRS.get_rnd_periodic_inType(atype, minC, maxC, period)
+        return ATTRS.get_rnd_inType(atype, minC, maxC, alpha)
+        #return ATTRS.get_periodic_inType(atype, minC, maxC, period_id, period, alpha)
+        #return ATTRS.get_rnd_periodic_inType(atype, minC, maxC, period, alpha)
 
 #-------------------------------------------------------------------
 # NOTE:: all similar functions but then access different paths in the mesh/data e.g. uv.data[i].uv,vc.data[i].color,attr.data[i].value
 # NOTE:: set random functions do the same iteration to avoid allocating twice the memory in a tmp list, could change for less code dupe
-# OPT:: inconsistncy with 3D vs 4D colors -> assure_4d_alpha meh, maybe 4D everywhere and split get random mat with sep alpha
-# IDEA:: modulate light as it iterates the base value for a darkening effect? jsut modify input list outside?
 
 def gen_meshUV(mesh: types.Mesh, uv_base:Vector|list[Vector] = None, name="UV_map",) -> types.MeshUVLoopLayer:
     """ Add a UV layer to the mesh: 2D float PER loop corner """
@@ -232,15 +219,14 @@ def set_meshVC_legacy(mesh: types.Mesh, vc: types.MeshLoopColorLayer|str, color_
         for i, face in enumerate(mesh.polygons):
             c = color_base[i % len(color_base)]
             for j, loopID in enumerate(face.loop_indices):
-                vc.data[loopID].color = COLORS.assure_4d_alpha(c)
+                vc.data[loopID].color = c
     else:
         for i, faceL in enumerate(mesh.loops):
             c = color_base[i % len(color_base)]
-            vc.data[i].color = COLORS.assure_4d_alpha(c)
+            vc.data[i].color = c
 
 def set_meshVC_legacy_rnd(mesh: types.Mesh, vc: types.MeshLoopColorLayer|str, minC=0.0, maxC=1.0, alpha=1.0, joinFaces=True):
-    rndValues = [ COLORS.assure_4d_alpha(ATTRS.get_deferred_inType("FLOAT_COLOR", minC, maxC, i), alpha)
-                 for i, faceL in enumerate(mesh.loops) ]
+    rndValues = [ ATTRS.get_deferred_inType("FLOAT_COLOR", minC, maxC, i, alpha) for i, faceL in enumerate(mesh.loops) ]
     set_meshVC_legacy(mesh, vc, rndValues, joinFaces)
 
 #-------------------------------------------------------------------
@@ -265,15 +251,13 @@ def set_meshVC(mesh: types.Mesh, vc: types.Attribute|str, color_base:Vector|list
     source = ATTRS.get_src_inDomain(mesh, vc.domain)
     for i, datum in enumerate(source):
         c = color_base[i % len(color_base)]
-        vc.data[i].color = COLORS.assure_4d_alpha(c)
+        vc.data[i].color = c
 
 def set_meshVC_rnd(mesh: types.Mesh, vc: types.Attribute|str, minC=0.0, maxC=1.0, alpha=1.0, joinFaces=True):
     if isinstance(vc, str): vc = mesh.color_attributes[vc]
     source = ATTRS.get_src_inDomain(mesh, vc.domain)
     for i, datum in enumerate(source):
-        c = ATTRS.get_deferred_inType("FLOAT_COLOR", minC, maxC, i)
-        c.w = alpha
-        vc.data[i].color = c
+        vc.data[i].color = ATTRS.get_deferred_inType("FLOAT_COLOR", minC, maxC, i, alpha)
 
 #-------------------------------------------------------------------
 
@@ -293,15 +277,13 @@ def set_meshAC(mesh: types.Mesh, ac: types.Attribute|str, color_base:Vector|list
     source = ATTRS.get_src_inDomain(mesh, ac.domain)
     for i, datum in enumerate(source):
         c = color_base[i % len(color_base)]
-        ac.data[i].color = COLORS.assure_4d_alpha(c)
+        ac.data[i].color = c
 
 def set_meshAC_rnd(mesh: types.Mesh, ac: types.Attribute|str, minC=0.0, maxC=1.0, alpha=1.0):
     if isinstance(ac, str): ac = mesh.attributes[ac]
     source = ATTRS.get_src_inDomain(mesh, ac.domain)
     for i, datum in enumerate(source):
-        c = ATTRS.get_deferred_inType(ac.data_type, minC, maxC, i)
-        c.w = alpha
-        ac.data[i].color = c
+        ac.data[i].color = ATTRS.get_deferred_inType(ac.data_type, minC, maxC, i, alpha)
 
 #-------------------------------------------------------------------
 
@@ -372,8 +354,8 @@ def gen_test_colors(obj, mesh, alpha, matName):
     vc_old = gen_meshVC_legacy(mesh, COLORS.pink)
     set_meshVC_legacy(mesh, vc_old, COLORS.list_gray)
     set_meshVC_legacy_rnd(mesh, vc_old)
-    vc = gen_meshVC(mesh, COLORS.list_rgb4D )
-    vcFace = gen_meshVC(mesh, COLORS.list_rgb4D, adomain="CORNER")
+    vc = gen_meshVC(mesh, COLORS.list_rgb )
+    vcFace = gen_meshVC(mesh, COLORS.list_rgb, adomain="CORNER")
 
     # test attr color
     ac = gen_meshAC(mesh, COLORS.list_fade, adomain="CORNER", name="ACtestcolor")
