@@ -217,15 +217,12 @@ class MW_gen_OT(_StartRefresh_OT):
 
         #test some legacy or statistics cont stuff
         if DEV.LEGACY_CONT:
-            mw_setup.gen_LEGACY_CONT(obj_cells_root, cont.voro_cont, cfg, self.ctx)
+            mw_setup.gen_LEGACY_CONT(obj_root, cont.voro_cont, cfg, self.ctx)
             return self.end_op("DEV.LEGACY_CONT stop...")
 
-        # cells are always added to the scene
-        obj_cells_root = mw_setup.gen_cellsEmpty(obj_root, cfg, self.ctx)
-        cells = mw_setup.gen_cellsObjects(obj_cells_root, cont, cfg, self.ctx, scale=obj_root.mw_vis.cell_scale, flipN=cfg.debug_flipCellNormals)
-
-        # precalculate/query neighs and other data
-        cont.precalculate_data(obj_cells_root, cells)
+        # precalculate/query neighs and other data with generated cells mesh
+        cells = mw_setup.gen_cellsObjects(obj_root, cont, cfg, self.ctx, scale=obj_root.mw_vis.cell_scale, flipN=cfg.debug_flipCellNormals)
+        cont.precalculate_data(cells)
         if not cont.precalculated:
             return self.end_op_error("error during container precalculations!")
 

@@ -32,10 +32,10 @@ class COLORS:
     default_precision = 1
     def rounded(c: Vector, precision=default_precision, alphaToo = False):
         cc = Vector().to_4d()
-        cc.x = round(c.x, precision)
-        cc.y = round(c.y, precision)
-        cc.z = round(c.z, precision)
-        cc.w = round(c.w, precision) if alphaToo else c.w
+        cc[0] = round(c[0], precision)
+        cc[1] = round(c[1], precision)
+        cc[2] = round(c[2], precision)
+        cc[3] = round(c[3], precision) if alphaToo else c[3]
         return cc
 
     def get_random(minC=0.0, maxC=1.0, alpha=default_alpha) -> Vector:

@@ -48,7 +48,7 @@ class MW_Container:
         if self.voro_cont is not None:
             self.initialized = True
 
-    def precalculate_data(self, obj_cells_root : types.Object, cells_list : list[types.Object]):
+    def precalculate_data(self, cells_list : list[types.Object]):
         """ Precalculate/query data such as valid neighbours and mapping faces """
         stats = getStats()
 
@@ -83,7 +83,6 @@ class MW_Container:
         stats.logDt(msg) # uncut=True
 
         # retrieve objs, meshes -> dicts per cell
-        self.cells_parent = obj_cells_root
         self.cells_objs        : list[types.Object|int] = [ERROR_IDX.MISSING]* len(self.voro_cont)
         self.cells_meshes      : list[types.Mesh|int]   = [ERROR_IDX.MISSING]* len(self.voro_cont)
         self.cells_meshes_FtoF : list[dict|int]         = [ERROR_IDX.MISSING]* len(self.voro_cont)

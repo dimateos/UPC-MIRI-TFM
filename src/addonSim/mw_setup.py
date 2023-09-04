@@ -151,25 +151,29 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, co
 
 #-------------------------------------------------------------------
 
-def gen_cellsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_cellsEmpty = utils_scene.gen_child(obj, getPrefs().names.cells, context, None, keepTrans=False)
-    return obj_cellsEmpty
-
-def gen_cellsObjects(obj: types.Object, cont: MW_Container, cfg: MW_gen_cfg, context: types.Context, scale = 1.0, flipN = False):
+def gen_cellsObjects(root: types.Object, cont: MW_Container, cfg: MW_gen_cfg, context: types.Context, scale = 1.0, flipN = False):
     prefs = getPrefs()
     prefs.names.set_IdFormated_amount(len(cont.voro_cont))
-    vis_cfg : MW_vis_cfg= obj.parent.mw_vis
+    vis_cfg : MW_vis_cfg= root.mw_vis
 
-    # create shared material and add it to the root of shards too
-    color3 = utils_mat.COLORS.gray
-    matCells = utils_mat.get_colorMat(color3, alpha=vis_cfg.cell_matAlpha, matName=prefs.names.cells+"Mat")
-    obj.active_material = matCells
+    # create empty objects holding them
+    root_cells = utils_scene.gen_child(root, getPrefs().names.cells, context, None, keepTrans=False)
+    root_air = utils_scene.gen_child(root, getPrefs().names.cells_air, context, None, keepTrans=False)
+    root_core = utils_scene.gen_child(root, getPrefs().names.cells_core, context, None, keepTrans=False)
+
+    # create shared material (cannot add it to empty objects for easy access tho!)
+    mat_cells = utils_mat.get_colorMat(vis_cfg.cell_color, matName=prefs.names.get_MatFormated(prefs.names.cells))
+    mat_air = utils_mat.get_colorMat(vis_cfg.cell_color_air, matName=prefs.names.get_MatFormated(prefs.names.cells_air))
+    mat_core = utils_mat.get_colorMat(vis_cfg.cell_color_core, matName=prefs.names.get_MatFormated(prefs.names.cells_core))
 
     cells = []
     for cell in cont.voro_cont:
         # skip none cells (computation error)
         if cell is None: continue
-        source_id = cont.voro_cont.source_idx[cell.id]
+
+        # name respect to the original point, better the internal cell?
+        #source_id = cont.voro_cont.source_idx[cell.id]
+        source_id = cell.id
         name= f"{prefs.names.cells[0]}{prefs.names.get_IdFormated(source_id)}"
 
         # assert some voro properties, the more varied test cases the better: center of mass at the center of volume
@@ -197,18 +201,21 @@ def gen_cellsObjects(obj: types.Object, cont: MW_Container, cfg: MW_gen_cfg, con
         # build the static mesh and child object
         mesh = bpy.data.meshes.new(name)
         mesh.from_pydata(vertices=verts, edges=[], faces=faces_blender)
-        obj_shard = utils_scene.gen_child(obj, name, context, mesh, keepTrans=False)
+
+        obj_shard = utils_scene.gen_child(root_cells, name, context, mesh, keepTrans=False)
+        obj_shard.active_material = mat_cells
         cells.append(obj_shard)
+
+        # postion afterwards
         obj_shard.location = pos
         obj_shard.scale = [scale]*3
-
-        obj_shard.active_material = matCells
-        #utils_mat.gen_meshAttr(mesh, utils_mat.COLORS.assure_4d_alpha(color3, prefs.gen_setup_matAlpha), 1, "FLOAT_COLOR", "POINT", "alphaColor")
 
     getStats().logDt("generated cells objects")
     return cells
 
-def gen_LEGACY_CONT(obj: types.Object, voro_cont: VORO_Container, cfg: MW_gen_cfg, context: types.Context):
+def gen_LEGACY_CONT(root: types.Object, voro_cont: VORO_Container, cfg: MW_gen_cfg, context: types.Context):
+    root_cells = utils_scene.gen_child(root, getPrefs().names.cells, context, None, keepTrans=False)
+
     centroids = []
     vertices = []
     volume = []
@@ -239,7 +246,7 @@ def gen_LEGACY_CONT(obj: types.Object, voro_cont: VORO_Container, cfg: MW_gen_cf
         name= f"{getPrefs().names.cells}_{cell.id}"
         mesh = bpy.data.meshes.new(name)
         mesh.from_pydata(vertices=vs, edges=[], faces=f)
-        obj_shard = utils_scene.gen_child(obj, name, context, mesh, keepTrans=False)
+        obj_shard = utils_scene.gen_child(root_cells, name, context, mesh, keepTrans=False)
         pass
     getStats().logDt("generated LEGACY cells objects")
 

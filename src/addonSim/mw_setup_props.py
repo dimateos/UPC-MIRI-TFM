@@ -39,13 +39,13 @@ def cell_scale_update(cfg):
     cells_root = utils_scene.get_child(root, getPrefs().names.cells)
     utils_trans.scale_objectChildren(cells_root, scale)
 
-def cell_matAlpha_update(cfg):
-    root, alpha = getRoot_checkProxy(cfg, "mw_vis", "cell_matAlpha")
+def cell_color_update(cfg, prop_name:str, cells_name:str):
+    root, color = getRoot_checkProxy(cfg, "mw_vis", prop_name)
     if root is None: return
 
-    cells_root = utils_scene.get_child(root, getPrefs().names.cells)
-    mat = cells_root.active_material
-    mat.diffuse_color.w = alpha
+    cells_root = utils_scene.get_child(root, cells_name)
+    cell_sample = cells_root.children[0]
+    cell_sample.active_material.diffuse_color = color
 
 #def struct_linksScale_update(self, context):
 #    obj = MW_global_selected.root

@@ -148,11 +148,20 @@ class MW_prefs(bpy.types.AddonPreferences):
         source_wallsBB = source+"_wallsBB"
 
         cells = "cells"
+        cells_air = cells+"_air"
+        cells_core = cells+"_core"
 
         links = "links"
         links_air = links+"_air"
+
+        # TODO:: no more legacy support
         links_legacy = links+"_legacy"
         links_group = "L"
+
+        @classmethod
+        def get_MatFormated(cls, name:str):
+            """ Add common material suffix """
+            return f"{name}_mat"
 
         @classmethod
         def get_IdFormated(cls, idx:int):

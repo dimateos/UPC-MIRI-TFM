@@ -172,6 +172,8 @@ class MW_sim_cfg(types.PropertyGroup):
 #-------------------------------------------------------------------
 
 class MW_vis_cfg(types.PropertyGroup):
+    from .preferences import getPrefs
+
     # use prefs editor in the panel but edit the selected root
     nbl_prefsProxy: props.BoolProperty(default=False)
 
@@ -181,19 +183,35 @@ class MW_vis_cfg(types.PropertyGroup):
         update= lambda self, context: mw_setup_props.cell_scale_update(self)
     )
 
-    cell_matAlpha: props.FloatProperty(
-        name="Cell alpha [mat]", description="See through the links (needs active render color material)",
-        default=0.66, min=0.1, max=1
+    cell_color: bpy.props.FloatVectorProperty(
+        name="Cell color [mat]",
+        default=(0.514, 0.396, 0.224, 0.75),
+        size=4, min=0, max=1,
+        subtype='COLOR',
+        update= lambda self, context: mw_setup_props.cell_color_update(self, "cell_color", MW_vis_cfg.getPrefs().names.cells)
     )
+    cell_color_air: bpy.props.FloatVectorProperty(
+        name="Cell AIR color [mat]",
+        default=(0.176, 0.718, 0.749, 0.25),
+        size=4, min=0, max=1,
+        subtype='COLOR',
+        update= lambda self, context: mw_setup_props.cell_color_update(self, "cell_color_air", MW_vis_cfg.getPrefs().names.cells_air)
+    )
+    cell_color_core: bpy.props.FloatVectorProperty(
+        name="Cell CORE color [mat]",
+        default=(0.8, 0.294, 0.125, 1.0),
+        size=4, min=0, max=1,
+        subtype='COLOR',
+        update= lambda self, context: mw_setup_props.cell_color_update(self, "cell_color_core", MW_vis_cfg.getPrefs().names.cells_core)
+    )
+
+    #-------------------------------------------------------------------
 
     struct_linksScale: props.FloatProperty(
         name="Links scale", description="Reduce some bits to be able to see the links better",
         default=1, min=0.25, max=3,
         #update=struct_linksScale_update
     )
-
-    #-------------------------------------------------------------------
-
 
     links_matAlpha: props.BoolProperty(
         name="WIP: Link alpha mod", description="Degrade alpha with life",
