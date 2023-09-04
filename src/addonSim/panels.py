@@ -42,7 +42,7 @@ class MW_gen_PT(types.Panel):
     def draw_onSelected(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
         col = layout.column()
-        selected = MW_global_selected.last
+        selected = MW_global_selected.current
 
         # Something selected, not last active
         if not selected:
@@ -68,7 +68,7 @@ class MW_gen_PT(types.Panel):
             obj = MW_global_selected.root
 
             # show info of root + selected
-            msg = f"Root: {obj.name}"
+            msg = f"Fract: {obj.name}"
             if selected.name != obj.name:
                 msg += f" - {selected.name}"
 
@@ -85,7 +85,7 @@ class MW_gen_PT(types.Panel):
 
             # dupe
             col_rowSplit = layout.row().split(factor=0.70)
-            col_rowSplit.operator(ops.MW_gen_OT.bl_idname, text="DUPLICATE Fracture", icon="DUPLICATE")
+            col_rowSplit.operator(ops.MW_gen_OT.bl_idname, text="DUPLICATE", icon="DUPLICATE")
             col_rowSplit.prop(prefs, "gen_duplicate_OT_hidePrev")
 
             self.draw_props(obj, selected, context, layout)
@@ -139,11 +139,19 @@ class MW_gen_PT(types.Panel):
             col_rowSplit.label(text=f"Root:  {MW_global_selected.root.name if MW_global_selected.root else '~'}", icon="RESTRICT_SELECT_ON")
             col_rowSplit.label(text=f"{MW_global_selected.prevalid_root.name if MW_global_selected.prevalid_root else '~'}", icon="FRAME_PREV")
             col_rowSplit = boxSelected.row().split(factor=0.6)
-            col_rowSplit.label(text=f"Last: {MW_global_selected.last.name if MW_global_selected.last else '~'}", icon="RESTRICT_SELECT_OFF")
+            col_rowSplit.label(text=f"Current: {MW_global_selected.current.name if MW_global_selected.current else '~'}", icon="RESTRICT_SELECT_OFF")
             col_rowSplit.label(text=f"{MW_global_selected.prevalid_last.name if MW_global_selected.prevalid_last else '~'}", icon="FRAME_PREV")
             col_rowSplit = boxSelected.row().split(factor=0.6)
-            col_rowSplit.label(text=f"Selected: {len(MW_global_selected.selection) if MW_global_selected.selection else '~'}", icon="SELECT_SET")
-            col_rowSplit.label(text=f"{context.active_object.name if context.active_object else '~'}", icon="SELECT_INTERSECT")
+            col_rowSplit.label(text=f"Active: {context.active_object.name if context.active_object else '~'}", icon="SELECT_INTERSECT")
+            col_rowSplit.label(text=f"{len(MW_global_selected.selection) if MW_global_selected.selection else '~'}", icon="SELECT_SET")
+
+            # idx
+            if MW_global_selected.current:
+                boxSelected.separator()
+                col_rowSplit = boxSelected.row().split(factor=0.5)
+                col_rowSplit.label(text=f"{MW_global_selected.current.mw_id.meta_type}", icon="COPY_ID")
+                col_rowSplit.label(text=f"s: {MW_global_selected.current.mw_id.storage_id}")
+                col_rowSplit.label(text=f"c: {MW_global_selected.current.mw_id.cell_id}")
 
             # more stuff
             box.operator(ops.MW_util_comps_OT.bl_idname, icon="NODE_COMPOSITING")

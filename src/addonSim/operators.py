@@ -590,11 +590,11 @@ class MW_util_bake_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_global_selected.last and MW_id_utils.isChild(MW_global_selected.last)
+        return MW_global_selected.current and MW_id_utils.isChild(MW_global_selected.current)
 
     def execute(self, context: types.Context):
         self.start_op(skipStats=True)
-        cell = utils_scene.copy_object(MW_global_selected.last, context)
+        cell = utils_scene.copy_object(MW_global_selected.current, context)
 
         cell.parent = None
         MW_id_utils.resetMetaType(cell)

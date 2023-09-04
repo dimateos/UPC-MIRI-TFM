@@ -274,7 +274,8 @@ class MW_global_selected:
 
     # common selection
     selection       : types.Object = None
-    last            : types.Object = None
+    current         : types.Object = None
+    active          : types.Object = None
     prevalid_last   : types.Object = None
 
     @classmethod
@@ -285,12 +286,12 @@ class MW_global_selected:
         rootChange = False
 
         if selected:
-            if cls.last:
-                cls.prevalid_last = cls.last
+            if cls.current:
+                cls.prevalid_last = cls.current
             cls.selection = selected.copy() if isinstance(selected, list) else [selected]
-            cls.last = cls.selection[-1]
+            cls.current = cls.selection[-1]
 
-            newRoot = MW_id_utils.getRoot(cls.last)
+            newRoot = MW_id_utils.getRoot(cls.current)
             if newRoot:
                 if cls.root:
                     cls.prevalid_root  = cls.root
@@ -325,14 +326,14 @@ class MW_global_selected:
 
     @classmethod
     def logSelected(cls):
-        DEV.log_msg(f"root: {cls.root.name if cls.root else '...'} | last: {cls.last.name if cls.last else '...'}"
+        DEV.log_msg(f"root: {cls.root.name if cls.root else '...'} | last: {cls.current.name if cls.current else '...'}"
                     f" | selection: {len(cls.selection) if cls.selection else '...'}", {"GLOBAL", "SELECTED"})
 
     @classmethod
     def reset(cls):
         """ Reset all to None but keep sanitized references to prevalid """
         cls.selection = None
-        cls.last      = None
+        cls.current      = None
         cls.root      = None
         cls.fract     = None
         cls.prevalid_sanitize()
@@ -340,7 +341,7 @@ class MW_global_selected:
     @classmethod
     def sanitize(cls):
         """ Potentially sanitize objects no longer on the scene """
-        if utils_scene.needsSanitize_object(cls.last):
+        if utils_scene.needsSanitize_object(cls.current):
             cls.reset()
         else:
             cls.prevalid_sanitize()
