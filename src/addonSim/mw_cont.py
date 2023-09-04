@@ -32,6 +32,12 @@ class ERROR_IDX:
 
     all = [ MISSING, ASYMMETRY ]
 
+    @classmethod
+    def str(cls, idx):
+        if idx == cls.MISSING: return "MISSING"
+        if idx == cls.ASYMMETRY: return "ASYMMETRY"
+        return "unknown"
+
 class STATE_ENUM:
     """ Current cell state, preserves some sequentiality"""
     SOLID = 0
@@ -39,6 +45,13 @@ class STATE_ENUM:
     CORE = -1
 
     all = [ SOLID, AIR, CORE ]
+
+    @classmethod
+    def str(cls, idx):
+        if idx == cls.SOLID: return "SOLID"
+        if idx == cls.AIR: return "AIR"
+        if idx == cls.CORE: return "CORE"
+        return "unknown"
 
 #-------------------------------------------------------------------
 

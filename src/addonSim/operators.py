@@ -322,7 +322,7 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
 class MW_mark_core_OT(_StartRefresh_OT):
     bl_idname = "mw.mark_core"
     bl_label = "Mark core object"
-    bl_description = "Change the selected cells states to core."
+    bl_description = "Change the selected cells states to core"
 
     # UNDO as part of bl_options will cancel any edit last operation pop up
     bl_options = {'INTERNAL', 'UNDO'}
@@ -334,11 +334,12 @@ class MW_mark_core_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
+        # OPT:: if the cells store the state, then there is no need to poll fract + could recover it
         return MW_global_selected.fract
 
     def execute(self, context: types.Context):
         self.start_op()
-        mw_setup.set_cellsCore(MW_global_selected.root, MW_global_selected.selection)
+        mw_setup.set_cellsCore(MW_global_selected.fract, MW_global_selected.root, MW_global_selected.selection)
         return self.end_op()
 
 #-------------------------------------------------------------------
@@ -608,6 +609,8 @@ class MW_util_bake_OT(_StartRefresh_OT):
 classes = [
     MW_gen_OT,
     MW_gen_recalc_OT,
+
+    MW_mark_core_OT,
     MW_gen_links_OT,
 
     MW_sim_step_OT,

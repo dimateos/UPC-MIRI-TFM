@@ -63,16 +63,20 @@ class DM_utils(types.PropertyGroup):
     """ Global prefs for the dm utils (all part of PT) """
 
     meta_show_info: props.BoolProperty(
-        name="Show inspect...", description="Show the object info",
-        default=True,
+        name="Inspect OBJ", description="Show some object info",
+        default=False,
     )
     meta_show_full: props.BoolProperty(
-        name="Show full...", description="Show all the info",
+        name="full...", description="Show more info",
+        default=False,
+    )
+    meta_scene_info: props.BoolProperty(
+        name="Inspect SCENE", description="Show some scene info",
         default=False,
     )
     meta_show_tmpDebug: props.BoolProperty(
         name="debug...", description="WIP: Show some debug stuff",
-        default=False,
+        default=True,
     )
 
     # filters

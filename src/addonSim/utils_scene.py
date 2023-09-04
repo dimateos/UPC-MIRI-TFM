@@ -156,7 +156,7 @@ def get_child(obj: types.Object, name: str, rec=False, exactMatch = False) -> ty
 def get_children(obj: types.Object, names: list[str], rec=False, exactMatch = False) -> list[types.Object]:
     """ Find child by name (starts with to avoid limited exact names). Returns a list with the same size, with potentially None elements!  """
     toSearch = obj.children if not rec else obj.children_recursive
-    return get_object_fromList(toSearch, names, exactMatch)
+    return get_multiObject_fromList(toSearch, names, exactMatch)
 
 #-------------------------------------------------------------------
 

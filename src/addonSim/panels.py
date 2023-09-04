@@ -8,6 +8,7 @@ from .properties_global import (
     MW_global_storage,
     MW_global_selected,
 )
+from .mw_cont import STATE_ENUM
 
 from . import operators as ops
 from .panels_dm import util_classes_pt
@@ -37,7 +38,6 @@ class MW_gen_PT(types.Panel):
 
         # more options
         self.draw_debug(context, layoutCol)
-        layoutCol.operator(ops.MW_util_bool_OT.bl_idname, icon="MOD_BOOLEAN")
 
     def draw_onSelected(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
@@ -46,7 +46,7 @@ class MW_gen_PT(types.Panel):
 
         # Something selected, not last active
         if not selected:
-            col.label(text="No selectedect selected...", icon="ERROR")
+            col.label(text="No object selected...", icon="ERROR")
             return
 
         # No fracture selected
@@ -102,36 +102,41 @@ class MW_gen_PT(types.Panel):
             col_rowSplit.prop(prefs, "all_PT_meta_show_root", text="Root props:" if prefs.all_PT_meta_show_root else "Child props:")
             col_rowSplit.label(text=obj.name if prefs.all_PT_meta_show_root else selected.name)
 
-        # more actions
-        layout.operator(ops.MW_gen_links_OT.bl_idname, icon="OUTLINER_DATA_GREASEPENCIL")
-
         # visuals inspect
         #vis_cfg = context.scene.mw_vis -> scene data is affected by operator undo
         vis_cfg = prefs.mw_vis
         open, box = ui.draw_propsToggle_custom(vis_cfg, prefs.vis_PT_meta_inspector, layout, "Visuals...")
 
+        # more actions
+        layout.operator(ops.MW_mark_core_OT.bl_idname, icon="PIVOT_CURSOR")
+        layout.operator(ops.MW_gen_links_OT.bl_idname, icon="OUTLINER_DATA_GREASEPENCIL")
+
+        # warning no fract
+        if not MW_global_selected.fract:
+            layout.label(text="Root without storage! Recalc...", icon="ERROR")
+
     def draw_debug(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
 
-        open, box = ui.draw_toggleBox(prefs.gen_PT_meta_inspector, "meta_show_debug", layout)
+        open, box = ui.draw_toggleBox(prefs.gen_PT_meta_inspector, "meta_show_debug", layout, returnCol=False)
         if open:
-            # delete all fractures
-            col_rowSplit = box.row().split(factor=0.66)
-            col_rowSplit.operator(ops.MW_util_delete_all_OT.bl_idname, text="DELETE all", icon="CANCEL")
-            col_rowSplit.prop(prefs, "util_delete_OT_unhideSelect")
-
             # recalculate fracture
-            boxLinks = box.box()
-            boxLinks.operator(ops.MW_gen_recalc_OT.bl_idname, icon="ZOOM_PREVIOUS")
+            box.operator(ops.MW_gen_recalc_OT.bl_idname, icon="ZOOM_PREVIOUS")
 
-            # global storage
-            col_rowSplit = boxLinks.row().split(factor=0.66)
-            col_rowSplit.label(text=f"Storage: {len(MW_global_storage.id_fracts)}", icon="FORCE_CURVE")
-            col_rowSplit.prop(prefs, "prefs_autoPurge")
+            # cell data
+            if MW_global_selected.current:
+                boxSelected = box.box().column()
+                col_rowSplit = boxSelected.row().split(factor=0.5)
+                col_rowSplit.label(text=f"{MW_global_selected.current.mw_id.meta_type}", icon="COPY_ID")
+                col_rowSplit.label(text=f"s: {MW_global_selected.current.mw_id.storage_id}")
+                cell_id = MW_global_selected.current.mw_id.cell_id
+                col_rowSplit.label(text=f"c: {cell_id}")
 
-            col = boxLinks.column()
-            for id,fract in MW_global_storage.id_fracts.items():
-                col.label(text=f"{id}: {len(fract.cont.voro_cont)} cells + {len(fract.links.link_map)} links", icon="THREE_DOTS")
+                # cell data from cont
+                if MW_global_selected.fract and MW_global_selected.fract.cont:
+                    col_rowSplit = boxSelected.row()
+                    cell_state = MW_global_selected.fract.cont.cells_state[cell_id]
+                    col_rowSplit.label(text=f"State: {STATE_ENUM.str(cell_state)}", icon="EXPERIMENTAL")
 
             # global selected
             boxSelected = box.box().column()
@@ -145,16 +150,26 @@ class MW_gen_PT(types.Panel):
             col_rowSplit.label(text=f"Active: {context.active_object.name if context.active_object else '~'}", icon="SELECT_INTERSECT")
             col_rowSplit.label(text=f"{len(MW_global_selected.selection) if MW_global_selected.selection else '~'}", icon="SELECT_SET")
 
-            # idx
-            if MW_global_selected.current:
-                boxSelected.separator()
-                col_rowSplit = boxSelected.row().split(factor=0.5)
-                col_rowSplit.label(text=f"{MW_global_selected.current.mw_id.meta_type}", icon="COPY_ID")
-                col_rowSplit.label(text=f"s: {MW_global_selected.current.mw_id.storage_id}")
-                col_rowSplit.label(text=f"c: {MW_global_selected.current.mw_id.cell_id}")
+            # delete all fractures
+            boxLinks = box.box()
+            col_rowSplit = boxLinks.row().split(factor=0.66)
+            col_rowSplit.operator(ops.MW_util_delete_all_OT.bl_idname, text="DELETE all", icon="CANCEL")
+            col_rowSplit.prop(prefs, "util_delete_OT_unhideSelect")
+
+            # global storage
+            col_rowSplit = boxLinks.row().split(factor=0.66)
+            col_rowSplit.label(text=f"Storage: {len(MW_global_storage.id_fracts)}", icon="FORCE_CURVE")
+            col_rowSplit.prop(prefs, "prefs_autoPurge")
+
+            col = boxLinks
+            for id,fract in MW_global_storage.id_fracts.items():
+                col.label(text=f"{id}: {len(fract.cont.voro_cont)} cells + {len(fract.links.link_map)} links", icon="THREE_DOTS")
+
 
             # more stuff
-            box.operator(ops.MW_util_comps_OT.bl_idname, icon="NODE_COMPOSITING")
+            col = layout.column()
+            col.operator(ops.MW_util_comps_OT.bl_idname, icon="NODE_COMPOSITING")
+            col.operator(ops.MW_util_bool_OT.bl_idname, icon="MOD_BOOLEAN")
 
 
 #-------------------------------------------------------------------
@@ -194,8 +209,7 @@ class MW_addon_PT(types.Panel):
 
     def draw(self, context):
         prefs = getPrefs()
-        layout = self.layout
-        col = layout.column()
+        layout = self.layout.column()
 
         #ui.draw_propsToggle(prefs, prefs.prefs_PT_meta_inspector, layout)
         ui.draw_propsToggle_custom(prefs.dev_PT_meta_cfg, prefs.dev_PT_meta_cfg, layout, text="DEV")

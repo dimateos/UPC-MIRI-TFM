@@ -24,19 +24,26 @@ def draw_refresh(data, layout: types.UILayout):
     split.prop(data, "meta_auto_refresh", toggle=True, icon_only=False, icon='FILE_REFRESH')
     split.prop(data, "meta_refresh", toggle=True, icon_only=True, icon='FILE_REFRESH')
 
-def draw_toggleBox(metadata, propToggle_name:str, layout: types.UILayout, text:str=None, scaleOpen=0.9) -> tuple[bool, types.UILayout]:
+def draw_toggleBox(metadata, propToggle_name:str, layout: types.UILayout, text:str=None, scaleOpen=0.9, returnCol=True) -> tuple[bool, types.UILayout]:
     """ Create a box with a toggle, scales down recursively inner widgets by default. Return the state of the toggle and the created layout."""
     box = layout.box()
     open = getattr(metadata, propToggle_name)
     icon = CONST_ICONS.section_opened if open else CONST_ICONS.section_closed
 
+    # apply scale before to affect title
     if open:
         box.scale_y = scaleOpen
 
+    # draw title with icon
     if text:
         box.prop(metadata, propToggle_name, toggle=True, icon=icon, text=text)
     else:
         box.prop(metadata, propToggle_name, toggle=True, icon=icon)
+
+    # create a column to reduce spacing
+    if open:
+        if returnCol: box = box.column()
+
     return open, box
 
 def draw_props_raw(data, prop_names:list[str], layout: types.UILayout, showId=False):

@@ -13,8 +13,9 @@ from .properties import (
     MW_vis_cfg,
 )
 
-from .mw_cont import MW_Container, VORO_Container
+from .mw_cont import MW_Container, VORO_Container, STATE_ENUM
 from .mw_links import MW_Links
+from .mw_fract import MW_Fract # could import all from here
 
 from . import utils, utils_scene, utils_mat, utils_mesh
 from .utils_dev import DEV
@@ -219,13 +220,17 @@ def gen_cellsObjects(root: types.Object, cont: MW_Container, cfg: MW_gen_cfg, co
     getStats().logDt("generated cells objects")
     return cells
 
-def set_cellsCore(root: types.Object, cells_core: list[types.Object]):
+def set_cellsCore(fact: MW_Fract, root: types.Object, cells_core: list[types.Object]):
     prefs = getPrefs()
-    root_cells, root_cells_core = utils_scene.get_children(root, [prefs.names.cells, prefs.names.cells_core])
+    root_cells_core = utils_scene.get_child(root, prefs.names.cells_core)
 
     for cell in cells_core:
         # some selection could be an outside obj or a cell from other fract!
         if not MW_id_utils.sameStorageId(root, cell): continue
+
+        fact.cont.cells_state[cell.mw_id.cell_id] = STATE_ENUM.CORE
+        cell.active_material = root_cells_core.active_material
+        cell.parent = root_cells_core
 
 
 def gen_LEGACY_CONT(root: types.Object, voro_cont: VORO_Container, cfg: MW_gen_cfg, context: types.Context):

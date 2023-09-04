@@ -27,7 +27,7 @@ class Info_inpect_PT(types.Panel):
 
     def draw(self, context):
         prefs = getPrefs()
-        layout = self.layout
+        layout = self.layout.column()
 
         # inspect panel
         open, box = ui.draw_toggleBox(prefs.dm_prefs, "meta_show_info", layout, scaleOpen=1)
@@ -52,8 +52,8 @@ class Info_inpect_PT(types.Panel):
                     if bpy.context.mode == 'OBJECT':        self.drawMode_object(context, obj, box)
                     elif bpy.context.mode == 'EDIT_MESH':   self.drawMode_edit(context, obj, box)
 
-        # debug options
-        open, box = ui.draw_toggleBox(prefs.dm_prefs, "meta_show_tmpDebug", layout)
+        # scene inspect
+        open, box = ui.draw_toggleBox(prefs.dm_prefs, "meta_scene_info", layout)
         if open:
             # fix orphan meshes
             col_rowSplit = box.row().split(factor=0.8)
@@ -70,9 +70,11 @@ class Info_inpect_PT(types.Panel):
                 collection = getattr(bpy.data, colName)
                 col.label(text=f"{colName}: {len(collection)}", icon="LIBRARY_DATA_OVERRIDE_NONEDITABLE")
 
+        # debug options
+        open, box = ui.draw_toggleBox(prefs.dm_prefs, "meta_show_tmpDebug", layout)
+        if open:
             box.operator(ops_util.Debug_testColors_OT.bl_idname, icon="RESTRICT_COLOR_ON")
-
-        layout.operator(ops_util.Debug_testCode_OT.bl_idname, icon="MATSHADERBALL")
+            box.operator(ops_util.Debug_testCode_OT.bl_idname, icon="MATSHADERBALL")
 
     def drawMode_object(self, context, obj, box):
         # draw tranforms with specific precision
@@ -166,10 +168,13 @@ class Info_inpect_PT(types.Panel):
         fmt_vec = f"({fmt_single}, {fmt_single}, {fmt_single})"
         from math import degrees
 
+        subIcon = "NONE"
+        prefixIcon = "# "
+
         # bb
         box0 = layout.box()
         col0 = box0.column()
-        col0.label(text="Bounding box")
+        col0.label(text=f"{prefixIcon}Bounding box", icon=subIcon)
         bb, bb_center, bb_radius = utils_trans.get_bb_data(obj, worldSpace=True)
         col0.label(text=f"World radius: {fmt_single}".format(bb_radius))
         bb, bb_center, bb_radius = utils_trans.get_bb_data(obj)
@@ -178,7 +183,7 @@ class Info_inpect_PT(types.Panel):
         # group world
         box1 = layout.box()
         col1 = box1.column()
-        col1.label(text="World transform")
+        col1.label(text=f"{prefixIcon}World transform", icon=subIcon)
 
         matrix: Matrix = obj.matrix_world
         pos = matrix.to_translation()
@@ -190,9 +195,9 @@ class Info_inpect_PT(types.Panel):
         col1.label(text=f"sca: {fmt_vec}".format(*sca))
 
         # group local
-        box2 = col1.box()
+        box2 = layout.box()
         col2 = box2.column()
-        col2.label(text="Local transform")
+        col2.label(text=f"{prefixIcon}Local transform", icon=subIcon)
 
         matrix: Matrix = obj.matrix_basis
         pos = matrix.to_translation()
@@ -205,9 +210,9 @@ class Info_inpect_PT(types.Panel):
 
         # group centroid
         if obj.type == "MESH":
-            box3 = col1.box()
+            box3 = layout.box()
             col3 = box3.column()
-            col3.label(text="Local centroid (median)")
+            col3.label(text=f"{prefixIcon}Local centroid (median)", icon=subIcon)
             pos = utils_geo.centroid_mesh(obj.data, log=False)
             col3.label(text=f"pos: {fmt_vec}".format(*pos))
             col3.label(text=f"len: {pos.length}")
