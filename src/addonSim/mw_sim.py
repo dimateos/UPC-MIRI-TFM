@@ -42,7 +42,7 @@ class StepData:
         self.break_msg          : str               = "NO_BREAK"
 
 class SIM_CONST:
-    """ #WIP:: Some sim constants, maybe moved """
+    """ # WIP:: Some sim constants, maybe moved """
     upY = Vector((0,1,0))
     backZ = Vector((0,0,-1))
     dot_aligned_threshold = 1-1e-6
@@ -125,7 +125,7 @@ class Simulation:
     def storeRnd(self):
         self.rndState = rnd.getstate()
     def restoreRnd(self, addState=0):
-        """ NOTE:: just call some amount of randoms to modify seed, could modify state but requires copying a 600 elemnt tuple """
+        """ # NOTE:: just call some amount of randoms to modify seed, could modify state but requires copying a 600 elemnt tuple """
         utils.debug_rnd_seed(addState)
         #rnd.setstate(self.rndState)
         #for i in range(addState): rnd.random()

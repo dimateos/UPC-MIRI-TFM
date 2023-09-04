@@ -101,7 +101,7 @@ def map_FtoF(me: types.Mesh):
 
 def map_VtoF_EtoF_VtoE(me: types.Mesh):
     """ Returns multiple mappings of the mesh (that complement blenders)
-        NOTE:: basically the same performance as the general method
+        # NOTE:: basically the same performance as the general method
     """
     EKtoE = dict()
     VtoE = [set() for v in me.vertices]
@@ -130,7 +130,7 @@ def map_VtoF_EtoF_VtoE(me: types.Mesh):
 
 def map_VtoF_EtoF_VtoE_dictBased(me: types.Mesh):
     """ Returns multiple mappings of the mesh (that complement blenders)
-        NOTE:: turns out to be less performant than the list based methods
+        # NOTE:: turns out to be less performant than the list based methods
     """
     EKtoE: dict[tuple[int,int],int] = dict()
     VtoE: dict[int, set[int]] = dict()

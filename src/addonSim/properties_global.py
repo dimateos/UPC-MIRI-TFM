@@ -43,14 +43,16 @@ class MW_id_utils:
 
     @staticmethod
     def isRoot(obj: types.Object) -> bool:
+        """ Check if this is a root object, core the fracture (holds most of the config) """
         return "ROOT" in obj.mw_id.meta_type
     @staticmethod
     def isChild(obj: types.Object) -> bool:
+        """ Check if this is a child object part of a fracture (but could be either a cell, link, or intermediate object) """
         return "CHILD" in obj.mw_id.meta_type
 
     @staticmethod
     def hasRoot(obj: types.Object) -> bool:
-        """ Quick check if the object is part of a fracture """
+        """ Check if the object is part of a fracture (default value objects have) """
         #DEV.log_msg(f"hasRoot check: {obj.name} -> {obj.mw_id.meta_type}", {"REC", "CFG"})
         return "NONE" not in obj.mw_id.meta_type
 
@@ -82,6 +84,9 @@ class MW_id_utils:
 
     @staticmethod
     def getSceneRoots(scene: types.Scene) -> list[types.Object]:
+        """ Retrieve the root objects in the scene
+            # OPT:: could use the global storage instead of iterating the scene
+        """
         roots = [ obj for obj in scene.objects if MW_id_utils.isRoot(obj) ]
         return roots
 
@@ -89,7 +94,7 @@ class MW_id_utils:
     def setMetaType(obj: types.Object, type: set[str], skipParent = False, childrenRec = True):
         """ Set the property to the object and all its children (dictionary ies copied, not referenced)
             # NOTE:: acessing obj children is O(len(bpy.data.objects)), so just call it on the root again
-            # OPT:: avoid using this and just set the children?
+            # OPT:: could avoid using this and just set the children like for cell_id?
         """
         if not skipParent:
             obj.mw_id.meta_type = type.copy()
@@ -105,39 +110,56 @@ class MW_id_utils:
     #-------------------------------------------------------------------
 
     storage_uuid = 0
-    """ Simple counter as uuid"""
+    """ Simple counter as uuid
+        # OPT:: should be a read-only property
+    """
 
     @staticmethod
-    def setStorageId(obj: types.Object):
-        """ Set a new UUID for the storage, usually best to use getStorageId """
+    def genStorageId(obj: types.Object):
+        """ Set a new UUID for the storage, usually best to use getStorageId. Does not check the current id beforehand. """
         obj.mw_id.storage_id = MW_id_utils.storage_uuid
         MW_id_utils.storage_uuid += 1
 
     @staticmethod
-    def validStorageId(obj: types.Object):
+    def hasStorageId(obj: types.Object):
+        """ Check if the storage_id has been initialized, both the root and cells have it """
         return obj.mw_id.storage_id != -1
 
     @staticmethod
-    def validCellId(obj: types.Object):
-        return obj.mw_id.cell_id != -1
+    def sameStorageId(obj_a: types.Object, obj_b: types.Object):
+        """ Check if both objects are part of the same fracture """
+        return obj_a.mw_id.storage_id == obj_b.mw_id.storage_id
 
     @staticmethod
     def getStorageId(obj: types.Object):
-        """ Gets the storage id (assigns new uuid when needed) """
-        if not MW_id_utils.validStorageId(obj):
-            MW_id_utils.setStorageId(obj)
+        """ Gets the storage id (assigns new uuid when not set yet) """
+        if not MW_id_utils.hasStorageId(obj):
+            MW_id_utils.genStorageId(obj)
         return obj.mw_id.storage_id
 
     @staticmethod
     def getStorageId_assert(obj: types.Object):
-        """ Gets the storage id (excepts when unset) """
-        if not MW_id_utils.validStorageId(obj):
+        """ Gets the storage id (raises an exception if the id is not set yet) """
+        if not MW_id_utils.hasStorageId(obj):
             raise ValueError(f"{obj.name}: Invalid storage id (-1)!")
         return obj.mw_id.storage_id
 
     @staticmethod
     def resetStorageId(obj: types.Object):
+        """ Leave storage_id as not initilized """
         obj.mw_id.storage_id = -1
+
+    #-------------------------------------------------------------------
+
+    @staticmethod
+    def hasCellId(obj: types.Object):
+        """ Check if the cell_id has been initialized, meaning this is a cell object! """
+        return obj.mw_id.cell_id != -1
+
+    @staticmethod
+    def resetCellId(obj: types.Object):
+        """ Leave cell_id as not initilized """
+        obj.mw_id.cell_id = -1
 
 
 #-------------------------------------------------------------------
@@ -206,7 +228,7 @@ class MW_global_storage:
 
     @classmethod
     def freeFract_attempt(cls, obj):
-        if MW_id_utils.validStorageId(obj):
+        if MW_id_utils.hasStorageId(obj):
             id = obj.mw_id.storage_id
             if id in cls.id_fracts:
                 cls.freeFract_fromID(id)
@@ -258,7 +280,7 @@ class MW_global_selected:
     @classmethod
     def setSelected(cls, selected):
         """ Update global selection status and query fract root
-        # OPT:: multi-root selection? work with current active?
+            # OPT:: multi-root selection? work with current active?
         """
         rootChange = False
 

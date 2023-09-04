@@ -127,7 +127,7 @@ class DM_utils(types.PropertyGroup):
 
 class MW_prefs(bpy.types.AddonPreferences):
     bl_idname = ADDON.mod_name_prefs
-    """ NOTE:: __name__ must be exaclty used for addon prefs, so check when deploying without the addon"""
+    """ # NOTE:: __name__ must be exaclty used for addon prefs, so check when deploying without the addon"""
 
     def draw(self, context):
         """ Draw in preferences panel"""

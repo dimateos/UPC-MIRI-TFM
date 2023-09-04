@@ -62,7 +62,7 @@ def copy_originalPrev(obj: types.Object, cfg: MW_gen_cfg, context: types.Context
     MW_id_utils.resetStorageId(obj_root)
 
     # copy the original from the previous root withou suffix
-    obj_original = utils_scene.get_children([obj], getPrefs().names.original_copy+cfg.struct_nameOriginal)
+    obj_original = utils_scene.get_child(obj, getPrefs().names.original_copy+cfg.struct_nameOriginal)
     obj_copy = utils_scene.copy_objectRec(obj_original, context)
     utils_scene.set_child(obj_copy, obj_root)
 
@@ -71,7 +71,7 @@ def copy_originalPrev(obj: types.Object, cfg: MW_gen_cfg, context: types.Context
 
 def get_renamed(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     """ split by first _
-    # NOTE:: not robust... also not used?
+        # NOTE:: not robust... also not used?
     """
     try:
         prefix, name = obj.name.split("_",1)
@@ -85,7 +85,7 @@ def get_renamed(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
 
 def copy_convex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, context: types.Context):
     """ Make a copy and find its convex hull
-    # NOTE:: not recursive
+        # NOTE:: not recursive!
     """
 
     # Duplicate again the copy and set child too
@@ -221,12 +221,11 @@ def gen_cellsObjects(root: types.Object, cont: MW_Container, cfg: MW_gen_cfg, co
 
 def set_cellsCore(root: types.Object, cells_core: list[types.Object]):
     prefs = getPrefs()
-    root_cells = utils_scene.get_children([root], prefs.names.cells_core)
-    root_cells_core = utils_scene.get_children([root], prefs.names.cells_core)
+    root_cells, root_cells_core = utils_scene.get_children(root, [prefs.names.cells, prefs.names.cells_core])
 
     for cell in cells_core:
-        if cell is None: continue
-        if not MW_id_utils.validCellId(cell): continue
+        # some selection could be an outside obj or a cell from other fract!
+        if not MW_id_utils.sameStorageId(root, cell): continue
 
 
 def gen_LEGACY_CONT(root: types.Object, voro_cont: VORO_Container, cfg: MW_gen_cfg, context: types.Context):

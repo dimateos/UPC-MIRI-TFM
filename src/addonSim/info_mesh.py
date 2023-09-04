@@ -1,7 +1,7 @@
 # MIRI-A3DM
 # Diego Mateos (UPC)
 """ Sample functions to review mesh data\n
-    OPT:: type annotations for autocompletion
+    # OPT:: type annotations for autocompletion
 """
 
 import bpy

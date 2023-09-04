@@ -118,7 +118,7 @@ def get_nameClean(name):
 
 def get_object_fromList(objects: list[types.Object], name: str, exactMatch = True) -> types.Object|None:
     """ Find an object by name inside the list provided, returns the first found.
-    # IDEA:: maybe all children search based methods should return the explored objs
+        # IDEA:: maybe all children search based methods should return the explored objs
     """
     if exactMatch:
         for obj in objects:
@@ -133,14 +133,11 @@ def get_object_fromList(objects: list[types.Object], name: str, exactMatch = Tru
 
     return None
 
-def get_multiObject_fromList(objects: list[types.Object], names: list[str]) -> list[types.Object]:
-    """ Find the objects by non exact name """
-    found = []
-    for obj in objects:
-        obj_name = get_nameClean(obj.name)
-        if obj_name in names:
-            found.append(obj)
-
+def get_multiObject_fromList(objects: list[types.Object], names: list[str], exactMatch = True) -> list[types.Object]:
+    """ Find objects by name inside the list provided, returns a list of the same size with the first founds for each name (if any).
+        # NOTE:: mainly useful for get_children where the children list from the parent object is only requested once
+    """
+    found = [ get_object_fromList(objects, n, exactMatch) for n in names ]
     return found
 
 def get_object_fromScene(scene: types.Scene, name: str, exactMatch = True) -> types.Object|None:
@@ -148,16 +145,16 @@ def get_object_fromScene(scene: types.Scene, name: str, exactMatch = True) -> ty
     return get_object_fromList(scene.objects, name, exactMatch)
 
 def get_multiObject_fromScene(scene: types.Scene, names: list[str], exactMatch = True) -> list[types.Object]:
-    """ Find an object in the scene by name (starts with to avoid limited exact names). Returns the first found. """
-    return get_object_fromList(scene.objects, name, exactMatch)
+    """ Find an object in the scene by name (starts with to avoid limited exact names). Returns a list with the same size, with potentially None elements! """
+    return get_multiObject_fromList(scene.objects, names, exactMatch)
 
 def get_child(obj: types.Object, name: str, rec=False, exactMatch = False) -> types.Object|None:
     """ Find child by name (starts with to avoid limited exact names) """
     toSearch = obj.children if not rec else obj.children_recursive
     return get_object_fromList(toSearch, name, exactMatch)
 
-def get_children(obj: types.Object, names: list[str], rec=False) -> list[types.Object]:
-    """ Find child by name (starts with to avoid limited exact names) """
+def get_children(obj: types.Object, names: list[str], rec=False, exactMatch = False) -> list[types.Object]:
+    """ Find child by name (starts with to avoid limited exact names). Returns a list with the same size, with potentially None elements!  """
     toSearch = obj.children if not rec else obj.children_recursive
     return get_object_fromList(toSearch, names, exactMatch)
 

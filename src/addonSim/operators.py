@@ -108,11 +108,10 @@ class MW_gen_OT(_StartRefresh_OT):
     #    return MW_global_selected.last
 
     def invoke(self, context, event):
-        # avoid last stored operation overide
+        # avoid last stored operation overide and recalculating everything
         self.invoked_once = False
         getPrefs().gen_PT_meta_inspector.reset_meta_show_toggled()
-
-        # TODO:: potentially clean memory ptr leftovers?
+        # id of last fract calculated stored (outside the operator)
         self.last_storageID = None
         return super().invoke(context, event)
 
@@ -128,10 +127,9 @@ class MW_gen_OT(_StartRefresh_OT):
         if self.checkRefresh_cancel() or prefs.gen_PT_meta_inspector.skip_meta_show_toggled():
             return self.end_op_refresh(skipLog=True)
 
-        # Potentially free existing storage -> now purged on undo callback dynamically too
+        # Potentially free existing storage -> now purged on undo callback dynamically (called by uperator redo)
         if self.last_storageID is not None:
             MW_global_storage.freeFract_fromID(self.last_storageID)
-
 
         # Retrieve root
         obj = MW_global_selected.root
@@ -173,6 +171,10 @@ class MW_gen_OT(_StartRefresh_OT):
         self.obj_root = obj_root
         prefs = getPrefs()
 
+        # Add to global storage to generate the fracture id
+        fract = MW_Fract()
+        self.last_storageID = MW_global_storage.addFract(fract, obj_root)
+
         #assert(isinstance(self.cfg, MW_gen_cfg))
         cfg: MW_gen_cfg = self.cfg
         cfg.debug_rnd_seed = utils.debug_rnd_seed(cfg.debug_rnd_seed)
@@ -211,7 +213,7 @@ class MW_gen_OT(_StartRefresh_OT):
 
 
         DEV.log_msg("Start calc cont", {'CALC', 'CONT'})
-        cont = MW_Container(points, bb, faces4D, precision=cfg.debug_precisionWalls)
+        fract.cont = cont = MW_Container(obj_root, points, bb, faces4D, precision=cfg.debug_precisionWalls)
         if not cont.initialized:
             return self.end_op_error("found no cont... recalc different params?")
 
@@ -228,20 +230,14 @@ class MW_gen_OT(_StartRefresh_OT):
 
 
         DEV.log_msg("Start calc links", {'CALC', 'LINKS'})
-        links:MW_Links = MW_Links(cont)
+        fract.links = links = MW_Links(cont)
         if not links.initialized:
             return self.end_op_error("found no links... recalc different params?")
 
-
-        # use global storage
-        fract = MW_Fract()
-        fract.cont = cont
-        fract.links = links
-        self.last_storageID = MW_global_storage.addFract(fract, obj_root)
         return self.end_op()
 
     def end_op(self, msg="", skipLog=False, retPass=False):
-        """ OVERRIDE:: end_op to perform stuff at the end """
+        """ # OVERRIDE:: end_op to perform stuff at the end """
 
         if self.obj_root:
             # copy any cfg that may have changed during execute
@@ -274,8 +270,10 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
         obj_root = MW_global_selected.root
         gen_cfg = obj_root.mw_gen
 
-        # Potentially free existing storage (less max memory)
+        # Add to global storage to generate the fracture id (also potentially free existing storage to reduce max memory)
         MW_global_storage.freeFract_attempt(obj_root)
+        fract = MW_Fract()
+        MW_global_storage.addFract(fract, obj_root) # no need to store, there is no mod last op panel
 
         DEV.log_msg("Retrieving fracture data (objects and points)", {'SETUP'})
         if gen_cfg.shape_useConvexHull:
@@ -300,28 +298,22 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
 
 
         DEV.log_msg("Calc cont and links (cells not regenerated!)", {'CALC'})
-        cont = MW_Container(points, bb, faces4D, precision=gen_cfg.debug_precisionWalls)
+        fract.cont = cont = MW_Container(obj_root, points, bb, faces4D, precision=gen_cfg.debug_precisionWalls)
         if not cont:
             return self.end_op_error("found no cont... but could try recalculate!")
 
         # precalculate/query neighs and other data
-        cont.precalculate_data(obj_cells_root, obj_cells_root.children)
+        cont.precalculate_data(obj_cells_root.children)
 
         # calculate links and store in the external storage
-        links:MW_Links = MW_Links(cont)
+        fract.links = links = MW_Links(cont)
         if not links.initialized:
             return self.end_op_error("found no links... but could try recalculate!")
 
-
-        # use global storage
-        fract = MW_Fract()
-        fract.cont = cont
-        fract.links = links
-        self.last_storageID = MW_global_storage.addFract(fract, obj_root)
         return self.end_op()
 
     def end_op(self, msg="", skipLog=False, retPass=False):
-        """ OVERRIDE:: end_op to perform stuff at the end """
+        """ # OVERRIDE:: end_op to perform stuff at the end """
         MW_global_selected.recheckSelected()
         return super().end_op(msg, skipLog, retPass)
 
@@ -388,7 +380,7 @@ class MW_gen_links_OT(_StartRefresh_OT):
         return self.end_op()
 
     def end_op(self, msg="", skipLog=False, retPass=False):
-        """ OVERRIDE:: end_op to perform assign child to all """
+        """ # OVERRIDE:: end_op to perform assign child to all """
         obj = MW_global_selected.root
         if obj: MW_id_utils.setMetaType(obj, {"CHILD"}, skipParent=True)
         return super().end_op(msg, skipLog, retPass)

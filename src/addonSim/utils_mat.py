@@ -206,8 +206,9 @@ def delete_meshUV(mesh: types.Mesh):
 
 def gen_meshVC_legacy(mesh: types.Mesh, color_base:Vector|list[Vector] = None, joinFaces=True, name="VC_legacy") -> types.MeshLoopColorLayer:
     """ Add a legacy vertex color layer to the mesh: 4D float PER loop corner
-        NOTE:: internally uses the same feature as color attributes, but limited to loops
+        # NOTE:: internally uses the same feature as color attributes, but limited to loops
     """
+
     vc = mesh.vertex_colors.new(name=name)
     if color_base: set_meshVC_legacy(mesh, vc, color_base, joinFaces)
     return vc
@@ -233,9 +234,7 @@ def set_meshVC_legacy_rnd(mesh: types.Mesh, vc: types.MeshLoopColorLayer|str, mi
 
 def gen_meshVC(mesh: types.Mesh, color_base:Vector|list[Vector] = None, joinFaces=True, atype="FLOAT_COLOR", adomain="POINT", name="VC") -> types.Attribute:
     """ Add a color layer to the mesh: 4D float PER loop corner / vertex
-        NOTE:: internally color attributes use the same structure as attributes but limited to colors and POINT/CORNER
-        TODO:: using generalized set mesh attr, maybe also general version for common set + create list in random and pass it
-        IDEA:: maybe join faces as a parameter in the ATTRS class?
+        # NOTE:: internally color attributes use the same structure as attributes but limited to colors and POINT/CORNER
     """
     assert atype in ATTRS.attrsColor_atype, f"{atype} not in {ATTRS.attrsColor_atype}"
     assert adomain in ATTRS.attrsColor_adomain, f"{adomain} not in {ATTRS.attrsColor_adomain}"
@@ -263,7 +262,7 @@ def set_meshVC_rnd(mesh: types.Mesh, vc: types.Attribute|str, minC=0.0, maxC=1.0
 
 def gen_meshAC(mesh: types.Mesh, color_base:Vector|list[Vector] = None, atype="FLOAT_COLOR", adomain="EDGE", name="AC") -> types.Attribute:
     """ Add an attribute layer to the mesh to add color: 4D float PER loop, face, edge, vertex, etc
-        NOTE:: when using POINT/CORNER will also be added as a color_attribute
+        # NOTE:: when using POINT/CORNER will also be added as a color_attribute
     """
     assert atype in ATTRS.attrsColor_atype, f"{atype} not in {ATTRS.attrsColor_atype}"
     assert adomain in ATTRS.attrs_adomain, f"{adomain} not in {ATTRS.attrs_adomain}"
@@ -289,7 +288,7 @@ def set_meshAC_rnd(mesh: types.Mesh, ac: types.Attribute|str, minC=0.0, maxC=1.0
 
 def gen_meshAttr(mesh: types.Mesh, val_base = None, val_repeats = 1, atype="FLOAT", adomain="EDGE", name="AT") -> types.Attribute:
     """ Add a custom attribute layer to the mesh: vector, float, string, etc PER loop, face, edge, vertex, etc
-        NOTE:: when using colors and POINT/CORNER will also be added as a color_attribute PLUS the access attribute changes
+        # NOTE:: when using colors and POINT/CORNER will also be added as a color_attribute PLUS the access attribute changes
     """
     assert(atype in ATTRS.attrs_atype)
     assert(adomain in ATTRS.attrs_adomain)
@@ -325,7 +324,7 @@ def set_meshAttr_rnd(mesh: types.Mesh, attr: types.Attribute|str, minC=0.0, maxC
 
 def set_meshAttr_perFace(mesh: types.Mesh, dataAttr, values, val_repeats = 1):
     """ Generalized method to set a property per face to corners of a mesh.
-        NOTE:: requires acess to the data not a str to search it in the mesh
+        # NOTE:: requires acess to the data not a str to search it in the mesh
     """
     values = utils.assure_list(values)
     dataAttrName = ATTRS.get_attrName_inData(dataAttr)

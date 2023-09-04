@@ -21,7 +21,7 @@ link_key_t = tuple[int, int]
 
 class ERROR_IDX:
     """ Use leftover indices between cont boundaries and custom walls for filler error idx?
-        NOTE:: could be using any number, sequentiality not used
+        # NOTE:: could be using any number, sequentiality not used
     """
     _zerosForHighlight = 1000000 # could use original ID to preserve it?
 
@@ -44,11 +44,14 @@ class STATE_ENUM:
 
 class MW_Container:
 
-    def __init__(self, points: list[Vector], bb: list[Vector, 6], faces4D: list[Vector], precision: int):
+    def __init__(self, root :types.Object, points: list[Vector], bb: list[Vector, 6], faces4D: list[Vector], precision: int):
         self.initialized = False
         """ Set to true after succesfully inserted all points in the voro cointainer """
         self.precalculated = False
         """ Set to true after succesfully precalculated all the data """
+
+        self.root = root
+        """ Shortcut to fracture root object """
 
         # construct voro++ cont
         self.voro_cont = self.build_cont(points, bb, faces4D, precision)
@@ -56,7 +59,7 @@ class MW_Container:
             self.initialized = True
 
     def precalculate_data(self, cells_list : list[types.Object]):
-        """ Precalculate/query data such as valid neighbours and mapping faces """
+        """ Precalculate/query data such as valid neighbours and mapping faces, also adds storage and cell id to cell objects """
         stats = getStats()
 
         # init wall dict with just empty lists (some will remain empty)
@@ -65,7 +68,7 @@ class MW_Container:
         }
         # cell dict lists will have the same size of neighs/faces so fill in the following loop while checking for missing ones
         self.keys_perCell: dict[int, list[link_key_t] | int] = dict()
-        """ NOTE:: missing cells are filled with a placeholder id to preserve original position idx """
+        """ # NOTE:: missing cells are filled with a placeholder id to preserve original position idx """
 
         # calculate missing cells and query neighs (also with placeholders idx)
         self.foundId   : list[int]           = []
@@ -98,7 +101,11 @@ class MW_Container:
             # asign idx cell managing missing ones
             idx_cell = self.foundId[idx_found]
             self.cells_objs[idx_cell] = obj_cell
+
+            # asign data to the scene object too, including the storage id
             obj_cell.mw_id.cell_id = idx_cell
+            obj_cell.mw_id.storage_id = self.root.mw_id.storage_id
+
             # initial state is SOLD
             self.cells_state[idx_cell] = STATE_ENUM.SOLID
 
@@ -114,7 +121,7 @@ class MW_Container:
         self.keys_asymmetry : list[link_key_t]    = []
         self.keys_missing   : list[link_key_t]    = []
         self.neighs_faces   : list[list[int]|int] = [ERROR_IDX.MISSING]*len(self.voro_cont)
-        """ NOTE:: missing cells and neigh asymmetries are filled with a placeholder id too """
+        """ # NOTE:: missing cells and neigh asymmetries are filled with a placeholder id too """
 
         for idx_cell in self.foundId:
             neighs_cell = self.neighs[idx_cell]

@@ -64,7 +64,7 @@ def get_verts(obj: types.Object, worldSpace=False) -> list[Vector, 6]:
 
 def get_bb_data(obj: types.Object, margin_disp = 0.0, worldSpace=False) -> tuple[list[Vector], float, float]:
     """ Get the object bounding box MIN/MAX Vector pair in world space
-    # NOTE:: atm limited to mesh, otherwise check and use depsgraph
+        # NOTE:: atm limited to mesh, otherwise check and use depsgraph
     """
     disp = Vector([margin_disp]*3)
 
@@ -193,7 +193,7 @@ def scale_objectBB(obj: types.Object, s:float|Vector, replace_s = True):
 
 def scale_object(obj: types.Object, s:float|Vector, replace_s = True, pivot:Vector = None):
     """ Scale an object optionally around a pivot point
-    # WIP:: pivots space world/local etc break + hard to replace s too -> move center of curves to its center?
+        # WIP:: pivots space world/local etc break + hard to replace s too -> move center of curves to its center?
     """
     sv = assure_vector3(s)
     if not replace_s: sv *= obj.scale
@@ -230,7 +230,7 @@ def scale_objectChildren(obj_father: types.Object, s:float|Vector, replace_s=Tru
 #-------------------------------------------------------------------
 
 def assure_vector3(val_v3):
+    """ NOTE:: converts single values to 3D, skips vectors (not checked if 3D tho) """
     if not isinstance(val_v3, Vector):
         return Vector([val_v3]*3)
-    # NOTE:: also check to_3d?
     return val_v3

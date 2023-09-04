@@ -540,7 +540,7 @@ class Debug_testColors_OT(types.Operator):
 
 class Debug_testCode_OT(types.Operator):
     """ Test some code before creating new operators...
-    # NOTE:: could go to script files, but this tests the exact same environment the extension has after loading the modules
+        # NOTE:: could go to script files, but this tests the exact same environment the extension has after loading the modules
     """
     bl_idname = "dm.debug_test_code"
     bl_label = "DEBUG: addGradient"

@@ -214,7 +214,7 @@ def points_noDoubles(points: list[Vector], cfg: MW_gen_cfg):
 
 def points_transformCfg(points: list[Vector], cfg: MW_gen_cfg, bb_radius: float):
     """ Applies all transformations to the set of points obtained
-    # OPT:: do it while extracting to limit operations on unused data -> also check valid inside cont
+        # OPT:: do it while extracting to limit operations on unused data -> also check valid inside cont
     """
     points_limitNum(points, cfg)
     points_addNoise(points, cfg, bb_radius)
@@ -238,7 +238,7 @@ def boolean_mod_add(obj_original: types.Object, obj_cells_root: types.Object, co
     depsgraph = context.evaluated_depsgraph_get()
 
 def get_connected_comps(fract: MW_Fract):
-    """ NOTE:: old method, now donw with networkx """
+    """ # NOTE:: old method, now done with networkx """
     cell_union = UnionFind(len(fract.cont.foundId))
 
     for l in fract.links.internal:
