@@ -118,6 +118,10 @@ class MW_id_utils:
         return obj.mw_id.storage_id != -1
 
     @staticmethod
+    def validCellId(obj: types.Object):
+        return obj.mw_id.cell_id != -1
+
+    @staticmethod
     def getStorageId(obj: types.Object):
         """ Gets the storage id (assigns new uuid when needed) """
         if not MW_id_utils.validStorageId(obj):

@@ -117,7 +117,7 @@ def get_nameClean(name):
     except IndexError: return name
 
 def get_object_fromList(objects: list[types.Object], name: str, exactMatch = True) -> types.Object|None:
-    """ Find an object by name inside the list provided
+    """ Find an object by name inside the list provided, returns the first found.
     # IDEA:: maybe all children search based methods should return the explored objs
     """
     if exactMatch:
@@ -133,7 +133,21 @@ def get_object_fromList(objects: list[types.Object], name: str, exactMatch = Tru
 
     return None
 
+def get_multiObject_fromList(objects: list[types.Object], names: list[str]) -> list[types.Object]:
+    """ Find the objects by non exact name """
+    found = []
+    for obj in objects:
+        obj_name = get_nameClean(obj.name)
+        if obj_name in names:
+            found.append(obj)
+
+    return found
+
 def get_object_fromScene(scene: types.Scene, name: str, exactMatch = True) -> types.Object|None:
+    """ Find an object in the scene by name (starts with to avoid limited exact names). Returns the first found. """
+    return get_object_fromList(scene.objects, name, exactMatch)
+
+def get_multiObject_fromScene(scene: types.Scene, names: list[str], exactMatch = True) -> list[types.Object]:
     """ Find an object in the scene by name (starts with to avoid limited exact names). Returns the first found. """
     return get_object_fromList(scene.objects, name, exactMatch)
 
@@ -141,6 +155,11 @@ def get_child(obj: types.Object, name: str, rec=False, exactMatch = False) -> ty
     """ Find child by name (starts with to avoid limited exact names) """
     toSearch = obj.children if not rec else obj.children_recursive
     return get_object_fromList(toSearch, name, exactMatch)
+
+def get_children(obj: types.Object, names: list[str], rec=False) -> list[types.Object]:
+    """ Find child by name (starts with to avoid limited exact names) """
+    toSearch = obj.children if not rec else obj.children_recursive
+    return get_object_fromList(toSearch, names, exactMatch)
 
 #-------------------------------------------------------------------
 

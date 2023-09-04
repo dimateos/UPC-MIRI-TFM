@@ -177,6 +177,8 @@ class MW_vis_cfg(types.PropertyGroup):
     # use prefs editor in the panel but edit the selected root
     nbl_prefsProxy: props.BoolProperty(default=False)
 
+    #-------------------------------------------------------------------
+
     cell_scale: props.FloatProperty(
         name="Cell scale", description="Reduce some bits to be able to see the links better",
         default=0.75, min=0.25, max=1.0,
@@ -184,25 +186,32 @@ class MW_vis_cfg(types.PropertyGroup):
     )
 
     cell_color: bpy.props.FloatVectorProperty(
-        name="Cell color [mat]",
+        name="Cell color",
         default=(0.514, 0.396, 0.224, 0.75),
         size=4, min=0, max=1,
         subtype='COLOR',
         update= lambda self, context: mw_setup_props.cell_color_update(self, "cell_color", MW_vis_cfg.getPrefs().names.cells)
     )
     cell_color_air: bpy.props.FloatVectorProperty(
-        name="Cell AIR color [mat]",
+        name="Cell AIR color",
         default=(0.176, 0.718, 0.749, 0.25),
         size=4, min=0, max=1,
         subtype='COLOR',
         update= lambda self, context: mw_setup_props.cell_color_update(self, "cell_color_air", MW_vis_cfg.getPrefs().names.cells_air)
     )
     cell_color_core: bpy.props.FloatVectorProperty(
-        name="Cell CORE color [mat]",
+        name="Cell CORE color",
         default=(0.8, 0.294, 0.125, 1.0),
         size=4, min=0, max=1,
         subtype='COLOR',
         update= lambda self, context: mw_setup_props.cell_color_update(self, "cell_color_core", MW_vis_cfg.getPrefs().names.cells_core)
+    )
+
+    #-------------------------------------------------------------------
+
+    links_smoothShade: props.BoolProperty(
+        name="WIP: Link smooth shade",
+        default=True,
     )
 
     #-------------------------------------------------------------------
@@ -216,10 +225,6 @@ class MW_vis_cfg(types.PropertyGroup):
     links_matAlpha: props.BoolProperty(
         name="WIP: Link alpha mod", description="Degrade alpha with life",
         default=False,
-    )
-    links_smoothShade: props.BoolProperty(
-        name="WIP: Link smooth shade",
-        default=True,
     )
     links_depth: props.FloatProperty(
         name="WIP: Const link depth", description="Constant link d",

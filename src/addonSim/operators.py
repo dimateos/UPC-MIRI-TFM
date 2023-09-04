@@ -327,6 +327,30 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
 
 #-------------------------------------------------------------------
 
+class MW_mark_core_OT(_StartRefresh_OT):
+    bl_idname = "mw.mark_core"
+    bl_label = "Mark core object"
+    bl_description = "Change the selected cells states to core."
+
+    # UNDO as part of bl_options will cancel any edit last operation pop up
+    bl_options = {'INTERNAL', 'UNDO'}
+
+    def __init__(self) -> None:
+        super().__init__()
+        # config some base class log flags...
+        self.invoke_log = True
+
+    @classmethod
+    def poll(cls, context):
+        return MW_global_selected.fract
+
+    def execute(self, context: types.Context):
+        self.start_op()
+        mw_setup.set_cellsCore(MW_global_selected.root, MW_global_selected.selection)
+        return self.end_op()
+
+#-------------------------------------------------------------------
+
 class MW_gen_links_OT(_StartRefresh_OT):
     bl_idname = "mw.gen_links"
     bl_label = "Generate links object"

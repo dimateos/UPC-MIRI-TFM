@@ -62,7 +62,7 @@ def copy_originalPrev(obj: types.Object, cfg: MW_gen_cfg, context: types.Context
     MW_id_utils.resetStorageId(obj_root)
 
     # copy the original from the previous root withou suffix
-    obj_original = utils_scene.get_child(obj, getPrefs().names.original_copy+cfg.struct_nameOriginal)
+    obj_original = utils_scene.get_children([obj], getPrefs().names.original_copy+cfg.struct_nameOriginal)
     obj_copy = utils_scene.copy_objectRec(obj_original, context)
     utils_scene.set_child(obj_copy, obj_root)
 
@@ -157,14 +157,19 @@ def gen_cellsObjects(root: types.Object, cont: MW_Container, cfg: MW_gen_cfg, co
     vis_cfg : MW_vis_cfg= root.mw_vis
 
     # create empty objects holding them
-    root_cells = utils_scene.gen_child(root, getPrefs().names.cells, context, None, keepTrans=False)
-    root_air = utils_scene.gen_child(root, getPrefs().names.cells_air, context, None, keepTrans=False)
-    root_core = utils_scene.gen_child(root, getPrefs().names.cells_core, context, None, keepTrans=False)
+    # NOTE:: cannot add materials to empty objects, yo just add some data
+    emptyCurve = utils_mesh.getEmpty_curveData("empty-curve")
+    root_cells = utils_scene.gen_child(root, getPrefs().names.cells, context, emptyCurve, keepTrans=False)
+    root_air = utils_scene.gen_child(root, getPrefs().names.cells_air, context, emptyCurve, keepTrans=False)
+    root_core = utils_scene.gen_child(root, getPrefs().names.cells_core, context, emptyCurve, keepTrans=False)
 
-    # create shared material (cannot add it to empty objects for easy access tho!)
+    # create shared materials, will only asign one to the cells (initial state is solid)
     mat_cells = utils_mat.get_colorMat(vis_cfg.cell_color, matName=prefs.names.get_MatFormated(prefs.names.cells))
+    root_cells.active_material = mat_cells
     mat_air = utils_mat.get_colorMat(vis_cfg.cell_color_air, matName=prefs.names.get_MatFormated(prefs.names.cells_air))
+    root_air.active_material = mat_air
     mat_core = utils_mat.get_colorMat(vis_cfg.cell_color_core, matName=prefs.names.get_MatFormated(prefs.names.cells_core))
+    root_core.active_material = mat_core
 
     cells = []
     for cell in cont.voro_cont:
@@ -202,6 +207,7 @@ def gen_cellsObjects(root: types.Object, cont: MW_Container, cfg: MW_gen_cfg, co
         mesh = bpy.data.meshes.new(name)
         mesh.from_pydata(vertices=verts, edges=[], faces=faces_blender)
 
+        # create the object
         obj_shard = utils_scene.gen_child(root_cells, name, context, mesh, keepTrans=False)
         obj_shard.active_material = mat_cells
         cells.append(obj_shard)
@@ -212,6 +218,16 @@ def gen_cellsObjects(root: types.Object, cont: MW_Container, cfg: MW_gen_cfg, co
 
     getStats().logDt("generated cells objects")
     return cells
+
+def set_cellsCore(root: types.Object, cells_core: list[types.Object]):
+    prefs = getPrefs()
+    root_cells = utils_scene.get_children([root], prefs.names.cells_core)
+    root_cells_core = utils_scene.get_children([root], prefs.names.cells_core)
+
+    for cell in cells_core:
+        if cell is None: continue
+        if not MW_id_utils.validCellId(cell): continue
+
 
 def gen_LEGACY_CONT(root: types.Object, voro_cont: VORO_Container, cfg: MW_gen_cfg, context: types.Context):
     root_cells = utils_scene.gen_child(root, getPrefs().names.cells, context, None, keepTrans=False)

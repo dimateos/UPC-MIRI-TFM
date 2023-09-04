@@ -55,22 +55,29 @@ def set_smoothShading(me: types.Mesh, active=True, faces_idx = None):
         for f in me.polygons:
             f.use_smooth = active
 
-def get_curveData(points: list[Vector], name ="poly-curve", w=0.05, resFaces=0):
-    """ creates a blender poly-curve following the points """
+def getEmpty_curveData(name ="poly-curve", w=0.05, resFaces=0):
+    """ creates an empty blender poly-curve """
     # Create new POLY curve
     curve_data = bpy.data.curves.new(name, 'CURVE')
     curve_data.dimensions = '3D'
     line = curve_data.splines.new('POLY')
+
+    # Set the visuals
+    curve_data.bevel_depth = w
+    curve_data.bevel_resolution = resFaces
+    curve_data.fill_mode = "FULL" #'FULL', 'HALF', 'FRONT', 'BACK'
+    return curve_data
+
+def get_curveData(points: list[Vector], name ="poly-curve", w=0.05, resFaces=0):
+    """ creates a blender poly-curve following the points """
+    curve_data = getEmpty_curveData(name, w, resFaces)
+    line = curve_data.splines[0]
 
     # Add the points to the spline
     for i,p in enumerate(points):
         if i!=0: line.points.add(1)
         line.points[i].co = p.to_4d()
 
-    # Set the visuals
-    curve_data.bevel_depth = w
-    curve_data.bevel_resolution = resFaces
-    curve_data.fill_mode = "FULL" #'FULL', 'HALF', 'FRONT', 'BACK'
     return curve_data
 
 def get_resFaces_fromCurveRes(curveRes):

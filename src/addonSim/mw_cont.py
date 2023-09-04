@@ -21,17 +21,24 @@ link_key_t = tuple[int, int]
 
 class ERROR_IDX:
     """ Use leftover indices between cont boundaries and custom walls for filler error idx?
-        IDEA:: could just multiply id by a lot to keep track of original instead?
+        NOTE:: could be using any number, sequentiality not used
     """
-    _zerosForHighlight = 1000000
+    _zerosForHighlight = 1000000 # could use original ID to preserve it?
 
     MISSING = -7 *_zerosForHighlight
     """ Missing a whole cell / object"""
     ASYMMETRY = -8 *_zerosForHighlight
     """ Missing connection at in the supposed neighbour """
 
-    e3 = -9 *_zerosForHighlight
     all = [ MISSING, ASYMMETRY ]
+
+class STATE_ENUM:
+    """ Current cell state, preserves some sequentiality"""
+    SOLID = 0
+    AIR = 1
+    CORE = -1
+
+    all = [ SOLID, AIR, CORE ]
 
 #-------------------------------------------------------------------
 
@@ -60,11 +67,10 @@ class MW_Container:
         self.keys_perCell: dict[int, list[link_key_t] | int] = dict()
         """ NOTE:: missing cells are filled with a placeholder id to preserve original position idx """
 
-        # calculate missing cells and query neighs
+        # calculate missing cells and query neighs (also with placeholders idx)
         self.foundId   : list[int]           = []
         self.missingId : list[int]           = []
         self.neighs    : list[list[int]|int] = [ERROR_IDX.MISSING]*len(self.voro_cont)
-        """ NOTE:: missing cells are filled with a placeholder id to preserve original position idx """
 
         for idx_cell, obj_cell in enumerate(self.voro_cont):
             if obj_cell is None:
@@ -86,12 +92,15 @@ class MW_Container:
         self.cells_objs        : list[types.Object|int] = [ERROR_IDX.MISSING]* len(self.voro_cont)
         self.cells_meshes      : list[types.Mesh|int]   = [ERROR_IDX.MISSING]* len(self.voro_cont)
         self.cells_meshes_FtoF : list[dict|int]         = [ERROR_IDX.MISSING]* len(self.voro_cont)
+        self.cells_state       : list[types.Object|int] = [ERROR_IDX.MISSING]* len(self.voro_cont)
 
         for idx_found, obj_cell in enumerate(cells_list):
             # asign idx cell managing missing ones
             idx_cell = self.foundId[idx_found]
             self.cells_objs[idx_cell] = obj_cell
             obj_cell.mw_id.cell_id = idx_cell
+            # initial state is SOLD
+            self.cells_state[idx_cell] = STATE_ENUM.SOLID
 
             # store mesh and faces map
             mesh = obj_cell.data
@@ -137,6 +146,7 @@ class MW_Container:
                             self.keys_asymmetry.append((idx_cell,idx_neigh))
                             neighs_cell[idx_face] = ERROR_IDX.ASYMMETRY
 
+            # add the merged list of faces
             self.neighs_faces[idx_cell] = faces
 
         stats.logDt(f"calculated cell neighs faces: {len(self.keys_missing)} broken due missing")
