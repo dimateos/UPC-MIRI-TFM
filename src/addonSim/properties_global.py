@@ -21,8 +21,8 @@ class MW_id(types.PropertyGroup):
             ('ROOT', "Root object", "Root object holding the fracture"),
             ('CHILD', "Child object", "Child object part of the fracture"),
         ),
-        options={'ENUM_FLAG'},
         default={'NONE'},
+        options={'ENUM_FLAG'},
     )
 
     storage_id: props.IntProperty(

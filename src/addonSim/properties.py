@@ -193,7 +193,7 @@ class MW_vis_cfg(types.PropertyGroup):
     )
     cell_color_air: bpy.props.FloatVectorProperty(
         name="Cell AIR color",
-        default=(0.176, 0.718, 0.749, 0.25),
+        default=(0, 0.7, 1, 0.05),
         size=4, min=0, max=1,
         subtype='COLOR',
         update= lambda self, context: mw_setup_props.cell_color_update(self, "cell_color_air", MW_vis_cfg.getPrefs().names.cells_air)
@@ -245,8 +245,8 @@ class MW_vis_cfg(types.PropertyGroup):
             ('UNIFORM', "Uniform effect", "Uniform effect on width"),
             ('BINARY', "Binary", "Any differece from full life affects drastically"),
         ),
-        options={'ENUM_FLAG'},
         default={'BINARY'},
+        options={'ENUM_FLAG'},
     )
 
     links_res: props.IntProperty(

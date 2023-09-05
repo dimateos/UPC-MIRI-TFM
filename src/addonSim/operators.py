@@ -18,7 +18,7 @@ from .operators_dm import _StartRefresh_OT, util_classes_op
 
 from . import mw_setup, mw_extraction
 from .mw_links import MW_Links
-from .mw_cont import MW_Container
+from .mw_cont import MW_Container, STATE_ENUM
 from .mw_fract import MW_Fract
 from . import mw_sim
 
@@ -320,13 +320,27 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
 
 #-------------------------------------------------------------------
 
-class MW_mark_core_OT(_StartRefresh_OT):
-    bl_idname = "mw.mark_core"
-    bl_label = "Mark core object"
-    bl_description = "Change the selected cells states to core"
+class MW_set_state_OT(_StartRefresh_OT):
+    bl_idname = "mw.set_state"
+    bl_label = "Set cell state"
+    bl_description = "Set the selected cells state"
 
     # UNDO as part of bl_options will cancel any edit last operation pop up
     bl_options = {'INTERNAL', 'UNDO'}
+
+    # example of how to do the enum as a blender prop, but then is would have to be stored inside the cell
+    # blender provides some way to add id to enum props but is not well documented
+    set_state: bpy.props.EnumProperty(
+        name="STATE",
+        description="Set cells state",
+        items=(
+            ('SOLID', "Solid",  "Initial cell state"),
+            ('CORE', "Core",    "Immutable cells that cannot be removed"),
+            ('AIR', "Air",      "Detached cells that have been removed")
+        ),
+        default={'SOLID'},
+        options={'ENUM_FLAG'},
+    )
 
     def __init__(self) -> None:
         super().__init__()
@@ -336,11 +350,27 @@ class MW_mark_core_OT(_StartRefresh_OT):
     @classmethod
     def poll(cls, context):
         # OPT:: if the cells store the state, then there is no need to poll fract + could recover it
-        return MW_global_selected.fract
+        return MW_global_selected.fract and MW_id_utils.hasCellId(MW_global_selected.current)
+
+    def draw(self, context: types.Context):
+        # override parent class drawing, just the enum
+        self.layout.prop(self, "set_state")
+
+    def invoke(self, context, event):
+        # set to current state
+        cell_id = MW_global_selected.current.mw_id.cell_id
+        cell_state = MW_global_selected.fract.cont.cells_state[cell_id]
+        self.set_state = {STATE_ENUM.to_str(cell_state)}
+
+        # set args before execution to confirm
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
 
     def execute(self, context: types.Context):
         self.start_op()
-        mw_setup.set_cellsCore(MW_global_selected.fract, MW_global_selected.root, MW_global_selected.selection)
+        DEV.log_msg(f"arg_state: {self.set_state}")
+        state = STATE_ENUM.from_str(self.set_state.pop())
+        mw_setup.set_cellsState(MW_global_selected.fract, MW_global_selected.root, MW_global_selected.selection, state)
         return self.end_op()
 
 #-------------------------------------------------------------------
@@ -593,7 +623,7 @@ classes = [
     MW_gen_OT,
     MW_gen_recalc_OT,
 
-    MW_mark_core_OT,
+    MW_set_state_OT,
     MW_gen_links_OT,
 
     MW_sim_step_OT,

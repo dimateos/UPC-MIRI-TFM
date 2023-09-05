@@ -204,17 +204,27 @@ def gen_cellsObjects(fract: MW_Fract, root: types.Object, context: types.Context
     getStats().logDt("generated cells objects")
     return cells
 
-def set_cellsCore(fract: MW_Fract, root: types.Object, cells_core: list[types.Object]):
+def set_cellsState(fract: MW_Fract, root: types.Object, cells: list[types.Object], state:int):
     prefs = getPrefs()
-    root_cells_core = utils_scene.get_child(root, prefs.names.cells_core)
+    assert(state in STATE_ENUM.all)
 
-    for cell in cells_core:
+    # take respective parent object
+    if state == STATE_ENUM.SOLID:
+        root_cells = utils_scene.get_child(root, prefs.names.cells)
+    elif state == STATE_ENUM.CORE:
+        root_cells = utils_scene.get_child(root, prefs.names.cells_core)
+    elif state == STATE_ENUM.AIR:
+        root_cells = utils_scene.get_child(root, prefs.names.cells_air)
+
+    for cell in cells:
         # some selection could be an outside obj or a cell from other fract!
+        if not MW_id_utils.hasCellId(cell): continue
         if not MW_id_utils.sameStorageId(root, cell): continue
 
-        fract.cont.cells_state[cell.mw_id.cell_id] = STATE_ENUM.CORE
-        cell.active_material = root_cells_core.active_material
-        cell.parent = root_cells_core
+        # set the state and the parent (also the same mat as the parent)
+        fract.cont.cells_state[cell.mw_id.cell_id] = state
+        cell.active_material = root_cells.active_material
+        cell.parent = root_cells
 
 def gen_LEGACY_CONT(voro_cont: VORO_Container, root: types.Object, context: types.Context):
     root_cells = utils_scene.gen_child(root, getPrefs().names.cells, context, None, keepTrans=False)

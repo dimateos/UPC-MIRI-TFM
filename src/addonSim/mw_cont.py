@@ -45,13 +45,21 @@ class STATE_ENUM:
     CORE = -1
 
     all = [ SOLID, AIR, CORE ]
+    all_str = [ "SOLID", "AIR", "CORE" ]
 
     @classmethod
-    def str(cls, idx):
-        if idx == cls.SOLID: return "SOLID"
-        if idx == cls.AIR: return "AIR"
-        if idx == cls.CORE: return "CORE"
+    def to_str(cls, e:int):
+        if e == cls.SOLID:  return "SOLID"
+        if e == cls.AIR:    return "AIR"
+        if e == cls.CORE:   return "CORE"
         return "unknown"
+        #raise ValueError(f"STATE_ENUM: {e} is not in {cls.all}")
+    @classmethod
+    def from_str(cls, s:str):
+        if s == "SOLID":    return cls.SOLID
+        if s == "AIR":      return cls.AIR
+        if s == "CORE":     return cls.CORE
+        raise ValueError(f"STATE_ENUM: {s} is not in {cls.all_str}")
 
 #-------------------------------------------------------------------
 

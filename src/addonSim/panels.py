@@ -42,19 +42,19 @@ class MW_gen_PT(types.Panel):
     def draw_onSelected(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
         col = layout.column()
-        selected = MW_global_selected.current
+        curr = MW_global_selected.current
 
         # Something selected, not last active
-        if not selected:
+        if not curr:
             col.label(text="No object selected...", icon="ERROR")
             return
 
         # No fracture selected
         if not MW_global_selected.root:
-            col.label(text="Selected: " + selected.name, icon="INFO")
+            col.label(text="Selected: " + curr.name, icon="INFO")
 
             # Check that it is a mesh
-            if selected.type != 'MESH':
+            if curr.type != 'MESH':
                 col = layout.column()
                 col.label(text="Select a mesh...", icon="ERROR")
                 return
@@ -65,12 +65,12 @@ class MW_gen_PT(types.Panel):
 
         # Edit/info of selected
         else:
-            obj = MW_global_selected.root
+            root = MW_global_selected.root
 
             # show info of root + selected
-            msg = f"Fract: {obj.name}"
-            if selected.name != obj.name:
-                msg += f" - {selected.name}"
+            msg = f"Fract: {root.name}"
+            if curr.name != root.name:
+                msg += f" - {curr.name}"
 
             # button to bake the cell
             col_rowSplit = col.row().split(factor=0.90)
@@ -88,27 +88,34 @@ class MW_gen_PT(types.Panel):
             col_rowSplit.operator(ops.MW_gen_OT.bl_idname, text="DUPLICATE", icon="DUPLICATE")
             col_rowSplit.prop(prefs, "gen_duplicate_OT_hidePrev")
 
-            self.draw_props(obj, selected, context, layout)
+            self.draw_props(root, curr, context, layout)
 
-    def draw_props(self, obj, selected, context: types.Context, layout: types.UILayout):
+    def draw_props(self, root, selected, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
 
         # inspect root or selected?
-        gen_cfg = obj.mw_gen if prefs.all_PT_meta_show_root else selected.mw_gen
+        gen_cfg = root.mw_gen if prefs.all_PT_meta_show_root else selected.mw_gen
 
         open, box = ui.draw_propsToggle(gen_cfg, prefs.gen_PT_meta_inspector, layout, text="Container props")
         if open:
             col_rowSplit = layout.row().split()
             col_rowSplit.prop(prefs, "all_PT_meta_show_root", text="Root props:" if prefs.all_PT_meta_show_root else "Child props:")
-            col_rowSplit.label(text=obj.name if prefs.all_PT_meta_show_root else selected.name)
+            col_rowSplit.label(text=root.name if prefs.all_PT_meta_show_root else selected.name)
 
         # visuals inspect
         #vis_cfg = context.scene.mw_vis -> scene data is affected by operator undo
         vis_cfg = prefs.mw_vis
         open, box = ui.draw_propsToggle_custom(vis_cfg, prefs.vis_PT_meta_inspector, layout, "Visuals...")
 
+        # example of how to edit op parameters from the panel before execution (but better done inside invoke, in this case)
+        op = layout.operator(ops.MW_set_state_OT.bl_idname, icon="PIVOT_CURSOR")
+        #if MW_global_selected.fract and MW_global_selected.fract.cont:
+        #    if MW_id_utils.hasCellId(MW_global_selected.current):
+        #        cell_id = MW_global_selected.current.mw_id.cell_id
+        #        cell_state = MW_global_selected.fract.cont.cells_state[cell_id]
+        #        op.set_state = ops.MW_set_state_OT.set_state_toEnum[cell_state]
+
         # more actions
-        layout.operator(ops.MW_mark_core_OT.bl_idname, icon="PIVOT_CURSOR")
         layout.operator(ops.MW_gen_links_OT.bl_idname, icon="OUTLINER_DATA_GREASEPENCIL")
 
         # warning no fract
@@ -117,6 +124,7 @@ class MW_gen_PT(types.Panel):
 
     def draw_debug(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
+        curr = MW_global_selected.current
 
         open, box = ui.draw_toggleBox(prefs.gen_PT_meta_inspector, "meta_show_debug", layout, scaleBox=0.85, returnCol=False)
         if open:
@@ -124,19 +132,22 @@ class MW_gen_PT(types.Panel):
             box.operator(ops.MW_gen_recalc_OT.bl_idname, icon="ZOOM_PREVIOUS")
 
             # cell data
-            if MW_global_selected.current:
+            if curr:
                 boxSelected = box.box().column()
                 col_rowSplit = boxSelected.row().split(factor=0.5)
-                col_rowSplit.label(text=f"{MW_global_selected.current.mw_id.meta_type}", icon="COPY_ID")
-                col_rowSplit.label(text=f"s: {MW_global_selected.current.mw_id.storage_id}")
-                cell_id = MW_global_selected.current.mw_id.cell_id
+                col_rowSplit.label(text=f"{curr.mw_id.meta_type}", icon="COPY_ID")
+                col_rowSplit.label(text=f"s: {curr.mw_id.storage_id}")
+                cell_id = curr.mw_id.cell_id
                 col_rowSplit.label(text=f"c: {cell_id}")
 
                 # cell data from cont
-                if MW_global_selected.fract and MW_global_selected.fract.cont:
-                    col_rowSplit = boxSelected.row()
-                    cell_state = MW_global_selected.fract.cont.cells_state[cell_id]
-                    col_rowSplit.label(text=f"State: {STATE_ENUM.str(cell_state)}", icon="EXPERIMENTAL")
+                if MW_global_selected.fract:
+                    if MW_global_selected.fract.cont:
+                        col_rowSplit = boxSelected.row()
+                        cell_state = STATE_ENUM.to_str(MW_global_selected.fract.cont.cells_state[cell_id]) if cell_id >= 0 else "..."
+                        col_rowSplit.label(text=f"State: {cell_state}", icon="EXPERIMENTAL")
+                    if MW_global_selected.fract.links:
+                        pass
 
             # global selected
             boxSelected = box.box().column()
@@ -144,7 +155,7 @@ class MW_gen_PT(types.Panel):
             col_rowSplit.label(text=f"Root:  {MW_global_selected.root.name if MW_global_selected.root else '~'}", icon="RESTRICT_SELECT_ON")
             col_rowSplit.label(text=f"{MW_global_selected.prevalid_root.name if MW_global_selected.prevalid_root else '~'}", icon="FRAME_PREV")
             col_rowSplit = boxSelected.row().split(factor=0.6)
-            col_rowSplit.label(text=f"Current: {MW_global_selected.current.name if MW_global_selected.current else '~'}", icon="RESTRICT_SELECT_OFF")
+            col_rowSplit.label(text=f"Current: {curr.name if curr else '~'}", icon="RESTRICT_SELECT_OFF")
             col_rowSplit.label(text=f"{MW_global_selected.prevalid_last.name if MW_global_selected.prevalid_last else '~'}", icon="FRAME_PREV")
             col_rowSplit = boxSelected.row().split(factor=0.6)
             col_rowSplit.label(text=f"Active: {context.active_object.name if context.active_object else '~'}", icon="SELECT_INTERSECT")
