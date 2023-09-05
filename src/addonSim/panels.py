@@ -161,7 +161,7 @@ class MW_gen_PT(types.Panel):
             col_rowSplit.label(text=f"Storage: {len(MW_global_storage.id_fracts)}", icon="FORCE_CURVE")
             col_rowSplit.prop(prefs, "prefs_autoPurge")
 
-            col = boxLinks
+            col = boxLinks.column()
             for id,fract in MW_global_storage.id_fracts.items():
                 col.label(text=f"{id}: {len(fract.cont.voro_cont)} cells + {len(fract.links.link_map)} links", icon="THREE_DOTS")
 

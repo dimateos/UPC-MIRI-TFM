@@ -111,52 +111,67 @@ def delete_orphanData(collectionNames = None, logAmount = True):
 
 #-------------------------------------------------------------------
 
-# OPT:: not robuts... All names are unique, even under children hierarchies. Blender adds .001 etc
-def get_nameClean(name):
-    try: return name if name[-4] != "." else name[:-4]
-    except IndexError: return name
+class BLENDER_NAMES:
+    cmp_modes = [
+        "",             # regular mode using get_nameClean
+        "STARTS_WITH",  # only compare the beginning of the names
+        "EXACT"         # compare the full name including the potential blender added suffix
+    ]
 
-def get_object_fromList(objects: list[types.Object], name: str, exactMatch = True) -> types.Object|None:
+    def get_nameClean(name):
+        """ All names are unique, even under children hierarchies. Blender adds .001 etc
+            # OPT:: not robuts, the user could manually edit the suffix!
+        """
+        try: return name if name[-4] != "." else name[:-4]
+        except IndexError: return name
+
+def get_object_fromList(objects: list[types.Object], name: str, mode="") -> types.Object|None:
     """ Find an object by name inside the list provided, returns the first found.
         # IDEA:: maybe all children search based methods should return the explored objs
     """
-    if exactMatch:
+    assert(mode in BLENDER_NAMES.cmp_modes)
+
+    if mode == "STARTS_WITH":
+        for obj in objects:
+            if obj.name.startswith(name): return obj
+
+    elif mode == "EXACT":
         for obj in objects:
             if obj.name == name: return obj
 
     # cleaning the suffix instead of direclty comparing the names
     else:
-        name = get_nameClean(name)
+        name = BLENDER_NAMES.get_nameClean(name)
         for obj in objects:
-            cleanName = get_nameClean(obj.name)
+            cleanName = BLENDER_NAMES.get_nameClean(obj.name)
             if cleanName == name: return obj
 
     return None
 
-def get_multiObject_fromList(objects: list[types.Object], names: list[str], exactMatch = True) -> list[types.Object]:
+def get_multiObject_fromList(objects: list[types.Object], names: list[str], mode="") -> list[types.Object]:
     """ Find objects by name inside the list provided, returns a list of the same size with the first founds for each name (if any).
         # NOTE:: mainly useful for get_children where the children list from the parent object is only requested once
     """
-    found = [ get_object_fromList(objects, n, exactMatch) for n in names ]
+    found = [ get_object_fromList(objects, n, mode) for n in names ]
     return found
 
-def get_object_fromScene(scene: types.Scene, name: str, exactMatch = True) -> types.Object|None:
-    """ Find an object in the scene by name (starts with to avoid limited exact names). Returns the first found. """
-    return get_object_fromList(scene.objects, name, exactMatch)
+def get_object_fromScene(scene: types.Scene, name: str, mode="") -> types.Object|None:
+    """ Find an object in the scene by name. Returns the first found """
+    return get_object_fromList(scene.objects, name, mode)
 
-def get_multiObject_fromScene(scene: types.Scene, names: list[str], exactMatch = True) -> list[types.Object]:
-    """ Find an object in the scene by name (starts with to avoid limited exact names). Returns a list with the same size, with potentially None elements! """
-    return get_multiObject_fromList(scene.objects, names, exactMatch)
+def get_multiObject_fromScene(scene: types.Scene, names: list[str], mode="") -> list[types.Object]:
+    """ Find an object in the scene by name. Returns a list with the same size, with potentially None elements! """
+    return get_multiObject_fromList(scene.objects, names, mode)
 
-def get_child(obj: types.Object, name: str, rec=False, exactMatch = False) -> types.Object|None:
-    """ Find child by name (starts with to avoid limited exact names) """
+def get_child(obj: types.Object, name: str, rec=False, mode="") -> types.Object|None:
+    """ Find child by name. Returns the first found """
     toSearch = obj.children if not rec else obj.children_recursive
-    return get_object_fromList(toSearch, name, exactMatch)
+    return get_object_fromList(toSearch, name, mode)
 
-def get_children(obj: types.Object, names: list[str], rec=False, exactMatch = False) -> list[types.Object]:
-    """ Find child by name (starts with to avoid limited exact names). Returns a list with the same size, with potentially None elements!  """
+def get_children(obj: types.Object, names: list[str], rec=False, mode="") -> list[types.Object]:
+    """ Find child by name. Returns a list with the same size, with potentially None elements! """
     toSearch = obj.children if not rec else obj.children_recursive
-    return get_multiObject_fromList(toSearch, names, exactMatch)
+    return get_multiObject_fromList(toSearch, names, mode)
 
 #-------------------------------------------------------------------
 

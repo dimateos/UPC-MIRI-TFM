@@ -60,7 +60,7 @@ def copy_originalPrev(obj: types.Object, context: types.Context):
     MW_id_utils.resetStorageId(obj_root)
 
     # copy the original from the previous root withou suffix
-    obj_original = utils_scene.get_child(obj, getPrefs().names.original_copy)
+    obj_original = utils_scene.get_child(obj, getPrefs().names.original_copy, mode="STARTS_WITH")
     obj_copy = utils_scene.copy_objectRec(obj_original, context)
     utils_scene.set_child(obj_copy, obj_root)
 
