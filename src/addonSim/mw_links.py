@@ -100,6 +100,9 @@ class MW_Links():
         self.initialized = False
         """ Set to true after succesfully computed the link map """
 
+        self.cont = cont
+        """ Shortcut to container """
+
         self.cells_graph = nx.Graph()
         """ Graph connecting the cells to find connected components """
         self.comps = []

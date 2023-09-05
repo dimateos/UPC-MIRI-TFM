@@ -252,7 +252,22 @@ class MW_global_storage:
             cls.freeFract_fromID(id)
 
     @classmethod
+    def sanitizeFracts(cls):
+        """ Check references to other objects inside the fracts parts are not broken (mainly cont)"""
+        toSanitize = []
+
+        # detect NON-broken object references
+        for id,obj in cls.id_fracts_obj.items():
+            if not utils_scene.needsSanitize_object(obj):
+                toSanitize.append(id)
+
+        DEV.log_msg(f"Sanitizing {len(toSanitize)} fracts /{len(cls.id_fracts_obj)}", {"SANITIZE", "FRACT"})
+        for id in toSanitize:
+            cls.id_fracts[id].sanitize()
+
+    @classmethod
     def purgeFracts_callback(cls, _scene_=None, _undo_name_=None):
+        cls.sanitizeFracts()
         if cls.enable_autoPurge:
             cls.purgeFracts()
 
@@ -275,21 +290,24 @@ class MW_global_selected:
     # common selection
     selection       : types.Object = None
     current         : types.Object = None
-    active          : types.Object = None
     prevalid_last   : types.Object = None
 
     @classmethod
-    def setSelected(cls, selected):
+    def setSelected(cls, new_selection):
         """ Update global selection status and query fract root
-            # OPT:: multi-root selection? work with current active?
+            # NOTE:: new_selection lists objects alphabetically not by order of selection
+            # OPT:: multi-root selection? work with current active instead of last new active?
         """
         rootChange = False
 
-        if selected:
+        if new_selection:
             if cls.current:
                 cls.prevalid_last = cls.current
-            cls.selection = selected.copy() if isinstance(selected, list) else [selected]
-            cls.current = cls.selection[-1]
+            cls.selection = new_selection.copy() if isinstance(new_selection, list) else [new_selection]
+            #cls.current = cls.selection[-1]
+
+            # will differ later if the active_object is changed to one among already selected
+            cls.current = bpy.context.active_object
 
             newRoot = MW_id_utils.getRoot(cls.current)
             if newRoot:

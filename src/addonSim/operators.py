@@ -221,12 +221,12 @@ class MW_gen_OT(_StartRefresh_OT):
 
         #test some legacy or statistics cont stuff
         if DEV.LEGACY_CONT:
-            mw_setup.gen_LEGACY_CONT(cont.voro_cont, obj_root, self.ctx)
+            mw_setup.gen_cells_LEGACY(cont.voro_cont, obj_root, self.ctx)
             return self.end_op("DEV.LEGACY_CONT stop...")
 
         # precalculate/query neighs and other data with generated cells mesh
         cells = mw_setup.gen_cellsObjects(fract, obj_root, self.ctx, scale=obj_root.mw_vis.cell_scale, flipN=cfg.debug_flipCellNormals)
-        cont.precalculate_data(cells)
+        cont.precalculations(cells)
         if not cont.precalculated:
             return self.end_op_error("error during container precalculations!")
 
@@ -304,7 +304,7 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
             return self.end_op_error("found no cont... but could try recalculate!")
 
         # precalculate/query neighs and other data
-        cont.precalculate_data(obj_cells_root.children)
+        cont.precalculations(obj_cells_root.children)
 
         # calculate links and store in the external storage
         fract.links = links = MW_Links(cont)
@@ -371,6 +371,7 @@ class MW_set_state_OT(_StartRefresh_OT):
         DEV.log_msg(f"arg_state: {self.set_state}")
         state = STATE_ENUM.from_str(self.set_state.pop())
         mw_setup.set_cellsState(MW_global_selected.fract, MW_global_selected.root, MW_global_selected.selection, state)
+        # TODO:: recalc some link stuff + components
         return self.end_op()
 
 #-------------------------------------------------------------------
@@ -394,7 +395,7 @@ class MW_gen_links_OT(_StartRefresh_OT):
 
     def execute(self, context: types.Context):
         self.start_op()
-        mw_setup.gen_linksObject(MW_global_selected.fract, MW_global_selected.root, context)
+        mw_setup.gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
         mw_setup.gen_linksWallObject(MW_global_selected.fract, MW_global_selected.root, context)
         return self.end_op()
 
@@ -456,7 +457,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
             else: self.sim.step(sim_cfg.subSteps)
 
         # IDEA:: store copy or original or button to recalc links from start? -> set all life to 1 but handle any dynamic list
-        mw_setup.gen_linksObject(MW_global_selected.fract, MW_global_selected.root, context)
+        mw_setup.gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
         mw_setup.gen_linksWallObject(MW_global_selected.fract, MW_global_selected.root, context,
                                     self.sim.step_trace.entryL_candidatesW if self.sim.trace else None)
 
@@ -484,7 +485,7 @@ class MW_sim_reset_OT(_StartRefresh_OT):
         self.links = MW_global_selected.fract.links
         mw_sim.resetLife(self.links)
 
-        mw_setup.gen_linksObject(MW_global_selected.fract, MW_global_selected.root, context)
+        mw_setup.gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
         mw_setup.gen_linksWallObject(MW_global_selected.fract, MW_global_selected.root, context)
         return self.end_op()
 

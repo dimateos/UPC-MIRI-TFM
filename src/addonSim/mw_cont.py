@@ -6,11 +6,15 @@ from .preferences import getPrefs
 from .properties import (
     MW_gen_cfg,
 )
+from .properties_global import (
+    MW_global_selected,
+)
+
 
 # Using tess voro++ adaptor
 from tess import Container as VORO_Container
 
-from . import utils_geo
+from . import utils_geo, utils_scene
 from .utils_dev import DEV
 from .stats import getStats
 
@@ -75,11 +79,11 @@ class MW_Container:
         """ Shortcut to fracture root object """
 
         # construct voro++ cont
-        self.voro_cont = self.build_cont(points, bb, faces4D, precision)
+        self.voro_cont = self.build_voro(points, bb, faces4D, precision)
         if self.voro_cont is not None:
             self.initialized = True
 
-    def precalculate_data(self, cells_list : list[types.Object]):
+    def precalculations(self, cells_list : list[types.Object]):
         """ Precalculate/query data such as valid neighbours and mapping faces, also adds storage and cell id to cell objects """
         stats = getStats()
 
@@ -184,7 +188,7 @@ class MW_Container:
         self.precalculated = True
 
 
-    def build_cont(self, points: list[Vector], bb: list[Vector, 6], faces4D: list[Vector], precision: int):
+    def build_voro(self, points: list[Vector], bb: list[Vector, 6], faces4D: list[Vector], precision: int):
         """ Build a voro++ container using the points and the faces as walls """
 
         # Container bounds expected as tuples
@@ -220,6 +224,29 @@ class MW_Container:
         except Exception as e:
             DEV.log_msg(f"exception cont >> {str(e)}", {"CALC", "CONT", "ERROR"})
             return None
+
+    def sanitize(self):
+        # cannot suppose that the current root is this conts root tho
+        #if not MW_global_selected.root: return
+        #if not utils_scene.needsSanitize_object(self.root): return
+        #self.root = MW_global_selected.root
+
+        if not utils_scene.needsSanitize_object(self.cells_objs[0]): return
+
+        # some undo broke the references
+        DEV.log_msg(f"Sanitizing cont", {"SANITIZE", "CONT"})
+
+        # query cell roots and their children
+        cells_root = utils_scene.get_child(self.root, getPrefs().names.cells)
+        cells_root_core = utils_scene.get_child(self.root, getPrefs().names.cells_core)
+        cells_root_air = utils_scene.get_child(self.root, getPrefs().names.cells_air)
+        cells_list = cells_root.children + cells_root_core.children + cells_root_air.children
+
+        # iterate the unsorted cells and read their internal id
+        for obj_cell in cells_list:
+            idx_cell = obj_cell.mw_id.cell_id
+            self.cells_objs[idx_cell] = obj_cell
+            self.cells_meshes[idx_cell] = obj_cell.data
 
     #-------------------------------------------------------------------
 

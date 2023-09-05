@@ -122,4 +122,5 @@ def unregister():
     bpy.app.handlers.load_post.remove(callback_loadFile)
 
     if DEV.CALLBACK_REGISTER_ALL: unregisterAllHandlers()
-    DEV.log_msg(f"{_name}", {"ADDON", "PARSED"})
+
+DEV.log_msg(f"{_name}", {"ADDON", "PARSED"})

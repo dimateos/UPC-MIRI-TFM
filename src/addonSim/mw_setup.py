@@ -145,16 +145,16 @@ def gen_cellsObjects(fract: MW_Fract, root: types.Object, context: types.Context
     # create empty objects holding them (add empty data to )
     # NOTE:: cannot add materials to empty objects, yo just add some data (one for each, or they will share the material)
     root_cells = utils_scene.gen_child(root, prefs.names.cells, context, utils_mesh.getEmpty_curveData("empty-curve"), keepTrans=False)
-    root_air = utils_scene.gen_child(root, prefs.names.cells_air, context, utils_mesh.getEmpty_curveData("empty-curve-air"), keepTrans=False)
     root_core = utils_scene.gen_child(root, prefs.names.cells_core, context, utils_mesh.getEmpty_curveData("empty-curve-core"), keepTrans=False)
+    root_air = utils_scene.gen_child(root, prefs.names.cells_air, context, utils_mesh.getEmpty_curveData("empty-curve-air"), keepTrans=False)
 
     # create shared materials, will only asign one to the cells (initial state is solid)
     mat_cells = utils_mat.get_colorMat(vis_cfg.cell_color, matName=prefs.names.get_MatFormated(prefs.names.cells))
     root_cells.active_material = mat_cells
-    mat_air = utils_mat.get_colorMat(vis_cfg.cell_color_air, matName=prefs.names.get_MatFormated(prefs.names.cells_air))
-    root_air.active_material = mat_air
     mat_core = utils_mat.get_colorMat(vis_cfg.cell_color_core, matName=prefs.names.get_MatFormated(prefs.names.cells_core))
     root_core.active_material = mat_core
+    mat_air = utils_mat.get_colorMat(vis_cfg.cell_color_air, matName=prefs.names.get_MatFormated(prefs.names.cells_air))
+    root_air.active_material = mat_air
 
     cells = []
     for cell in fract.cont.voro_cont:
@@ -226,7 +226,7 @@ def set_cellsState(fract: MW_Fract, root: types.Object, cells: list[types.Object
         cell.active_material = root_cells.active_material
         cell.parent = root_cells
 
-def gen_LEGACY_CONT(voro_cont: VORO_Container, root: types.Object, context: types.Context):
+def gen_cells_LEGACY(voro_cont: VORO_Container, root: types.Object, context: types.Context):
     root_cells = utils_scene.gen_child(root, getPrefs().names.cells, context, None, keepTrans=False)
 
     centroids = []
@@ -274,10 +274,12 @@ def gen_LEGACY_CONT(voro_cont: VORO_Container, root: types.Object, context: type
 
 #-------------------------------------------------------------------
 
-def gen_linksObject(fract: MW_Fract, root: types.Object, context: types.Context):
-    prefs = getPrefs()
-    name = prefs.names.links
+def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
+    vis_cfg : MW_vis_cfg= root.mw_vis
+    name = getPrefs().names.links
     baseColor = utils_mat.COLORS.red
+
+    # some undo could break it
 
     # iterate the global map and store vert pairs for the tube mesh generation
     verts: list[tuple[Vector,Vector]] = []
@@ -286,17 +288,27 @@ def gen_linksObject(fract: MW_Fract, root: types.Object, context: types.Context)
     for l in fract.links.internal:
         life = l.life_clamped
 
-        verts.append((l.pos-l.dir*prefs.links_depth, l.pos+l.dir*prefs.links_depth))
+        k1, k2 = l.key_cells
+        kf1, kf2 = l.key_faces
+        c1 = fract.cont.cells_objs[k1]
+        f1 = fract.cont.getFaces(k1,kf1)
+        c2 = fract.cont.cells_objs[k2]
+        f2 = fract.cont.getFaces(k2,kf2)
+        p1 = c1.matrix_world @ f1.center
+        p2 = c2.matrix_world @ f2.center
+        verts.append((p1, p2))
+
+        #verts.append((l.pos-l.dir*vis_cfg.links_depth, l.pos+l.dir*vis_cfg.links_depth))
         lifeColor.append( (baseColor*life).to_4d() )
         #lifeColor[-1].w = 0.5
 
-        if prefs.links_widthModLife == {"UNIFORM"}:
-            lifeWidths.append(prefs.links_widthDead * (1-life) + prefs.links_width * life)
-        elif prefs.links_widthModLife == {"BINARY"}:
-            lifeWidths.append(prefs.links_widthDead if life<1 else prefs.links_width)
+        if vis_cfg.links_widthModLife == {"UNIFORM"}:
+            lifeWidths.append(vis_cfg.links_widthDead * (1-life) + vis_cfg.links_width * life)
+        elif vis_cfg.links_widthModLife == {"BINARY"}:
+            lifeWidths.append(vis_cfg.links_widthDead if life<1 else vis_cfg.links_width)
 
-    resFaces = utils_mesh.get_resFaces_fromCurveRes(prefs.links_res)
-    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidths, name, 1.0, resFaces, prefs.links_smoothShade)
+    resFaces = utils_mesh.get_resFaces_fromCurveRes(vis_cfg.links_res)
+    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidths, name, 1.0, resFaces, vis_cfg.links_smoothShade)
 
     # color encoded attributes for viewing in viewport edit mode
     utils_mat.gen_meshAttr(mesh, lifeColor, resFaces*2, "FLOAT_COLOR", "POINT", "life")
@@ -310,9 +322,9 @@ def gen_linksObject(fract: MW_Fract, root: types.Object, context: types.Context)
     return obj_links
 
 def gen_linksWallObject(fract: MW_Fract, root: types.Object, context: types.Context, weights : list[float] = None):
-    prefs = getPrefs()
-    name = prefs.names.links_air
-    wallsExtraScale = prefs.links_wallExtraScale
+    vis_cfg : MW_vis_cfg= root.mw_vis
+    name = getPrefs().names.links_air
+    wallsExtraScale = vis_cfg.links_wallExtraScale
 
     # iterate the global map and store vert pairs for the tube mesh generation
     verts: list[tuple[Vector,Vector]] = []
@@ -326,23 +338,23 @@ def gen_linksWallObject(fract: MW_Fract, root: types.Object, context: types.Cont
         # WIP:: also skip drawing non picked?
         if not l.picks: continue
 
-        lifeWidth.append(prefs.links_width*wallsExtraScale*l.life)
-        verts.append((l.pos, l.pos+l.dir*prefs.links_depth))
+        lifeWidth.append(vis_cfg.links_width*wallsExtraScale*l.life)
+        verts.append((l.pos, l.pos+l.dir*vis_cfg.links_depth))
 
-    resFaces = utils_mesh.get_resFaces_fromCurveRes(prefs.links_res+3)
-    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidth, name, 1+prefs.links_width*wallsExtraScale, resFaces, prefs.links_smoothShade)
+    resFaces = utils_mesh.get_resFaces_fromCurveRes(vis_cfg.links_res+3)
+    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidth, name, 1+vis_cfg.links_width*wallsExtraScale, resFaces, vis_cfg.links_smoothShade)
 
     # potentially reuse child
     obj_wallLinks = utils_scene.gen_childReuse(root, name, context, mesh, keepTrans=True)
     mesh.name = name
 
     # set global material
-    color3 = utils_mat.COLORS.blue+utils_mat.COLORS.white * 0.33
-    wallsMat = utils_mat.get_colorMat(color3, 1.0, "linkWallsMat")
+    color = utils_mat.COLORS.blue+utils_mat.COLORS.white * 0.33
+    wallsMat = utils_mat.get_colorMat(color, "linkWallsMat")
     obj_wallLinks.active_material = wallsMat
 
     # WIP:: additional attr to visualize in the ame view mode
-    utils_mat.gen_meshAttr(mesh, color3.to_4d(), 1, "FLOAT_COLOR", "POINT", "blueColor")
+    utils_mat.gen_meshAttr(mesh, color, 1, "FLOAT_COLOR", "POINT", "blueColor")
 
     MW_id_utils.setMetaType(obj_wallLinks, {"CHILD"}, childrenRec=False)
     getStats().logDt("generated wall links object")
@@ -392,8 +404,10 @@ def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: MW
             # vary curve props
             res = prefs.links_res
             width = prefs.links_widthDead * (1-l.life) + prefs.links_width * l.life
+            color = utils_mat.COLORS.red.copy() *l.life
             alpha = l.life+0.1 if prefs.links_matAlpha else 1.0
-            mat = utils_mat.get_colorMat(utils_mat.COLORS.red*l.life, alpha, name)
+            color.w = alpha
+            mat = utils_mat.get_colorMat(color, name)
 
         res = utils_mesh.get_resFaces_fromCurveRes(res)
         curve= utils_mesh.get_tubeMesh_pairsQuad([(p1, p2)], None, name, width, res)
