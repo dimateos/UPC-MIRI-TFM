@@ -142,20 +142,25 @@ def gen_cellsObjects(fract: MW_Fract, root: types.Object, context: types.Context
     prefs.names.set_IdFormated_amount(len(fract.cont.voro_cont))
     vis_cfg : MW_vis_cfg= root.mw_vis
 
-    # create empty objects holding them
+    # create empty objects holding them (add empty data to )
     # NOTE:: cannot add materials to empty objects, yo just add some data
     emptyCurve = utils_mesh.getEmpty_curveData("empty-curve")
-    root_cells = utils_scene.gen_child(root, getPrefs().names.cells, context, emptyCurve, keepTrans=False)
-    root_air = utils_scene.gen_child(root, getPrefs().names.cells_air, context, emptyCurve, keepTrans=False)
-    root_core = utils_scene.gen_child(root, getPrefs().names.cells_core, context, emptyCurve, keepTrans=False)
+    root_cells = utils_scene.gen_child(root, prefs.names.cells, context, emptyCurve, keepTrans=False)
+    root_air = utils_scene.gen_child(root, prefs.names.cells_air, context, keepTrans=False)
+    root_core = utils_scene.gen_child(root, prefs.names.cells_core, context, keepTrans=False)
 
     # create shared materials, will only asign one to the cells (initial state is solid)
     mat_cells = utils_mat.get_colorMat(vis_cfg.cell_color, matName=prefs.names.get_MatFormated(prefs.names.cells))
     root_cells.active_material = mat_cells
     mat_air = utils_mat.get_colorMat(vis_cfg.cell_color_air, matName=prefs.names.get_MatFormated(prefs.names.cells_air))
-    root_air.active_material = mat_air
+    #root_air.active_material = mat_air
     mat_core = utils_mat.get_colorMat(vis_cfg.cell_color_core, matName=prefs.names.get_MatFormated(prefs.names.cells_core))
-    root_core.active_material = mat_core
+    #root_core.active_material = mat_core
+
+    root_cells.material_slots[0].link = "OBJECT"
+    root_cells.active_material = mat_cells
+    root_cells.data = None
+    #utils_scene.delete_data(root_cells.data, root_cells.type, True)
 
     cells = []
     for cell in fract.cont.voro_cont:
@@ -194,13 +199,13 @@ def gen_cellsObjects(fract: MW_Fract, root: types.Object, context: types.Context
         mesh.from_pydata(vertices=verts, edges=[], faces=faces_blender)
 
         # create the object
-        obj_shard = utils_scene.gen_child(root_cells, name, context, mesh, keepTrans=False)
-        obj_shard.active_material = mat_cells
-        cells.append(obj_shard)
+        obj_cell = utils_scene.gen_child(root_cells, name, context, mesh, keepTrans=False)
+        obj_cell.active_material = mat_cells
+        cells.append(obj_cell)
 
         # postion afterwards
-        obj_shard.location = pos
-        obj_shard.scale = [scale]*3
+        obj_cell.location = pos
+        obj_cell.scale = [scale]*3
 
     getStats().logDt("generated cells objects")
     return cells
