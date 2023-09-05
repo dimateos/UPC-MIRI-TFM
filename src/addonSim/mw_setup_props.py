@@ -43,8 +43,8 @@ def cell_color_update(cfg, prop_name:str, cells_name:str):
     root, color = getRoot_checkProxy(cfg, "mw_vis", prop_name)
     if root is None: return
 
-    #cells_root = utils_scene.get_child(root, cells_name)
-    #cells_root.active_material.diffuse_color = color
+    cells_root = utils_scene.get_child(root, cells_name)
+    cells_root.active_material.diffuse_color = color
 
 #def struct_linksScale_update(self, context):
 #    obj = MW_global_selected.root

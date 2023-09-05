@@ -74,7 +74,7 @@ class DM_utils(types.PropertyGroup):
         name="Inspect SCENE", description="Show some scene info",
         default=False,
     )
-    meta_show_tmpDebug: props.BoolProperty(
+    meta_show_debug: props.BoolProperty(
         name="debug...", description="WIP: Show some debug stuff",
         default=True,
     )

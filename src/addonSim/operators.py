@@ -94,7 +94,7 @@ class MW_gen_OT(_StartRefresh_OT):
         rowsub.prop(cfg, "margin_box_bounds")
         rowsub.prop(cfg, "margin_face_bounds")
 
-        open, box = ui.draw_toggleBox(getPrefs().gen_PT_meta_inspector, "meta_show_debug_props", layout)
+        open, box = ui.draw_toggleBox(getPrefs().gen_PT_meta_inspector, "meta_show_debug_props", layout, scaleBox=0.85)
         if open:
             box.prop(cfg, "debug_rnd_seed")
             box.prop(cfg, "debug_precisionWalls")

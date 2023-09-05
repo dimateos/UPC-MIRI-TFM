@@ -118,7 +118,7 @@ class MW_gen_PT(types.Panel):
     def draw_debug(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
 
-        open, box = ui.draw_toggleBox(prefs.gen_PT_meta_inspector, "meta_show_debug", layout, returnCol=False)
+        open, box = ui.draw_toggleBox(prefs.gen_PT_meta_inspector, "meta_show_debug", layout, scaleBox=0.85, returnCol=False)
         if open:
             # recalculate fracture
             box.operator(ops.MW_gen_recalc_OT.bl_idname, icon="ZOOM_PREVIOUS")
@@ -214,7 +214,7 @@ class MW_addon_PT(types.Panel):
         #ui.draw_propsToggle(prefs, prefs.prefs_PT_meta_inspector, layout)
         ui.draw_propsToggle_custom(prefs.dev_PT_meta_cfg, prefs.dev_PT_meta_cfg, layout, text="DEV")
 
-        open, box = ui.draw_toggleBox(prefs.prefs_PT_meta_inspector, "meta_show_debug", layout)
+        open, box = ui.draw_toggleBox(prefs.prefs_PT_meta_inspector, "meta_show_debug", layout, scaleBox=0.85)
         if open:
             col = box.column()
             # check region width

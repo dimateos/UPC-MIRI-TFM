@@ -143,24 +143,18 @@ def gen_cellsObjects(fract: MW_Fract, root: types.Object, context: types.Context
     vis_cfg : MW_vis_cfg= root.mw_vis
 
     # create empty objects holding them (add empty data to )
-    # NOTE:: cannot add materials to empty objects, yo just add some data
-    emptyCurve = utils_mesh.getEmpty_curveData("empty-curve")
-    root_cells = utils_scene.gen_child(root, prefs.names.cells, context, emptyCurve, keepTrans=False)
-    root_air = utils_scene.gen_child(root, prefs.names.cells_air, context, keepTrans=False)
-    root_core = utils_scene.gen_child(root, prefs.names.cells_core, context, keepTrans=False)
+    # NOTE:: cannot add materials to empty objects, yo just add some data (one for each, or they will share the material)
+    root_cells = utils_scene.gen_child(root, prefs.names.cells, context, utils_mesh.getEmpty_curveData("empty-curve"), keepTrans=False)
+    root_air = utils_scene.gen_child(root, prefs.names.cells_air, context, utils_mesh.getEmpty_curveData("empty-curve-air"), keepTrans=False)
+    root_core = utils_scene.gen_child(root, prefs.names.cells_core, context, utils_mesh.getEmpty_curveData("empty-curve-core"), keepTrans=False)
 
     # create shared materials, will only asign one to the cells (initial state is solid)
     mat_cells = utils_mat.get_colorMat(vis_cfg.cell_color, matName=prefs.names.get_MatFormated(prefs.names.cells))
     root_cells.active_material = mat_cells
     mat_air = utils_mat.get_colorMat(vis_cfg.cell_color_air, matName=prefs.names.get_MatFormated(prefs.names.cells_air))
-    #root_air.active_material = mat_air
+    root_air.active_material = mat_air
     mat_core = utils_mat.get_colorMat(vis_cfg.cell_color_core, matName=prefs.names.get_MatFormated(prefs.names.cells_core))
-    #root_core.active_material = mat_core
-
-    root_cells.material_slots[0].link = "OBJECT"
-    root_cells.active_material = mat_cells
-    root_cells.data = None
-    #utils_scene.delete_data(root_cells.data, root_cells.type, True)
+    root_core.active_material = mat_core
 
     cells = []
     for cell in fract.cont.voro_cont:
