@@ -41,12 +41,6 @@ def struct_nameOriginal_update(self, context):
     self.meta_nameOriginal_prevRep = self.struct_nameOriginal
     DEV.log_msg(f"struct_nameOriginal: {self.struct_nameOriginal} - prev: {self.meta_nameOriginal_prev}", {"CALLBACK", "CFG", "PREV"})
 
-def get_struct_name(cfg):
-    return f"{cfg.struct_namePrefix}_{cfg.struct_nameOriginal}"
-def get_struct_nameNew(cfg, newName):
-    #self.struct_nameOriginal = newName
-    return f"{cfg.struct_namePrefix}_{newName}"
-
 #-------------------------------------------------------------------
 
 class MW_gen_cfg(types.PropertyGroup):
@@ -114,8 +108,13 @@ class MW_gen_cfg(types.PropertyGroup):
         default=4, min=0, max=10,
     )
 
+    debug_ensure_noDoubles: props.BoolProperty(
+        name="Ensure no repeated input points", description="Collapse the input point to a set of unique pointers before building the container",
+        default=True,
+    )
+
     debug_flipCellNormals: props.BoolProperty(
-        name="Invert final cells face normals", description="Seems like they end up reversed due to voro face ordering.",
+        name="Flip final cell normals", description="Seems like they end up reversed due to voro face ordering",
         default=True,
     )
 

@@ -177,9 +177,8 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context: types.Co
 
     return points
 
-def get_points_from_fracture(obj_root: types.Object, cfg: MW_gen_cfg):
-    prefs = getPrefs()
-    obj_points = utils_scene.get_child(obj_root, prefs.names.source_points)
+def get_points_from_fracture(obj_root: types.Object):
+    obj_points = utils_scene.get_child(obj_root, getPrefs().names.source_points)
 
     points = utils_trans.get_verts(obj_points, worldSpace=False)
     getStats().logDt(f"retrieved points: {len(points)} (from {obj_points.name})")
@@ -209,8 +208,9 @@ def points_addNoise(points: list[Vector], cfg: MW_gen_cfg, bb_radius: float):
         points[:] = [p * Vector((1,1,0)) for p in points]
 
 def points_noDoubles(points: list[Vector], cfg: MW_gen_cfg):
-    points_set = {Vector.to_tuple(p, 4) for p in points}
-    points = list(points_set)
+    if cfg.debug_ensure_noDoubles:
+        points_set = {Vector.to_tuple(p, 4) for p in points}
+        points = list(points_set)
 
 def points_transformCfg(points: list[Vector], cfg: MW_gen_cfg, bb_radius: float):
     """ Applies all transformations to the set of points obtained
