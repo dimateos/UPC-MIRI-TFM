@@ -250,9 +250,14 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-    # keeping the pane with visual settings up to date
-    getPrefs().mw_vis.nbl_prefsProxy = True
+    # keeping the panel with visual settings up to date
+    prefs = getPrefs()
+    prefs.mw_vis.nbl_prefsProxy = True
     MW_global_selected.callback_rootChange_actions.append(MW_prefs.mw_vis_newSelected_update)
+
+    if DEV.CALLBACK_REGISTER_ALL:
+        prefs.dev_PT_meta_cfg.logs = False
+        prefs.dev_PT_meta_cfg.logs_type_whitelist = "TEST-HANDLERS"
 
 def unregister():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})

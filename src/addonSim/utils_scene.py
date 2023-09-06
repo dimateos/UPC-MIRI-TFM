@@ -266,7 +266,7 @@ def gen_childReuse(
 
 #-------------------------------------------------------------------
 
-def needsSanitize_object(obj):
+def needsSanitize(obj):
     """ Check broken reference to bl object """
     if obj is None: return False
     try:
@@ -275,9 +275,9 @@ def needsSanitize_object(obj):
     except ReferenceError:
         return True
 
-def returnSanitized_object(obj):
+def returnSanitized(obj):
     """ Change object to none in case of broken bl object """
-    if needsSanitize_object(obj):
+    if needsSanitize(obj):
         return None
     else:
         return obj

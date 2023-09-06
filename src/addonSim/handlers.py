@@ -24,20 +24,34 @@ class Actions(list):
     def dispatch(self, params):
         for c in self: c(*params)
 
+# dict of function because doing .clear is risky, other addons might try to remove callbacks too
+_all_handlers = { # hacky way of ignoring all passed arguments while making the lambda referenced value show up
+    hn : lambda s1=None,s2=None,s3=None, n=hn: DEV.log_msg(f"handler: {n}", {"CALLBACK", "TEST-HANDLERS", "DEV"})
+    for hn in getProps_namesFiltered(bpy.app.handlers, "-n_")
+}
+
 def registerAllHandlers():
     """ Check whenever they are called etc"""
-    handler_names = getProps_namesFiltered(bpy.app.handlers, "-n_")
-    DEV.log_msg(f"Registering {len(handler_names)}: {handler_names}", {"CALLBACK", "TEST-HANDLERS", "DEV"})
+    global _all_handlers
+    prev = DEV.logs_type_whitelist
+    DEV.logs_type_whitelist = { "TEST-HANDLERS" } # get the log get in
+    DEV.log_msg(f"Registering {len(_all_handlers)}", {"CALLBACK", "TEST-HANDLERS", "DEV"})
 
-    for hn in handler_names:
-        f = lambda scene: DEV.log_msg(f"handler: {hn}", {"CALLBACK", "TEST-HANDLERS", "DEV"})
-        getattr(bpy.app.handlers, hn).append(f)
+    for hn,fn in _all_handlers.items():
+        fn(None)
+        getattr(bpy.app.handlers, hn).append(fn)
+    DEV.logs_type_whitelist = prev
 
 def unregisterAllHandlers():
-    handler_names = getProps_namesFiltered(bpy.app.handlers, "-n_")
-    DEV.log_msg(f"Unregistering {len(handler_names)}: {handler_names}", {"CALLBACK", "TEST-HANDLERS", "DEV"})
-    for hn in handler_names: getattr(bpy.app.handlers, hn).clear()
+    global _all_handlers
+    prev = DEV.logs_type_whitelist
+    DEV.logs_type_whitelist = { "TEST-HANDLERS" } # get the log get in
+    DEV.log_msg(f"Unregistering {len(_all_handlers)}", {"CALLBACK", "TEST-HANDLERS", "DEV"})
 
+    for hn,fn in _all_handlers.items():
+        try: getattr(bpy.app.handlers, hn).remove(fn)
+        except ValueError: pass
+    DEV.logs_type_whitelist = prev
 
 #-------------------------------------------------------------------
 
@@ -116,11 +130,11 @@ def register():
 
 def unregister():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})
+    if DEV.CALLBACK_REGISTER_ALL: unregisterAllHandlers()
 
     bpy.app.handlers.depsgraph_update_post.remove(callback_updatePost)
     bpy.app.handlers.undo_post.remove(callback_undo)
     bpy.app.handlers.load_post.remove(callback_loadFile)
 
-    if DEV.CALLBACK_REGISTER_ALL: unregisterAllHandlers()
 
 DEV.log_msg(f"{_name}", {"ADDON", "PARSED"})

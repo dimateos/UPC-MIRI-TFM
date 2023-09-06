@@ -244,7 +244,7 @@ class MW_global_storage:
 
         # detect broken object references
         for id,obj in cls.id_fracts_obj.items():
-            if utils_scene.needsSanitize_object(obj):
+            if utils_scene.needsSanitize(obj):
                 toPurge.append(id)
 
         DEV.log_msg(f"Purging {len(toPurge)}: {toPurge}", {"GLOBAL", "STORAGE"})
@@ -256,14 +256,14 @@ class MW_global_storage:
         """ Check references to other objects inside the fracts parts are not broken (mainly cont)"""
         toSanitize = []
 
-        # detect NON-broken object references
+        # detect NON-broken object references, will sanitize those conts
         for id,obj in cls.id_fracts_obj.items():
-            if not utils_scene.needsSanitize_object(obj):
+            if not utils_scene.needsSanitize(obj):
                 toSanitize.append(id)
 
         DEV.log_msg(f"Sanitizing {len(toSanitize)} fracts /{len(cls.id_fracts_obj)}", {"SANITIZE", "FRACT"})
         for id in toSanitize:
-            cls.id_fracts[id].sanitize()
+            cls.id_fracts[id].sanitize(cls.id_fracts_obj[id])
 
     @classmethod
     def purgeFracts_callback(cls, _scene_=None, _undo_name_=None):
@@ -307,7 +307,10 @@ class MW_global_selected:
             #cls.current = cls.selection[-1]
 
             # will differ later if the active_object is changed to one among already selected
-            cls.current = bpy.context.active_object
+            if bpy.context.active_object:
+                cls.current = bpy.context.active_object
+            else:
+                cls.current = new_selection[0] # multi-selection might leave none as active
 
             newRoot = MW_id_utils.getRoot(cls.current)
             if newRoot:
@@ -359,15 +362,15 @@ class MW_global_selected:
     @classmethod
     def sanitize(cls):
         """ Potentially sanitize objects no longer on the scene """
-        if utils_scene.needsSanitize_object(cls.current):
+        if utils_scene.needsSanitize(cls.current):
             cls.reset()
         else:
             cls.prevalid_sanitize()
 
     @classmethod
     def prevalid_sanitize(cls):
-        cls.prevalid_last = utils_scene.returnSanitized_object(cls.prevalid_last)
-        cls.prevalid_root = utils_scene.returnSanitized_object(cls.prevalid_root)
+        cls.prevalid_last = utils_scene.returnSanitized(cls.prevalid_last)
+        cls.prevalid_root = utils_scene.returnSanitized(cls.prevalid_root)
         if cls.prevalid_root is None:
             cls.prevalid_fract = None
 
