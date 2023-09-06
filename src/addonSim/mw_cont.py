@@ -225,21 +225,17 @@ class MW_Container:
             DEV.log_msg(f"exception cont >> {str(e)}", {"CALC", "CONT", "ERROR"})
             return None
 
-    def sanitize(self):
-        # cannot suppose that the current root is this conts root tho
-        #if not MW_global_selected.root: return
-        #if not utils_scene.needsSanitize_object(self.root): return
-        #self.root = MW_global_selected.root
+    def sanitize(self, root):
+        self.root = root
 
-        if not utils_scene.needsSanitize_object(self.cells_objs[0]): return
-
-        # some undo broke the references
+        # requery the object scenes, potentially broken by some undo
         DEV.log_msg(f"Sanitizing cont", {"SANITIZE", "CONT"})
 
         # query cell roots and their children
-        cells_root = utils_scene.get_child(self.root, getPrefs().names.cells)
-        cells_root_core = utils_scene.get_child(self.root, getPrefs().names.cells_core)
-        cells_root_air = utils_scene.get_child(self.root, getPrefs().names.cells_air)
+        prefs = getPrefs()
+        cells_root = utils_scene.get_child(self.root, prefs.names.cells)
+        cells_root_core = utils_scene.get_child(self.root, prefs.names.cells_core)
+        cells_root_air = utils_scene.get_child(self.root, prefs.names.cells_air)
         cells_list = cells_root.children + cells_root_core.children + cells_root_air.children
 
         # iterate the unsorted cells and read their internal id

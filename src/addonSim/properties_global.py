@@ -85,7 +85,7 @@ class MW_id_utils:
     @staticmethod
     def getSceneRoots(scene: types.Scene) -> list[types.Object]:
         """ Retrieve the root objects in the scene
-            # OPT:: could use the global storage instead of iterating the scene
+            # OPT:: in some cases could use the global storage instead of iterating the scene
         """
         roots = [ obj for obj in scene.objects if MW_id_utils.isRoot(obj) ]
         return roots
@@ -238,18 +238,40 @@ class MW_global_storage:
     enable_autoPurge = enable_autoPurge_default
 
     @classmethod
-    def purgeFracts(cls):
-        """ Remove fracts of deleted scene objects (that could appear again with UNDO etc)"""
-        toPurge = []
+    def getFracts_splitID_needsSanitize(cls):
+        broken = []
+        ok = []
 
         # detect broken object references
         for id,obj in cls.id_fracts_obj.items():
             if utils_scene.needsSanitize(obj):
-                toPurge.append(id)
+                broken.append(id)
+            else:
+                ok.append(id)
+        return ok, broken
 
-        DEV.log_msg(f"Purging {len(toPurge)}: {toPurge}", {"GLOBAL", "STORAGE"})
-        for id in toPurge:
+    @classmethod
+    def purgeFracts(cls):
+        """ Remove fracts of deleted scene objects (that could appear again with UNDO etc)"""
+        ok, broken = cls.getFracts_splitID_needsSanitize()
+        DEV.log_msg(f"Purging {len(broken)}: {broken}", {"GLOBAL", "STORAGE"})
+        for id in broken:
             cls.freeFract_fromID(id)
+
+    @classmethod
+    def recoverFracts(cls):
+        """ Try to recover objects that might have pop back into the scene """
+        ok, broken = cls.getFracts_splitID_needsSanitize()
+        roots = MW_id_utils.getSceneRoots(bpy.context.scene)
+        matched = []
+        DEV.log_msg(f"Check recover {len(broken)}: {broken}", {"GLOBAL", "STORAGE"})
+        for root in roots:
+            id = root.mw_id.storage_id
+            if id in broken:
+                matched.append(id)
+                cls.id_fracts_obj[id] = root
+
+        DEV.log_msg(f"Matched {len(matched)} / {len(roots)} roots: {matched}", {"GLOBAL", "STORAGE"})
 
     @classmethod
     def sanitizeFracts(cls):
@@ -267,10 +289,17 @@ class MW_global_storage:
 
     @classmethod
     def purgeFracts_callback(cls, _scene_=None, _undo_name_=None):
-        cls.sanitizeFracts()
+        #cls.sanitizeFracts()
+        # free from memory
         if cls.enable_autoPurge:
             cls.purgeFracts()
 
+        # some might reapear when undoing a delete
+        cls.recoverFracts()
+
+    @classmethod
+    def recoverFracts_callback(cls, _scene_=None, _undo_name_=None):
+        cls.recoverFracts()
 
 #-------------------------------------------------------------------
 
@@ -405,8 +434,11 @@ def register():
 
     # callbaks
     handlers.callback_selectionChange_actions.append(MW_global_selected.setSelected_callback)
-    handlers.callback_loadFile_actions.append(MW_global_selected.sanitizeSelected_callback)
     handlers.callback_undo_actions.append(MW_global_storage.purgeFracts_callback)
+    handlers.callback_redo_actions.append(MW_global_storage.recoverFracts_callback)
+
+    # OPT:: callback_loadFile not very well tested tho
+    handlers.callback_loadFile_actions.append(MW_global_selected.sanitizeSelected_callback)
     handlers.callback_loadFile_actions.append(MW_global_storage.purgeFracts_callback)
 
     for cls in classes:
@@ -421,10 +453,11 @@ def unregister():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})
 
     # callbacks (might end up set or not, use check)
-    handlers.callback_selectionChange_actions.remove(MW_global_selected.setSelected_callback)
     handlers.callback_loadFile_actions.remove(MW_global_selected.sanitizeSelected_callback)
-    handlers.callback_undo_actions.removeCheck(MW_global_storage.purgeFracts_callback)
     handlers.callback_loadFile_actions.remove(MW_global_storage.purgeFracts_callback)
+    handlers.callback_selectionChange_actions.remove(MW_global_selected.setSelected_callback)
+    handlers.callback_undo_actions.removeCheck(MW_global_storage.purgeFracts_callback)
+    handlers.callback_redo_actions.removeCheck(MW_global_storage.recoverFracts_callback)
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

@@ -8,12 +8,14 @@ from .properties_global import (
     MW_global_storage,
     MW_global_selected,
 )
-from .mw_cont import STATE_ENUM
+from .mw_fract import MW_Fract
+from .mw_cont import MW_Container, STATE_ENUM
 
 from . import operators as ops
 from .panels_dm import util_classes_pt
 
 from . import ui
+from . import utils_scene
 from .utils_dev import DEV
 
 
@@ -125,6 +127,8 @@ class MW_gen_PT(types.Panel):
     def draw_debug(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
         curr = MW_global_selected.current
+        fract : MW_Fract = MW_global_selected.fract
+        cont : MW_Container = MW_global_selected.fract.cont if fract else None
 
         open, box = ui.draw_toggleBox(prefs.gen_PT_meta_inspector, "meta_show_debug", layout, scaleBox=0.85, returnCol=False)
         if open:
@@ -139,15 +143,19 @@ class MW_gen_PT(types.Panel):
                 col_rowSplit.label(text=f"s: {curr.mw_id.storage_id}")
                 cell_id = curr.mw_id.cell_id
                 col_rowSplit.label(text=f"c: {cell_id}")
-
                 # cell data from cont
-                if MW_global_selected.fract:
-                    if MW_global_selected.fract.cont:
-                        col_rowSplit = boxSelected.row()
-                        cell_state = STATE_ENUM.to_str(MW_global_selected.fract.cont.cells_state[cell_id]) if cell_id >= 0 else "..."
-                        col_rowSplit.label(text=f"State: {cell_state}", icon="EXPERIMENTAL")
-                    if MW_global_selected.fract.links:
-                        pass
+                if fract and cont:
+                    col_rowSplit = boxSelected.row()
+                    cell_state = STATE_ENUM.to_str(MW_global_selected.fract.cont.cells_state[cell_id]) if cell_id >= 0 else "..."
+                    col_rowSplit.label(text=f"State: {cell_state}", icon="EXPERIMENTAL")
+
+            # cont POV
+            if fract:
+                if cont:
+                    boxCont = box.box().column()
+                    boxCont.label(text=f"Root:  {cont.root.name if not utils_scene.needsSanitize(cont.root) else '~'}")
+                    boxCont.label(text=f"Cells: { cont.cells_objs[0].name if not utils_scene.needsSanitize(cont.cells_objs[0]) else '~'} ({len(cont.cells_objs)})")
+                    boxCont.label(text=f"Meshes: { cont.cells_meshes[0].name if not utils_scene.needsSanitize(cont.cells_meshes[0]) else '~'} ({len(cont.cells_meshes)})")
 
             # global selected
             boxSelected = box.box().column()
@@ -174,7 +182,9 @@ class MW_gen_PT(types.Panel):
 
             col = boxLinks.column()
             for id,fract in MW_global_storage.id_fracts.items():
-                col.label(text=f"{id}: {len(fract.cont.voro_cont)} cells + {len(fract.links.link_map)} links", icon="THREE_DOTS")
+                obj = MW_global_storage.id_fracts_obj[id]
+                icon = "X" if utils_scene.needsSanitize(obj) else "CHECKMARK"
+                col.label(text=f"{id}: {len(fract.cont.voro_cont)} cells + {len(fract.links.link_map)} links", icon=icon)
 
 
             # more stuff
