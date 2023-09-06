@@ -251,55 +251,57 @@ class MW_global_storage:
         return ok, broken
 
     @classmethod
-    def purgeFracts(cls):
+    def purgeFracts(cls, broken = None):
         """ Remove fracts of deleted scene objects (that could appear again with UNDO etc)"""
-        ok, broken = cls.getFracts_splitID_needsSanitize()
-        DEV.log_msg(f"Purging {len(broken)}: {broken}", {"GLOBAL", "STORAGE"})
+        if broken is None:
+            ok, broken = cls.getFracts_splitID_needsSanitize()
+
+        DEV.log_msg(f"Purging {len(broken)}: {broken}", {"GLOBAL", "STORAGE", "SANITIZE"})
         for id in broken:
             cls.freeFract_fromID(id)
 
     @classmethod
-    def recoverFracts(cls):
+    def recoverFracts(cls, broken = None):
         """ Try to recover objects that might have pop back into the scene """
-        ok, broken = cls.getFracts_splitID_needsSanitize()
+        if broken is None:
+            ok, broken = cls.getFracts_splitID_needsSanitize()
+        DEV.log_msg(f"Check recover {len(broken)}: {broken}", {"GLOBAL", "STORAGE", "SANITIZE"})
+
+        # skip query scene roots when there are no broken
+        if not broken:
+            return
+
         roots = MW_id_utils.getSceneRoots(bpy.context.scene)
-        matched = []
-        DEV.log_msg(f"Check recover {len(broken)}: {broken}", {"GLOBAL", "STORAGE"})
+        recovered = []
         for root in roots:
             id = root.mw_id.storage_id
             if id in broken:
-                matched.append(id)
+                recovered.append(id)
                 cls.id_fracts_obj[id] = root
 
-        DEV.log_msg(f"Matched {len(matched)} / {len(roots)} roots: {matched}", {"GLOBAL", "STORAGE"})
+        DEV.log_msg(f"Recovered {len(recovered)} / {len(roots)} roots: {recovered}", {"GLOBAL", "STORAGE", "SANITIZE"})
+        return recovered
 
     @classmethod
     def sanitizeFracts(cls):
-        """ Check references to other objects inside the fracts parts are not broken (mainly cont)"""
-        toSanitize = []
+        ok, broken = cls.getFracts_splitID_needsSanitize()
 
-        # detect NON-broken object references, will sanitize those conts
-        for id,obj in cls.id_fracts_obj.items():
-            if not utils_scene.needsSanitize(obj):
-                toSanitize.append(id)
+        # free from memory unreferences conts (could pop back again tho)
+        if cls.enable_autoPurge:
+            cls.purgeFracts(broken)
 
-        DEV.log_msg(f"Sanitizing {len(toSanitize)} fracts /{len(cls.id_fracts_obj)}", {"SANITIZE", "FRACT"})
-        for id in toSanitize:
+        # some might reapear when undoing a delete
+        else:
+            recovered = cls.recoverFracts(broken)
+            ok += recovered
+
+        # potentially recalculate some parts of the fract
+        for id in ok:
             cls.id_fracts[id].sanitize(cls.id_fracts_obj[id])
 
     @classmethod
-    def purgeFracts_callback(cls, _scene_=None, _undo_name_=None):
-        #cls.sanitizeFracts()
-        # free from memory
-        if cls.enable_autoPurge:
-            cls.purgeFracts()
-
-        # some might reapear when undoing a delete
-        cls.recoverFracts()
-
-    @classmethod
-    def recoverFracts_callback(cls, _scene_=None, _undo_name_=None):
-        cls.recoverFracts()
+    def sanitizeFracts_callback(cls, _scene_=None, _undo_name_=None):
+        cls.sanitizeFracts()
 
 #-------------------------------------------------------------------
 
@@ -434,12 +436,12 @@ def register():
 
     # callbaks
     handlers.callback_selectionChange_actions.append(MW_global_selected.setSelected_callback)
-    handlers.callback_undo_actions.append(MW_global_storage.purgeFracts_callback)
-    handlers.callback_redo_actions.append(MW_global_storage.recoverFracts_callback)
+    handlers.callback_undo_actions.append(MW_global_storage.sanitizeFracts_callback)
+    handlers.callback_redo_actions.append(MW_global_storage.sanitizeFracts_callback)
 
     # OPT:: callback_loadFile not very well tested tho
     handlers.callback_loadFile_actions.append(MW_global_selected.sanitizeSelected_callback)
-    handlers.callback_loadFile_actions.append(MW_global_storage.purgeFracts_callback)
+    handlers.callback_loadFile_actions.append(MW_global_storage.sanitizeFracts_callback)
 
     for cls in classes:
         bpy.utils.register_class(cls)
@@ -453,11 +455,12 @@ def unregister():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})
 
     # callbacks (might end up set or not, use check)
-    handlers.callback_loadFile_actions.remove(MW_global_selected.sanitizeSelected_callback)
-    handlers.callback_loadFile_actions.remove(MW_global_storage.purgeFracts_callback)
     handlers.callback_selectionChange_actions.remove(MW_global_selected.setSelected_callback)
-    handlers.callback_undo_actions.removeCheck(MW_global_storage.purgeFracts_callback)
-    handlers.callback_redo_actions.removeCheck(MW_global_storage.recoverFracts_callback)
+    handlers.callback_undo_actions.removeCheck(MW_global_storage.sanitizeFracts_callback)
+    handlers.callback_redo_actions.removeCheck(MW_global_storage.sanitizeFracts_callback)
+
+    handlers.callback_loadFile_actions.remove(MW_global_selected.sanitizeSelected_callback)
+    handlers.callback_loadFile_actions.remove(MW_global_storage.sanitizeFracts_callback)
 
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

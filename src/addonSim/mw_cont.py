@@ -226,10 +226,9 @@ class MW_Container:
             return None
 
     def sanitize(self, root):
+        """ Query all objects references from the scene again, sometimes just in case """
+        DEV.log_msg(f"Sanitizing cont", {"CONT", "SANITIZE"})
         self.root = root
-
-        # requery the object scenes, potentially broken by some undo
-        DEV.log_msg(f"Sanitizing cont", {"SANITIZE", "CONT"})
 
         # query cell roots and their children
         prefs = getPrefs()
@@ -245,6 +244,8 @@ class MW_Container:
             self.cells_meshes[idx_cell] = obj_cell.data
 
     #-------------------------------------------------------------------
+
+    # OPT:: None cells?
 
     def getMeshes(self, idx: list[int]|int) -> list[types.Mesh]|types.Mesh:
         """ return a mesh or list of meshes given idx  """
