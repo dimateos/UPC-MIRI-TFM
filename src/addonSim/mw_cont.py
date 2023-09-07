@@ -21,7 +21,8 @@ from .stats import getStats
 
 #-------------------------------------------------------------------
 
-link_key_t = tuple[int, int]
+linkCells_key_t = tuple[int, int]
+linkFaces_key_t = tuple[int, int]
 
 class ERROR_ENUM:
     """ Use leftover indices between cont boundaries and custom walls for filler error idx?
@@ -92,11 +93,11 @@ class MW_Container:
         stats = getStats()
 
         # init wall dict with just empty lists (some will remain empty)
-        self.keys_perWall: dict[int, list[link_key_t]] = {
+        self.keys_perWall: dict[int, list[linkCells_key_t]] = {
             id: list() for id in self.voro_cont.get_conainerId_limitWalls()+self.voro_cont.walls_cont_idx
         }
         # cell dict lists will have the same size of neighs/faces so fill in the following loop while checking for missing ones
-        self.keys_perCell: dict[int, list[link_key_t] | int] = dict()
+        self.keys_perCell: dict[int, list[linkCells_key_t] | int] = dict()
         """ # NOTE:: missing cells are filled with a placeholder id to preserve original position idx """
 
         # calculate missing cells and query neighs (also with placeholders idx)
@@ -153,8 +154,8 @@ class MW_Container:
         stats.logDt("calculated cells mesh dicts (interleaved missing cells)")
 
         # build symmetric face map of the found cells
-        self.keys_asymmetry : list[link_key_t]    = []
-        self.keys_missing   : list[link_key_t]    = []
+        self.keys_asymmetry : list[linkCells_key_t]    = []
+        self.keys_missing   : list[linkCells_key_t]    = []
         self.neighs_faces   : list[list[int]|int] = [ERROR_ENUM.MISSING]*len(self.voro_cont)
         """ # NOTE:: missing cells and neigh asymmetries are filled with a placeholder id too """
 
@@ -196,7 +197,6 @@ class MW_Container:
         if self.keys_asymmetry: msg += f": {str(self.keys_asymmetry[:10])}"
         stats.logDt(msg) # uncut=True
         self.precalculated = True
-
 
     def build_voro(self, points: list[Vector], bb: list[Vector, 6], faces4D: list[Vector], precision: int):
         """ Build a voro++ container using the points and the faces as walls """
@@ -285,6 +285,8 @@ class MW_Container:
             self.cells_objs[id] = ERROR_ENUM.DELETED
             self.cells_meshes[id] = ERROR_ENUM.DELETED
             self.cells_state[id] = STATE_ENUM.AIR
+
+        # TODO:: links should remove some
 
     #-------------------------------------------------------------------
 

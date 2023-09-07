@@ -2,7 +2,7 @@ import bpy.types as types
 from mathutils import Vector, Matrix
 INF_FLOAT = float("inf")
 
-from .mw_cont import MW_Container, ERROR_ENUM, link_key_t
+from .mw_cont import MW_Container, ERROR_ENUM, linkCells_key_t, linkFaces_key_t
 from . import mw_resistance
 import networkx as nx
 
@@ -16,16 +16,16 @@ from .stats import getStats
 # OPT:: could use a class or an array of props? pyhton already slow so ok class?
 # IDEA:: augmented cell class instead of array of props? cont -> cell -> link... less key map indirections
 class Link():
-    def __init__(self, col: "MW_Links", key_cells: link_key_t, key_faces: tuple[int, int], pos_world:Vector, dir_world:Vector, face_area:float, airLink=False):
+    def __init__(self, col: "MW_Links", key_cells: linkCells_key_t, key_faces: linkFaces_key_t, pos_world:Vector, dir_world:Vector, face_area:float, airLink=False):
         # no directionality but tuple key instead of set
-        self.key_cells : link_key_t       = key_cells
-        self.key_faces : link_key_t       = key_faces
+        self.key_cells : linkCells_key_t       = key_cells
+        self.key_faces : linkFaces_key_t       = key_faces
         self.collection: "MW_Links" = col
 
         # neighs populated afterwards
         self.neighs_Cell_Cell: list[Link] = list()
         self.neighs_Air_Cell: list[Link] = list()
-        self.neighs_error : list[link_key_t] = list()
+        self.neighs_error : list[linkCells_key_t] = list()
 
         # sim props
         self.airLink_initial = airLink
@@ -77,14 +77,14 @@ class Link():
     def __len__(self):
         return len(self.neighs_Cell_Cell) + len(self.neighs_Air_Cell)
 
-    def setNeighs(self, newNeighsKeys:list[link_key_t]):
+    def setNeighs(self, newNeighsKeys:list[linkCells_key_t]):
         """ Clear and add links """
         self.neighs_Cell_Cell.clear()
         self.neighs_Air_Cell.clear()
         self.neighs_error.clear()
         self.addNeighs(newNeighsKeys)
 
-    def addNeighs(self, newNeighsKeys:list[link_key_t]):
+    def addNeighs(self, newNeighsKeys:list[linkCells_key_t]):
         """ Classify by key and add queried links to the respective neigh list """
         for kn in newNeighsKeys:
             if   kn[0] in ERROR_ENUM.all: self.neighs_error.append(kn)
@@ -109,7 +109,7 @@ class MW_Links():
         """ List of sets with connected components cells id """
         self.cells_graph.add_nodes_from(cont.foundId)
 
-        self.link_map: dict[link_key_t, Link] = dict()
+        self.link_map: dict[linkCells_key_t, Link] = dict()
         """ Static global link map storage, indexed by key with no repetitions """
 
         self.external : list[Link] = list()
@@ -126,16 +126,19 @@ class MW_Links():
         self.avg_area = 0
 
         # key is always sorted numerically -> negative walls id go at the beginning
-        def getKey_swap(k1,k2) -> tuple[link_key_t,bool]:
+        def getKey_swap(k1,k2) -> tuple[linkCells_key_t,bool]:
             swap = k1 > k2
             key = (k1, k2) if not swap else (k2, k1)
             return key,swap
-        def getKey(k1,k2, swap) -> link_key_t:
+        def getKey(k1,k2, swap) -> linkCells_key_t:
             key = (k1, k2) if not swap else (k2, k1)
             return key
 
         # FIRST loop to build the global dictionaries
         for idx_cell in cont.foundId:
+            # skip deleted afterwards
+            if idx_cell in cont.deletedId:
+                continue
 
             # XXX:: data to calculate global pos here or leave for links to do?
             obj        = cont.cells_objs[idx_cell]
@@ -148,6 +151,8 @@ class MW_Links():
 
                 # skip asymmetric (already prefilled keys_perCell)
                 if idx_neighCell in ERROR_ENUM.all:
+                    continue
+                if idx_neighCell in cont.deletedId:
                     continue
 
                 # get world props
@@ -215,6 +220,10 @@ class MW_Links():
 
         # SECOND loop to aggregate the links neighbours, only need to iterate cont_foundId
         for idx_cell in cont.foundId:
+            # skip deleted afterwards
+            if idx_cell in cont.deletedId:
+                continue
+
             keys_perFace = cont.keys_perCell[idx_cell]
             for idx_face,key in enumerate(keys_perFace):
                 # skip possible asymmetries
