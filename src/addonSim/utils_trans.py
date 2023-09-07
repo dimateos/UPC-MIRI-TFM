@@ -7,21 +7,19 @@ from . import utils
 # transform utils: math and 3D algebra + some scene interaction
 #-------------------------------------------------------------------
 
-getPerpendicular_stable_minMagSq = 1e-3*1e-3
+getPerpendicular_stable_minMagSq = 1e-4*1e-4
 """ small magnitudes will be unstable when normalizing """
 
 def almostNull(v:Vector):
     global getPerpendicular_stable_minMagSq
     if getPerpendicular_stable_minMagSq:
-        return v.length_squared > getPerpendicular_stable_minMagSq
+        return v.length_squared < getPerpendicular_stable_minMagSq
     return True
 
 def getPerpendicular_stable(v:Vector, normalize=True):
     """ find the most stable perpendicular vector """
-
-    if almostNull(v):
-        print(f"WARNING: getPerpendicular_stable almostNull {v}")
-        return Vector((0, 1, 0))
+    #assert(not almostNull(v))
+    if almostNull(v): print(f"WARNING: getPerpendicular_stable almostNull {v.length}")
 
     # pick the axis vector that yields the lowest dot product (least aligned one)
     Ax, Ay, Az = abs(v.x), abs(v.y), abs(v.z)
@@ -220,7 +218,7 @@ def scale_object(obj: types.Object, s:float|Vector, replace_s = True, pivot:Vect
         obj.matrix_world = M @ get_worldMatrix_unscaled(obj)
         #trans_update(obj,log=True)
 
-def scale_objectChildren(obj_father: types.Object, s:float|Vector, replace_s=True, pivotBB=False, ignore_empty=True, rec=True):
+def scale_objectChildren(obj_father: types.Object, s:float|Vector, replace_s=True, pivotBB=False, ignore_empty=True, rec=False):
     """ Scale an object children optionally ignoring empty """
     toScale = obj_father.children if not rec else obj_father.children_recursive
     sv = assure_vector3(s)

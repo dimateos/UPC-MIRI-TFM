@@ -139,7 +139,7 @@ class MW_gen_OT(_StartRefresh_OT):
             # Selected object not fractured, fresh execution
             if obj is None:
                 DEV.log_msg("cfg NOT found: new frac", {'SETUP'})
-                obj_root, obj_original = mw_setup.copy_original(MW_global_selected.current, self.cfg, context)
+                obj_root, obj_original = mw_setup.copy_original(MW_global_selected.current, self.cfg, context, prefs.names.original_copy)
                 # Sync prefs panel with the object -> ok callbacks because obj is None
                 copyProps(prefs.mw_vis, obj_root.mw_vis)
                 return self.execute_fresh(obj_root, obj_original)
@@ -159,7 +159,7 @@ class MW_gen_OT(_StartRefresh_OT):
                     utils_scene.hide_objectRec(obj)
 
                 DEV.log_msg("cfg found: duplicating frac", {'SETUP'})
-                obj_root, obj_original = mw_setup.copy_originalPrev(obj, context)
+                obj_root, obj_original = mw_setup.copy_originalPrev(obj, context, prefs.names.original_copy)
                 return self.execute_fresh(obj_root, obj_original)
 
         # catch exceptions to at least mark as child and copy props
@@ -186,7 +186,7 @@ class MW_gen_OT(_StartRefresh_OT):
         DEV.log_msg("Initial object setup", {'SETUP'})
         if cfg.shape_useConvexHull:
             # NOTE:: convex hull triangulates the faces... e.g. UV sphere ends with more!
-            obj_toFrac = mw_setup.copy_convex(obj_root, obj_original, self.ctx)
+            obj_toFrac = mw_setup.copy_convex(obj_root, obj_original, self.ctx, prefs.names.original_convex, prefs.names.original_dissolve)
         else: obj_toFrac = obj_original
 
 
@@ -533,7 +533,7 @@ class MW_util_bool_OT(_StartRefresh_OT):
 
         if obj:
             prefs = getPrefs()
-            obj_original = utils_scene.get_child(obj, prefs.names.original_copy + prefs.names.original)
+            obj_original = utils_scene.get_child(obj, prefs.names.original_copy, mode="STARTS_WITH")
             obj_cells = utils_scene.get_child(obj, prefs.names.cells)
             mw_extraction.boolean_mod_add(obj_original, obj_cells, context)
 

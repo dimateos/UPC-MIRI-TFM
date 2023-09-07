@@ -285,13 +285,14 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
 
         obj = context.active_object
         if self.obj_replace:
-            child_empty = utils_scene.gen_childClean(obj, self.CONST_NAMES.empty, context, None, keepTrans=False)
+            child_empty = utils_scene.gen_childReuse(obj, self.CONST_NAMES.empty, context, None, keepTrans=False)
         else: child_empty = utils_scene.get_child(obj, self.CONST_NAMES.empty)
 
         # optional grayscale common color mat
-        gray3 = utils_mat.COLORS.white * self.color_gray
+        gray = utils_mat.COLORS.white * self.color_gray
+        gray.w = self.color_alpha
         if self.color_useGray:
-            mat_gray = utils_mat.get_colorMat(gray3, self.color_alpha, "spawnIndices_shared")
+            mat_gray = utils_mat.get_colorMat(gray, "spawnIndices_shared")
 
         # IDEA:: add more info as suffix + rename after delete so no .001 + also applied to some setup
 
@@ -301,7 +302,10 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
             if self.mesh_useShape:
                 mesh = utils_mesh.SHAPES.get_octahedron(f"{self.namePrefix}.vert")
                 if self.color_useGray: mat = mat_gray
-                else: mat = utils_mat.get_colorMat(utils_mat.COLORS.red+gray3, self.color_alpha, "spawnIndices_VERT")
+                else:
+                    red = utils_mat.COLORS.red+gray
+                    red.w = self.color_alpha
+                    mat = utils_mat.get_colorMat(red, "spawnIndices_VERT")
             else:
                 mesh= None
                 mat = None
@@ -331,7 +335,10 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
             if self.mesh_useShape:
                 mesh = utils_mesh.SHAPES.get_cuboid(f"{self.namePrefix}.edge")
                 if self.color_useGray: mat = mat_gray
-                else: mat = utils_mat.get_colorMat(utils_mat.COLORS.green+gray3, self.color_alpha, "spawnIndices_EDGE")
+                else:
+                    green = utils_mat.COLORS.green+gray
+                    green.w = self.color_alpha
+                    mat = utils_mat.get_colorMat(green, "spawnIndices_EDGE")
             else:
                 mesh= None
                 mat = None
@@ -361,7 +368,10 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
             if self.mesh_useShape:
                 mesh = utils_mesh.SHAPES.get_tetrahedron(f"{self.namePrefix}.face")
                 if self.color_useGray: mat = mat_gray
-                else: mat = utils_mat.get_colorMat(utils_mat.COLORS.blue+gray3, self.color_alpha, "spawnIndices_FACE")
+                else:
+                    blue = utils_mat.COLORS.blue+gray
+                    blue.w = self.color_alpha
+                    mat = utils_mat.get_colorMat(blue, "spawnIndices_FACE")
             else:
                 mesh= None
                 mat = None

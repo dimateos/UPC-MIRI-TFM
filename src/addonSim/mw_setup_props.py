@@ -16,6 +16,7 @@ from .utils_dev import DEV
 
 def getRoot_checkProxy(cfg, cfg_name:str, prop_name:str):
     """ Check common prefs proxy flag and return the object when the update is required"""
+    #return None,None
     obj = MW_global_selected.root
     proxy = getattr(cfg, "nbl_prefsProxy")
 

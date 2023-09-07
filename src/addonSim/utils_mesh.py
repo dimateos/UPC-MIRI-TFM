@@ -104,15 +104,11 @@ def get_tubeMesh_pairsQuad(src_verts_pairs:list[tuple[Vector]], src_scale:list[f
     res_step = PI * 2 / resFaces
     verts, faces = [], []
 
-    ## generate mesh attributes
-    #me = bpy.data.meshes.new(name)
-    #if attributesData:
-    #    for key,val in attributesData.items():
-    #        gen
-
     # directly work on each face
     for vid, vPair in enumerate(src_verts_pairs):
         normal = vPair[1] - vPair[0]
+        #if utils_trans.almostNull(normal): continue
+
         u,v = utils_trans.getPerpendicularBase_stable(normal)
         r = radii*src_scale[vid] if src_scale else radii
         get_ringVerts_interleaved(vPair, r, resFaces, res_step, verts, u,v)

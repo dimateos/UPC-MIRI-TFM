@@ -164,18 +164,18 @@ class MW_prefs(bpy.types.AddonPreferences):
         links_group = "L"
 
         @classmethod
-        def get_MatFormated(cls, name:str):
+        def fmt_mat(cls, name:str):
             """ Add common material suffix """
             return f"{name}_mat"
 
         @classmethod
-        def get_IdFormated(cls, idx:int):
+        def fmt_id(cls, idx:int):
             """ Pad with a certain amount of zeroes to achieve a correct lexicographic order """
             return f"{{:{cls.child_idFormat}}}".format(idx)
 
         child_idFormat = "04"
         @classmethod
-        def set_IdFormated_amount(cls, n:int):
+        def fmt_setAmount(cls, n:int):
             """ Dynamically adjust based on number of cells """
             from math import ceil
             digits = len(str(n))
