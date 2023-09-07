@@ -35,6 +35,10 @@ class MW_id(types.PropertyGroup):
         default=-1,
     )
 
+    cell_state: props.IntProperty(
+        name="Cell state", description="State that matches the cont cell state",
+        default=-1,
+    )
 
 #-------------------------------------------------------------------
 
@@ -293,7 +297,8 @@ class MW_global_storage:
         # some might reapear when undoing a delete
         else:
             recovered = cls.recoverFracts(broken)
-            ok += recovered
+            if recovered:
+                ok += recovered
 
         # potentially recalculate some parts of the fract
         for id in ok:

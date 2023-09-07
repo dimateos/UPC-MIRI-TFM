@@ -45,24 +45,24 @@ class ERROR_IDX:
 class STATE_ENUM:
     """ Current cell state, preserves some sequentiality"""
     SOLID = 0
-    AIR = 1
-    CORE = -1
+    CORE = 1
+    AIR = 2
 
-    all = [ SOLID, AIR, CORE ]
-    all_str = [ "SOLID", "AIR", "CORE" ]
+    all = [ SOLID, CORE, AIR ]
+    all_str = [ "SOLID", "CORE", "AIR" ]
 
     @classmethod
     def to_str(cls, e:int):
         if e == cls.SOLID:  return "SOLID"
-        if e == cls.AIR:    return "AIR"
         if e == cls.CORE:   return "CORE"
-        return "unknown"
+        if e == cls.AIR:    return "AIR"
+        return "none"
         #raise ValueError(f"STATE_ENUM: {e} is not in {cls.all}")
     @classmethod
     def from_str(cls, s:str):
         if s == "SOLID":    return cls.SOLID
-        if s == "AIR":      return cls.AIR
         if s == "CORE":     return cls.CORE
+        if s == "AIR":      return cls.AIR
         raise ValueError(f"STATE_ENUM: {s} is not in {cls.all_str}")
 
 #-------------------------------------------------------------------
@@ -133,6 +133,7 @@ class MW_Container:
 
             # initial state is SOLD
             self.cells_state[idx_cell] = STATE_ENUM.SOLID
+            obj_cell.mw_id.cell_state = STATE_ENUM.SOLID
 
             # store mesh and faces map
             mesh = obj_cell.data
@@ -236,12 +237,17 @@ class MW_Container:
         cells_root_core = utils_scene.get_child(self.root, prefs.names.cells_core)
         cells_root_air = utils_scene.get_child(self.root, prefs.names.cells_air)
         cells_list = cells_root.children + cells_root_core.children + cells_root_air.children
+        # WIP:: store the roots?
 
         # iterate the unsorted cells and read their internal id
         for obj_cell in cells_list:
             idx_cell = obj_cell.mw_id.cell_id
             self.cells_objs[idx_cell] = obj_cell
             self.cells_meshes[idx_cell] = obj_cell.data
+            # also recover state from scene
+            self.cells_state[idx_cell] = obj_cell.mw_id.cell_state
+
+        # WIP:: check deleted, obj, mesh?
 
     #-------------------------------------------------------------------
 

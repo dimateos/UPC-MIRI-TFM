@@ -143,11 +143,13 @@ class MW_gen_PT(types.Panel):
                 col_rowSplit.label(text=f"s: {curr.mw_id.storage_id}")
                 cell_id = curr.mw_id.cell_id
                 col_rowSplit.label(text=f"c: {cell_id}")
-                # cell data from cont
+                # state data from cont or the cell
+                col_rowSplit = boxSelected.row()
+                col_rowSplit = boxSelected.row().split(factor=0.6)
+                col_rowSplit.label(text=f"State: {STATE_ENUM.to_str(curr.mw_id.cell_state)}", icon="CON_PIVOT")
                 if fract and cont:
-                    col_rowSplit = boxSelected.row()
-                    cell_state = STATE_ENUM.to_str(MW_global_selected.fract.cont.cells_state[cell_id]) if cell_id >= 0 else "..."
-                    col_rowSplit.label(text=f"State: {cell_state}", icon="EXPERIMENTAL")
+                    col_rowSplit.label(text=f"c: {STATE_ENUM.to_str(MW_global_selected.fract.cont.cells_state[cell_id])}")
+
 
             # cont POV
             if fract:
