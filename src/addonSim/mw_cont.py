@@ -7,7 +7,7 @@ from .properties import (
     MW_gen_cfg,
 )
 from .properties_global import (
-    MW_global_selected,
+    MW_global_selected, MW_id_utils
 )
 
 
@@ -23,23 +23,26 @@ from .stats import getStats
 
 link_key_t = tuple[int, int]
 
-class ERROR_IDX:
+class ERROR_ENUM:
     """ Use leftover indices between cont boundaries and custom walls for filler error idx?
         # NOTE:: could be using any number, sequentiality not used
     """
     _zerosForHighlight = 1000000 # could use original ID to preserve it?
 
     MISSING = -7 *_zerosForHighlight
-    """ Missing a whole cell / object"""
+    """ Missing a whole cell / object """
     ASYMMETRY = -8 *_zerosForHighlight
     """ Missing connection at in the supposed neighbour """
+    DELETED = -9 *_zerosForHighlight
+    """ Deleted from the scene """
 
-    all = [ MISSING, ASYMMETRY ]
+    all = [ MISSING, ASYMMETRY, DELETED ]
 
     @classmethod
     def str(cls, idx):
         if idx == cls.MISSING: return "MISSING"
         if idx == cls.ASYMMETRY: return "ASYMMETRY"
+        if idx == cls.DELETED: return "DELETED"
         return "unknown"
 
 class STATE_ENUM:
@@ -56,6 +59,7 @@ class STATE_ENUM:
         if e == cls.SOLID:  return "SOLID"
         if e == cls.CORE:   return "CORE"
         if e == cls.AIR:    return "AIR"
+        if e in ERROR_ENUM.all: return "ERROR_ENUM"
         return "none"
         #raise ValueError(f"STATE_ENUM: {e} is not in {cls.all}")
     @classmethod
@@ -98,18 +102,19 @@ class MW_Container:
         # calculate missing cells and query neighs (also with placeholders idx)
         self.foundId   : list[int]           = []
         self.missingId : list[int]           = []
-        self.neighs    : list[list[int]|int] = [ERROR_IDX.MISSING]*len(self.voro_cont)
+        self.deletedId : list[int]           = [] # NOTE:: will be treated as AIR cells, but missing geometry!
+        self.neighs    : list[list[int]|int] = [ERROR_ENUM.MISSING]*len(self.voro_cont)
 
         for idx_cell, obj_cell in enumerate(self.voro_cont):
             if obj_cell is None:
                 self.missingId.append(idx_cell)
-                self.keys_perCell[idx_cell] = ERROR_IDX.MISSING
+                self.keys_perCell[idx_cell] = ERROR_ENUM.MISSING
             else:
                 self.foundId.append(idx_cell)
                 neighs_cell = obj_cell.neighbors()
                 self.neighs[idx_cell] = neighs_cell
                 # prefill with asymmetry keys too
-                key = (ERROR_IDX.ASYMMETRY, idx_cell)
+                key = (ERROR_ENUM.ASYMMETRY, idx_cell)
                 self.keys_perCell[idx_cell] = [key]*len(neighs_cell)
 
         msg = f"calculated voro cell neighs: {len(self.missingId)} / {len(self.voro_cont)} missing"
@@ -117,10 +122,14 @@ class MW_Container:
         stats.logDt(msg) # uncut=True
 
         # retrieve objs, meshes -> dicts per cell
-        self.cells_objs        : list[types.Object|int] = [ERROR_IDX.MISSING]* len(self.voro_cont)
-        self.cells_meshes      : list[types.Mesh|int]   = [ERROR_IDX.MISSING]* len(self.voro_cont)
-        self.cells_meshes_FtoF : list[dict|int]         = [ERROR_IDX.MISSING]* len(self.voro_cont)
-        self.cells_state       : list[types.Object|int] = [ERROR_IDX.MISSING]* len(self.voro_cont)
+        self.cells_objs        : list[types.Object|int] = [ERROR_ENUM.MISSING]* len(self.voro_cont)
+        self.cells_meshes      : list[types.Mesh|int]   = [ERROR_ENUM.MISSING]* len(self.voro_cont)
+        self.cells_meshes_FtoF : list[dict|int]         = [ERROR_ENUM.MISSING]* len(self.voro_cont)
+        self.cells_state       : list[types.Object|int] = [ERROR_ENUM.MISSING]* len(self.voro_cont)
+        prefs = getPrefs()
+        self.cells_root = utils_scene.get_child(self.root, prefs.names.cells)
+        self.cells_root_core = utils_scene.get_child(self.root, prefs.names.cells_core)
+        self.cells_root_air = utils_scene.get_child(self.root, prefs.names.cells_air)
 
         for idx_found, obj_cell in enumerate(cells_list):
             # asign idx cell managing missing ones
@@ -146,13 +155,13 @@ class MW_Container:
         # build symmetric face map of the found cells
         self.keys_asymmetry : list[link_key_t]    = []
         self.keys_missing   : list[link_key_t]    = []
-        self.neighs_faces   : list[list[int]|int] = [ERROR_IDX.MISSING]*len(self.voro_cont)
+        self.neighs_faces   : list[list[int]|int] = [ERROR_ENUM.MISSING]*len(self.voro_cont)
         """ # NOTE:: missing cells and neigh asymmetries are filled with a placeholder id too """
 
         for idx_cell in self.foundId:
             neighs_cell = self.neighs[idx_cell]
 
-            faces: list[int] = [ERROR_IDX.ASYMMETRY] * len(neighs_cell)
+            faces: list[int] = [ERROR_ENUM.ASYMMETRY] * len(neighs_cell)
             for idx_face,idx_neigh in enumerate(neighs_cell):
                 # wall connection always ok, so simply add its index
                 if idx_neigh < 0: faces.append(idx_neigh)
@@ -162,11 +171,11 @@ class MW_Container:
                     neighs_other = self.neighs[idx_neigh]
 
                     # check missing whole cell -> alter neighs acording to found error
-                    if neighs_other == ERROR_IDX.MISSING:
+                    if neighs_other == ERROR_ENUM.MISSING:
                         self.keys_missing.append((idx_cell,idx_neigh))
-                        neighs_cell[idx_face] = ERROR_IDX.MISSING
+                        neighs_cell[idx_face] = ERROR_ENUM.MISSING
                         # also reasign the exact error code in the keys_perCell structure too (started as asymmetry)
-                        self.keys_perCell[idx_cell][idx_face] = (ERROR_IDX.MISSING, idx_cell)
+                        self.keys_perCell[idx_cell][idx_face] = (ERROR_ENUM.MISSING, idx_cell)
 
                     # try to find valid face matching index
                     else:
@@ -177,7 +186,7 @@ class MW_Container:
                         # symmetry checked with .index exception -> also alter neighs
                         except ValueError:
                             self.keys_asymmetry.append((idx_cell,idx_neigh))
-                            neighs_cell[idx_face] = ERROR_IDX.ASYMMETRY
+                            neighs_cell[idx_face] = ERROR_ENUM.ASYMMETRY
 
             # add the merged list of faces
             self.neighs_faces[idx_cell] = faces
@@ -226,6 +235,8 @@ class MW_Container:
             DEV.log_msg(f"exception cont >> {str(e)}", {"CALC", "CONT", "ERROR"})
             return None
 
+    #-------------------------------------------------------------------
+
     def sanitize(self, root):
         """ Query all objects references from the scene again, sometimes just in case """
         DEV.log_msg(f"Sanitizing cont", {"CONT", "SANITIZE"})
@@ -233,32 +244,63 @@ class MW_Container:
 
         # query cell roots and their children
         prefs = getPrefs()
-        cells_root = utils_scene.get_child(self.root, prefs.names.cells)
-        cells_root_core = utils_scene.get_child(self.root, prefs.names.cells_core)
-        cells_root_air = utils_scene.get_child(self.root, prefs.names.cells_air)
-        cells_list = cells_root.children + cells_root_core.children + cells_root_air.children
-        # WIP:: store the roots?
+        self.cells_root = utils_scene.get_child(self.root, prefs.names.cells)
+        self.cells_root_core = utils_scene.get_child(self.root, prefs.names.cells_core)
+        self.cells_root_air = utils_scene.get_child(self.root, prefs.names.cells_air)
+        cells_list = self.cells_root.children + self.cells_root_core.children + self.cells_root_air.children
 
         # iterate the unsorted cells and read their internal id
         for obj_cell in cells_list:
+            if not MW_id_utils.hasCellId(obj_cell):
+                continue
             idx_cell = obj_cell.mw_id.cell_id
+
             self.cells_objs[idx_cell] = obj_cell
             self.cells_meshes[idx_cell] = obj_cell.data
             # also recover state from scene
             self.cells_state[idx_cell] = obj_cell.mw_id.cell_state
 
-        # WIP:: check deleted, obj, mesh?
+        # check some deleted obj (meshes not checked)
+        ok, broken = self.getCells_splitID_needsSanitize()
+        self.setCells_missing(broken)
+
+    def getCells_splitID_needsSanitize(self):
+        """ Detect broken references to scene objects """
+        broken = []
+        ok = []
+
+        for id in self.foundId:
+            cell = self.cells_objs[id]
+            if utils_scene.needsSanitize(cell):
+                broken.append(id)
+            else:
+                ok.append(id)
+        return ok, broken
+
+    def setCells_missing(self, broken:list[int]):
+        """ Mark as DELETED to be treated as AIR but without access to geometry, dont touch other arrays """
+        self.deletedId = broken.copy()
+
+        for id in broken:
+            self.cells_objs[id] = ERROR_ENUM.DELETED
+            self.cells_meshes[id] = ERROR_ENUM.DELETED
+            self.cells_state[id] = STATE_ENUM.AIR
 
     #-------------------------------------------------------------------
 
-    # OPT:: None cells?
+    def getCells(self, idx: list[int]|int) -> list[types.Object]|types.Object:
+        """ return an object or list of objects given idx  """
+        try:
+            return self.cells_objs[idx]
+        except TypeError:
+            return [ self.cells_objs[i] for i in idx]
 
-    def getMeshes(self, idx: list[int]|int) -> list[types.Mesh]|types.Mesh:
+    def getMeshes(self, midx: list[int]|int) -> list[types.Mesh]|types.Mesh:
         """ return a mesh or list of meshes given idx  """
         try:
-            return self.cells_meshes[idx]
+            return self.cells_meshes[midx]
         except TypeError:
-            return [ self.cells_meshes[i] for i in idx ]
+            return [ self.cells_meshes[i] for i in midx ]
 
     def getFaces(self, midx: list[int]|int, fidx: list[int]|int) -> list[types.MeshPolygon]|types.MeshPolygon:
         """ return a face or list of faces given idx  """
@@ -266,3 +308,10 @@ class MW_Container:
             return self.cells_meshes[midx].polygons[fidx]
         except TypeError:
             return [ self.cells_meshes[i].polygons[j] for i,j in zip(midx,fidx) ]
+
+    def getCells_Faces(self, idx: list[int]|int, fidx: list[int]|int) -> list[tuple[types.Object,types.MeshPolygon]]|tuple[types.Object,types.MeshPolygon]:
+        """ return a pair or list of pairs  """
+        try:
+            return (self.cells_objs[idx], self.cells_meshes[idx].polygons[fidx])
+        except TypeError:
+            return [ (self.cells_objs[i], self.cells_meshes[i].polygons[j]) for i,j in zip(idx,fidx) ]

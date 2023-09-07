@@ -243,10 +243,10 @@ class MW_global_storage:
 
     @classmethod
     def getFracts_splitID_needsSanitize(cls):
+        """ Detect broken references to scene objects """
         broken = []
         ok = []
 
-        # detect broken object references
         for id,obj in cls.id_fracts_obj.items():
             if utils_scene.needsSanitize(obj):
                 broken.append(id)

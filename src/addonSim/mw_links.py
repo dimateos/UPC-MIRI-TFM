@@ -2,7 +2,7 @@ import bpy.types as types
 from mathutils import Vector, Matrix
 INF_FLOAT = float("inf")
 
-from .mw_cont import MW_Container, ERROR_IDX, link_key_t
+from .mw_cont import MW_Container, ERROR_ENUM, link_key_t
 from . import mw_resistance
 import networkx as nx
 
@@ -87,7 +87,7 @@ class Link():
     def addNeighs(self, newNeighsKeys:list[link_key_t]):
         """ Classify by key and add queried links to the respective neigh list """
         for kn in newNeighsKeys:
-            if   kn[0] in ERROR_IDX.all: self.neighs_error.append(kn)
+            if   kn[0] in ERROR_ENUM.all: self.neighs_error.append(kn)
             elif kn[0] < 0                  : self.neighs_Air_Cell.append(self.collection.link_map[kn])
             else                            : self.neighs_Cell_Cell.append(self.collection.link_map[kn])
 
@@ -147,7 +147,7 @@ class MW_Links():
             for idx_face, idx_neighCell in enumerate(cont.neighs[idx_cell]):
 
                 # skip asymmetric (already prefilled keys_perCell)
-                if idx_neighCell in ERROR_IDX.all:
+                if idx_neighCell in ERROR_ENUM.all:
                     continue
 
                 # get world props
@@ -218,7 +218,7 @@ class MW_Links():
             keys_perFace = cont.keys_perCell[idx_cell]
             for idx_face,key in enumerate(keys_perFace):
                 # skip possible asymmetries
-                if key[0] in ERROR_IDX.all:
+                if key[0] in ERROR_ENUM.all:
                     continue
 
                 # retrieve valid link
