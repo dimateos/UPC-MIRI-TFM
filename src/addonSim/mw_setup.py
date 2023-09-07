@@ -112,27 +112,25 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, context: types.Contex
 
 #-------------------------------------------------------------------
 
-def gen_pointsObject(obj: types.Object, points: list[Vector], context: types.Context):
+# TODO:: for other methodas too
+
+def gen_pointsObject(obj: types.Object, points: list[Vector], context: types.Context, name:str):
     # Create a new mesh data block and add only verts
-    mesh = bpy.data.meshes.new(getPrefs().names.source_points)
+    mesh = bpy.data.meshes.new(name)
     mesh.from_pydata(points, [], [])
     #mesh.update()
 
-    obj_points = utils_scene.gen_child(obj, getPrefs().names.source_points, context, mesh, keepTrans=False)
-
-    getStats().logDt("generated points object")
+    obj_points = utils_scene.gen_child(obj, name, context, mesh, keepTrans=False)
     return obj_points
 
-def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], context: types.Context):
+def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], context: types.Context, name:str):
     # Create a new mesh data block and add only verts
-    mesh = bpy.data.meshes.new(getPrefs().names.source_wallsBB)
+    mesh = bpy.data.meshes.new(name)
     mesh.from_pydata(bb, [], [])
 
     # Generate it taking the transform as it is (points already in local space)
-    obj_bb = utils_scene.gen_child(obj, getPrefs().names.source_wallsBB, context, mesh, keepTrans=False)
+    obj_bb = utils_scene.gen_child(obj, name, context, mesh, keepTrans=False)
     obj_bb.show_bounds = True
-
-    getStats().logDt("generated bounds object")
     return obj_bb
 
 #-------------------------------------------------------------------
@@ -286,6 +284,7 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     verts: list[tuple[Vector,Vector]] = []
     lifeWidths: list[float] = []
     lifeColor: list[Vector] = []
+    points: list[Vector] = []
     for l in fract.links.internal:
         life = l.life_clamped
 
@@ -298,6 +297,9 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
         p1 = c1.matrix_world @ f1.center
         p2 = c2.matrix_world @ f2.center
         verts.append((p1, p2))
+
+        # original center
+        points.append(l.pos)
 
         #verts.append((l.pos-l.dir*vis_cfg.links_depth, l.pos+l.dir*vis_cfg.links_depth))
         lifeColor.append( (baseColor*life).to_4d() )
@@ -317,6 +319,9 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     # potentially reuse child
     obj_links = utils_scene.gen_childReuse(root, name, context, mesh, keepTrans=True)
     mesh.name = name
+
+    # add points
+    gen_pointsObject(root, points, context, getPrefs().names.links_points)
 
     MW_id_utils.setMetaType(obj_links, {"CHILD"}, childrenRec=False)
     getStats().logDt("generated links object")

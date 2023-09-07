@@ -210,8 +210,9 @@ class MW_gen_OT(_StartRefresh_OT):
         mw_extraction.points_transformCfg(points, cfg, bb_radius)
 
         # Add some reference of the points to the scene
-        mw_setup.gen_pointsObject(obj_root, points, self.ctx)
-        mw_setup.gen_boundsObject(obj_root, bb, self.ctx)
+        mw_setup.gen_pointsObject(obj_root, points, self.ctx, prefs.names.source_points)
+        mw_setup.gen_boundsObject(obj_root, bb, self.ctx, prefs.names.source_wallsBB)
+        getStats().logDt("generated point and bound objects")
 
 
         DEV.log_msg("Start calc cont", {'CALC', 'CONT'})

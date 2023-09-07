@@ -10,27 +10,33 @@ from . import utils
 getPerpendicular_stable_minMagSq = 1e-3*1e-3
 """ small magnitudes will be unstable when normalizing """
 
-def getPerpendicular_stable(n:Vector, normalize=True):
-    """ find the most stable perpendicular vector """
-
+def almostNull(v:Vector):
     global getPerpendicular_stable_minMagSq
     if getPerpendicular_stable_minMagSq:
-        assert(n.length_squared > getPerpendicular_stable_minMagSq)
+        return v.length_squared > getPerpendicular_stable_minMagSq
+    return True
+
+def getPerpendicular_stable(v:Vector, normalize=True):
+    """ find the most stable perpendicular vector """
+
+    if almostNull(v):
+        print(f"WARNING: getPerpendicular_stable almostNull {v}")
+        return Vector((0, 1, 0))
 
     # pick the axis vector that yields the lowest dot product (least aligned one)
-    Ax, Ay, Az = abs(n.x), abs(n.y), abs(n.z)
+    Ax, Ay, Az = abs(v.x), abs(v.y), abs(v.z)
 
     # do cross product with that axis (directly compose the resulting vector)
     if Ax < Ay:
         if Ax < Az:
-            perp = Vector((0, -n.z, n.y))
+            perp = Vector((0, -v.z, v.y))
         else:
-            perp = Vector((-n.y, n.x, 0))
+            perp = Vector((-v.y, v.x, 0))
     else:
         if Ay < Az:
-            perp = Vector((n.z, 0, -n.x))
+            perp = Vector((v.z, 0, -v.x))
         else:
-            perp = Vector((-n.y, n.x, 0))
+            perp = Vector((-v.y, v.x, 0))
 
     if normalize: perp.normalize()
     return perp

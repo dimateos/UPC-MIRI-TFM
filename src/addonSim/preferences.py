@@ -157,6 +157,7 @@ class MW_prefs(bpy.types.AddonPreferences):
 
         links = "links"
         links_air = links+"_air"
+        links_points = links+"_points"
 
         # TODO:: no more legacy support
         links_legacy = links+"_legacy"
