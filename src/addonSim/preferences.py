@@ -205,6 +205,7 @@ class MW_prefs(bpy.types.AddonPreferences):
     prefs_PT_meta_inspector: props.PointerProperty(type=Prop_inspector)
     gen_PT_meta_inspector: props.PointerProperty(type=Prop_inspector)
     vis_PT_meta_inspector: props.PointerProperty(type=Prop_inspector)
+    sim_PT_meta_inspector: props.PointerProperty(type=Prop_inspector)
 
     # edit default vis (being in prefs avoids undo stack)
     from .properties import MW_vis_cfg
@@ -214,6 +215,7 @@ class MW_prefs(bpy.types.AddonPreferences):
         copyProps(newRoot.mw_vis, getPrefs().mw_vis)
 
     #-------------------------------------------------------------------
+    # settings that affect OP and are set from panels
 
     all_PT_meta_show_root: props.BoolProperty(
         name="Root props", description="Show root properties / selected child. Children should have most default values.",

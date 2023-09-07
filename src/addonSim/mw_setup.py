@@ -309,7 +309,7 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
         elif vis_cfg.links_widthModLife == {"BINARY"}:
             lifeWidths.append(vis_cfg.links_widthDead if life<1 else vis_cfg.links_width)
 
-    resFaces = utils_mesh.get_resFaces_fromCurveRes(vis_cfg.links_res)
+    resFaces = utils_mesh.get_resFaces_fromCurveRes(vis_cfg.debug_links_res)
 
     # single mesh with tubes
     mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidths, name, 1.0, resFaces, vis_cfg.links_smoothShade)
@@ -322,7 +322,7 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     mesh.name = name
 
     # add points
-    gen_pointsObject(root, points, context, getPrefs().names.links_points)
+    gen_pointsObject(root, points, context, getPrefs().names.links_points, reuse=True)
 
     MW_id_utils.setMetaType(obj_links, {"CHILD"}, childrenRec=False)
     getStats().logDt("generated links object")
@@ -348,7 +348,7 @@ def gen_linksWallObject(fract: MW_Fract, root: types.Object, context: types.Cont
         lifeWidth.append(vis_cfg.links_width*wallsExtraScale*l.life)
         verts.append((l.pos, l.pos+l.dir*vis_cfg.links_depth))
 
-    resFaces = utils_mesh.get_resFaces_fromCurveRes(vis_cfg.links_res+3)
+    resFaces = utils_mesh.get_resFaces_fromCurveRes(vis_cfg.debug_links_res)
     mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidth, name, 1+vis_cfg.links_width*wallsExtraScale, resFaces, vis_cfg.links_smoothShade)
 
     # potentially reuse child
@@ -393,8 +393,8 @@ def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: MW
             #p4 = l.dir*1.8
 
             # vary curve props
-            res = (prefs.links_res+1) +2
-            #res = prefs.links_res
+            res = (prefs.prop_links_res+1) +2
+            #res = prefs.prop_links_res
             width = prefs.links_width * 1.5
             mat = wallsMat
 
@@ -409,11 +409,11 @@ def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: MW
             p2 = -l.dir*0.1
 
             # vary curve props
-            res = prefs.links_res
+            res = prefs.prop_links_res
             width = prefs.links_widthDead * (1-l.life) + prefs.links_width * l.life
             color = utils_mat.COLORS.red.copy() *l.life
-            alpha = l.life+0.1 if prefs.links_matAlpha else 1.0
-            color.w = alpha
+            #alpha = l.life+0.1 if prefs.links_matAlpha else 1.0
+            #color.w = alpha
             mat = utils_mat.get_colorMat(color, name)
 
         res = utils_mesh.get_resFaces_fromCurveRes(res)
@@ -469,7 +469,7 @@ def genWIP_linksCellObjects(objParent: types.Object, voro_cont: VORO_Container, 
             name= f"s{cell.id}_n{n_id}"
             neigh_centroid = Vector(voro_cont[n_id].centroid())
 
-            curve = utils_mesh.get_curveData([cell_centroid, neigh_centroid], name, prefs.links_width, prefs.links_res)
+            curve = utils_mesh.get_curveData([cell_centroid, neigh_centroid], name, prefs.links_width, prefs.prop_links_res)
             obj_link = utils_scene.gen_child(obj_group, name, context, curve, keepTrans=False)
 
             obj_link.hide_set(key_rep)

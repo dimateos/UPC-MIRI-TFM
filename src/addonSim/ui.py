@@ -102,13 +102,31 @@ def draw_propsToggle(data, data_inspector:Prop_inspector, layout:types.UILayout,
     return open, box
 
 def draw_propsToggle_custom(data, data_inspector:Prop_inspector, layout:types.UILayout, text:str="Properties",
-                            propFilter="-meta", showDefault=True, showId=False, editable=True) -> tuple[bool, types.UILayout]:
+                            propFilter="-meta", showDefault=True, showId=False, editable=True, splitDebug=True) -> tuple[bool, types.UILayout]:
     """ Draw some properties of an object under a custom toggleable layout. """
 
     # outer fold
     open, box = draw_toggleBox(data_inspector, "meta_show_props", layout, text)
     if open:
+
+        # filter props
         prop_names = getProps_namesFiltered(data, propFilter, exc_nonBlProp=True, showDefault=showDefault)
+
+        # split debug props
+        if splitDebug:
+            prop_names, debug_names = getProps_splitDebug(prop_names)
+        else:
+            debug_names = None
+
+        if (debug_names):
+            # debug inner fold
+            open_debug, box_debug = draw_toggleBox(data_inspector, "meta_show_debug_props", box)
+            if open_debug:
+                col = box_debug.column()
+                col.enabled = editable
+                draw_props_raw(data, debug_names, col, showId)
+
+        # draw the list of props
         col         = box.column()
         col.enabled = editable
         draw_props_raw(data, prop_names, col, showId)

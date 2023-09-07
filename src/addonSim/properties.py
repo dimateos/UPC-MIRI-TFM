@@ -209,8 +209,18 @@ class MW_vis_cfg(types.PropertyGroup):
     #-------------------------------------------------------------------
 
     links_smoothShade: props.BoolProperty(
-        name="WIP: Link smooth shade",
+        name="Link smooth shade",
         default=True,
+        update= lambda self, context: mw_setup_props.links_smoothShade_update(self)
+    )
+
+    #-------------------------------------------------------------------
+    # debug one are non-dynamic, only affects subsequent runs but get written to root too
+
+    debug_links_res: props.IntProperty(
+        name="Link mesh resolution", description="Affect the number of faces per tube",
+        default=0, min=-1, max=8,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "debug_links_res")
     )
 
     #-------------------------------------------------------------------
@@ -221,10 +231,6 @@ class MW_vis_cfg(types.PropertyGroup):
         #update=struct_linksScale_update
     )
 
-    links_matAlpha: props.BoolProperty(
-        name="WIP: Link alpha mod", description="Degrade alpha with life",
-        default=False,
-    )
     links_depth: props.FloatProperty(
         name="WIP: Const link depth", description="Constant link d",
         default=0.15, min=0.01, max=0.4, step=0.05, precision=4
@@ -249,10 +255,6 @@ class MW_vis_cfg(types.PropertyGroup):
         options={'ENUM_FLAG'},
     )
 
-    links_res: props.IntProperty(
-        name="WIP: Link res", description="WIP: curve res -> faces",
-        default=0, min=-1, max=8,
-    )
     links_wallExtraScale: props.FloatProperty(
         name="WIP: Link walls extra", description="WIP: extra scaling",
         default=1.25, min=0.25, max=3,

@@ -20,7 +20,7 @@ def getRoot_checkProxy(cfg, cfg_name:str, prop_name:str):
     obj = MW_global_selected.root
     proxy = getattr(cfg, "nbl_prefsProxy")
 
-    DEV.log_msg(f"Scaling cell {obj.name if obj else '...'} -> {prop_name} {'(proxy)' if proxy else ''}", {'CALLBACK', 'PROP', 'PROXY'})
+    DEV.log_msg(f"{obj.name if obj else '...'} -> {prop_name} {'(proxy)' if proxy else ''}", {'CALLBACK', 'PROP', 'PROXY'})
     if not obj:
         return None,None
 
@@ -30,6 +30,17 @@ def getRoot_checkProxy(cfg, cfg_name:str, prop_name:str):
         return None,None
 
     return obj, getattr(obj_cfg, prop_name)
+
+def getRoot_checkProxy_None(cfg, cfg_name:str, prop_name:str):
+    """ Check common prefs proxy flag and return None """
+    obj = MW_global_selected.root
+    proxy = getattr(cfg, "nbl_prefsProxy")
+    if not obj:
+        return
+
+    obj_cfg = getattr(obj, cfg_name)
+    if proxy:
+        setattr(obj_cfg, prop_name, getattr(cfg, prop_name))
 
 #-------------------------------------------------------------------
 
@@ -46,6 +57,18 @@ def cell_color_update(cfg, prop_name:str, cells_name:str):
 
     cells_root = utils_scene.get_child(root, cells_name)
     cells_root.active_material.diffuse_color = color
+
+def links_smoothShade_update(cfg):
+    root, smooth = getRoot_checkProxy(cfg, "mw_vis", "links_smoothShade")
+    if root is None: return
+
+    links = utils_scene.get_child(root, getPrefs().names.links)
+    if links and links.data:
+        utils_mesh.set_smoothShading(links.data, smooth)
+
+    links_air = utils_scene.get_child(root, getPrefs().names.links_air)
+    if links_air and links_air.data:
+        utils_mesh.set_smoothShading(links_air.data, smooth)
 
 #def struct_linksScale_update(self, context):
 #    obj = MW_global_selected.root

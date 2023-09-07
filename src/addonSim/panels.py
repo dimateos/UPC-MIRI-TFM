@@ -235,7 +235,7 @@ class MW_addon_PT(types.Panel):
         layout = self.layout.column()
 
         #ui.draw_propsToggle(prefs, prefs.prefs_PT_meta_inspector, layout)
-        ui.draw_propsToggle_custom(prefs.dev_PT_meta_cfg, prefs.dev_PT_meta_cfg, layout, text="DEV")
+        ui.draw_propsToggle_custom(prefs.dev_PT_meta_cfg, prefs.dev_PT_meta_cfg, layout, text="DEV", splitDebug=False)
 
         open, box = ui.draw_toggleBox(prefs.prefs_PT_meta_inspector, "meta_show_debug", layout, scaleBox=0.85)
         if open:
