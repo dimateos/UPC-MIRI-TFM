@@ -104,11 +104,6 @@ class MW_gen_PT(types.Panel):
             col_rowSplit.prop(prefs, "all_PT_meta_show_root", text="Root props:" if prefs.all_PT_meta_show_root else "Child props:")
             col_rowSplit.label(text=root.name if prefs.all_PT_meta_show_root else selected.name)
 
-        # visuals inspect
-        #vis_cfg = context.scene.mw_vis -> scene data is affected by operator undo
-        vis_cfg = prefs.mw_vis
-        open, box = ui.draw_propsToggle_custom(vis_cfg, prefs.vis_PT_meta_inspector, layout, "Visuals...")
-
         # example of how to edit op parameters from the panel before execution (but better done inside invoke, in this case)
         op = layout.operator(ops.MW_set_state_OT.bl_idname, icon="PIVOT_CURSOR")
         #if MW_global_selected.fract and MW_global_selected.fract.cont:
@@ -123,6 +118,11 @@ class MW_gen_PT(types.Panel):
         # warning no fract
         if not MW_global_selected.fract:
             layout.label(text="Root without storage! Recalc...", icon="ERROR")
+
+        # visuals inspect
+        #vis_cfg = context.scene.mw_vis -> scene data is affected by operator undo
+        vis_cfg = prefs.mw_vis
+        open, box = ui.draw_propsToggle_custom(vis_cfg, prefs.vis_PT_meta_inspector, layout, "Visuals...")
 
     def draw_debug(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
