@@ -227,6 +227,15 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=True,
     )
 
+    sim_step_OT_genLinks: props.BoolProperty(
+        name="links", description="WIP: Redraw the links (should always)",
+        default=False,
+    )
+    sim_step_OT_clearCfg: props.BoolProperty(
+        name="cfg", description="Execute with the default configuration",
+        default=False,
+    )
+
     util_delete_OT_unhideSelect: props.BoolProperty(
         name="unhide", description="Unhide the original object after deletion",
         default=True,

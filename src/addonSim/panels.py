@@ -166,7 +166,7 @@ class MW_gen_PT(types.Panel):
             col_rowSplit.label(text=f"{MW_global_selected.prevalid_root.name if MW_global_selected.prevalid_root else '~'}", icon="FRAME_PREV")
             col_rowSplit = boxSelected.row().split(factor=0.6)
             col_rowSplit.label(text=f"Current: {curr.name if curr else '~'}", icon="RESTRICT_SELECT_OFF")
-            col_rowSplit.label(text=f"{MW_global_selected.prevalid_last.name if MW_global_selected.prevalid_last else '~'}", icon="FRAME_PREV")
+            col_rowSplit.label(text=f"{MW_global_selected.prevalid_current.name if MW_global_selected.prevalid_current else '~'}", icon="FRAME_PREV")
             col_rowSplit = boxSelected.row().split(factor=0.6)
             col_rowSplit.label(text=f"Active: {context.active_object.name if context.active_object else '~'}", icon="SELECT_INTERSECT")
             col_rowSplit.label(text=f"{len(MW_global_selected.selection) if MW_global_selected.selection else '~'}", icon="SELECT_SET")
@@ -212,9 +212,19 @@ class MW_sim_PT(types.Panel):
         prefs = getPrefs()
         col = self.layout.column()
 
-        #col.label(text=f"...")
-        self.layout.operator(ops.MW_sim_step_OT.bl_idname)
-        self.layout.operator(ops.MW_sim_reset_OT.bl_idname)
+        col_rowSplit = col.row().split(factor=0.70)
+        col_rowSplit.operator(ops.MW_sim_step_OT.bl_idname, text="STEP", icon="MOD_FLUIDSIM")
+        col_rowSplit.prop(prefs, "sim_step_OT_genLinks")
+
+        col_rowSplit = col.row().split(factor=0.70)
+        col_rowSplit.operator(ops.MW_sim_reset_OT.bl_idname, text="RESET", icon="ORPHAN_DATA")
+        col_rowSplit.prop(prefs, "sim_step_OT_clearCfg")
+
+
+        #root = MW_global_selected.root if
+        #MW_global_selected.root
+        #gen_cfg = root.mw_gen if prefs.all_PT_meta_show_root else selected.mw_gen
+        #open, box = ui.draw_propsToggle_custom(vis_cfg, prefs.sim_PT_meta_inspector, col, "Parameters", "-step,-debug")
 
 
 #-------------------------------------------------------------------

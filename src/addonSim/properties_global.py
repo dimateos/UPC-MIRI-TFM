@@ -317,16 +317,16 @@ class MW_global_selected:
     #my_object: bpy.props.PointerProperty(type=bpy.types.Object)
 
     # root fracture object
-    root            : types.Object = None
-    fract                          = None
-    prevalid_root   : types.Object = None
-    prevalid_fract                 = None
+    root                : types.Object = None
+    fract                              = None
+    prevalid_root       : types.Object = None
+    prevalid_fract                     = None
     """ prevalid are the previous ones and always valid (not at the start) """
 
     # common selection
-    selection       : types.Object = None
-    current         : types.Object = None
-    prevalid_last   : types.Object = None
+    selection           : types.Object = None
+    current             : types.Object = None
+    prevalid_current    : types.Object = None
 
     @classmethod
     def setSelected(cls, new_selection):
@@ -338,7 +338,7 @@ class MW_global_selected:
 
         if new_selection:
             if cls.current:
-                cls.prevalid_last = cls.current
+                cls.prevalid_current = cls.current
             cls.selection = new_selection.copy() if isinstance(new_selection, list) else [new_selection]
             #cls.current = cls.selection[-1]
 
@@ -378,6 +378,22 @@ class MW_global_selected:
             cls.callback_rootChange_actions.dispatch([cls.root])
 
     @classmethod
+    def last_root(cls):
+        if cls.root:
+            return cls.root
+        else:
+            return cls.prevalid_root
+
+    @classmethod
+    def last_fract(cls):
+        if cls.fract:
+            return cls.fract
+        else:
+            return cls.prevalid_fract
+
+    #-------------------------------------------------------------------
+
+    @classmethod
     def recheckSelected(cls):
         cls.setSelected(cls.selection)
 
@@ -389,8 +405,15 @@ class MW_global_selected:
     @classmethod
     def reset(cls):
         """ Reset all to None but keep sanitized references to prevalid """
+        if cls.current:
+            cls.prevalid_current = cls.current
+        if cls.root:
+            cls.prevalid_root = cls.root
+        if cls.fract:
+            cls.prevalid_fract = cls.fract
+
         cls.selection = None
-        cls.current      = None
+        cls.current   = None
         cls.root      = None
         cls.fract     = None
         cls.prevalid_sanitize()
@@ -405,7 +428,7 @@ class MW_global_selected:
 
     @classmethod
     def prevalid_sanitize(cls):
-        cls.prevalid_last = utils_scene.returnSanitized(cls.prevalid_last)
+        cls.prevalid_current = utils_scene.returnSanitized(cls.prevalid_current)
         cls.prevalid_root = utils_scene.returnSanitized(cls.prevalid_root)
         if cls.prevalid_root is None:
             cls.prevalid_fract = None
