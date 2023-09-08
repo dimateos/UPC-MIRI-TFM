@@ -133,38 +133,62 @@ class MW_gen_cfg(types.PropertyGroup):
 
 
 #-------------------------------------------------------------------
-# OPT:: maybe split files + some go to prefs + new propGroup to add to scene props_utils instead of prefs
-# IDEA:: vis cfg part of each gen and sim, or subpart with another group?
-# IDEA:: using animation frame handler to see the simulaion play?
 # IDEA:: min -1 for infinite break condition?
 
 class MW_sim_cfg(types.PropertyGroup):
-    steps: props.IntProperty(
+    step_infiltrations: props.IntProperty(
         name="Number of iters", description="WIP: atm redo each modification",
         default=1, min=1, max=1000,
     )
-    subSteps: props.IntProperty(
+    step_maxDepth: props.IntProperty(
         name="Number of propagations per iter", description="WIP: atm redo each modification",
         default=10, min=0, max=100,
     )
 
-    steps_uniformDeg: props.BoolProperty(
-        name="Uniform reduction",
-        default=False,
-    )
-    steps_reset: props.BoolProperty(
-        name="Reset at start",
-        default=True,
-    )
-
-    deg: props.FloatProperty(
+    step_deg: props.FloatProperty(
         name="Degradation", description="WIP: flat reduction",
         default=0.25, min=0.05, max=0.75, step=1, precision=3
     )
 
-    addSeed: props.IntProperty(
+    #-------------------------------------------------------------------
+
+    debug_addSeed: props.IntProperty(
         name="Add random seed",
         default=0, min=0, max=100,
+    )
+
+    debug_uniformDeg: props.BoolProperty(
+        name="Uniform reduction",
+        default=False,
+    )
+
+    debug_trace: props.BoolProperty(
+        default=True,
+    )
+    debug_log: props.BoolProperty(
+        default=True,
+    )
+
+    #-------------------------------------------------------------------
+
+    link_entry_minAlign: props.FloatProperty(
+        default=0.1, precision=3
+    )
+    link_next_minAlign: props.FloatProperty(
+        default=0.1, precision=3
+    )
+
+    water_baseCost: props.FloatProperty(
+        default=0.01, precision=4
+    )
+    water_linkCost: props.FloatProperty(
+        default=0.2, precision=3
+    )
+    water_minAbsorb_check: props.FloatProperty(
+        default=0.3, precision=3
+    )
+    water_minAbsorb_continueProb: props.FloatProperty(
+        default=0.9, precision=3
     )
 
 
@@ -216,6 +240,7 @@ class MW_vis_cfg(types.PropertyGroup):
 
     #-------------------------------------------------------------------
     # debug one are non-dynamic, only affects subsequent runs but get written to root too
+    # OPT:: most could be easily dynamic but probably not worth it
 
     debug_links_res: props.IntProperty(
         name="Link mesh resolution", description="Affect the number of faces per tube",

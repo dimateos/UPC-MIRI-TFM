@@ -72,7 +72,7 @@ class STATE_ENUM:
 
 #-------------------------------------------------------------------
 
-class MW_Container:
+class MW_Cont:
 
     def __init__(self, root :types.Object, points: list[Vector], bb: list[Vector, 6], faces4D: list[Vector], precision: int):
         self.initialized = False

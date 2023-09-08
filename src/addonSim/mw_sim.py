@@ -13,10 +13,9 @@ from .stats import getStats
 
 #-------------------------------------------------------------------
 # IDEA:: toggle full log / etc
-# IDEA:: vis steps with a curve
+# IDEA:: vis step_infiltrations with a curve
 # IDEA:: vis probs with a heatmap
 # IDEA:: manually pick step/ entry? by num?
-# IDEA:: pass/reuse cfg sim direclty maybe also for mwcont?
 
 # IDEA:: bridges neighbours? too aligned wall links, vertically aligned internal -> when broken? cannot go though?
 
@@ -63,8 +62,8 @@ class SIM_CONST:
 # TODO:: edit in UI some panel
 class SIM_CFG:
     """ Sim config values to tweak """
-    entryL_min_align = 0.1
-    nextL_min_align = -0.1
+    link_entry_minAlign = 0.1
+    link_next_minAlign = -0.1
 
     water_baseCost = 0.01
     water_linkCost = 0.2
@@ -75,7 +74,7 @@ class SIM_CFG:
 
 #-------------------------------------------------------------------
 
-class Simulation:
+class MW_Sim:
     def __init__(self, links_initial: MW_Links, deg = 0.05, log = True):
         self.storeRnd()
 
@@ -98,8 +97,8 @@ class Simulation:
     def set_deg(self, deg):
         self.deg = deg
 
-    def resetSim(self, addSeed = 0, initialAirToo = True):
-        self.restoreRnd(addSeed)
+    def resetSim(self, debug_addSeed = 0, initialAirToo = True):
+        self.restoreRnd(debug_addSeed)
 
         # WIP:: should use reset function etc
         for i,l in enumerate(self.links.internal):
@@ -142,7 +141,7 @@ class Simulation:
 
     #-------------------------------------------------------------------
 
-    def step(self, subSteps = 10, inlineLog = True):
+    def step(self, step_maxDepth = 10, inlineLog = True):
         self.resetCurrent()
         self.step_id += 1
 
@@ -167,7 +166,7 @@ class Simulation:
 
         # main loop with a break condition
         self.sub_id = -1
-        while self.check_continue(subSteps):
+        while self.check_continue(step_maxDepth):
             self.sub_id += 1
             if (self.trace):
                 self.sub_trace = SubStepData()
@@ -240,7 +239,7 @@ class Simulation:
         d = l.dir.dot(water_dir_inv)
 
         # cut-off
-        if d < SIM_CFG.entryL_min_align:
+        if d < SIM_CFG.link_entry_minAlign:
             return 0
 
         # weight using face areaFactor (could use regular area instead)
@@ -288,7 +287,7 @@ class Simulation:
         d = dpos.normalized().dot(water_dir_inv)
 
         # cut-off
-        if d < SIM_CFG.nextL_min_align:
+        if d < SIM_CFG.link_next_minAlign:
             return 0
 
         # weight using only the angle
@@ -337,7 +336,7 @@ class Simulation:
 
     #-------------------------------------------------------------------
 
-    def check_continue(self, subSteps):
+    def check_continue(self, step_maxDepth):
         # no next link was found
         if not self.currentL:
             if self.trace:
@@ -352,7 +351,7 @@ class Simulation:
             return False
 
         # max iterations when enabled
-        if subSteps and self.sub_id >= subSteps-1:
+        if step_maxDepth and self.sub_id >= step_maxDepth-1:
             if self.trace:
                 self.step_trace.break_msg = "MAX_ITERS"
             return False

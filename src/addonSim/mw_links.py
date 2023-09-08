@@ -2,7 +2,7 @@ import bpy.types as types
 from mathutils import Vector, Matrix
 INF_FLOAT = float("inf")
 
-from .mw_cont import MW_Container, ERROR_ENUM, linkCells_key_t, linkFaces_key_t
+from .mw_cont import MW_Cont, ERROR_ENUM, linkCells_key_t, linkFaces_key_t
 from . import mw_resistance
 import networkx as nx
 
@@ -95,7 +95,7 @@ class Link():
 
 class MW_Links():
 
-    def __init__(self, cont: MW_Container):
+    def __init__(self, cont: MW_Cont):
         stats = getStats()
         self.initialized = False
         """ Set to true after succesfully computed the link map """

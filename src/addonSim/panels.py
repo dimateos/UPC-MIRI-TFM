@@ -9,7 +9,7 @@ from .properties_global import (
     MW_global_selected,
 )
 from .mw_fract import MW_Fract
-from .mw_cont import MW_Container, STATE_ENUM
+from .mw_cont import MW_Cont, STATE_ENUM
 
 from . import operators as ops
 from .panels_dm import util_classes_pt
@@ -105,12 +105,12 @@ class MW_gen_PT(types.Panel):
             col_rowSplit.label(text=root.name if prefs.all_PT_meta_show_root else selected.name)
 
         # example of how to edit op parameters from the panel before execution (but better done inside invoke, in this case)
-        op = layout.operator(ops.MW_set_state_OT.bl_idname, icon="PIVOT_CURSOR")
+        op = layout.operator(ops.MW_cell_state_OT.bl_idname, icon="PIVOT_CURSOR")
         #if MW_global_selected.fract and MW_global_selected.fract.cont:
         #    if MW_id_utils.hasCellId(MW_global_selected.current):
         #        cell_id = MW_global_selected.current.mw_id.cell_id
         #        cell_state = MW_global_selected.fract.cont.cells_state[cell_id]
-        #        op.set_state = ops.MW_set_state_OT.set_state_toEnum[cell_state]
+        #        op.set_state = ops.MW_cell_state_OT.set_state_toEnum[cell_state]
 
         # more actions
         layout.operator(ops.MW_gen_links_OT.bl_idname, icon="OUTLINER_DATA_GREASEPENCIL")
@@ -128,7 +128,7 @@ class MW_gen_PT(types.Panel):
         prefs = getPrefs()
         curr = MW_global_selected.current
         fract : MW_Fract = MW_global_selected.fract
-        cont : MW_Container = MW_global_selected.fract.cont if fract else None
+        cont : MW_Cont = MW_global_selected.fract.cont if fract else None
 
         open, box = ui.draw_toggleBox(prefs.gen_PT_meta_inspector, "meta_show_debug", layout, scaleBox=0.85, returnCol=False)
         if open:

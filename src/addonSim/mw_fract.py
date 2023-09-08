@@ -7,7 +7,7 @@ from .properties import (
     MW_gen_cfg,
 )
 
-from .mw_cont import MW_Container
+from .mw_cont import MW_Cont
 from .mw_links import MW_Links
 
 from .utils_dev import DEV
@@ -23,7 +23,7 @@ class MW_Fract:
 
         # TODO:: reference to root?
 
-        self.cont  : MW_Container = None
+        self.cont  : MW_Cont = None
         self.links : MW_Links     = None
         self.sim = None
 

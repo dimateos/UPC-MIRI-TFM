@@ -38,8 +38,8 @@ def getRoot_checkProxy_None(cfg, cfg_name:str, prop_name:str):
     if not obj:
         return
 
-    obj_cfg = getattr(obj, cfg_name)
     if proxy:
+        obj_cfg = getattr(obj, cfg_name)
         setattr(obj_cfg, prop_name, getattr(cfg, prop_name))
 
 #-------------------------------------------------------------------

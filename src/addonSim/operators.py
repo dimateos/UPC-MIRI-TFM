@@ -18,7 +18,7 @@ from .operators_dm import _StartRefresh_OT, util_classes_op
 
 from . import mw_setup, mw_extraction
 from .mw_links import MW_Links
-from .mw_cont import MW_Container, STATE_ENUM
+from .mw_cont import MW_Cont, STATE_ENUM
 from .mw_fract import MW_Fract
 from . import mw_sim
 
@@ -216,7 +216,7 @@ class MW_gen_OT(_StartRefresh_OT):
 
 
         DEV.log_msg("Start calc cont", {'CALC', 'CONT'})
-        fract.cont = cont = MW_Container(obj_root, points, bb, faces4D, precision=cfg.debug_precisionWalls)
+        fract.cont = cont = MW_Cont(obj_root, points, bb, faces4D, precision=cfg.debug_precisionWalls)
         if not cont.initialized:
             return self.end_op_error("found no cont... recalc different params?")
 
@@ -300,7 +300,7 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
 
 
         DEV.log_msg("Calc cont and links (cells not regenerated!)", {'CALC'})
-        fract.cont = cont = MW_Container(obj_root, points, bb, faces4D, precision=gen_cfg.debug_precisionWalls)
+        fract.cont = cont = MW_Cont(obj_root, points, bb, faces4D, precision=gen_cfg.debug_precisionWalls)
         if not cont:
             return self.end_op_error("found no cont... but could try recalculate!")
 
@@ -321,8 +321,8 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
 
 #-------------------------------------------------------------------
 
-class MW_set_state_OT(_StartRefresh_OT):
-    bl_idname = "mw.set_state"
+class MW_cell_state_OT(_StartRefresh_OT):
+    bl_idname = "mw.cell_state"
     bl_label = "Set cell state"
     bl_description = "Set the selected cells state"
 
@@ -397,7 +397,7 @@ class MW_gen_links_OT(_StartRefresh_OT):
     def execute(self, context: types.Context):
         self.start_op()
         mw_setup.gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
-        mw_setup.gen_linksWallObject(MW_global_selected.fract, MW_global_selected.root, context)
+        #mw_setup.gen_linksWallObject(MW_global_selected.fract, MW_global_selected.root, context)
         return self.end_op()
 
     def end_op(self, msg="", skipLog=False, retPass=False):
@@ -415,7 +415,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
 
     bl_options = {'PRESET', 'REGISTER', 'UNDO'}
     cfg: props.PointerProperty(type=MW_sim_cfg)
-    sim: mw_sim.Simulation = None
+    sim: mw_sim.MW_Sim = None
     links: MW_Links = None
 
     def __init__(self) -> None:
@@ -436,7 +436,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
     def invoke(self, context, event):
         # create simulation object
         self.links = MW_global_selected.fract.links
-        self.sim = mw_sim.Simulation(self.links)
+        self.sim = mw_sim.MW_Sim(self.links)
 
         return super().invoke(context, event)
 
@@ -449,13 +449,13 @@ class MW_sim_step_OT(_StartRefresh_OT):
         if cancel: return self.end_op_refresh(skipLog=True)
 
         # achieve constructive results during adjust op menu
-        self.sim.resetSim(sim_cfg.addSeed)
-        self.sim.set_deg(sim_cfg.deg)
-        DEV.log_msg(f"steps({sim_cfg.steps}) subSteps({sim_cfg.subSteps}) deg({sim_cfg.deg})", {'SETUP'})
+        self.sim.resetSim(sim_cfg.debug_addSeed)
+        self.sim.set_deg(sim_cfg.step_deg)
+        DEV.log_msg(f"step_infiltrations({sim_cfg.step_infiltrations}) step_maxDepth({sim_cfg.step_maxDepth}) step_deg({sim_cfg.step_deg})", {'SETUP'})
 
-        for step in range(sim_cfg.steps):
-            if sim_cfg.steps_uniformDeg: self.sim.stepAll()
-            else: self.sim.step(sim_cfg.subSteps)
+        for step in range(sim_cfg.step_infiltrations):
+            if sim_cfg.debug_uniformDeg: self.sim.stepAll()
+            else: self.sim.step(sim_cfg.step_maxDepth)
 
         # IDEA:: store copy or original or button to recalc links from start? -> set all life to 1 but handle any dynamic list
         mw_setup.gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
@@ -625,7 +625,7 @@ classes = [
     MW_gen_OT,
     MW_gen_recalc_OT,
 
-    MW_set_state_OT,
+    MW_cell_state_OT,
     MW_gen_links_OT,
 
     MW_sim_step_OT,

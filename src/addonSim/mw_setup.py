@@ -13,7 +13,7 @@ from .properties import (
     MW_vis_cfg,
 )
 
-from .mw_cont import MW_Container, VORO_Container, STATE_ENUM
+from .mw_cont import MW_Cont, VORO_Container, STATE_ENUM
 from .mw_links import MW_Links
 from .mw_fract import MW_Fract # could import all from here
 
