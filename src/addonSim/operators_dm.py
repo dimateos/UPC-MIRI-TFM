@@ -2,18 +2,18 @@ import bpy
 import bpy.types as types
 import bpy.props as props
 from mathutils import Vector, Matrix
+from math import ceil
 
 from .preferences import getPrefs, ADDON
 
 from . import ui
-from . import utils
-from . import utils_geo
-from . import utils_render
+from . import utils, utils_scene, utils_trans, utils_geo, utils_mat, utils_mesh
+from . import utils_mat
 from .utils_dev import DEV
 from .stats import getStats
 
 
-# OPT:: add operators to search bars
+# Misc utility operators (dimateos)
 #-------------------------------------------------------------------
 
 class _StartRefresh_OT(types.Operator):
@@ -111,6 +111,7 @@ class _StartRefresh_OT(types.Operator):
 
         if self.start_log and not skipLog:
             if not msg: msg= f"{self.bl_label}"
+            DEV.log_msg_sep()
             DEV.log_msg(f"Op START: {msg} ({self.bl_idname})", {'OP_FLOW'})
 
         if self.start_logStats: stats.logDt(f"timing: ({self.bl_idname})...")
@@ -284,13 +285,14 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
 
         obj = context.active_object
         if self.obj_replace:
-            child_empty = utils.gen_childClean(obj, self.CONST_NAMES.empty, context, None, keepTrans=False)
-        else: child_empty = utils.get_child(obj, self.CONST_NAMES.empty)
+            child_empty = utils_scene.gen_childReuse(obj, self.CONST_NAMES.empty, context, None, keepTrans=False)
+        else: child_empty = utils_scene.get_child(obj, self.CONST_NAMES.empty)
 
         # optional grayscale common color mat
-        gray3 = utils_render.COLORS.white * self.color_gray
+        gray = utils_mat.COLORS.white * self.color_gray
+        gray.w = self.color_alpha
         if self.color_useGray:
-            mat_gray = utils_render.get_colorMat(gray3, self.color_alpha, "spawnIndices_shared")
+            mat_gray = utils_mat.get_colorMat(gray, "spawnIndices_shared")
 
         # IDEA:: add more info as suffix + rename after delete so no .001 + also applied to some setup
 
@@ -298,9 +300,12 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
             # verts use a red octahedron for rep
             scaleV = Vector([self.verts_scale * self.mesh_scale]*3)
             if self.mesh_useShape:
-                mesh = utils_render.SHAPES.get_octahedron(f"{self.namePrefix}.vert")
+                mesh = utils_mesh.SHAPES.get_octahedron(f"{self.namePrefix}.vert")
                 if self.color_useGray: mat = mat_gray
-                else: mat = utils_render.get_colorMat(utils_render.COLORS.red+gray3, self.color_alpha, "spawnIndices_VERT")
+                else:
+                    red = utils_mat.COLORS.red+gray
+                    red.w = self.color_alpha
+                    mat = utils_mat.get_colorMat(red, "spawnIndices_VERT")
             else:
                 mesh= None
                 mat = None
@@ -310,10 +315,10 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
             else: verts = utils.get_filtered(obj.data.vertices, self.index_filter)
 
             # spawn as children
-            parent = utils.gen_child(child_empty, self.CONST_NAMES.verts, context, None, keepTrans=False)
+            parent = utils_scene.gen_child(child_empty, self.CONST_NAMES.verts, context, None, keepTrans=False)
             for v in verts:
                 name = f"{self.namePrefix}.v{v.index}"
-                child = utils.gen_child(parent, name, context, mesh, keepTrans=False)
+                child = utils_scene.gen_child(parent, name, context, mesh, keepTrans=False)
                 child.location = v.co
                 child.scale = scaleV
                 child.active_material = mat
@@ -328,9 +333,12 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
             # edges use a green cuboid  for rep
             scaleV = Vector([self.edge_scale * self.mesh_scale]*3)
             if self.mesh_useShape:
-                mesh = utils_render.SHAPES.get_cuboid(f"{self.namePrefix}.edge")
+                mesh = utils_mesh.SHAPES.get_cuboid(f"{self.namePrefix}.edge")
                 if self.color_useGray: mat = mat_gray
-                else: mat = utils_render.get_colorMat(utils_render.COLORS.green+gray3, self.color_alpha, "spawnIndices_EDGE")
+                else:
+                    green = utils_mat.COLORS.green+gray
+                    green.w = self.color_alpha
+                    mat = utils_mat.get_colorMat(green, "spawnIndices_EDGE")
             else:
                 mesh= None
                 mat = None
@@ -340,10 +348,10 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
             else: edges = utils.get_filtered(obj.data.edges, self.index_filter)
 
             # spawn as children
-            parent = utils.gen_child(child_empty, self.CONST_NAMES.edges, context, None, keepTrans=False)
+            parent = utils_scene.gen_child(child_empty, self.CONST_NAMES.edges, context, None, keepTrans=False)
             for e in edges:
                 name = f"{self.namePrefix}.e{e.index}"
-                child = utils.gen_child(parent, name, context, mesh, keepTrans=False)
+                child = utils_scene.gen_child(parent, name, context, mesh, keepTrans=False)
                 child.location = utils_geo.edge_center(obj.data, e)
                 child.scale = scaleV
                 child.active_material = mat
@@ -358,9 +366,12 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
             # faces use a blue tetrahedron for rep
             scaleV = Vector([self.faces_scale * self.mesh_scale]*3)
             if self.mesh_useShape:
-                mesh = utils_render.SHAPES.get_tetrahedron(f"{self.namePrefix}.face")
+                mesh = utils_mesh.SHAPES.get_tetrahedron(f"{self.namePrefix}.face")
                 if self.color_useGray: mat = mat_gray
-                else: mat = utils_render.get_colorMat(utils_render.COLORS.blue+gray3, self.color_alpha, "spawnIndices_FACE")
+                else:
+                    blue = utils_mat.COLORS.blue+gray
+                    blue.w = self.color_alpha
+                    mat = utils_mat.get_colorMat(blue, "spawnIndices_FACE")
             else:
                 mesh= None
                 mat = None
@@ -370,10 +381,10 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
             else: faces = utils.get_filtered(obj.data.polygons, self.index_filter)
 
             # spawn as children
-            parent = utils.gen_child(child_empty, self.CONST_NAMES.faces, context, None, keepTrans=False)
+            parent = utils_scene.gen_child(child_empty, self.CONST_NAMES.faces, context, None, keepTrans=False)
             for f in faces:
                 name = f"{self.namePrefix}.f{f.index}"
-                child = utils.gen_child(parent, name, context, mesh, keepTrans=False)
+                child = utils_scene.gen_child(parent, name, context, mesh, keepTrans=False)
                 child.location = f.center + f.normal*0.1*scaleV[0]
                 child.scale = scaleV
                 child.active_material = mat
@@ -402,7 +413,7 @@ class Util_deleteIndices_OT(_StartRefresh_OT):
             return False
 
         # look for the child
-        obj = utils.get_child(context.active_object, Util_spawnIndices_OT.CONST_NAMES.empty)
+        obj = utils_scene.get_child(context.active_object, Util_spawnIndices_OT.CONST_NAMES.empty)
 
         Util_deleteIndices_OT._obj = obj
         return obj
@@ -410,7 +421,7 @@ class Util_deleteIndices_OT(_StartRefresh_OT):
     def execute(self, context: types.Context):
         self.start_op()
         obj = Util_deleteIndices_OT._obj
-        utils.delete_objectRec(obj, logAmount=True)
+        utils_scene.delete_objectRec(obj, logAmount=True)
         return self.end_op()
 
 #-------------------------------------------------------------------
@@ -423,11 +434,28 @@ class Util_deleteOrphanData_OT(_StartRefresh_OT):
 
     def execute(self, context: types.Context):
         self.start_op()
-        collections = getPrefs().dm_PT_orphans_collection.split(",")
-        utils.delete_orphanData(collections, logAmount=True)
+        collections = getPrefs().dm_prefs.orphans_collection.split(",")
+        utils_scene.delete_orphanData(collections, logAmount=True)
         return self.end_op()
 
 #-------------------------------------------------------------------
+
+class Info_printMatrices_OT(types.Operator):
+    bl_idname = "dm.info_print_matrices"
+    bl_label = "Print obj matrices"
+    bl_description = "DEBUG print in the console the matrices etc"
+    bl_options = {'INTERNAL'}
+
+    @classmethod
+    def poll(cls, context):
+        obj = bpy.context.active_object
+        return obj
+
+    def execute(self, context: types.Context):
+        obj = bpy.context.active_object
+        DEV.log_msg_sep()
+        utils_trans.trans_printMatrices(obj)
+        return {'FINISHED'}
 
 class Info_printData_OT(types.Operator):
     bl_idname = "dm.info_print_data"
@@ -443,6 +471,7 @@ class Info_printData_OT(types.Operator):
     def execute(self, context: types.Context):
         obj = bpy.context.active_object
         from . import info_mesh
+        DEV.log_msg_sep()
         info_mesh.desc_mesh_data(obj.data)
         return {'FINISHED'}
 
@@ -459,7 +488,28 @@ class Info_printQueries_OT(types.Operator):
 
     def execute(self, context: types.Context):
         obj = bpy.context.active_object
+        DEV.log_msg_sep()
         utils_geo.queryLogAll_mesh(obj.data)
+        return {'FINISHED'}
+
+class Info_printMappings_OT(types.Operator):
+    bl_idname = "dm.info_print_mappings"
+    bl_label = "Print mesh mappings"
+    bl_description = "DEBUG print in the console mesh mappings life FtoF etc"
+    bl_options = {'INTERNAL'}
+
+    @classmethod
+    def poll(cls, context):
+        obj = bpy.context.active_object
+        return (obj and obj.type == 'MESH')
+
+    def execute(self, context: types.Context):
+        obj = bpy.context.active_object
+        mappings = utils_geo.get_meshDicts(obj.data)
+        DEV.log_msg_sep()
+        for key,m in mappings.items():
+            print(f"> {key} [{len(m)}] :\n", m)
+        print()
         return {'FINISHED'}
 
 class Info_printAPI_OT(types.Operator):
@@ -476,32 +526,34 @@ class Info_printAPI_OT(types.Operator):
     def execute(self, context: types.Context):
         obj = bpy.context.active_object
         from . import info_mesh
+        DEV.log_msg_sep()
         info_mesh.desc_mesh_inspect(obj.data)
         return {'FINISHED'}
 
-class Info_printMatrices_OT(types.Operator):
-    bl_idname = "dm.info_print_matrices"
-    bl_label = "Print obj matrices"
-    bl_description = "DEBUG print in the console the matrices etc"
+#-------------------------------------------------------------------
+
+class Debug_testColors_OT(types.Operator):
+    bl_idname = "dm.debug_test_colors"
+    bl_label = "DEBUG: test color props"
+    bl_description = "Add a bunch of mesh and color properties"
     bl_options = {'INTERNAL'}
 
     @classmethod
     def poll(cls, context):
         obj = bpy.context.active_object
-        return obj
+        return (obj and obj.type == 'MESH')
 
     def execute(self, context: types.Context):
         obj = bpy.context.active_object
-        utils.trans_printMatrices(obj)
+        utils_mat.gen_test_colors(obj, obj.data, 0.5, "mat")
         return {'FINISHED'}
 
-#-------------------------------------------------------------------
-
-from . import mw_resistance
-
 class Debug_testCode_OT(types.Operator):
+    """ Test some code before creating new operators...
+        # NOTE:: could go to script files, but this tests the exact same environment the extension has after loading the modules
+    """
     bl_idname = "dm.debug_test_code"
-    bl_label = "DEBUG: run test code"
+    bl_label = "DEBUG: addGradient"
     bl_description = "Run TMP test code"
     bl_options = {'INTERNAL'}
 
@@ -510,6 +562,46 @@ class Debug_testCode_OT(types.Operator):
         return True
 
     def execute(self, context: types.Context):
+        #self.resistField(context)
+        #self.particleSystem(context)
+        self.addGradient(context)
+        return {'FINISHED'}
+
+    def particleSystem(self, context: types.Context):
+        obj = context.active_object
+        if not obj:
+            return
+
+        mod = obj.modifiers.new("ParticleSystem", 'PARTICLE_SYSTEM')
+        system : types.ParticleSystem = obj.particle_systems[-1]
+
+        # Seed it
+        system.seed = 0
+
+        # Config
+        cfg : types.ParticleSettings = obj.particle_systems[-1].settings
+        cfg.type = 'EMITTER'
+        cfg.count = 5000 # high enough
+        cfg.lifetime = 0
+        cfg.render_type = 'HALO'
+        #cfg.particle_size = 0.01
+
+        # see distribution but lags the scene tho
+        #cfg.show_unborn = True
+
+        # Source
+        cfg.emit_from = "VOLUME"
+        ## random
+        #cfg.distribution = "RAND"
+        #cfg.use_emit_random = True
+        #cfg.use_even_distribution = True
+        # grid? whatever is used many end up outside
+        cfg.distribution = "GRID"
+        bb, bb_center, bb_radius = utils_trans.get_bb_data(obj, worldSpace=True)
+        cfg.grid_resolution = ceil(bb_radius) *5
+        cfg.grid_random = 0
+
+    def resistField(self, context: types.Context):
         side = 12
         sideResV = 100
         name = "TestGrid"
@@ -519,15 +611,75 @@ class Debug_testCode_OT(types.Operator):
         from . import sv_geom_primitives
         mesh = bpy.data.meshes.new(name)
         verts, edges, faces = sv_geom_primitives.grid(side,side,sideResV,sideResV)
-        utils.transform_points(verts, trans)
+        utils_trans.transform_points(verts, trans)
         mesh.from_pydata(verts, edges, faces)
         obj = bpy.data.objects.new(name, mesh)
         context.scene.collection.objects.link(obj)
 
+        from . import mw_resistance
         rest_colors = [ mw_resistance.get2D_color4D(v.co.x, v.co.y) for v in mesh.vertices ]
-        utils_render.gen_meshAttr(mesh, rest_colors, 1, "FLOAT_COLOR", "POINT", "resistance")
+        utils_mat.gen_meshAttr(mesh, rest_colors, 1, "FLOAT_COLOR", "POINT", "resistance")
 
-        return {'FINISHED'}
+    def addGradient(self, context: types.Context):
+        # Add UV coordinates
+        obj = context.active_object
+        if not obj and obj.type != "MESH":
+            return
+
+        # Clean UV and generate a new one
+        mesh: types.Mesh = obj.data
+        utils_mat.delete_meshUV(mesh)
+        uv = utils_mat.gen_meshUV(mesh, [Vector([0.0, 0.9])], name="UV_life") # [Vector([0.2, 0.2]), Vector([0.5, 0.5]), Vector([0.8, 0.8])]
+
+        # Create a new image
+        width = 256
+        height = 256
+        image = bpy.data.images.new(name="RedGradient", width=width, height=height)
+
+        # Create a NumPy array to store the image data
+        import numpy as np
+        pixels = np.empty(width * height * 4, dtype=np.float32)
+        for y in range(height):
+            for x in range(width):
+                # Calculate the red value based on the Y position (top to bottom gradient)
+                red = y / (height - 1)
+                # Set the pixel values (RGBA)
+                index = (y * width + x) * 4
+                pixels[index] = red
+                pixels[index + 1] = 0.0
+                pixels[index + 2] = 0.0
+                pixels[index + 3] = 1.0
+
+        # Flatten the NumPy array and assign it to the image
+        image.pixels = pixels.tolist()
+
+        # Create a new material and add it
+        mat = bpy.data.materials.new(name="GradientMaterial")
+        obj.active_material = mat
+
+        # Cfg default nodes
+        mat.use_nodes = True
+        nodes = mat.node_tree.nodes
+        for node in nodes: nodes.remove(node)
+
+        # Add a ShaderNodeTexImage node
+        texture_node = nodes.new(type='ShaderNodeTexImage')
+        texture_node.location = (0, 0)
+        texture_node.image = image
+
+        # Add an Input node for UV coordinates
+        uv_map_node = nodes.new(type='ShaderNodeUVMap')
+        uv_map_node.location = (-200, 0)
+        uv_map_node.uv_map = "UVMap"  # Replace with the name of your UV map if needed
+
+        # Add an Output node
+        output_node = nodes.new(type='ShaderNodeOutputMaterial')
+        output_node.location = (400, 0)
+
+        # Connect the nodes
+        mat.node_tree.links.new(uv_map_node.outputs['UV'], texture_node.inputs['Vector'])
+        mat.node_tree.links.new(texture_node.outputs['Color'], output_node.inputs['Surface'])
+
 
 #-------------------------------------------------------------------
 # Blender events
@@ -538,10 +690,12 @@ util_classes_op = [
 
     Util_deleteOrphanData_OT,
 
+    Info_printMatrices_OT,
     Info_printData_OT,
     Info_printQueries_OT,
+    Info_printMappings_OT,
     Info_printAPI_OT,
-    Info_printMatrices_OT,
 
-    Debug_testCode_OT
+    Debug_testColors_OT,
+    Debug_testCode_OT,
 ]

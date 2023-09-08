@@ -4,8 +4,7 @@ import random as rnd
 
 from .preferences import getPrefs
 
-from .mw_links import LinkCollection, Link
-from tess import Container, Cell
+from .mw_links import MW_Links, Link
 
 from . import utils
 from .utils_dev import DEV
@@ -14,10 +13,9 @@ from .stats import getStats
 
 #-------------------------------------------------------------------
 # IDEA:: toggle full log / etc
-# IDEA:: vis steps with a curve
+# IDEA:: vis step_infiltrations with a curve
 # IDEA:: vis probs with a heatmap
 # IDEA:: manually pick step/ entry? by num?
-# IDEA:: pass/reuse cfg sim direclty maybe also for mwcont?
 
 # IDEA:: bridges neighbours? too aligned wall links, vertically aligned internal -> when broken? cannot go though?
 
@@ -43,7 +41,7 @@ class StepData:
         self.break_msg          : str               = "NO_BREAK"
 
 class SIM_CONST:
-    """ #WIP:: Some sim constants, maybe moved """
+    """ # WIP:: Some sim constants, maybe moved """
     upY = Vector((0,1,0))
     backZ = Vector((0,0,-1))
     dot_aligned_threshold = 1-1e-6
@@ -64,8 +62,8 @@ class SIM_CONST:
 # TODO:: edit in UI some panel
 class SIM_CFG:
     """ Sim config values to tweak """
-    entryL_min_align = 0.1
-    nextL_min_align = -0.1
+    link_entry_minAlign = 0.1
+    link_next_minAlign = -0.1
 
     water_baseCost = 0.01
     water_linkCost = 0.2
@@ -76,16 +74,16 @@ class SIM_CFG:
 
 #-------------------------------------------------------------------
 
-class Simulation:
-    def __init__(self, links_initial: LinkCollection, deg = 0.05, log = True):
+class MW_Sim:
+    def __init__(self, links_initial: MW_Links, deg = 0.05, log = True):
         self.storeRnd()
 
         if DEV.DEBUG_MODEL:
             DEV.log_msg(f" > init : DEBUG_MODEL flag set", {"SIM", "LOG", "STEP"})
 
         self.links             = links_initial
-        self.links_iniLife     = [ l.life for l in self.links.links_Cell_Cell ]
-        self.links_iniLife_air = [ l.life for l in self.links.links_Air_Cell  ]
+        self.links_iniLife     = [ l.life for l in self.links.internal ]
+        self.links_iniLife_air = [ l.life for l in self.links.external  ]
         self.deg               = deg
 
         self.resetCurrent()
@@ -99,14 +97,14 @@ class Simulation:
     def set_deg(self, deg):
         self.deg = deg
 
-    def resetSim(self, addSeed = 0, initialAirToo = True):
-        self.restoreRnd(addSeed)
+    def resetSim(self, debug_addSeed = 0, initialAirToo = True):
+        self.restoreRnd(debug_addSeed)
 
         # WIP:: should use reset function etc
-        for i,l in enumerate(self.links.links_Cell_Cell):
+        for i,l in enumerate(self.links.internal):
             l.reset(self.links_iniLife[i])
         if initialAirToo:
-            for i,l in enumerate(self.links.links_Air_Cell):
+            for i,l in enumerate(self.links.external):
                 l.reset(self.links_iniLife_air[i])
 
         self.resetCurrent()
@@ -126,24 +124,24 @@ class Simulation:
     def storeRnd(self):
         self.rndState = rnd.getstate()
     def restoreRnd(self, addState=0):
-        """ NOTE:: just call some amount of randoms to modify seed, could modify state but requires copying a 600 elemnt tuple """
-        utils.rnd_seed(addState)
+        """ # NOTE:: just call some amount of randoms to modify seed, could modify state but requires copying a 600 elemnt tuple """
+        utils.debug_rnd_seed(addState)
         #rnd.setstate(self.rndState)
         #for i in range(addState): rnd.random()
 
     #-------------------------------------------------------------------
 
     def setAll(self, life= 1.0):
-        for l in self.links.links_Cell_Cell:
+        for l in self.links.internal:
             l.reset(life)
 
     def stepAll(self):
-        for l in self.links.links_Cell_Cell:
+        for l in self.links.internal:
             l.degrade(self.deg)
 
     #-------------------------------------------------------------------
 
-    def step(self, subSteps = 10, inlineLog = True):
+    def step(self, step_maxDepth = 10, inlineLog = True):
         self.resetCurrent()
         self.step_id += 1
 
@@ -168,7 +166,7 @@ class Simulation:
 
         # main loop with a break condition
         self.sub_id = -1
-        while self.check_continue(subSteps):
+        while self.check_continue(step_maxDepth):
             self.sub_id += 1
             if (self.trace):
                 self.sub_trace = SubStepData()
@@ -205,7 +203,7 @@ class Simulation:
     #  https://docs.python.org/dev/library/random.html#random.choices
 
     def get_entryLink(self):
-        candidates = self.links.links_Air_Cell
+        candidates = self.links.external
 
         # candidates not found
         if not candidates:
@@ -241,7 +239,7 @@ class Simulation:
         d = l.dir.dot(water_dir_inv)
 
         # cut-off
-        if d < SIM_CFG.entryL_min_align:
+        if d < SIM_CFG.link_entry_minAlign:
             return 0
 
         # weight using face areaFactor (could use regular area instead)
@@ -289,7 +287,7 @@ class Simulation:
         d = dpos.normalized().dot(water_dir_inv)
 
         # cut-off
-        if d < SIM_CFG.nextL_min_align:
+        if d < SIM_CFG.link_next_minAlign:
             return 0
 
         # weight using only the angle
@@ -338,7 +336,7 @@ class Simulation:
 
     #-------------------------------------------------------------------
 
-    def check_continue(self, subSteps):
+    def check_continue(self, step_maxDepth):
         # no next link was found
         if not self.currentL:
             if self.trace:
@@ -353,7 +351,7 @@ class Simulation:
             return False
 
         # max iterations when enabled
-        if subSteps and self.sub_id >= subSteps-1:
+        if step_maxDepth and self.sub_id >= step_maxDepth-1:
             if self.trace:
                 self.step_trace.break_msg = "MAX_ITERS"
             return False
@@ -362,6 +360,6 @@ class Simulation:
 
 
 # WIP:: simulation instance only resides in the OP -> move to MWcont and share across OP invokes
-def resetLife(links: LinkCollection, life = 1.0):
+def resetLife(links: MW_Links, life = 1.0):
     for l in links.link_map.values():
         l.reset()

@@ -14,9 +14,11 @@ bl_info = {
 
 from . import handlers
 from . import preferences
+from . import properties_global
 from . import properties
 from . import operators
 from . import panels
+from . import mw_fract
 
 from .utils_dev import DEV
 preferences.ADDON._bl_info = bl_info.copy()
@@ -28,10 +30,12 @@ preferences.ADDON._bl_name = __name__
 
 submodules = [
     handlers,
-    preferences,
+    properties_global,
     properties,
+    preferences,
     operators,
     panels,
+    mw_fract
 ]
 _name = f"{__name__}  (...{__file__[-DEV.logs_cutpath:]})"
 

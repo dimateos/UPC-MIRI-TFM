@@ -1,56 +1,48 @@
 import bpy
 import bpy.types as types
 from mathutils import Vector, Matrix
-from math import pi as PI, cos, sin, radians
 from random import uniform
 
 from . import utils
 
+
 #-------------------------------------------------------------------
 
 class COLORS:
-    """ Common colors and generators """
-    red   = Vector([1.0, 0.0, 0.0])
-    green = Vector([0.0, 1.0, 0.0])
-    blue  = Vector([0.0, 0.0, 1.0])
+    """ Common colors and generators, using vec4 with alpha"""
+    default_alpha = 1.0
+
+    red   = Vector([1.0, 0.0, 0.0, default_alpha])
+    green = Vector([0.0, 1.0, 0.0, default_alpha])
+    blue  = Vector([0.0, 0.0, 1.0, default_alpha])
     list_rgb = [red, green, blue]
-    list_rgb4D = [ c.to_4d() for c in list_rgb ]
 
     yellow  = (red+green) * 0.5
     orange  = (red+yellow) * 0.5
     pink    = (red+blue) * 0.5
     aqua    = (green+blue) * 0.5
     list_fade = [red, orange, yellow, green, aqua, blue, pink]
-    list_fade4D = [ c.to_4d() for c in list_fade ]
 
-    black   = Vector([0.0, 0.0, 0.0])
-    white   = Vector([1.0, 1.0, 1.0])
+    black   = Vector([0.0, 0.0, 0.0, default_alpha])
+    white   = Vector([1.0, 1.0, 1.0, default_alpha])
     gray   = white * 0.5
     list_gray = [black, gray, white]
-    list_gray4D = [ c.to_4d() for c in list_gray ]
 
     default_name = "colorMat"
     default_precision = 1
     def rounded(c: Vector, precision=default_precision, alphaToo = False):
-        cc = Vector()
-        cc.x = round(c.x, precision)
-        cc.y = round(c.y, precision)
-        cc.z = round(c.z, precision)
-        if len(c) > 3: cc.w = round(c.w, precision) if alphaToo else c.w
+        cc = Vector().to_4d()
+        cc[0] = round(c[0], precision)
+        cc[1] = round(c[1], precision)
+        cc[2] = round(c[2], precision)
+        cc[3] = round(c[3], precision) if alphaToo else c[3]
         return cc
 
-    def assure_4d_alpha(c: Vector, a=1.0):
-        if len(c) > 3: return c
-        c = c.to_4d()
-        c.w = a
+    def get_random(minC=0.0, maxC=1.0, alpha=default_alpha) -> Vector:
+        c = Vector( [uniform(minC,maxC), uniform(minC,maxC), uniform(minC,maxC), alpha] )
         return c
 
-    def get_random(minC=0.0, maxC=1.0, alpha=0.0) -> Vector:
-        c = Vector( [uniform(minC,maxC), uniform(minC,maxC), uniform(minC,maxC)] )
-        if alpha: c = COLORS.assure_4d_alpha(c, alpha)
-        return c
-
-    def get_ramp(start = 0.1, stop = 0.9, step = 0.2, alpha=0.0) -> list[Vector]:
+    def get_ramp(start = 0.1, stop = 0.9, step = 0.2, alpha=default_alpha) -> list[Vector]:
         startV = Vector( [start]*3 )
         stepV = Vector( [step]*3 )
 
@@ -59,27 +51,27 @@ class COLORS:
             for y in range(int((stop - start) / step) + 1):
                 for z in range(int((stop - start) / step) + 1):
                     c = startV + Vector( [x,y,z] ) *stepV
-                    if alpha: c = COLORS.toColor4D(c, alpha)
+                    c.to_4d()
+                    c.w = alpha
                     colors.append(c)
         return colors
 
-def get_colorMat(color3=COLORS.red, alpha=1.0, matName: str=None):
+def get_colorMat(color=COLORS.red, matName: str=None):
     if not matName: matName = COLORS.default_name
     mat = bpy.data.materials.new(matName)
     mat.use_nodes = False
 
-    color3 = COLORS.rounded(color3)
-    mat.diffuse_color[0] = color3[0]
-    mat.diffuse_color[1] = color3[1]
-    mat.diffuse_color[2] = color3[2]
-    mat.diffuse_color[3] = alpha
+    color = COLORS.rounded(color)
+    mat.diffuse_color[0] = color[0]
+    mat.diffuse_color[1] = color[1]
+    mat.diffuse_color[2] = color[2]
+    mat.diffuse_color[3] = color[3]
     return mat
 
-def get_randomMat(minC=0.0, maxC=1.0, alpha=1.0, matName: str=None):
-    # OPT:: could do a single mat that shows a random color per object ID using a ramp
+def get_randomMat(minC=0.0, maxC=1.0, alpha=COLORS.default_alpha, matName: str=None):
     if not matName: matName = "randomMat"
-    color = COLORS.get_random(minC, maxC)
-    mat = get_colorMat(color, alpha, matName)
+    color = COLORS.get_random(minC, maxC, alpha)
+    mat = get_colorMat(color, matName)
     return mat
 
 #-------------------------------------------------------------------
@@ -101,13 +93,13 @@ class ATTRS:
         else: raise TypeError(f"{adomain} not in {ATTRS.attrs_adomain}")
 
     @staticmethod
-    def get_value_inType(atype:str, v):
+    def get_value_inType(atype:str, v, alpha = COLORS.default_alpha):
         """ Get a value of the type aprox """
         if   atype == "FLOAT"       : val= v
-        elif atype == "FLOAT_COLOR" : val= Vector((v,v,v, 1.0))
+        elif atype == "FLOAT_COLOR" : val= Vector((v,v,v, alpha))
         elif atype == "FLOAT2"      : val= Vector((v,v))
         elif atype == "FLOAT_VECTOR": val= Vector((v,v,v))
-        elif atype == "BYTE_COLOR"  : val= Vector((v,v,v, 1.0)) * 256
+        elif atype == "BYTE_COLOR"  : val= Vector((v,v,v, alpha)) * 256
         elif atype == "BOOL"        : val= bool(v)
         elif atype == "INT"         : val= round(v)
         elif atype == "INT8"        : val= round(v * 256)
@@ -141,13 +133,13 @@ class ATTRS:
     #-------------------------------------------------------------------
 
     @staticmethod
-    def get_rnd_inType(atype:str, minC = 0.0, maxC = 1.0):
+    def get_rnd_inType(atype:str, minC = 0.0, maxC = 1.0, alpha = COLORS.default_alpha):
         """ Get a random value of the type aprox """
         if   atype == "FLOAT"       : rnd= uniform(minC, maxC)
-        elif atype == "FLOAT_COLOR" : rnd= COLORS.get_random(minC, maxC, 1.0)
+        elif atype == "FLOAT_COLOR" : rnd= COLORS.get_random(minC, maxC, alpha)
         elif atype == "FLOAT2"      : rnd= Vector((uniform(minC, maxC), uniform(minC, maxC)))
         elif atype == "FLOAT_VECTOR": rnd= COLORS.get_random(minC, maxC)
-        elif atype == "BYTE_COLOR"  : rnd= COLORS.get_random(minC, maxC, 1.0) * 256
+        elif atype == "BYTE_COLOR"  : rnd= COLORS.get_random(minC, maxC, alpha) * 256
         elif atype == "BOOL"        : rnd= round(uniform(minC,maxC))
         elif atype == "INT"         : rnd= round(minC + uniform(0,1) * maxC)
         elif atype == "INT8"        : rnd= round(uniform(0,1) * 256)
@@ -156,20 +148,20 @@ class ATTRS:
         return rnd
 
     @staticmethod
-    def get_periodic_inType(atype:str, minC = 0.0, maxC = 1.0, period_id:int = None, period = 2):
+    def get_periodic_inType(atype:str, minC = 0.0, maxC = 1.0, period_id:int = None, period = 2, alpha = COLORS.default_alpha):
         """ Get periodic value in the type (building a ramp from 0-1 in period)"""
         step = int((period_id % period) / period) + 1
         stepVal = minC + step * maxC
-        val = ATTRS.get_value_inType(atype, stepVal)
+        val = ATTRS.get_value_inType(atype, stepVal, alpha)
         return val
 
     rndRep_vals = { atype: list() for atype in attrs_atype }
     rndRep_count = { atype: 0 for atype in attrs_atype }
     @staticmethod
-    def get_rnd_periodic_inType(atype:str, minC = 0.0, maxC = 1.0, period = 2):
+    def get_rnd_periodic_inType(atype:str, minC = 0.0, maxC = 1.0, period = 2, alpha = COLORS.default_alpha):
         """ Get a random value of the type with certain periodicity (limit rnd values) """
         if len(ATTRS.rndRep_vals[atype]) < period:
-            ATTRS.rndRep_vals[atype].append(ATTRS.get_rnd_inType(atype, minC, maxC))
+            ATTRS.rndRep_vals[atype].append(ATTRS.get_rnd_inType(atype, minC, maxC, alpha))
 
         vid = ATTRS.rndRep_count[atype] % period
         rndRep = ATTRS.rndRep_vals[atype][vid]
@@ -177,17 +169,15 @@ class ATTRS:
         return rndRep
 
     @staticmethod
-    def get_deferred_inType(atype:str, minC = 0.0, maxC = 1.0, period_id:int = None, period = 2):
+    def get_deferred_inType(atype:str, minC = 0.0, maxC = 1.0, period_id:int = None, period = 2, alpha=COLORS.default_alpha):
         """ Proxy function to pick the random method used in other functions"""
-        return ATTRS.get_rnd_inType(atype, minC, maxC)
-        #return ATTRS.get_periodic_inType(atype, minC, maxC, period_id, period)
-        #return ATTRS.get_rnd_periodic_inType(atype, minC, maxC, period)
+        return ATTRS.get_rnd_inType(atype, minC, maxC, alpha)
+        #return ATTRS.get_periodic_inType(atype, minC, maxC, period_id, period, alpha)
+        #return ATTRS.get_rnd_periodic_inType(atype, minC, maxC, period, alpha)
 
 #-------------------------------------------------------------------
 # NOTE:: all similar functions but then access different paths in the mesh/data e.g. uv.data[i].uv,vc.data[i].color,attr.data[i].value
 # NOTE:: set random functions do the same iteration to avoid allocating twice the memory in a tmp list, could change for less code dupe
-# OPT:: inconsistncy with 3D vs 4D colors -> assure_4d_alpha meh, maybe 4D everywhere and split get random mat with sep alpha
-# IDEA:: modulate light as it iterates the base value for a darkening effect? jsut modify input list outside?
 
 def gen_meshUV(mesh: types.Mesh, uv_base:Vector|list[Vector] = None, name="UV_map",) -> types.MeshUVLoopLayer:
     """ Add a UV layer to the mesh: 2D float PER loop corner """
@@ -207,12 +197,18 @@ def set_meshUV_rnd(mesh: types.Mesh, uv: types.MeshUVLoopLayer|str, minC=0.0, ma
     for i, faceL in enumerate(mesh.loops):
         uv.data[i].uv = ATTRS.get_deferred_inType("FLOAT2", minC, maxC, i)
 
+def delete_meshUV(mesh: types.Mesh):
+    while mesh.uv_layers:
+        uv_layer = mesh.uv_layers[0]
+        mesh.uv_layers.remove(uv_layer)
+
 #-------------------------------------------------------------------
 
 def gen_meshVC_legacy(mesh: types.Mesh, color_base:Vector|list[Vector] = None, joinFaces=True, name="VC_legacy") -> types.MeshLoopColorLayer:
     """ Add a legacy vertex color layer to the mesh: 4D float PER loop corner
-        NOTE:: internally uses the same feature as color attributes, but limited to loops
+        # NOTE:: internally uses the same feature as color attributes, but limited to loops
     """
+
     vc = mesh.vertex_colors.new(name=name)
     if color_base: set_meshVC_legacy(mesh, vc, color_base, joinFaces)
     return vc
@@ -224,24 +220,21 @@ def set_meshVC_legacy(mesh: types.Mesh, vc: types.MeshLoopColorLayer|str, color_
         for i, face in enumerate(mesh.polygons):
             c = color_base[i % len(color_base)]
             for j, loopID in enumerate(face.loop_indices):
-                vc.data[loopID].color = COLORS.assure_4d_alpha(c)
+                vc.data[loopID].color = c
     else:
         for i, faceL in enumerate(mesh.loops):
             c = color_base[i % len(color_base)]
-            vc.data[i].color = COLORS.assure_4d_alpha(c)
+            vc.data[i].color = c
 
 def set_meshVC_legacy_rnd(mesh: types.Mesh, vc: types.MeshLoopColorLayer|str, minC=0.0, maxC=1.0, alpha=1.0, joinFaces=True):
-    rndValues = [ COLORS.assure_4d_alpha(ATTRS.get_deferred_inType("FLOAT_COLOR", minC, maxC, i), alpha)
-                 for i, faceL in enumerate(mesh.loops) ]
+    rndValues = [ ATTRS.get_deferred_inType("FLOAT_COLOR", minC, maxC, i, alpha) for i, faceL in enumerate(mesh.loops) ]
     set_meshVC_legacy(mesh, vc, rndValues, joinFaces)
 
 #-------------------------------------------------------------------
 
 def gen_meshVC(mesh: types.Mesh, color_base:Vector|list[Vector] = None, joinFaces=True, atype="FLOAT_COLOR", adomain="POINT", name="VC") -> types.Attribute:
     """ Add a color layer to the mesh: 4D float PER loop corner / vertex
-        NOTE:: internally color attributes use the same structure as attributes but limited to colors and POINT/CORNER
-        TODO:: using generalized set mesh attr, maybe also general version for common set + create list in random and pass it
-        IDEA:: maybe join faces as a parameter in the ATTRS class?
+        # NOTE:: internally color attributes use the same structure as attributes but limited to colors and POINT/CORNER
     """
     assert atype in ATTRS.attrsColor_atype, f"{atype} not in {ATTRS.attrsColor_atype}"
     assert adomain in ATTRS.attrsColor_adomain, f"{adomain} not in {ATTRS.attrsColor_adomain}"
@@ -257,21 +250,19 @@ def set_meshVC(mesh: types.Mesh, vc: types.Attribute|str, color_base:Vector|list
     source = ATTRS.get_src_inDomain(mesh, vc.domain)
     for i, datum in enumerate(source):
         c = color_base[i % len(color_base)]
-        vc.data[i].color = COLORS.assure_4d_alpha(c)
+        vc.data[i].color = c
 
 def set_meshVC_rnd(mesh: types.Mesh, vc: types.Attribute|str, minC=0.0, maxC=1.0, alpha=1.0, joinFaces=True):
     if isinstance(vc, str): vc = mesh.color_attributes[vc]
     source = ATTRS.get_src_inDomain(mesh, vc.domain)
     for i, datum in enumerate(source):
-        c = ATTRS.get_deferred_inType("FLOAT_COLOR", minC, maxC, i)
-        c.w = alpha
-        vc.data[i].color = c
+        vc.data[i].color = ATTRS.get_deferred_inType("FLOAT_COLOR", minC, maxC, i, alpha)
 
 #-------------------------------------------------------------------
 
 def gen_meshAC(mesh: types.Mesh, color_base:Vector|list[Vector] = None, atype="FLOAT_COLOR", adomain="EDGE", name="AC") -> types.Attribute:
     """ Add an attribute layer to the mesh to add color: 4D float PER loop, face, edge, vertex, etc
-        NOTE:: when using POINT/CORNER will also be added as a color_attribute
+        # NOTE:: when using POINT/CORNER will also be added as a color_attribute
     """
     assert atype in ATTRS.attrsColor_atype, f"{atype} not in {ATTRS.attrsColor_atype}"
     assert adomain in ATTRS.attrs_adomain, f"{adomain} not in {ATTRS.attrs_adomain}"
@@ -285,21 +276,19 @@ def set_meshAC(mesh: types.Mesh, ac: types.Attribute|str, color_base:Vector|list
     source = ATTRS.get_src_inDomain(mesh, ac.domain)
     for i, datum in enumerate(source):
         c = color_base[i % len(color_base)]
-        ac.data[i].color = COLORS.assure_4d_alpha(c)
+        ac.data[i].color = c
 
 def set_meshAC_rnd(mesh: types.Mesh, ac: types.Attribute|str, minC=0.0, maxC=1.0, alpha=1.0):
     if isinstance(ac, str): ac = mesh.attributes[ac]
     source = ATTRS.get_src_inDomain(mesh, ac.domain)
     for i, datum in enumerate(source):
-        c = ATTRS.get_deferred_inType(ac.data_type, minC, maxC, i)
-        c.w = alpha
-        ac.data[i].color = c
+        ac.data[i].color = ATTRS.get_deferred_inType(ac.data_type, minC, maxC, i, alpha)
 
 #-------------------------------------------------------------------
 
 def gen_meshAttr(mesh: types.Mesh, val_base = None, val_repeats = 1, atype="FLOAT", adomain="EDGE", name="AT") -> types.Attribute:
     """ Add a custom attribute layer to the mesh: vector, float, string, etc PER loop, face, edge, vertex, etc
-        NOTE:: when using colors and POINT/CORNER will also be added as a color_attribute PLUS the access attribute changes
+        # NOTE:: when using colors and POINT/CORNER will also be added as a color_attribute PLUS the access attribute changes
     """
     assert(atype in ATTRS.attrs_atype)
     assert(adomain in ATTRS.attrs_adomain)
@@ -335,7 +324,7 @@ def set_meshAttr_rnd(mesh: types.Mesh, attr: types.Attribute|str, minC=0.0, maxC
 
 def set_meshAttr_perFace(mesh: types.Mesh, dataAttr, values, val_repeats = 1):
     """ Generalized method to set a property per face to corners of a mesh.
-        NOTE:: requires acess to the data not a str to search it in the mesh
+        # NOTE:: requires acess to the data not a str to search it in the mesh
     """
     values = utils.assure_list(values)
     dataAttrName = ATTRS.get_attrName_inData(dataAttr)
@@ -350,157 +339,30 @@ def set_meshAttr_perFace(mesh: types.Mesh, dataAttr, values, val_repeats = 1):
             dataAttr.data[loopID].__setattr__(dataAttrName, val)
 
 #-------------------------------------------------------------------
-# IDEA:: common vector contsants?
 
-class SHAPES:
-    octa_verts = [
-        Vector((0, 0, 1)),
-        Vector((1, 0, 0)), Vector((0, 1, 0)), Vector((-1, 0, 0)), Vector((0, -1, 0)),
-        Vector((0, 0, -1)),
-    ]
-    octa_faces = [
-        [0,1,2], [0,2,3], [0,3,4], [0,4,1],
-        [5,2,1], [5,3,2], [5,4,3], [5,1,4],
-    ]
-    @staticmethod
-    def get_octahedron(meshName:str = "octa") ->types.Mesh:
-        me = bpy.data.meshes.new(meshName)
-        me.from_pydata(vertices=SHAPES.octa_verts, edges=[], faces=SHAPES.octa_faces)
-        return me
+# NOTE:: materials can also by aded to the object instead of the data?
+def gen_test_colors(obj, mesh, alpha, matName):
+    obj.active_material = get_randomMat(alpha=alpha, matName=matName)
 
-    tetra_verts = octa_verts[:-1]
-    tetra_faces = octa_faces[:4]+[[4,3,2,1]]
-    @staticmethod
-    def get_tetrahedron(meshName:str = "tetra") ->types.Mesh:
-        me = bpy.data.meshes.new(meshName)
-        me.from_pydata(vertices=SHAPES.tetra_verts, edges=[], faces=SHAPES.tetra_faces)
-        return me
+    # test uv and if attr float 2d is mapped to UV too
+    uv = gen_meshUV(mesh, [Vector([0.66, 0.66]), Vector([0.33, 0.33])])
+    set_meshUV_rnd(mesh, uv.name)
+    auv = gen_meshAttr(mesh, Vector([0.33,0.66]), adomain="CORNER", atype="FLOAT2", name="AUVtest")
 
-    cuboid_verts = [
-        Vector((1, 0, 1)), Vector((0, 1, 1)), Vector((-1, 0, 1)), Vector((0, -1, 1)),
-        Vector((1, 0, -1)), Vector((0, 1, -1)), Vector((-1, 0, -1)), Vector((0, -1, -1)),
-    ]
-    cuboid_faces = [
-        [0,1,2,3], [7,6,5,4],
-        [4,5,1,0], [5,6,2,1], [6,7,3,2], [7,4,0,3],
-    ]
-    @staticmethod
-    def get_cuboid(meshName:str = "cuboid") ->types.Mesh:
-        me = bpy.data.meshes.new(meshName)
-        me.from_pydata(vertices=SHAPES.cuboid_verts, edges=[], faces=SHAPES.cuboid_faces)
-        return me
+    # test vertex colors
+    vc_old = gen_meshVC_legacy(mesh, COLORS.pink)
+    set_meshVC_legacy(mesh, vc_old, COLORS.list_gray)
+    set_meshVC_legacy_rnd(mesh, vc_old)
+    vc = gen_meshVC(mesh, COLORS.list_rgb )
+    vcFace = gen_meshVC(mesh, COLORS.list_rgb, adomain="CORNER")
 
-def set_smoothShading(me: types.Mesh, active=True, faces_idx = None):
-    """ set smooth shading for specified faces or for all when none provided """
-    if faces_idx:
-        for f in faces_idx:
-            me.polygons[f].use_smooth = active
-    else:
-        for f in me.polygons:
-            f.use_smooth = active
+    # test attr color
+    ac = gen_meshAC(mesh, COLORS.list_fade, adomain="CORNER", name="ACtestcolor")
+    ac2 = gen_meshAC(mesh, adomain="FACE")
+    ac3 = gen_meshAC(mesh, COLORS.red, adomain="EDGE")
 
-def get_curveData(points: list[Vector], name ="poly-curve", w=0.05, resFaces=0):
-    """ creates a blender poly-curve following the points """
-    # Create new POLY curve
-    curve_data = bpy.data.curves.new(name, 'CURVE')
-    curve_data.dimensions = '3D'
-    line = curve_data.splines.new('POLY')
-
-    # Add the points to the spline
-    for i,p in enumerate(points):
-        if i!=0: line.points.add(1)
-        line.points[i].co = p.to_4d()
-
-    # Set the visuals
-    curve_data.bevel_depth = w
-    curve_data.bevel_resolution = resFaces
-    curve_data.fill_mode = "FULL" #'FULL', 'HALF', 'FRONT', 'BACK'
-    return curve_data
-
-def get_resFaces_fromCurveRes(curveRes):
-    """ return the number sample points (or side faces) the curve profile will have """
-    return 4 + curveRes*2
-
-    #-------------------------------------------------------------------
-
-def get_ringVerts(v:Vector, radii:float, resFaces:float, step:float, vertsOut:list[Vector], axisU = Vector((1,0,0)), axisV=Vector((0,1,0))):
-    for i in range(resFaces):
-        sample = v + radii * (cos(i * step) * axisU + sin(i * step) * axisV)
-        vertsOut.append(sample)
-
-def get_ringVerts_interleaved(vList:list[Vector], radii:float, resFaces:float, step:float, vertsOut:list[Vector], axisU = Vector((1,0,0)), axisV=Vector((0,1,0))):
-    for i in range(resFaces):
-        for v in vList:
-            sample = v + radii * (cos(i * step) * axisU + sin(i * step) * axisV)
-            vertsOut.append(sample)
-
-#attributesData:dict[str,dict] = None,
-def get_tubeMesh_pairsQuad(src_verts_pairs:list[tuple[Vector]], src_scale:list[float] = None, name ="tube-mesh", radii=0.05, resFaces=4, smoothShade = True):
-    """ direction aligned simplified version: only single pairs and quad faces"""
-    assert (resFaces >= 2)
-    res_step = PI * 2 / resFaces
-    verts, faces = [], []
-
-    ## generate mesh attributes
-    #me = bpy.data.meshes.new(name)
-    #if attributesData:
-    #    for key,val in attributesData.items():
-    #        gen
-
-    # directly work on each face
-    for vid, vPair in enumerate(src_verts_pairs):
-        normal = vPair[1] - vPair[0]
-        u,v = utils.getPerpendicularBase_stable(normal)
-        r = radii*src_scale[vid] if src_scale else radii
-        get_ringVerts_interleaved(vPair, r, resFaces, res_step, verts, u,v)
-
-        # generate faces quads -> ccw so normals towards outside
-        vs_id_base = vid*resFaces*2
-        for i in range(0, resFaces-1):
-            vs_id = vs_id_base + i *2
-            faces.append((vs_id, vs_id+2, vs_id+3, vs_id+1))
-
-        # add connection from first to last too
-        vs_id = vs_id_base + resFaces*2 -2
-        faces.append((vs_id, vs_id_base, vs_id_base+1, vs_id+1))
-
-    me = bpy.data.meshes.new(name)
-    me.from_pydata(vertices=verts, edges=[], faces=faces)
-
-    # apply smooth shading
-    if smoothShade: set_smoothShading(me)
-    return me
-
-def get_tubeMesh_AAtriFan(src_verts:list[Vector], src_edges:list[tuple[int]], src_scale:list[float] = None, name ="tube-mesh", radii=0.05, resFaces=4, smoothShade = True):
-    """ extrudes AA sampled circle points around the vertices using a triangle fan"""
-    assert (resFaces >= 2)
-    res_step = PI * 2 / resFaces
-    verts, faces = [], []
-
-    # generate the new vertices (axis aligned sampled circle)
-    for v_id in range(len(src_verts)):
-        v = src_verts[v_id]
-        r = radii*src_scale[v_id] if src_scale else radii
-        get_ringVerts(v, r, resFaces, res_step, verts)
-
-    # generate faces triangle stripes joining verts from the edges -> ccw so normals towards outside
-    for v1_id, v2_id in src_edges:
-        for i in range(1, resFaces):
-            vs_id = v2_id * resFaces + i
-            vs_id_prev = v1_id * resFaces + i
-            # print(f"vs_id: {vs_id} - vsp_id: {vsp_id}")
-            faces.append((vs_id - 1, vs_id_prev - 1, vs_id))
-            faces.append((vs_id_prev - 1, vs_id_prev, vs_id))
-
-        # add connection from first to last too
-        vs_id = v2_id * resFaces
-        vs_id_prev = v1_id * resFaces
-        faces.append((vs_id +resFaces- 1, vs_id_prev +resFaces - 1, vs_id))
-        faces.append((vs_id_prev +resFaces- 1, vs_id_prev, vs_id))
-
-    me = bpy.data.meshes.new(name)
-    me.from_pydata(vertices=verts, edges=[], faces=faces)
-
-    # apply smooth shading
-    if smoothShade: set_smoothShading(me)
-    return me
+    # test non color attr
+    at = gen_meshAttr(mesh, adomain="FACE")
+    set_meshAttr_rnd(mesh, at)
+    atc = gen_meshAttr(mesh, COLORS.blue.to_4d(), adomain="CORNER", atype="FLOAT_COLOR", name="ATtestcolor")
+    set_meshAttr_rnd(mesh, atc)

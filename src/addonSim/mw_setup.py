@@ -4,89 +4,76 @@ import bmesh
 from mathutils import Vector, Matrix
 from math import radians
 
-# IDEA:: global prefs might not be so good
-#from .preferences import prefs
 from .preferences import getPrefs
+from .properties_global import (
+    MW_id, MW_id_utils,
+)
 from .properties import (
     MW_gen_cfg,
+    MW_vis_cfg,
 )
 
-from .mw_links import LinkCollection
-from tess import Container
+from .mw_cont import MW_Cont, VORO_Container, STATE_ENUM
+from .mw_links import MW_Links
+from .mw_fract import MW_Fract # could import all from here
 
-from . import utils
-from . import utils_render
+from . import utils, utils_scene, utils_mat, utils_mesh
 from .utils_dev import DEV
 from .stats import getStats
 
 
-# OPT:: more docu on methods
+# OPT:: more docu on some methods
 #-------------------------------------------------------------------
 
-def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    cfg.meta_type = {"ROOT"}
-    cfg.struct_nameOriginal = obj.name
-    prefs = getPrefs()
-
+def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context, namePreffix:str):
     # Empty object to hold all of them set at the original obj trans
-    obj_root = bpy.data.objects.new(cfg.get_struct_name(), None)
+    cfg.struct_nameOriginal = obj.name
+    obj_root = bpy.data.objects.new(f"{cfg.struct_namePrefix}_{cfg.struct_nameOriginal}", None)
+    obj_root.mw_id.meta_type = {"ROOT"}
     context.scene.collection.objects.link(obj_root)
 
     # Duplicate the original object
-    prefs.names.original = obj.name
-    obj_copy = utils.copy_objectRec(obj, context, namePreffix=prefs.names.original_copy)
-    #MW_gen_cfg.setMetaType(obj_copy, {"CHILD"})
+    obj_copy = utils_scene.copy_objectRec(obj, context, namePreffix=namePreffix)
+    #MW_id_utils.setMetaType(obj_copy, {"CHILD"})
 
     # Scene viewport
     obj.select_set(False)
-    utils.hide_objectRec(obj, not cfg.struct_showOrignal_scene)
-    utils.hide_objectRec(obj_copy, not cfg.struct_showOrignal)
+    utils_scene.hide_objectRec(obj)
+    utils_scene.hide_objectRec(obj_copy)
     obj_copy.show_bounds = True
 
     # Set the transform to the empty and parent keeping the transform of the copy
     obj_root.matrix_world = obj.matrix_world.copy()
-    utils.set_child(obj_copy, obj_root)
-
-    # Rename with prefix?
-    get_renamed(obj_root, cfg, context)
+    utils_scene.set_child(obj_copy, obj_root)
 
     getStats().logDt(f"generated copy object ({1+len(obj_copy.children_recursive)} object/s)")
     return obj_root, obj_copy
 
-def copy_originalPrev(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
+def copy_originalPrev(obj: types.Object, context: types.Context, namePreffix:str):
     # Copy the root objects including its mw_cfg
-    obj_root = utils.copy_object(obj, context)
+    obj_root = utils_scene.copy_object(obj, context)
+
+    # XXX:: reset more metadata?
+    MW_id_utils.resetStorageId(obj_root)
 
     # copy the original from the previous root withou suffix
-    obj_original = utils.get_child(obj, getPrefs().names.original_copy+cfg.struct_nameOriginal)
-    obj_copy = utils.copy_objectRec(obj_original, context)
-    utils.set_child(obj_copy, obj_root)
+    obj_original = utils_scene.get_child(obj, namePreffix, mode="STARTS_WITH")
+    obj_copy = utils_scene.copy_objectRec(obj_original, context)
+    utils_scene.set_child(obj_copy, obj_root)
 
     getStats().logDt("generated copy object from prev frac")
     return obj_root, obj_copy
 
-# OPT:: not robust...
-def get_renamed(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    # split by first _
-    try:
-        prefix, name = obj.name.split("_",1)
-    except ValueError:
-        prefix, name = "", obj.name
+def copy_convex(obj: types.Object, obj_copy: types.Object, context: types.Context, nameConvex:str, nameDissolved:str):
+    """ Make a copy and find its convex hull
+        # NOTE:: not recursive!
+    """
 
-    # use new prefix preserving name
-    obj.name = cfg.get_struct_nameNew(name)
-
-#-------------------------------------------------------------------
-
-def copy_convex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, context: types.Context):
     # Duplicate again the copy and set child too
-    obj_c = utils.copy_objectRec(obj_copy, context, keep_mods=False)
-    obj_c.name = getPrefs().names.original_convex
-    #MW_gen_cfg.setMetaType(obj_c, {"CHILD"})
-    utils.set_child(obj_c, obj)
-
-    # XXX:: need to mesh update? + decimate before more perf? but need to change EDIT/OBJ modes?
-    # NOTE:: not recursive hull...
+    obj_c = utils_scene.copy_objectRec(obj_copy, context, keep_mods=False)
+    obj_c.name = nameConvex
+    #MW_id_utils.setMetaType(obj_c, {"CHILD"})
+    utils_scene.set_child(obj_c, obj)
 
     # build convex hull with only verts
     bm = bmesh.new()
@@ -101,18 +88,18 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, cont
     bm.to_mesh(obj_c.data)
 
     # Second copy with the face dissolve
-    obj_d = utils.copy_objectRec(obj_c, context, keep_mods=False)
-    obj_d.name = getPrefs().names.original_dissolve
-    #MW_gen_cfg.setMetaType(obj_d, {"CHILD"})
-    utils.set_child(obj_d, obj)
+    obj_d = utils_scene.copy_objectRec(obj_c, context, keep_mods=False)
+    obj_d.name = nameDissolved
+    #MW_id_utils.setMetaType(obj_d, {"CHILD"})
+    utils_scene.set_child(obj_d, obj)
 
     # dissolve faces based on angle limit
     bmesh.ops.dissolve_limit(bm, angle_limit=radians(1.7), use_dissolve_boundaries=True, verts=bm.verts, edges=bm.edges)
     bm.to_mesh(obj_d.data)
 
     # Scene viewport
-    utils.hide_objectRec(obj_c)
-    utils.hide_objectRec(obj_d, not cfg.struct_showConvex)
+    utils_scene.hide_objectRec(obj_c)
+    utils_scene.hide_objectRec(obj_d)
 
     bm.free()
     getStats().logDt("generated convex object")
@@ -120,46 +107,58 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, cfg: MW_gen_cfg, cont
 
 #-------------------------------------------------------------------
 
-def gen_pointsObject(obj: types.Object, points: list[Vector], cfg: MW_gen_cfg, context: types.Context):
+def gen_pointsObject(obj: types.Object, points: list[Vector], context: types.Context, name:str, reuse=False):
     # Create a new mesh data block and add only verts
-    mesh = bpy.data.meshes.new(getPrefs().names.source_points)
+    mesh = bpy.data.meshes.new(name)
     mesh.from_pydata(points, [], [])
     #mesh.update()
 
-    obj_points = utils.gen_child(obj, getPrefs().names.source_points, context, mesh, keepTrans=False, hide=not cfg.struct_showPoints)
-
-    getStats().logDt("generated points object")
+    if reuse:   obj_points = utils_scene.gen_childReuse(obj, name, context, mesh, keepTrans=False)
+    else:       obj_points = utils_scene.gen_child(obj, name, context, mesh, keepTrans=False)
     return obj_points
 
-def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], cfg: MW_gen_cfg, context: types.Context):
+def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], context: types.Context, name:str, reuse=False):
     # Create a new mesh data block and add only verts
-    mesh = bpy.data.meshes.new(getPrefs().names.source_wallsBB)
+    mesh = bpy.data.meshes.new(name)
     mesh.from_pydata(bb, [], [])
 
     # Generate it taking the transform as it is (points already in local space)
-    obj_bb = utils.gen_child(obj, getPrefs().names.source_wallsBB, context, mesh, keepTrans=False, hide=not cfg.struct_showBB)
-    obj_bb.show_bounds = True
+    if reuse:   obj_bb = utils_scene.gen_childReuse(obj, name, context, mesh, keepTrans=False)
+    else:       obj_bb = utils_scene.gen_child(obj, name, context, mesh, keepTrans=False)
 
-    getStats().logDt("generated bounds object")
+    obj_bb.show_bounds = True
     return obj_bb
 
 #-------------------------------------------------------------------
 
-def gen_shardsEmpty(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_shardsEmpty = utils.gen_child(obj, getPrefs().names.shards, context, None, keepTrans=False, hide=not cfg.struct_showShards)
-    return obj_shardsEmpty
-
-def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context, invertOrientation = False):
+def gen_cellsObjects(fract: MW_Fract, root: types.Object, context: types.Context, scale = 1.0, flipN = False):
     prefs = getPrefs()
-    if not prefs.gen_setup_matColors:
-        color3 = utils_render.COLORS.gray
-        matShards = utils_render.get_colorMat(color3, alpha=prefs.gen_setup_matAlpha, matName=prefs.names.shards+"Mat")
+    prefs.names.fmt_setAmount(len(fract.cont.voro_cont))
+    vis_cfg : MW_vis_cfg= root.mw_vis
 
-    for cell in cont:
+    # create empty objects holding them (add empty data to )
+    # NOTE:: cannot add materials to empty objects, yo just add some data (one for each, or they will share the material)
+    root_cells = utils_scene.gen_child(root, prefs.names.cells, context, utils_mesh.getEmpty_curveData("empty-curve"), keepTrans=False)
+    root_core = utils_scene.gen_child(root, prefs.names.cells_core, context, utils_mesh.getEmpty_curveData("empty-curve-core"), keepTrans=False)
+    root_air = utils_scene.gen_child(root, prefs.names.cells_air, context, utils_mesh.getEmpty_curveData("empty-curve-air"), keepTrans=False)
+
+    # create shared materials, will only asign one to the cells (initial state is solid)
+    mat_cells = utils_mat.get_colorMat(vis_cfg.cell_color, matName=prefs.names.fmt_mat(prefs.names.cells))
+    root_cells.active_material = mat_cells
+    mat_core = utils_mat.get_colorMat(vis_cfg.cell_color_core, matName=prefs.names.fmt_mat(prefs.names.cells_core))
+    root_core.active_material = mat_core
+    mat_air = utils_mat.get_colorMat(vis_cfg.cell_color_air, matName=prefs.names.fmt_mat(prefs.names.cells_air))
+    root_air.active_material = mat_air
+
+    cells = []
+    for cell in fract.cont.voro_cont:
         # skip none cells (computation error)
         if cell is None: continue
-        source_id = cont.source_idx[cell.id]
-        name= f"{prefs.names.shards}_{prefs.names.get_IdFormated(source_id)}"
+
+        # name respect to the original point, better the internal cell?
+        #source_id = cont.voro_cont.source_idx[cell.id]
+        source_id = cell.id
+        name= f"{prefs.names.cells[0]}{prefs.names.fmt_id(source_id)}"
 
         # assert some voro properties, the more varied test cases the better: center of mass at the center of volume
         if DEV.ASSERT_CELL_POS:
@@ -181,54 +180,50 @@ def gen_shardsObjects(obj: types.Object, cont: Container, cfg: MW_gen_cfg, conte
 
         # maybe reorient faces
         faces_voro = cell.face_vertices()
-        faces_blender = [ f_indices[::-1] for f_indices in faces_voro ] if invertOrientation else faces_voro
+        faces_blender = [ f_indices[::-1] for f_indices in faces_voro ] if flipN else faces_voro
 
         # build the static mesh and child object
         mesh = bpy.data.meshes.new(name)
         mesh.from_pydata(vertices=verts, edges=[], faces=faces_blender)
-        obj_shard = utils.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showShards)
-        obj_shard.location = pos
-        obj_shard.scale = [cfg.struct_shardScale]*3
 
-        # IDEA:: test visuals alternatives -> add to dm utils
-        #if DEV.VISUAL_TESTS:
-        if prefs.gen_setup_matColors:
-            # test uv and if attr float 2d is mapped to UV too
-            uv = utils_render.gen_meshUV(mesh, [Vector([0.66, 0.66]), Vector([0.33, 0.33])])
-            utils_render.set_meshUV_rnd(mesh, uv.name)
-            auv = utils_render.gen_meshAttr(mesh, Vector([0.33,0.66]), adomain="CORNER", atype="FLOAT2", name="AUVtest")
+        # create the object
+        obj_cell = utils_scene.gen_child(root_cells, name, context, mesh, keepTrans=False)
+        obj_cell.active_material = mat_cells
+        cells.append(obj_cell)
 
-            # test vertex colors
-            vc_old = utils_render.gen_meshVC_legacy(mesh, utils_render.COLORS.pink)
-            utils_render.set_meshVC_legacy(mesh, vc_old, utils_render.COLORS.list_gray)
-            utils_render.set_meshVC_legacy_rnd(mesh, vc_old)
-            vc = utils_render.gen_meshVC(mesh, utils_render.COLORS.list_rgb4D )
-            vcFace = utils_render.gen_meshVC(mesh, utils_render.COLORS.list_rgb4D, adomain="CORNER")
+        # postion afterwards
+        obj_cell.location = pos
+        obj_cell.scale = [scale]*3
 
-            # test attr color
-            ac = utils_render.gen_meshAC(mesh, utils_render.COLORS.list_fade, adomain="CORNER", name="ACtestcolor")
-            ac2 = utils_render.gen_meshAC(mesh, adomain="FACE")
-            ac3 = utils_render.gen_meshAC(mesh, utils_render.COLORS.red, adomain="EDGE")
+    getStats().logDt("generated cells objects")
+    return cells
 
-            # test non color attr
-            at = utils_render.gen_meshAttr(mesh, adomain="FACE")
-            utils_render.set_meshAttr_rnd(mesh, at)
-            atc = utils_render.gen_meshAttr(mesh, utils_render.COLORS.blue.to_4d(), adomain="CORNER", atype="FLOAT_COLOR", name="ATtestcolor")
-            utils_render.set_meshAttr_rnd(mesh, atc)
+def set_cellsState(fract: MW_Fract, root: types.Object, cells: list[types.Object], state:int):
+    prefs = getPrefs()
+    assert(state in STATE_ENUM.all)
 
-            # NOTE:: materials can also by aded to the object instead of the data?
-            obj_shard.active_material = utils_render.get_randomMat(alpha=prefs.gen_setup_matAlpha, matName=name)
+    # take respective parent object
+    if state == STATE_ENUM.SOLID:
+        root_cells = utils_scene.get_child(root, prefs.names.cells)
+    elif state == STATE_ENUM.CORE:
+        root_cells = utils_scene.get_child(root, prefs.names.cells_core)
+    elif state == STATE_ENUM.AIR:
+        root_cells = utils_scene.get_child(root, prefs.names.cells_air)
 
-        else:
-            obj_shard.active_material = matShards
+    for cell in cells:
+        # some selection could be an outside obj or a cell from other fract!
+        if not MW_id_utils.hasCellId(cell): continue
+        if not MW_id_utils.sameStorageId(root, cell): continue
 
-            # WIP:: additional attr to visualize in the view mode -> alpha is not visualized...
-            # TODO:: just change all colors to be vec4...
-            utils_render.gen_meshAttr(mesh, utils_render.COLORS.assure_4d_alpha(color3, prefs.gen_setup_matAlpha), 1, "FLOAT_COLOR", "POINT", "alphaColor")
+        # set the state and the parent (also the same mat as the parent)
+        fract.cont.cells_state[cell.mw_id.cell_id] = state
+        cell.mw_id.cell_state = state
+        cell.active_material = root_cells.active_material
+        cell.parent = root_cells
 
-    getStats().logDt("generated shards objects")
+def gen_cells_LEGACY(voro_cont: VORO_Container, root: types.Object, context: types.Context):
+    root_cells = utils_scene.gen_child(root, getPrefs().names.cells, context, None, keepTrans=False)
 
-def gen_LEGACY_CONT(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
     centroids = []
     vertices = []
     volume = []
@@ -237,7 +232,7 @@ def gen_LEGACY_CONT(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context
     normals = []
     neighbors = []
 
-    for cell in cont:
+    for cell in voro_cont:
         if cell is None: continue
         c = cell.centroid()
         vs = cell.vertices()
@@ -256,12 +251,13 @@ def gen_LEGACY_CONT(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context
         neighbors += [ns]
 
         # build the static mesh and child object just at the origin
-        name= f"{getPrefs().names.shards}_{cell.id}"
+        name= f"{getPrefs().names.cells}_{cell.id}"
         mesh = bpy.data.meshes.new(name)
         mesh.from_pydata(vertices=vs, edges=[], faces=f)
-        obj_shard = utils.gen_child(obj, name, context, mesh, keepTrans=False, hide=not cfg.struct_showShards)
-        pass
-    getStats().logDt("generated LEGACY shards objects")
+        obj_shard = utils_scene.gen_child(root_cells, name, context, mesh, keepTrans=False)
+        pass #breakpoint here to see stats
+
+    getStats().logDt("generated LEGACY cells objects")
 
     numVerts = [ len(vs) for vs in vertices ]
     numFaces = [ len(fs) for fs in face_vertices ]
@@ -272,54 +268,75 @@ def gen_LEGACY_CONT(obj: types.Object, cont: Container, cfg: MW_gen_cfg, context
     getStats().logDt("calculated stats (use breakpoints to see)")
 
 #-------------------------------------------------------------------
-# WIP:: maybe links to go from face to face of scaled down shards?
-# TODO:: to walls, show damage, etc
-# TODO:: single face tube -> code per face instead of vert? see in table
-# TODO:: fix misalgined origin...
 
-def gen_linksObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cfg, context: types.Context):
-    prefs = getPrefs()
-    name = prefs.names.links
-    baseColor = utils_render.COLORS.red
+def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
+    vis_cfg : MW_vis_cfg= root.mw_vis
+    name = getPrefs().names.links
+    baseColor = utils_mat.COLORS.red
+
+    # some undo could break it
 
     # iterate the global map and store vert pairs for the tube mesh generation
     verts: list[tuple[Vector,Vector]] = []
     lifeWidths: list[float] = []
     lifeColor: list[Vector] = []
-    for l in links.links_Cell_Cell:
+    points: list[Vector] = []
+    for l in fract.links.internal:
         life = l.life_clamped
 
-        verts.append((l.pos-l.dir*prefs.links_depth, l.pos+l.dir*prefs.links_depth))
+        k1, k2 = l.key_cells
+        kf1, kf2 = l.key_faces
+        c1 = fract.cont.cells_objs[k1]
+        f1 = fract.cont.getFaces(k1,kf1)
+        c2 = fract.cont.cells_objs[k2]
+        f2 = fract.cont.getFaces(k2,kf2)
+
+        # TODO:: avoid p1 p2 being equial
+
+        p1 = c1.matrix_world @ f1.center
+        p2 = c2.matrix_world @ f2.center
+        verts.append((p1, p2))
+
+        # original center
+        points.append(l.pos)
+
+        #verts.append((l.pos-l.dir*vis_cfg.links_depth, l.pos+l.dir*vis_cfg.links_depth))
         lifeColor.append( (baseColor*life).to_4d() )
+        #lifeColor[-1].w = 0.5
 
-        if prefs.links_widthModLife == {"UNIFORM"}:
-            lifeWidths.append(prefs.links_widthDead * (1-life) + prefs.links_width * life)
-        elif prefs.links_widthModLife == {"BINARY"}:
-            lifeWidths.append(prefs.links_widthDead if life<1 else prefs.links_width)
+        if vis_cfg.links_widthModLife == {"UNIFORM"}:
+            lifeWidths.append(vis_cfg.links_widthDead * (1-life) + vis_cfg.links_width * life)
+        elif vis_cfg.links_widthModLife == {"BINARY"}:
+            lifeWidths.append(vis_cfg.links_widthDead if life<1 else vis_cfg.links_width)
 
-    resFaces = utils_render.get_resFaces_fromCurveRes(prefs.links_res)
-    mesh = utils_render.get_tubeMesh_pairsQuad(verts, lifeWidths, name, 1.0, resFaces, prefs.links_smoothShade)
+    resFaces = utils_mesh.get_resFaces_fromCurveRes(vis_cfg.debug_links_res)
+
+    # single mesh with tubes
+    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidths, name, 1.0, resFaces, vis_cfg.links_smoothShade)
 
     # color encoded attributes for viewing in viewport edit mode
-    utils_render.gen_meshAttr(mesh, lifeColor, resFaces*2, "FLOAT_COLOR", "POINT", "life")
+    utils_mat.gen_meshAttr(mesh, lifeColor, resFaces*2, "FLOAT_COLOR", "POINT", "life")
 
     # potentially reuse child
-    obj_links = utils.gen_childReuse(obj, name, context, mesh, keepTrans=True, hide=not cfg.struct_showLinks)
+    obj_links = utils_scene.gen_childReuse(root, name, context, mesh, keepTrans=True)
     mesh.name = name
 
-    MW_gen_cfg.setMetaType(obj_links, {"CHILD"}, childrenRec=False)
+    # add points
+    gen_pointsObject(root, points, context, getPrefs().names.links_points, reuse=True)
+
+    MW_id_utils.setMetaType(obj_links, {"CHILD"}, childrenRec=False)
     getStats().logDt("generated links object")
     return obj_links
 
-def gen_linksWallObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cfg, context: types.Context, weights : list[float] = None):
-    prefs = getPrefs()
-    name = prefs.names.links_air
-    wallsExtraScale = prefs.links_wallExtraScale
+def gen_linksWallObject(fract: MW_Fract, root: types.Object, context: types.Context, weights : list[float] = None):
+    vis_cfg : MW_vis_cfg= root.mw_vis
+    name = getPrefs().names.links_air
+    wallsExtraScale = vis_cfg.links_wallExtraScale
 
     # iterate the global map and store vert pairs for the tube mesh generation
     verts: list[tuple[Vector,Vector]] = []
     lifeWidth: list[float] = []
-    for i,l in enumerate(links.links_Air_Cell):
+    for i,l in enumerate(fract.links.external):
         #DEV.log_msg(f"life {l.life}")
 
         # skip drawing entry links with no probability
@@ -328,39 +345,33 @@ def gen_linksWallObject(obj: types.Object, links: LinkCollection, cfg: MW_gen_cf
         # WIP:: also skip drawing non picked?
         if not l.picks: continue
 
-        lifeWidth.append(prefs.links_width*wallsExtraScale*l.life)
-        verts.append((l.pos, l.pos+l.dir*prefs.links_depth))
+        lifeWidth.append(vis_cfg.links_width*wallsExtraScale*l.life)
+        verts.append((l.pos, l.pos+l.dir*vis_cfg.links_depth))
 
-    resFaces = utils_render.get_resFaces_fromCurveRes(prefs.links_res+3)
-    mesh = utils_render.get_tubeMesh_pairsQuad(verts, lifeWidth, name, 1+prefs.links_width*wallsExtraScale, resFaces, prefs.links_smoothShade)
+    resFaces = utils_mesh.get_resFaces_fromCurveRes(vis_cfg.debug_links_res)
+    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidth, name, 1+vis_cfg.links_width*wallsExtraScale, resFaces, vis_cfg.links_smoothShade)
 
     # potentially reuse child
-    obj_wallLinks = utils.gen_childReuse(obj, name, context, mesh, keepTrans=True, hide=not cfg.struct_showLinks_airLinks)
+    obj_wallLinks = utils_scene.gen_childReuse(root, name, context, mesh, keepTrans=True)
     mesh.name = name
 
     # set global material
-    color3 = utils_render.COLORS.blue+utils_render.COLORS.white * 0.33
-    wallsMat = utils_render.get_colorMat(color3, 1.0, "linkWallsMat")
+    color = utils_mat.COLORS.blue+utils_mat.COLORS.white * 0.33
+    wallsMat = utils_mat.get_colorMat(color, "linkWallsMat")
     obj_wallLinks.active_material = wallsMat
 
     # WIP:: additional attr to visualize in the ame view mode
-    utils_render.gen_meshAttr(mesh, color3.to_4d(), 1, "FLOAT_COLOR", "POINT", "blueColor")
+    utils_mat.gen_meshAttr(mesh, color, 1, "FLOAT_COLOR", "POINT", "blueColor")
 
-    MW_gen_cfg.setMetaType(obj_wallLinks, {"CHILD"}, childrenRec=False)
+    MW_id_utils.setMetaType(obj_wallLinks, {"CHILD"}, childrenRec=False)
     getStats().logDt("generated wall links object")
     return obj_wallLinks
 
 #-------------------------------------------------------------------
-# WIP:: links empties etc... final generation/visual not set
 
-def genWIP_linksEmpties(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_links = utils.gen_childClean(obj, getPrefs().names.links, context, None, keepTrans=False, hide=not cfg.struct_showLinks)
-    obj_links_air = utils.gen_childClean(obj, getPrefs().names.links_air, context, None, keepTrans=False, hide=not cfg.struct_showLinks_airLinks)
-    return obj_links, obj_links_air
-
-def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: LinkCollection, cfg: MW_gen_cfg, context: types.Context):
+def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: MW_Links, context: types.Context):
     prefs = getPrefs()
-    wallsMat = utils_render.get_colorMat(utils_render.COLORS.blue+utils_render.COLORS.white * 0.33, 1.0, "linkWallsMat")
+    wallsMat = utils_mat.get_colorMat(utils_mat.COLORS.blue+utils_mat.COLORS.white * 0.33, 1.0, "linkWallsMat")
     #objLinks = None
     #objWall = None
 
@@ -382,8 +393,8 @@ def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: Li
             #p4 = l.dir*1.8
 
             # vary curve props
-            res = (prefs.links_res+1) +2
-            #res = prefs.links_res
+            res = (prefs.prop_links_res+1) +2
+            #res = prefs.prop_links_res
             width = prefs.links_width * 1.5
             mat = wallsMat
 
@@ -398,37 +409,38 @@ def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: Li
             p2 = -l.dir*0.1
 
             # vary curve props
-            res = prefs.links_res
+            res = prefs.prop_links_res
             width = prefs.links_widthDead * (1-l.life) + prefs.links_width * l.life
-            alpha = l.life+0.1 if prefs.links_matAlpha else 1.0
-            mat = utils_render.get_colorMat(utils_render.COLORS.red*l.life, alpha, name)
+            color = utils_mat.COLORS.red.copy() *l.life
+            #alpha = l.life+0.1 if prefs.links_matAlpha else 1.0
+            #color.w = alpha
+            mat = utils_mat.get_colorMat(color, name)
 
-        res = utils_render.get_resFaces_fromCurveRes(res)
-        curve= utils_render.get_tubeMesh_pairsQuad([(p1, p2)], None, name, width, res)
-        obj_link = utils.gen_child(obj, name, context, curve, keepTrans=True, hide=not cfg.struct_showLinks)
+        res = utils_mesh.get_resFaces_fromCurveRes(res)
+        curve= utils_mesh.get_tubeMesh_pairsQuad([(p1, p2)], None, name, width, res)
+        obj_link = utils_scene.gen_child(obj, name, context, curve, keepTrans=True)
         obj_link.location = l.pos
         obj_link.active_material = mat
 
-    MW_gen_cfg.setMetaType(objLinks.parent, {"CHILD"}, skipParent=True)
+    MW_id_utils.setMetaType(objLinks.parent, {"CHILD"}, skipParent=True)
     getStats().logDt("generated links to walls objects")
 
-def genWIP_linksEmptiesPerCell(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
-    obj_links_legacy = utils.gen_childClean(obj, getPrefs().names.links_legacy, context, None, keepTrans=False, hide=not cfg.struct_showLinks_legacy)
-    return obj_links_legacy
+def genWIP_linksCellObjects(objParent: types.Object, voro_cont: VORO_Container, context: types.Context):
+    prefs = getPrefs()
+    prefs.names.fmt_setAmount(len(voro_cont))
 
-def genWIP_linksCellObjects(objParent: types.Object, cont: Container, cfg: MW_gen_cfg, context: types.Context):
     # WIP:: links better generated from map isntead of cont? + done in a separate op
     # WIP:: atm just hiding reps -> maybe generate using a different map instead of iterating the raw cont
-    #   maybe merge shard/link loop
+    #   maybe merge cell/link loop
     neigh_set = set()
 
-    for cell in cont:
+    for cell in voro_cont:
         # NOTE:: in the case of directly iterating the cont there could be missing ones
         if cell is None: continue
 
         # group the links by cell using a parent
-        nameGroup= f"{getPrefs().names.links_group}_{getPrefs().names.get_IdFormated(cell.id)}"
-        obj_group = utils.gen_child(objParent, nameGroup, context, None, keepTrans=False, hide=False)
+        nameGroup= f"{getPrefs().names.links_group}_{prefs.names.fmt_id(cell.id)}"
+        obj_group = utils_scene.gen_child(objParent, nameGroup, context, None, keepTrans=False, hide=False)
         #obj_group.matrix_world = Matrix.Identity(4)
         #obj_group.location = cell.centroid()
 
@@ -441,11 +453,11 @@ def genWIP_linksCellObjects(objParent: types.Object, cont: Container, cfg: MW_ge
             # wall link
             if n_id < 0:
                 name= f"s{cell.id}_w{-n_id}"
-                obj_link = utils.gen_child(obj_group, name, context, None, keepTrans=False, hide=not cfg.struct_showLinks_airLinks)
+                obj_link = utils_scene.gen_child(obj_group, name, context, None, keepTrans=False)
                 continue
 
             # TODO:: so some cells actually connect with the missing ones...
-            if cont[n_id] is None:
+            if voro_cont[n_id] is None:
                 continue
 
             # neighbour link -> check rep
@@ -455,13 +467,13 @@ def genWIP_linksCellObjects(objParent: types.Object, cont: Container, cfg: MW_ge
 
             # custom ordered name
             name= f"s{cell.id}_n{n_id}"
-            neigh_centroid = Vector(cont[n_id].centroid())
+            neigh_centroid = Vector(voro_cont[n_id].centroid())
 
-            curve = utils_render.get_curveData([cell_centroid, neigh_centroid], name, cfg.links_width, cfg.links_res)
-            obj_link = utils.gen_child(obj_group, name, context, curve, keepTrans=False, hide=not cfg.struct_showLinks)
+            curve = utils_mesh.get_curveData([cell_centroid, neigh_centroid], name, prefs.links_width, prefs.prop_links_res)
+            obj_link = utils_scene.gen_child(obj_group, name, context, curve, keepTrans=False)
 
-            obj_link.hide_set(key_rep or not cfg.struct_showLinks_legacy)
+            obj_link.hide_set(key_rep)
             #obj_link.location = cell.centroid()
 
-    MW_gen_cfg.setMetaType(objParent, {"CHILD"}, skipParent=False)
+    MW_id_utils.setMetaType(objParent, {"CHILD"}, skipParent=False)
     getStats().logDt("generated links per cell objects")

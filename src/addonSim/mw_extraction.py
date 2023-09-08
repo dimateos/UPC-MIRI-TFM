@@ -8,14 +8,15 @@ INF_FLOAT = float("inf")
 from .preferences import getPrefs
 from .properties import (
     MW_gen_cfg,
+    MW_gen_source_options,
 )
 
-from . import utils
+from .mw_fract import MW_Fract
+from .unionfind import UnionFind
+
+from . import utils_scene, utils_trans
 from .utils_dev import DEV
 from .stats import getStats
-
-from .mw_links import LinkCollection
-from .unionfind import UnionFind
 
 
 # OPT:: not recursive + query obj.children a lot
@@ -66,7 +67,7 @@ def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context: types
             break
 
     # grease pencil
-    if "PENCIL" in cfg.sourceOptions.all_keys:
+    if "PENCIL" in MW_gen_source_options.all_keys:
         def check_points_from_splines(gp):
             if not gp.layers.active:
                 return False
@@ -84,7 +85,7 @@ def detect_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context: types
 
 def get_points_from_object_fallback(obj: types.Object, cfg: MW_gen_cfg, context: types.Context):
     if not cfg.meta_source_enabled:
-        cfg.source = { cfg.sourceOptions.error_key }
+        cfg.source = { MW_gen_source_options.error_key }
         DEV.log_msg("No points found...", {"CALC", "SOURCE", "ERROR"})
         return []
 
@@ -98,9 +99,9 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context: types.Co
     """
     # try set default source or fallback
     if not cfg.source:
-        if cfg.sourceOptions.default_key in cfg.meta_source_enabled:
-            cfg.source = { cfg.sourceOptions.default_key }
-        else: cfg.source = { cfg.sourceOptions.fallback_key }
+        if MW_gen_source_options.default_key in cfg.meta_source_enabled:
+            cfg.source = { MW_gen_source_options.default_key }
+        else: cfg.source = { MW_gen_source_options.fallback_key }
 
     # return in local space
     points = []
@@ -109,7 +110,7 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context: types.Co
     def points_from_verts(ob: types.Object, isChild=False):
         """Takes points from _any_ object with geometry"""
         if ob.type == 'MESH':
-            verts = utils.get_verts(ob, worldSpace=False)
+            verts = utils_trans.get_verts(ob, worldSpace=False)
         else:
             # NOTE:: unused because atm limited to mesh in ui/operator anyway
             depsgraph = context.evaluated_depsgraph_get()
@@ -129,7 +130,7 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context: types.Co
         if isChild:
             matrix = world_toLocal @ ob.matrix_world
             #matrix = ob.matrix_parent_inverse @ ob.matrix_basis
-            utils.transform_points(verts, matrix)
+            utils_trans.transform_points(verts, matrix)
         points.extend(verts)
 
     # geom own
@@ -176,11 +177,10 @@ def get_points_from_object(obj: types.Object, cfg: MW_gen_cfg, context: types.Co
 
     return points
 
-def get_points_from_fracture(obj_root: types.Object, cfg: MW_gen_cfg):
-    prefs = getPrefs()
-    obj_points = utils.get_child(obj_root, prefs.names.source_points)
+def get_points_from_fracture(obj_root: types.Object):
+    obj_points = utils_scene.get_child(obj_root, getPrefs().names.source_points)
 
-    points = utils.get_verts(obj_points, worldSpace=False)
+    points = utils_trans.get_verts(obj_points, worldSpace=False)
     getStats().logDt(f"retrieved points: {len(points)} (from {obj_points.name})")
     return points
 
@@ -190,49 +190,59 @@ def points_limitNum(points: list[Vector], cfg: MW_gen_cfg):
     source_limit = cfg.source_limit
 
     if source_limit > 0 and source_limit < len(points):
-        rnd.shuffle(points)
+        if cfg.source_shuffle:
+            rnd.shuffle(points)
         points[source_limit:] = []
-
-def points_noDoubles(points: list[Vector], cfg: MW_gen_cfg):
-    points_set = {Vector.to_tuple(p, 4) for p in points}
-    points = list(points_set)
 
 def points_addNoise(points: list[Vector], cfg: MW_gen_cfg, bb_radius: float):
     noise = cfg.source_noise
 
     if noise:
-        scalar = noise * bb_radius # boundbox radius to aprox scale
+        # aprox the random max displacement
+        approxR = bb_radius**3 / len(points)
+        scalar = noise * approxR
         points[:] = [p + (bl_rnd.random_unit_vector() * scalar * rnd.random()) for p in points]
 
+    if DEV.DEBUG_MODEL:
+        # collapse to the plane (non uniform random side effect)
+        points[:] = [p * Vector((1,1,0)) for p in points]
+
+def points_noDoubles(points: list[Vector], cfg: MW_gen_cfg):
+    if cfg.debug_ensure_noDoubles:
+        points_set = {Vector.to_tuple(p, 4) for p in points}
+        points = list(points_set)
+
 def points_transformCfg(points: list[Vector], cfg: MW_gen_cfg, bb_radius: float):
-    """ Applies all transformations to the set of points obtained """
+    """ Applies all transformations to the set of points obtained
+        # OPT:: do it while extracting to limit operations on unused data -> also check valid inside cont
+    """
     points_limitNum(points, cfg)
-    points_noDoubles(points, cfg)
     points_addNoise(points, cfg, bb_radius)
+    points_noDoubles(points, cfg)
     getStats().logDt(f"transform/limit points: {len(points)} (noise {cfg.source_noise:.4f})")
 
 #-------------------------------------------------------------------
 
-# TODO:: check already have it + apply
-def boolean_mod_add(obj_original: types.Object, obj_shardsRoot: types.Object, context: types.Context):
-    c = obj_shardsRoot.children
-    for shard in c:
-        mod = shard.modifiers.new(name="Boolean", type='BOOLEAN')
+# TODO:: check already have it? faster to add to all at once too
+def boolean_mod_add(obj_original: types.Object, obj_cells_root: types.Object, context: types.Context):
+    c = obj_cells_root.children
+    for obj_cell in c:
+        mod = obj_cell.modifiers.new(name="Boolean", type='BOOLEAN')
         mod.object = obj_original
         mod.operation = 'INTERSECT'
         mod.solver = "FAST"
 
-    DEV.log_msg(f"Applied boolean to {len(c)} shards)", {"CALC", "MOD"})
+    DEV.log_msg(f"Applied boolean to {len(c)} cells)", {"CALC", "MOD"})
 
     # Calculates all booleans at once (faster).
     depsgraph = context.evaluated_depsgraph_get()
 
-# TODO:: test with sep comps -> random remove?
-def get_connected_comps(links: LinkCollection):
-    cell_union = UnionFind(len(links.cont_foundId))
+def get_connected_comps(fract: MW_Fract):
+    """ # NOTE:: old method, now done with networkx """
+    cell_union = UnionFind(len(fract.cont.foundId))
 
-    for l in links.links_Cell_Cell:
+    for l in fract.links.internal:
         cell_union.union(*l.key_cells)
 
-    DEV.log_msg(f"Extracted {cell_union.num_components} components)", {"CALC", "COMP"})
+    DEV.log_msg(f"Extracted {cell_union.num_components} components", {"CALC", "COMP"})
     return cell_union

@@ -3,21 +3,27 @@ import bpy.types as types
 import bpy.props as props
 
 from .preferences import getPrefs
+from .properties_global import (
+    MW_id,
+    MW_id_utils,
+    MW_global_selected,
+    MW_global_storage
+)
 from .properties import (
     MW_gen_cfg,
     MW_sim_cfg,
 )
-from .operators_utils import _StartRefresh_OT, util_classes_op
+from .properties_utils import copyProps
+from .operators_dm import _StartRefresh_OT, util_classes_op
 
-from . import mw_setup
-from . import mw_extraction
-from .mw_links import LinkCollection, LinkStorage
-from .mw_cont import MW_Container
+from . import mw_setup, mw_extraction
+from .mw_links import MW_Links
+from .mw_cont import MW_Cont, STATE_ENUM
+from .mw_fract import MW_Fract
 from . import mw_sim
 
 from . import ui
-from . import utils
-from .utils_cfg import copyProps
+from . import utils, utils_scene, utils_trans
 from .utils_dev import DEV
 from .stats import getStats
 
@@ -26,12 +32,13 @@ from .stats import getStats
 
 class MW_gen_OT(_StartRefresh_OT):
     bl_idname = "mw.gen"
-    bl_label = "Fracture generation"
-    bl_description = "Fracture generation using voro++"
+    bl_label = "Cells generation"
+    bl_description = "Voronoi cells generation using voro++"
 
     # REGISTER + UNDO pops the edit last op window
     bl_options = {'PRESET', 'REGISTER', 'UNDO'}
     cfg: props.PointerProperty(type=MW_gen_cfg)
+    invoked_once = False
 
     def __init__(self) -> None:
         super().__init__(init_log=True)
@@ -40,80 +47,119 @@ class MW_gen_OT(_StartRefresh_OT):
         self.refresh_log = True
         self.end_log     = True
 
-    # NOTE:: no poll because the button is removed from ui isntead
-
     def draw(self, context: types.Context):
         super().draw(context)
-        ui.draw_gen_cfg(self.cfg, self.layout, context)
+        cfg : MW_gen_cfg = self.cfg
+        layout = self.layout
+        box = layout.box()
+        col = box.column()
+
+        # source points
+        factor = 0.4
+        rowsub = col.row().split(factor=factor)
+        rowsub.alignment = "LEFT"
+        rowsub.label(text="Point Source:")
+        split = rowsub.split()
+        split.enabled = False
+        split.alignment = "LEFT"
+        split.label(text=cfg.struct_nameOriginal)
+
+        rowsub = col.row().split(factor=factor)
+        rowsub.alignment = "LEFT"
+        rowsub.prop(cfg, "struct_namePrefix")
+        split = rowsub.split()
+        split.enabled = False
+        split.alignment = "LEFT"
+        split.label(text=f"{cfg.struct_namePrefix}_{cfg.struct_nameOriginal}")
+
+        rowsub = col.row()
+        rowsub.prop(cfg, "source")
+
+        rowsub = col.row().split(factor=0.8)
+        rowsub.prop(cfg, "source_limit")
+        rowsub.label(text=f"/ {cfg.source_numFound}")
+
+        rowsub = col.row()
+        rowsub.prop(cfg, "source_noise")
+        rowsub.prop(cfg, "source_shuffle")
+
+        # container faces
+        box = layout.box()
+        col = box.column()
+        col.label(text="Generation:")
+        rowsub = col.row(align=True)
+        rowsub.prop(cfg, "shape_useConvexHull")
+        rowsub.prop(cfg, "shape_useWalls")
+        rowsub = col.row(align=True)
+        rowsub.prop(cfg, "margin_box_bounds")
+        rowsub.prop(cfg, "margin_face_bounds")
+
+        open, box = ui.draw_toggleBox(getPrefs().gen_PT_meta_inspector, "meta_show_debug_props", layout, scaleBox=0.85)
+        if open:
+            box.prop(cfg, "debug_rnd_seed")
+            box.prop(cfg, "debug_precisionWalls")
+            box.prop(cfg, "debug_ensure_noDoubles")
+            box.prop(cfg, "debug_flipCellNormals")
+
+    # NOTE:: no poll because the button is removed from ui in draw instead
+    #@classmethod
+    #def poll(cls, context):
+    #    # XXX:: required achieve edit last op but MW_global_selected is none?
+    #    MW_global_selected.logSelected()
+    #    return MW_global_selected.last
 
     def invoke(self, context, event):
-        # avoid last stored operation overide
-        self.cfg.meta_type = {"NONE"}
-        # clean memory ptr leftovers
-        self.last_ptrID_links = ""
+        # avoid last stored operation overide and recalculating everything
+        self.invoked_once = False
+        getPrefs().gen_PT_meta_inspector.reset_meta_show_toggled()
+        # id of last fract calculated stored (outside the operator)
+        self.last_storageID = None
         return super().invoke(context, event)
 
     #-------------------------------------------------------------------
-
-    # OPT:: GEN: more error handling of user deletion of intermediate objects?
-    # OPT:: automatically add particles/child parts -> most interesting method... -> util OP not part of flow
-    # IDEA:: GEN: support for non meshes (e.g. curves)
-    # IDEA:: GEN: disabled pencil too, should check points are close enugh/inside
-    # IDEA:: GEN: atm only a single selected object + spawning direclty on the scene collection
-    # IDEA:: GEN: recursiveness of shards? at least fracture existing fract obj instead of root -> bake button?
-    # NOTE:: GEN: avoid convex hull from voro++ -> break in convex pieces, or test cells uniformly distrib? aprox or exact?
-    # OPT:: RENDER: interior handle for materials
-
-    # IDEA:: SIM: shrink here or as part of sim, e.g. smoothing? -> support physics interspace
-    # IDEA:: SIM: add mass add rigid body proportional to volume? from voro++?
-    # IDEA:: recalculate cont after reload from cfg exact params -> precision used stored? all props stored but some in side panel? e.g. visual and precision
-    # OPT:: assets with msg
 
     def execute(self, context: types.Context):
         self.start_op()
         self.obj_root = None
         self.ctx = context
+        prefs = getPrefs()
 
         # handle refresh
-        cancel = self.checkRefresh_cancel()
-        if cancel: return self.end_op_refresh(skipLog=True)
+        if self.checkRefresh_cancel() or prefs.gen_PT_meta_inspector.skip_meta_show_toggled():
+            return self.end_op_refresh(skipLog=True)
 
-        # TODO:: run again more smartly, like detect no need for changes (e.g. name change or prefs debug show) -> compare both props, or use prop update func self ref? also for spawn indices
-        # IDEA:: move all visual toggles to the side panel to avoid recalculations...
-        # OPT:: separate simulation and scene generation: option to no store inter meshes
-        # IDEA:: decimate before/after convex, test perf? sep operator?
-
-        # Free existing link memory -> now purged on undo callback dynamically
-        prefs = getPrefs()
-        if self.last_ptrID_links and not prefs.prefs_links_undoPurge:
-            LinkStorage.freeLinks(self.last_ptrID_links)
-
+        # Potentially free existing storage -> now purged on undo callback dynamically (called by uperator redo)
+        if self.last_storageID is not None:
+            MW_global_storage.freeFract_fromID(self.last_storageID)
 
         # Retrieve root
-        obj, cfg = MW_gen_cfg.getSelectedRoot()
+        obj = MW_global_selected.root
         getStats().logDt("retrieved root object")
         try:
             # Selected object not fractured, fresh execution
-            if not cfg:
+            if obj is None:
                 DEV.log_msg("cfg NOT found: new frac", {'SETUP'})
-                obj_root, obj_original = mw_setup.copy_original(obj, self.cfg, context)
+                obj_root, obj_original = mw_setup.copy_original(MW_global_selected.current, self.cfg, context, prefs.names.original_copy)
+                # Sync prefs panel with the object -> ok callbacks because obj is None
+                copyProps(prefs.mw_vis, obj_root.mw_vis)
                 return self.execute_fresh(obj_root, obj_original)
 
             # Fracture the same original object, copy props for a duplicated result to tweak parameters
             # NOTE:: no longer supporting edit fracture -> basically always replaces all objects in the scene which is slower than a fresh one
             else:
                 # Copy the config to the op only once to allow the user to edit it afterwards
-                if "NONE" in self.cfg.meta_type:
+                if not self.invoked_once:
+                    self.invoked_once = True
                     DEV.log_msg("cfg found once: copying props to OP", {'SETUP'})
-                    copyProps(cfg, self.cfg)
+                    copyProps(obj.mw_gen, self.cfg)
 
                 # optionally unhide the original fracture object but always unselect
                 obj.select_set(False)
                 if (prefs.gen_duplicate_OT_hidePrev):
-                    utils.hide_objectRec(obj)
+                    utils_scene.hide_objectRec(obj)
 
                 DEV.log_msg("cfg found: duplicating frac", {'SETUP'})
-                obj_root, obj_original = mw_setup.copy_originalPrev(obj, self.cfg, context)
+                obj_root, obj_original = mw_setup.copy_originalPrev(obj, context, prefs.names.original_copy)
                 return self.execute_fresh(obj_root, obj_original)
 
         # catch exceptions to at least mark as child and copy props
@@ -123,92 +169,94 @@ class MW_gen_OT(_StartRefresh_OT):
 
 
     def execute_fresh(self, obj_root:types.Object, obj_original:types.Object ):
-        self.obj_root = obj_root
-        cfg: MW_gen_cfg = self.cfg
-        cfg.rnd_seed = utils.rnd_seed(cfg.rnd_seed)
         prefs = getPrefs()
+
+        # work with the properties stored in the object
+        self.obj_root = obj_root
+        copyProps(self.cfg, obj_root.mw_gen)
+        cfg: MW_gen_cfg = obj_root.mw_gen
+        cfg.debug_rnd_seed = utils.debug_rnd_seed(cfg.debug_rnd_seed)
+
+
+        # Add to global storage to generate the fracture id
+        fract = MW_Fract()
+        self.last_storageID = MW_global_storage.addFract(fract, obj_root)
 
 
         DEV.log_msg("Initial object setup", {'SETUP'})
-        # NOTE:: convex hull triangulates the faces... e.g. UV sphere ends with more!
         if cfg.shape_useConvexHull:
-            obj_toFrac = mw_setup.copy_convex(obj_root, obj_original, cfg, self.ctx)
+            # NOTE:: convex hull triangulates the faces... e.g. UV sphere ends with more!
+            obj_toFrac = mw_setup.copy_convex(obj_root, obj_original, self.ctx, prefs.names.original_convex, prefs.names.original_dissolve)
         else: obj_toFrac = obj_original
 
-        DEV.log_msg("Start calc points", {'CALC'})
-        # Get the points and transform to local space when needed
-        mw_extraction.detect_points_from_object(obj_original, cfg, self.ctx)
-        points = mw_extraction.get_points_from_object_fallback(obj_original, cfg, self.ctx)
-        if not points:
-            return self.end_op_error("found no points...")
 
-        # Get more data from the points
-        bb, bb_center, bb_radius = utils.get_bb_data(obj_toFrac, cfg.margin_box_bounds)
+        DEV.log_msg("Start calc faces", {'CALC'})
+        bb, bb_center, bb_radius = utils_trans.get_bb_data(obj_toFrac, cfg.margin_box_bounds)
         getStats().logDt(f"calc bb: [{bb_center[:]}] r {bb_radius:.3f} (margin {cfg.margin_box_bounds:.4f})")
         if cfg.shape_useWalls:
-            faces4D = utils.get_faces_4D(obj_toFrac, cfg.margin_face_bounds)
+            faces4D = utils_trans.get_faces_4D(obj_toFrac, cfg.margin_face_bounds)
         else: faces4D = []
         getStats().logDt(f"calc faces4D: {len(faces4D)} (n_disp {cfg.margin_face_bounds:.4f})")
 
-        # XXX:: 2D objects should use the boundary? limits walls per axis
-        # XXX:: limit particles axis too?
+
+        DEV.log_msg("Start calc points", {'CALC'})
+        mw_extraction.detect_points_from_object(obj_original, cfg, self.ctx)
+        points = mw_extraction.get_points_from_object_fallback(obj_original, cfg, self.ctx)
+        cfg.source_numFound = len(points)
+        if not points:
+            return self.end_op_error("found no points...")
 
         # Limit and rnd a bit the points
         mw_extraction.points_transformCfg(points, cfg, bb_radius)
 
         # Add some reference of the points to the scene
-        mw_setup.gen_pointsObject(obj_root, points, self.cfg, self.ctx)
-        mw_setup.gen_boundsObject(obj_root, bb, self.cfg, self.ctx)
+        mw_setup.gen_pointsObject(obj_root, points, self.ctx, prefs.names.source_points)
+        mw_setup.gen_boundsObject(obj_root, bb, self.ctx, prefs.names.source_wallsBB)
+        getStats().logDt("generated point and bound objects")
 
 
-        DEV.log_msg("Start calc cont and links", {'CALC'})
-        # IDEA:: mesh conecting input points + use single mesh instead of one per link?
-        # IDEA:: generate in phases? only cont, then links, etc...
-        # XXX:: detect meshes with no volume? test basic shape for crashes...
-
-        cont = MW_Container(points, bb, faces4D, precision=prefs.gen_calc_precisionWalls)
-        if not cont:
-            return self.end_op_error("found no cont... but could try recalculate!")
-
-        # shards are always added to the scene
-        obj_shards = mw_setup.gen_shardsEmpty(obj_root, cfg, self.ctx)
+        DEV.log_msg("Start calc cont", {'CALC', 'CONT'})
+        fract.cont = cont = MW_Cont(obj_root, points, bb, faces4D, precision=cfg.debug_precisionWalls)
+        if not cont.initialized:
+            return self.end_op_error("found no cont... recalc different params?")
 
         #test some legacy or statistics cont stuff
         if DEV.LEGACY_CONT:
-            mw_setup.gen_LEGACY_CONT(obj_shards, cont, cfg, self.ctx)
+            mw_setup.gen_cells_LEGACY(cont.voro_cont, obj_root, self.ctx)
             return self.end_op("DEV.LEGACY_CONT stop...")
-        mw_setup.gen_shardsObjects(obj_shards, cont, cfg, self.ctx, invertOrientation=prefs.gen_setup_invertShardNormals)
 
-        # calculate links and store in the external storage
-        links:LinkCollection = LinkCollection(cont, obj_shards)
+        # precalculate/query neighs and other data with generated cells mesh
+        cells = mw_setup.gen_cellsObjects(fract, obj_root, self.ctx, scale=obj_root.mw_vis.cell_scale, flipN=cfg.debug_flipCellNormals)
+        cont.precalculations(cells)
+        if not cont.precalculated:
+            return self.end_op_error("error during container precalculations!")
+
+
+        DEV.log_msg("Start calc links", {'CALC', 'LINKS'})
+        fract.links = links = MW_Links(cont)
         if not links.initialized:
-            return self.end_op_error("found no links... but could try recalculate!")
-
-        # use links storage
-        self.last_ptrID_links = cfg.ptrID_links = obj_root.name
-        LinkStorage.addLinks(links, cfg.ptrID_links, obj_root)
-
+            return self.end_op_error("found no links... recalc different params?")
 
         return self.end_op()
 
     def end_op(self, msg="", skipLog=False, retPass=False):
-        """ OVERRIDE:: end_op to perform stuff at the end """
+        """ # OVERRIDE:: end_op to perform stuff at the end """
 
         if self.obj_root:
-            utils.select_unhide(self.obj_root, self.ctx)
-
             # copy any cfg that may have changed during execute
-            self.cfg.name = self.obj_root.name
-            copyProps(self.cfg, self.obj_root.mw_gen)
+            copyProps(self.obj_root.mw_gen, self.cfg)
             # set the meta type to all objects at once
-            MW_gen_cfg.setMetaType(self.obj_root, {"CHILD"}, skipParent=True)
+            MW_id_utils.setMetaType(self.obj_root, {"CHILD"}, skipParent=True)
+            utils_scene.select_unhide(self.obj_root, self.ctx)
 
+        # keep the panel updated
+        MW_global_selected.recheckSelected()
         return super().end_op(msg, skipLog, retPass)
 
 
 class MW_gen_recalc_OT(_StartRefresh_OT):
     bl_idname = "mw.gen_recalc"
-    bl_label = "Recalculate links"
+    bl_label = "Recalculate facture"
     bl_description = "For selected root. Useful after a module reload etc..."
 
     # UNDO as part of bl_options will cancel any edit last operation pop up
@@ -216,84 +264,116 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_gen_cfg.hasSelectedRoot()
+        return MW_global_selected.root
 
     def execute(self, context: types.Context):
         self.start_op()
         prefs = getPrefs()
-        obj_root, cfg = MW_gen_cfg.getSelectedRoot()
+        obj_root = MW_global_selected.root
+        gen_cfg = obj_root.mw_gen
 
-        # delete current cont when found
-        if cfg.ptrID_links:
-            LinkStorage.freeLinks(cfg.ptrID_links)
-
+        # Add to global storage to generate the fracture id (also potentially free existing storage to reduce max memory)
+        MW_global_storage.freeFract_attempt(obj_root)
+        fract = MW_Fract()
+        MW_global_storage.addFract(fract, obj_root) # no need to store, there is no mod last op panel
 
         DEV.log_msg("Retrieving fracture data (objects and points)", {'SETUP'})
-        if cfg.shape_useConvexHull:
-            obj_toFrac = utils.get_child(obj_root, prefs.names.original_dissolve)
-        else: obj_toFrac = utils.get_child(obj_root, prefs.names.original_copy)
+        if gen_cfg.shape_useConvexHull:
+            obj_toFrac = utils_scene.get_child(obj_root, prefs.names.original_dissolve)
+        else: obj_toFrac = utils_scene.get_child(obj_root, prefs.names.original_copy)
 
-        points = mw_extraction.get_points_from_fracture(obj_root, cfg)
+        points = mw_extraction.get_points_from_fracture(obj_root)
         if not points:
             return self.end_op_error("found no points...")
 
-        obj_shards = utils.get_child(obj_root, prefs.names.shards)
-        if not obj_shards:
-            return self.end_op_error("found no shards...")
+        obj_cells_root = utils_scene.get_child(obj_root, prefs.names.cells)
+        if not obj_cells_root:
+            return self.end_op_error("found no cells...")
 
         # Get more data from the points
-        bb, bb_center, bb_radius = utils.get_bb_data(obj_toFrac, cfg.margin_box_bounds)
-        getStats().logDt(f"calc bb: [{bb_center[:]}] r {bb_radius:.3f} (margin {cfg.margin_box_bounds:.4f})")
-        if cfg.shape_useWalls:
-            faces4D = utils.get_faces_4D(obj_toFrac, cfg.margin_face_bounds)
+        bb, bb_center, bb_radius = utils_trans.get_bb_data(obj_toFrac, gen_cfg.margin_box_bounds)
+        getStats().logDt(f"calc bb: [{bb_center[:]}] r {bb_radius:.3f} (margin {gen_cfg.margin_box_bounds:.4f})")
+        if gen_cfg.shape_useWalls:
+            faces4D = utils_trans.get_faces_4D(obj_toFrac, gen_cfg.margin_face_bounds)
         else: faces4D = []
-        getStats().logDt(f"calc faces4D: {len(faces4D)} (n_disp {cfg.margin_face_bounds:.4f})")
+        getStats().logDt(f"calc faces4D: {len(faces4D)} (n_disp {gen_cfg.margin_face_bounds:.4f})")
 
 
-        DEV.log_msg("Calc cont and links (shards not regenerated!)", {'CALC'})
-        cont = MW_Container(points, bb, faces4D, precision=prefs.gen_calc_precisionWalls)
+        DEV.log_msg("Calc cont and links (cells not regenerated!)", {'CALC'})
+        fract.cont = cont = MW_Cont(obj_root, points, bb, faces4D, precision=gen_cfg.debug_precisionWalls)
         if not cont:
             return self.end_op_error("found no cont... but could try recalculate!")
 
+        # precalculate/query neighs and other data
+        cont.precalculations(obj_cells_root.children)
+
         # calculate links and store in the external storage
-        links:LinkCollection = LinkCollection(cont, obj_shards)
+        fract.links = links = MW_Links(cont)
         if not links.initialized:
             return self.end_op_error("found no links... but could try recalculate!")
 
-        # use links storage
-        self.last_ptrID_links = cfg.ptrID_links = obj_root.name
-        LinkStorage.addLinks(links, cfg.ptrID_links, obj_root)
-
-
         return self.end_op()
 
+    def end_op(self, msg="", skipLog=False, retPass=False):
+        """ # OVERRIDE:: end_op to perform stuff at the end """
+        MW_global_selected.recheckSelected()
+        return super().end_op(msg, skipLog, retPass)
 
-    @staticmethod
-    def getSelectedRoot_links():
-        obj, cfg = MW_gen_cfg.getSelectedRoot()
-        links = None
+#-------------------------------------------------------------------
 
-        if not cfg.ptrID_links:
-            DEV.log_msg("Found no links in incomplete fracture", {'LINKS'})
-        else:
-            links = LinkStorage.getLinks(cfg.ptrID_links)
-            if not links:
-                DEV.log_msg("Found no links in storage", {'LINKS'})
-        return obj, cfg, links
+class MW_cell_state_OT(_StartRefresh_OT):
+    bl_idname = "mw.cell_state"
+    bl_label = "Set cell state"
+    bl_description = "Set the selected cells state"
 
-    @staticmethod
-    def getSelectedRoot_links_autoRecalc() -> tuple[types.Object, "MW_gen_cfg", LinkCollection|None]:
-        """ Retrieves links or recalculates them automatically """
+    # UNDO as part of bl_options will cancel any edit last operation pop up
+    bl_options = {'INTERNAL', 'UNDO'}
 
-        # attempt to retrieve links
-        obj, cfg, links = MW_gen_recalc_OT.getSelectedRoot_links()
+    # example of how to do the enum as a blender prop, but then is would have to be stored inside the cell
+    # blender provides some way to add id to enum props but is not well documented
+    set_state: bpy.props.EnumProperty(
+        name="STATE",
+        description="Set cells state",
+        items=(
+            ('SOLID', "Solid",  "Initial cell state"),
+            ('CORE', "Core",    "Immutable cells that cannot be removed"),
+            ('AIR', "Air",      "Detached cells that have been removed")
+        ),
+        default={'SOLID'},
+        options={'ENUM_FLAG'},
+    )
 
-        # call recalc op once
-        if not links and getPrefs().util_recalc_OT_auto:
-            bpy.ops.mw.gen_recalc()
-            obj, cfg, links = MW_gen_recalc_OT.getSelectedRoot_links()
+    def __init__(self) -> None:
+        super().__init__()
+        # config some base class log flags...
+        self.invoke_log = True
 
-        return obj, cfg, links
+    @classmethod
+    def poll(cls, context):
+        # OPT:: if the cells store the state, then there is no need to poll fract + could recover it
+        return MW_global_selected.fract and MW_id_utils.hasCellId(MW_global_selected.current)
+
+    def draw(self, context: types.Context):
+        # override parent class drawing, just the enum
+        self.layout.prop(self, "set_state")
+
+    def invoke(self, context, event):
+        # set to current state
+        cell_id = MW_global_selected.current.mw_id.cell_id
+        cell_state = MW_global_selected.fract.cont.cells_state[cell_id]
+        self.set_state = {STATE_ENUM.to_str(cell_state)}
+
+        # set args before execution to confirm
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
+    def execute(self, context: types.Context):
+        self.start_op()
+        DEV.log_msg(f"arg_state: {self.set_state}")
+        state = STATE_ENUM.from_str(self.set_state.pop())
+        mw_setup.set_cellsState(MW_global_selected.fract, MW_global_selected.root, MW_global_selected.selection, state)
+        # TODO:: recalc some link stuff + components
+        return self.end_op()
 
 #-------------------------------------------------------------------
 
@@ -312,32 +392,18 @@ class MW_gen_links_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_gen_cfg.hasSelectedRoot()
+        return MW_global_selected.fract
 
     def execute(self, context: types.Context):
         self.start_op()
-
-        obj, cfg, links = MW_gen_recalc_OT.getSelectedRoot_links_autoRecalc()
-        if not links:
-            return self.end_op_error("No links storage found...")
-
-        ## WIP:: per cell no need but atm cont ref is inside LinkCollection structure
-        #obj_links_legacy = mw_setup.genWIP_linksEmptiesPerCell(obj, cfg, context)
-        #mw_setup.genWIP_linksCellObjects(obj_links_legacy, links.cont, cfg, context)
-
-        #obj_links, obj_links_air = mw_setup.genWIP_linksEmpties(obj, cfg, context)
-        ##mw_setup.genWIP_linksObjects(obj_links, obj_links_air, links, cfg, context)
-        #mw_setup.gen_linksSingleObject(obj_links, obj_links_air, links, cfg, context)
-
-        mw_setup.gen_linksObject(obj, links, cfg, context)
-        mw_setup.gen_linksWallObject(obj, links, cfg, context)
-
+        mw_setup.gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
+        #mw_setup.gen_linksWallObject(MW_global_selected.fract, MW_global_selected.root, context)
         return self.end_op()
 
     def end_op(self, msg="", skipLog=False, retPass=False):
-        """ OVERRIDE:: end_op to perform assign child to all """
-        obj, cfg = MW_gen_cfg.getSelectedRoot()
-        if obj: MW_gen_cfg.setMetaType(obj, {"CHILD"}, skipParent=True)
+        """ # OVERRIDE:: end_op to perform assign child to all """
+        obj = MW_global_selected.root
+        if obj: MW_id_utils.setMetaType(obj, {"CHILD"}, skipParent=True)
         return super().end_op(msg, skipLog, retPass)
 
 #-------------------------------------------------------------------
@@ -349,8 +415,8 @@ class MW_sim_step_OT(_StartRefresh_OT):
 
     bl_options = {'PRESET', 'REGISTER', 'UNDO'}
     cfg: props.PointerProperty(type=MW_sim_cfg)
-    sim: mw_sim.Simulation = None
-    links: LinkCollection = None
+    sim: mw_sim.MW_Sim = None
+    links: MW_Links = None
 
     def __init__(self) -> None:
         super().__init__()
@@ -365,40 +431,36 @@ class MW_sim_step_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_gen_cfg.hasSelectedRoot()
+        return MW_global_selected.fract
 
     def invoke(self, context, event):
-        obj, cfgGen, self.links = MW_gen_recalc_OT.getSelectedRoot_links_autoRecalc()
-        if not self.links:
-            return self.end_op_error("No links storage found...")
-
         # create simulation object
-        self.sim = mw_sim.Simulation(self.links)
+        self.links = MW_global_selected.fract.links
+        self.sim = mw_sim.MW_Sim(self.links)
 
         return super().invoke(context, event)
 
     def execute(self, context: types.Context):
         self.start_op()
-        cfg : MW_sim_cfg= self.cfg
+        sim_cfg : MW_sim_cfg= self.cfg
 
         # handle refresh
         cancel = self.checkRefresh_cancel()
         if cancel: return self.end_op_refresh(skipLog=True)
 
         # achieve constructive results during adjust op menu
-        self.sim.resetSim(cfg.addSeed)
-        self.sim.set_deg(cfg.deg)
-        DEV.log_msg(f"steps({cfg.steps}) subSteps({cfg.subSteps}) deg({cfg.deg})", {'SETUP'})
+        self.sim.resetSim(sim_cfg.debug_addSeed)
+        self.sim.set_deg(sim_cfg.step_deg)
+        DEV.log_msg(f"step_infiltrations({sim_cfg.step_infiltrations}) step_maxDepth({sim_cfg.step_maxDepth}) step_deg({sim_cfg.step_deg})", {'SETUP'})
 
-        for step in range(cfg.steps):
-            if cfg.steps_uniformDeg: self.sim.stepAll()
-            else: self.sim.step(cfg.subSteps)
+        for step in range(sim_cfg.step_infiltrations):
+            if sim_cfg.debug_uniformDeg: self.sim.stepAll()
+            else: self.sim.step(sim_cfg.step_maxDepth)
 
         # IDEA:: store copy or original or button to recalc links from start? -> set all life to 1 but handle any dynamic list
-        obj, cfgGen = MW_gen_cfg.getSelectedRoot()
-        if obj:
-            mw_setup.gen_linksObject(obj, self.links, cfgGen, context)
-            mw_setup.gen_linksWallObject(obj, self.links, cfgGen, context, self.sim.step_trace.entryL_candidatesW if self.sim.trace else None)
+        mw_setup.gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
+        mw_setup.gen_linksWallObject(MW_global_selected.fract, MW_global_selected.root, context,
+                                    self.sim.step_trace.entryL_candidatesW if self.sim.trace else None)
 
         return self.end_op()
 
@@ -408,7 +470,6 @@ class MW_sim_reset_OT(_StartRefresh_OT):
     bl_description = "WIP: sim reset"
 
     bl_options = {'INTERNAL', 'UNDO'}
-    links: LinkCollection = None
 
     def __init__(self) -> None:
         super().__init__()
@@ -416,29 +477,23 @@ class MW_sim_reset_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_gen_cfg.hasSelectedRoot()
-
-    def invoke(self, context, event):
-        obj, cfgGen, self.links = MW_gen_recalc_OT.getSelectedRoot_links()
-        if not self.links:
-            return self.end_op_error("No links storage found...")
-
-        return super().invoke(context, event)
+        return MW_global_selected.fract
 
     def execute(self, context: types.Context):
         self.start_op()
+
+        # TODO:: global sim atm
+        self.links = MW_global_selected.fract.links
         mw_sim.resetLife(self.links)
 
-        obj, cfgGen = MW_gen_cfg.getSelectedRoot()
-        if obj:
-            mw_setup.gen_linksObject(obj, self.links, cfgGen, context)
-            mw_setup.gen_linksWallObject(obj, self.links, cfgGen, context)
+        mw_setup.gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
+        mw_setup.gen_linksWallObject(MW_global_selected.fract, MW_global_selected.root, context)
         return self.end_op()
 
 #-------------------------------------------------------------------
 
 class MW_util_comps_OT(_StartRefresh_OT):
-    bl_idname = "mw.util_omps"
+    bl_idname = "mw.util_comps"
     bl_label = "check comps"
     bl_description = "WIP: check connected components"
 
@@ -450,18 +505,11 @@ class MW_util_comps_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_gen_cfg.hasSelectedRoot()
-
-    def invoke(self, context, event):
-        obj, cfgGen, self.links = MW_gen_recalc_OT.getSelectedRoot_links()
-        if not self.links:
-            return self.end_op_error("No links storage found...")
-
-        return super().invoke(context, event)
+        return MW_global_selected.fract
 
     def execute(self, context: types.Context):
         self.start_op()
-        mw_extraction.get_connected_comps(self.links)
+        mw_extraction.get_connected_comps(MW_global_selected.fract)
         return self.end_op()
 
 class MW_util_bool_OT(_StartRefresh_OT):
@@ -477,17 +525,17 @@ class MW_util_bool_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_gen_cfg.hasSelectedRoot()
+        return MW_global_selected.root
 
     def execute(self, context: types.Context):
         self.start_op()
-        obj, cfg = MW_gen_cfg.getSelectedRoot()
+        obj = MW_global_selected.root
 
         if obj:
             prefs = getPrefs()
-            obj_original = utils.get_child(obj, prefs.names.original_copy + prefs.names.original)
-            obj_shards = utils.get_child(obj, prefs.names.shards)
-            mw_extraction.boolean_mod_add(obj_original, obj_shards, context)
+            obj_original = utils_scene.get_child(obj, prefs.names.original_copy, mode="STARTS_WITH")
+            obj_cells = utils_scene.get_child(obj, prefs.names.cells)
+            mw_extraction.boolean_mod_add(obj_original, obj_cells, context)
 
         return self.end_op()
 
@@ -501,27 +549,28 @@ class MW_util_delete_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_gen_cfg.hasSelectedRoot()
+        return MW_global_selected.root
 
     def execute(self, context: types.Context):
         self.start_op()
-        obj, cfg = MW_gen_cfg.getSelectedRoot()
         prefs = getPrefs()
+        obj = MW_global_selected.root
+        gen_cfg = obj.mw_gen
 
         # optionally unhide the original object
         if (prefs.util_delete_OT_unhideSelect):
-            obj_original = utils.get_object_fromScene(context.scene, cfg.struct_nameOriginal)
+            obj_original = utils_scene.get_object_fromScene(context.scene, gen_cfg.struct_nameOriginal)
             if not obj_original:
                 self.logReport("obj_original not found -> wont unhide")
             else:
-                utils.select_unhideRec(obj_original, context, selectChildren=False)
+                utils_scene.select_unhideRec(obj_original, context, selectChildren=False)
 
-        # free memory from potential links map
-        if cfg.ptrID_links and prefs.prefs_links_undoPurge:
-            LinkStorage.freeLinks(cfg.ptrID_links)
+        # potentially free memory from storage
+        if prefs.prefs_autoPurge and MW_global_storage.hasFract(obj):
+            MW_global_storage.freeFract(obj)
 
         # finally delete the fracture object recusively
-        utils.delete_objectRec(obj, logAmount=True)
+        utils_scene.delete_objectRec(obj, logAmount=True)
         return self.end_op()
 
 class MW_util_delete_all_OT(_StartRefresh_OT):
@@ -536,13 +585,13 @@ class MW_util_delete_all_OT(_StartRefresh_OT):
         self.start_op()
 
         # iterate and delete roots
-        roots = MW_gen_cfg.getSceneRoots(context.scene)
+        roots = MW_id_utils.getSceneRoots(context.scene)
         for obj_root in roots:
-            MW_gen_cfg.setSelectedRoot([obj_root])
+            MW_global_selected.setSelected([obj_root])
             bpy.ops.mw.util_delete()
 
-        #MW_gen_cfg.resetSelectedRoot()
-        MW_gen_cfg.setSelectedRoot(context.selected_objects)
+        #MW_global_selected.resetSelected()
+        MW_global_selected.setSelected(context.selected_objects)
         return self.end_op()
 
 #-------------------------------------------------------------------
@@ -550,21 +599,23 @@ class MW_util_delete_all_OT(_StartRefresh_OT):
 class MW_util_bake_OT(_StartRefresh_OT):
     bl_idname = "mw.util_bake"
     bl_label = "Bake"
-    bl_description = "Unlink the shard from the fracture, e.g. to recursive fracture it"
+    bl_description = "Unlink the cell from the fracture, e.g. to recursive fracture it"
 
     # UNDO as part of bl_options will cancel any edit last operation pop up
     bl_options = {'INTERNAL', 'UNDO'}
 
     @classmethod
     def poll(cls, context):
-        return context.selected_objects and MW_gen_cfg.isChild(context.selected_objects[-1])
+        return MW_global_selected.current and MW_id_utils.isChild(MW_global_selected.current)
 
     def execute(self, context: types.Context):
         self.start_op(skipStats=True)
-        obj = context.selected_objects[-1]
-        obj.parent = None
-        MW_gen_cfg.setMetaType(obj, {"NONE"})
-        MW_gen_cfg.setSelectedRoot(context.selected_objects)
+        cell = utils_scene.copy_object(MW_global_selected.current, context)
+
+        cell.parent = None
+        MW_id_utils.resetMetaType(cell)
+        utils_scene.select_nothing()
+        utils_scene.select_unhide(cell, context)
         return self.end_op(skipLog=True)
 
 #-------------------------------------------------------------------
@@ -573,6 +624,8 @@ class MW_util_bake_OT(_StartRefresh_OT):
 classes = [
     MW_gen_OT,
     MW_gen_recalc_OT,
+
+    MW_cell_state_OT,
     MW_gen_links_OT,
 
     MW_sim_step_OT,
