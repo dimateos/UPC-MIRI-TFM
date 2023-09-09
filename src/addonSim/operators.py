@@ -540,7 +540,7 @@ class MW_util_bool_OT(_StartRefresh_OT):
             prefs = getPrefs()
             obj_original = utils_scene.get_child(obj, prefs.names.original_copy, mode="STARTS_WITH")
             obj_cells = utils_scene.get_child(obj, prefs.names.cells)
-            mw_extraction.boolean_mod_add(obj_original, obj_cells, context, prefs.util_bool_OT_apply)
+            mw_extraction.boolean_mod_add(context, obj_original, obj_cells, prefs.util_bool_OT_apply)
 
         return self.end_op()
 

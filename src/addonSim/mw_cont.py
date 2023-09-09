@@ -261,21 +261,28 @@ class MW_Cont:
             self.cells_state[idx_cell] = obj_cell.mw_id.cell_state
 
         # check some deleted obj (meshes not checked)
-        ok, broken = self.getCells_splitID_needsSanitize()
+        ok, broken, error = self.getCells_splitID_needsSanitize()
         self.setCells_missing(broken)
 
     def getCells_splitID_needsSanitize(self):
         """ Detect broken references to scene objects """
         broken = []
         ok = []
+        error = []
 
         for id in self.foundId:
             cell = self.cells_objs[id]
+
+            if cell in ERROR_ENUM.all:
+                error.append(id)
+                continue
+
             if utils_scene.needsSanitize(cell):
                 broken.append(id)
             else:
                 ok.append(id)
-        return ok, broken
+
+        return ok, broken, error
 
     def setCells_missing(self, broken:list[int]):
         """ Mark as DELETED to be treated as AIR but without access to geometry, dont touch other arrays """

@@ -223,20 +223,6 @@ def points_transformCfg(points: list[Vector], cfg: MW_gen_cfg, bb_radius: float)
 
 #-------------------------------------------------------------------
 
-# TODO:: check already have it? faster to add to all at once too
-def boolean_mod_add(obj_original: types.Object, obj_cells_root: types.Object, context: types.Context):
-    c = obj_cells_root.children
-    for obj_cell in c:
-        mod = obj_cell.modifiers.new(name="Boolean", type='BOOLEAN')
-        mod.object = obj_original
-        mod.operation = 'INTERSECT'
-        mod.solver = "FAST"
-
-    DEV.log_msg(f"Applied boolean to {len(c)} cells)", {"CALC", "MOD"})
-
-    # Calculates all booleans at once (faster).
-    depsgraph = context.evaluated_depsgraph_get()
-
 def get_connected_comps(fract: MW_Fract):
     """ # NOTE:: old method, now done with networkx """
     cell_union = UnionFind(len(fract.cont.foundId))
@@ -246,3 +232,98 @@ def get_connected_comps(fract: MW_Fract):
 
     DEV.log_msg(f"Extracted {cell_union.num_components} components", {"CALC", "COMP"})
     return cell_union
+
+_boolean_mod_add_name = "MW_boolean"
+def boolean_mod_add(context: types.Context, obj_original: types.Object, obj_cells_root: types.Object, apply=False):
+    """ Add or reuse boolean op to cells """
+    global _boolean_mod_add_name
+    cells = obj_cells_root.children
+    for obj_cell in cells:
+        mod = None
+
+        # potentially reuse existing modifier
+        for obj_mod in obj_cell.modifiers:
+            if obj_mod.name == _boolean_mod_add_name:
+                mod = obj_mod
+                break
+
+        if mod is None:
+            mod = obj_cell.modifiers.new(name=_boolean_mod_add_name, type='BOOLEAN')
+        mod.object = obj_original
+        mod.operation = 'INTERSECT'
+        mod.solver = "FAST"
+
+        #if apply:
+        #    bpy.context.view_layer.objects.active = obj_cell
+        #    bpy.ops.object.modifier_apply(modifier=_boolean_mod_add_name)
+
+    # apply to all at once (way faster)
+    if apply:
+        boolean_mod_apply(context, cells)
+
+    DEV.log_msg(f"Added boolean to {len(cells)} cells)", {"CALC", "MOD"})
+
+    # Calculates all booleans at once (faster).
+    depsgraph = context.evaluated_depsgraph_get()
+
+def boolean_mod_apply( context, objects, clean=True, remove_doubles=True):
+    """ Apply modifier too all cells at once (faster)
+        # ref: cell fracture modifier +simplify for just apply to all
+    """
+    import bmesh
+    objects_boolean = []
+
+    # Calculates all booleans at once (faster).
+    depsgraph = context.evaluated_depsgraph_get()
+
+    for obj_cell in objects:
+        obj_cell_eval = obj_cell.evaluated_get(depsgraph)
+        mesh_new = bpy.data.meshes.new_from_object(obj_cell_eval)
+        mesh_old = obj_cell.data
+        obj_cell.data = mesh_new
+        obj_cell.modifiers.remove(obj_cell.modifiers[-1])
+
+        # remove if not valid
+        if not mesh_old.users:
+            bpy.data.meshes.remove(mesh_old)
+        if not mesh_new.vertices:
+            context.scene.collection.objects.unlink(obj_cell)
+            if not obj_cell.users:
+                bpy.data.objects.remove(obj_cell)
+                obj_cell = None
+                if not mesh_new.users:
+                    bpy.data.meshes.remove(mesh_new)
+                    mesh_new = None
+
+        # avoid unneeded bmesh re-conversion
+        if mesh_new is not None:
+            bm = None
+            if clean:
+                if bm is None:  # ok this will always be true for now...
+                    bm = bmesh.new()
+                    bm.from_mesh(mesh_new)
+                bm.normal_update()
+                try:
+                    bmesh.ops.dissolve_limit(bm, verts=bm.verts, edges=bm.edges, angle_limit=0.001)
+                except RuntimeError:
+                    import traceback
+                    traceback.print_exc()
+
+            if remove_doubles:
+                if bm is None:
+                    bm = bmesh.new()
+                    bm.from_mesh(mesh_new)
+                bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.005)
+
+            if bm is not None:
+                bm.to_mesh(mesh_new)
+                bm.free()
+
+        del mesh_new
+        del mesh_old
+
+        if obj_cell is not None:
+            objects_boolean.append(obj_cell)
+
+    context.view_layer.update()
+    return objects_boolean
