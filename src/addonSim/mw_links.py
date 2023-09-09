@@ -1,10 +1,10 @@
 import bpy.types as types
 from mathutils import Vector, Matrix
 INF_FLOAT = float("inf")
+import networkx as nx
 
 from .mw_cont import MW_Cont, ERROR_ENUM, linkCells_key_t, linkFaces_key_t
 from . import mw_resistance
-import networkx as nx
 
 from . import utils, utils_trans
 from .utils_dev import DEV
@@ -105,9 +105,10 @@ class MW_Links():
 
         self.cells_graph = nx.Graph()
         """ Graph connecting the cells to find connected components """
+        self.cells_graph.add_nodes_from(cont.foundId)
         self.comps = []
         """ List of sets with connected components cells id """
-        self.cells_graph.add_nodes_from(cont.foundId)
+        self.comps_len = -1
 
         self.link_map: dict[linkCells_key_t, Link] = dict()
         """ Static global link map storage, indexed by key with no repetitions """
@@ -158,7 +159,6 @@ class MW_Links():
                 # get world props
                 face: types.MeshPolygon = me.polygons[idx_face]
                 pos = m_toWorld @ face.center
-                if DEV.DEBUG_COMPS and abs(pos.x) < 0.5: continue
                 normal = mn_toWorld @ face.normal
                 area = face.area
                 # NOTE:: rotated normals may potentially have a length of 1.0 +- 1e-8 but not worth normalizing
@@ -265,10 +265,40 @@ class MW_Links():
 
         stats.logDt("aggregated link neighbours")
 
-        self.comps = list(nx.connected_components(self.cells_graph))
-        stats.logDt(f"calculated components: {len(self.comps)}")
+        self.comps_recalc()
 
         logType = {"CALC", "LINKS"}
         if not self.link_map: logType |= {"ERROR"}
         DEV.log_msg(f"Found {len(self.link_map)} links: {len(self.external)} external | {len(self.internal)} internal", logType)
         self.initialized = True
+
+    def sanitize(self, root):
+        """ Remove deleted cells from the graph and recalculate comps
+            # OPT:: due to potential UNDO/REDO making cells reapear all foundID are added again
+        """
+        cleaned = False
+        if not self.cont.deletedId or self.cont.deletedId == self.cont.deletedId_prev:
+            return cleaned
+
+        # detect changes
+        curr = set(self.cont.deletedId)
+        prev = set(self.cont.deletedId_prev)
+        newDeleted = curr - prev
+        newAdded = prev - curr
+
+        # add / remove cells
+        self.cells_graph.add_nodes_from(newAdded)
+        self.cells_graph.remove_nodes_from(newDeleted)
+
+        # recalculate the components
+        self.comps_recalc()
+        return cleaned
+
+    def comps_recalc(self):
+        """ Recalc cell connected componentes, return true when changed """
+        prevLen = self.comps_len
+        self.comps = list(nx.connected_components(self.cells_graph))
+        self.comps_len = len(self.comps)
+        newSplit = prevLen != self.comps_len
+        getStats().logDt(f"calculated components: {self.comps_len} {'[new SPLIT]' if newSplit else ''}")
+        return newSplit

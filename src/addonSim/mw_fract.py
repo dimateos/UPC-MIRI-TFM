@@ -28,8 +28,14 @@ class MW_Fract:
         self.sim = None
 
     def sanitize(self, root):
+        cleaned = False
+
         if self.cont:
-            self.cont.sanitize(root)
+            cleaned |= self.cont.sanitize(root)
+        if self.links:
+            cleaned |= self.links.sanitize(root)
+
+        return cleaned
 
 #-------------------------------------------------------------------
 # Blender events

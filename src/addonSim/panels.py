@@ -187,7 +187,9 @@ class MW_gen_PT(types.Panel):
 
             # more stuff
             col = layout.column()
-            col.operator(ops.MW_util_comps_OT.bl_idname, icon="NODE_COMPOSITING")
+            col_rowSplit = col.row().split(factor=0.66)
+            col_rowSplit.operator(ops.MW_util_comps_OT.bl_idname, icon="NODE_COMPOSITING")
+            col_rowSplit.prop(prefs, "util_comps_OT_apply")
 
             col_rowSplit = col.row().split(factor=0.66)
             col_rowSplit.operator(ops.MW_util_bool_OT.bl_idname, icon="MOD_BOOLEAN")

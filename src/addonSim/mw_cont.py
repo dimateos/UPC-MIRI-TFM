@@ -239,8 +239,9 @@ class MW_Cont:
 
     def sanitize(self, root):
         """ Query all objects references from the scene again, sometimes just in case """
-        DEV.log_msg(f"Sanitizing cont", {"CONT", "SANITIZE"})
+        cleaned = self.root != root
         self.root = root
+        DEV.log_msg(f"Sanitizing cont", {"CONT", "SANITIZE"})
 
         # query cell roots and their children
         prefs = getPrefs()
@@ -258,42 +259,47 @@ class MW_Cont:
             self.cells_objs[idx_cell] = obj_cell
             self.cells_meshes[idx_cell] = obj_cell.data
             # also recover state from scene
+            cleaned |= self.cells_state[idx_cell] == obj_cell.mw_id.cell_state
             self.cells_state[idx_cell] = obj_cell.mw_id.cell_state
 
         # check some deleted obj (meshes not checked)
         ok, broken, error = self.getCells_splitID_needsSanitize()
         self.setCells_missing(broken)
+        cleaned |= self.deletedId != self.deletedId_prev
+        return cleaned
 
     def getCells_splitID_needsSanitize(self):
         """ Detect broken references to scene objects """
-        broken = []
-        ok = []
-        error = []
+        ok, broken, error = [],[],[]
+        broken_prev = []
 
         for id in self.foundId:
             cell = self.cells_objs[id]
 
-            if cell in ERROR_ENUM.all:
+            # skip build error
+            if cell == ERROR_ENUM.MISSING or cell == ERROR_ENUM.ASYMMETRY:
                 error.append(id)
                 continue
 
-            if utils_scene.needsSanitize(cell):
+            # deleted broken references
+            if cell == ERROR_ENUM.DELETED:
+                broken_prev.append(id)
+            elif utils_scene.needsSanitize(cell):
                 broken.append(id)
             else:
                 ok.append(id)
 
-        return ok, broken, error
+        return ok, broken+broken_prev, error
 
     def setCells_missing(self, broken:list[int]):
         """ Mark as DELETED to be treated as AIR but without access to geometry, dont touch other arrays """
-        self.deletedId = broken.copy()
+        self.deletedId_prev = self.deletedId
+        self.deletedId = broken
 
         for id in broken:
             self.cells_objs[id] = ERROR_ENUM.DELETED
             self.cells_meshes[id] = ERROR_ENUM.DELETED
             self.cells_state[id] = STATE_ENUM.AIR
-
-        # TODO:: links should remove some
 
     #-------------------------------------------------------------------
 

@@ -243,10 +243,10 @@ class MW_prefs(bpy.types.AddonPreferences):
         name="unhide", description="Unhide the original object after deletion",
         default=True,
     )
-    #util_comps_OT_unhideSelect: props.BoolProperty(
-    #    name="unhide", description="Unhide the original object after deletion",
-    #    default=True,
-    #)
+    util_comps_OT_apply: props.BoolProperty(
+        name="apply", description="Change the state to air to removed cells",
+        default=False,
+    )
     util_bool_OT_apply: props.BoolProperty(
         name="apply", description="Apply the modifier after adding it",
         default=False,

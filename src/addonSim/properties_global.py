@@ -421,17 +421,30 @@ class MW_global_selected:
     @classmethod
     def sanitize(cls):
         """ Potentially sanitize objects no longer on the scene """
+        cleaned = False
+
         if utils_scene.needsSanitize(cls.current):
             cls.reset()
+            cleaned |= True
         else:
-            cls.prevalid_sanitize()
+            cleaned |= cls.prevalid_sanitize()
+
+        return cleaned
 
     @classmethod
     def prevalid_sanitize(cls):
+        cleaned = False
+
         cls.prevalid_current = utils_scene.returnSanitized(cls.prevalid_current)
+        if cls.prevalid_current is None:
+            cleaned |= True
+
         cls.prevalid_root = utils_scene.returnSanitized(cls.prevalid_root)
         if cls.prevalid_root is None:
             cls.prevalid_fract = None
+            cleaned |= True
+
+        return cleaned
 
     # callback triggers
     @classmethod

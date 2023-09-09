@@ -207,29 +207,6 @@ def gen_cellsObjects(fract: MW_Fract, root: types.Object, context: types.Context
     getStats().logDt("generated cells objects")
     return cells
 
-def set_cellsState(fract: MW_Fract, root: types.Object, cells: list[types.Object], state:int):
-    prefs = getPrefs()
-    assert(state in STATE_ENUM.all)
-
-    # take respective parent object
-    if state == STATE_ENUM.SOLID:
-        root_cells = utils_scene.get_child(root, prefs.names.cells)
-    elif state == STATE_ENUM.CORE:
-        root_cells = utils_scene.get_child(root, prefs.names.cells_core)
-    elif state == STATE_ENUM.AIR:
-        root_cells = utils_scene.get_child(root, prefs.names.cells_air)
-
-    for cell in cells:
-        # some selection could be an outside obj or a cell from other fract!
-        if not MW_id_utils.hasCellId(cell): continue
-        if not MW_id_utils.sameStorageId(root, cell): continue
-
-        # set the state and the parent (also the same mat as the parent)
-        fract.cont.cells_state[cell.mw_id.cell_id] = state
-        cell.mw_id.cell_state = state
-        cell.active_material = root_cells.active_material
-        cell.parent = root_cells
-
 def gen_cells_LEGACY(voro_cont: VORO_Container, root: types.Object, context: types.Context):
     root_cells = utils_scene.gen_child(root, getPrefs().names.cells, context, None, keepTrans=False)
 
@@ -275,6 +252,29 @@ def gen_cells_LEGACY(voro_cont: VORO_Container, root: types.Object, context: typ
     stVolume = np.std(volume)
     stArea = np.std(surface_area)
     getStats().logDt("calculated stats (use breakpoints to see)")
+
+def set_cellsState(fract: MW_Fract, root: types.Object, cells: list[types.Object], state:int):
+    prefs = getPrefs()
+    assert(state in STATE_ENUM.all)
+
+    # take respective parent object
+    if state == STATE_ENUM.SOLID:
+        root_cells = utils_scene.get_child(root, prefs.names.cells)
+    elif state == STATE_ENUM.CORE:
+        root_cells = utils_scene.get_child(root, prefs.names.cells_core)
+    elif state == STATE_ENUM.AIR:
+        root_cells = utils_scene.get_child(root, prefs.names.cells_air)
+
+    for cell in cells:
+        # some selection could be an outside obj or a cell from other fract!
+        if not MW_id_utils.hasCellId(cell): continue
+        if not MW_id_utils.sameStorageId(root, cell): continue
+
+        # set the state and the parent (also the same mat as the parent)
+        fract.cont.cells_state[cell.mw_id.cell_id] = state
+        cell.mw_id.cell_state = state
+        cell.active_material = root_cells.active_material
+        cell.parent = root_cells
 
 #-------------------------------------------------------------------
 

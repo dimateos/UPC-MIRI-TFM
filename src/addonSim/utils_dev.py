@@ -8,7 +8,6 @@ class DEV:
     DEBUG_MODEL           = True    # fake 2D so ignore some directional links (at sim)
     DEBUG_UI              = True    # some additional debug UI
 
-    DEBUG_COMPS           = False   # break links at the middle of the model to test comps (at link gen)
     ASSERT_CELL_POS       = False   # assert some local and global pos match
     LEGACY_CONT           = False   # check some stats of legacy cont
 

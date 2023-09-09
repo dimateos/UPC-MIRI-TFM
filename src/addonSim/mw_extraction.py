@@ -3,7 +3,7 @@ import bpy.types as types
 from mathutils import Vector
 import mathutils.noise as bl_rnd
 import random as rnd
-INF_FLOAT = float("inf")
+from .unionfind import UnionFind
 
 from .preferences import getPrefs
 from .properties import (
@@ -12,7 +12,6 @@ from .properties import (
 )
 
 from .mw_fract import MW_Fract
-from .unionfind import UnionFind
 
 from . import utils_scene, utils_trans
 from .utils_dev import DEV
@@ -223,7 +222,7 @@ def points_transformCfg(points: list[Vector], cfg: MW_gen_cfg, bb_radius: float)
 
 #-------------------------------------------------------------------
 
-def get_connected_comps(fract: MW_Fract):
+def get_connected_comps_unionFind(fract: MW_Fract):
     """ # NOTE:: old method, now done with networkx """
     cell_union = UnionFind(len(fract.cont.foundId))
 

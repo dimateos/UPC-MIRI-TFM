@@ -365,7 +365,6 @@ class MW_cell_state_OT(_StartRefresh_OT):
 
     def execute(self, context: types.Context):
         self.start_op()
-        DEV.log_msg(f"arg_state: {self.set_state}")
         state = STATE_ENUM.from_str(self.set_state.pop())
         mw_setup.set_cellsState(MW_global_selected.fract, MW_global_selected.root, MW_global_selected.selection, state)
         # TODO:: recalc some link stuff + components
@@ -510,11 +509,23 @@ class MW_util_comps_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_global_selected.fract
+        return MW_global_selected.fract and MW_global_selected.fract.links
 
     def execute(self, context: types.Context):
         self.start_op()
-        mw_extraction.get_connected_comps(MW_global_selected.fract)
+        #comps = mw_extraction.get_connected_comps_unionFind(MW_global_selected.fract)
+
+        # check potentially deleted cells etc
+        MW_global_selected.fract.sanitize(MW_global_selected.root)
+
+        # query comps from links
+        links : MW_Links = MW_global_selected.fract.links
+        comps = links.comps
+        DEV.log_msg(f"Current components: {len(comps)}")
+
+        if getPrefs().util_comps_OT_apply:
+            pass
+
         return self.end_op()
 
 class MW_util_bool_OT(_StartRefresh_OT):
@@ -604,7 +615,7 @@ class MW_util_delete_all_OT(_StartRefresh_OT):
 class MW_util_bake_OT(_StartRefresh_OT):
     bl_idname = "mw.util_bake"
     bl_label = "Bake"
-    bl_description = "Unlink the cell from the fracture, e.g. to recursive fracture it"
+    bl_description = "Copy and unlink the cell from the fracture, e.g. to recursive fracture it"
 
     # UNDO as part of bl_options will cancel any edit last operation pop up
     bl_options = {'INTERNAL', 'UNDO'}
