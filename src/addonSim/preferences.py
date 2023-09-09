@@ -26,13 +26,16 @@ def getPrefs() -> "MW_prefs":
 class MW_dev(types.PropertyGroup):
     """ Toggle some DEV flags in runtime """
     meta_show_props: props.BoolProperty(
-        description="Show DEV cfg",
         default=True,
     )
 
     DEBUG_MODEL : props.BoolProperty(
         default=DEV.DEBUG_MODEL,
         update=lambda self, context: setattr(DEV, "DEBUG_MODEL", self.DEBUG_MODEL),
+    )
+    DEBUG_UI : props.BoolProperty(
+        default=DEV.DEBUG_UI,
+        update=lambda self, context: setattr(DEV, "DEBUG_UI", self.DEBUG_UI),
     )
 
     logs : props.BoolProperty(
@@ -72,7 +75,7 @@ class DM_utils(types.PropertyGroup):
     )
     meta_scene_info: props.BoolProperty(
         name="Inspect SCENE", description="Show some scene info",
-        default=False,
+        default=True,
     )
     meta_show_debug: props.BoolProperty(
         name="debug...", description="WIP: Show some debug stuff",
@@ -136,8 +139,8 @@ class MW_prefs(bpy.types.AddonPreferences):
     def draw(self, context):
         """ Draw in preferences panel"""
         # Careful with circulare dependecies, maybe split the class with draw and props
-        from .ui import draw_propsToggle
-        draw_propsToggle(self, getPrefs().prefs_PT_meta_inspector, self.layout)
+        from .ui import draw_propsToggle_full
+        draw_propsToggle_full(self, getPrefs().prefs_PT_meta_inspector, self.layout)
 
     #-------------------------------------------------------------------
 
@@ -270,6 +273,9 @@ def register():
     if DEV.CALLBACK_REGISTER_ALL:
         prefs.dev_PT_meta_cfg.logs = False
         prefs.dev_PT_meta_cfg.logs_type_whitelist = "TEST-HANDLERS"
+
+    # toggle some defautls per inspector
+    #prefs.prefs_PT_meta_inspector.meta_show_1 = True
 
 def unregister():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})

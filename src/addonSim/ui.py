@@ -29,21 +29,13 @@ def draw_toggleBox(metadata, propToggle_name:str, layout: types.UILayout, text:s
     box = layout.box()
     open = getattr(metadata, propToggle_name)
     icon = CONST_ICONS.section_opened if open else CONST_ICONS.section_closed
-    box.scale_y = scaleBox
 
-    # apply scale before to affect title
-    if open:
-        box.scale_y = scaleBox*scaleOpen
+    # optinal reduced spacing
+    if returnCol: box = box.column()
+    box.scale_y = scaleBox*scaleOpen if open else scaleBox
 
     # draw title with icon
-    if text:
-        box.prop(metadata, propToggle_name, toggle=True, icon=icon, text=text)
-    else:
-        box.prop(metadata, propToggle_name, toggle=True, icon=icon)
-
-    # create a column to reduce spacing
-    if open:
-        if returnCol: box = box.column()
+    box.prop(metadata, propToggle_name, toggle=True, icon=icon, text=text)
 
     return open, box
 
@@ -59,41 +51,39 @@ def draw_props(data, propFilter:str, layout: types.UILayout, showId=False, showD
     prop_names = getProps_namesFiltered(data, propFilter, exc_nonBlProp=True, showDefault=showDefault)
     draw_props_raw(data, prop_names, layout, showId)
 
-def draw_propsToggle(data, data_inspector:Prop_inspector, layout:types.UILayout, text:str="Properties",
-                     scaleBox=1, scaleOpen=0.9, scaleDebug=0.9, returnCol=True) -> tuple[bool, types.UILayout]:
-    """ Draw all properties of an object under a toggleable layout. """
+#-------------------------------------------------------------------
+
+def draw_propsToggle_custom(data, data_inspector:Prop_inspector, layout:types.UILayout,
+                            propToggle_name="meta_show_props", text:str=None,
+                            propToggle_debug_name="meta_show_debug_props", text_debug:str=None,
+                            propFilter="-meta,-debug", showDefault=True, showId=False, editable=True, splitDebug=False,
+                            scaleBox=1, scaleOpen=0.9, scaleDebug=0.9, returnCol=True, userCustom=False) -> tuple[bool, types.UILayout]:
+    """ Draw some properties of an object under a custom toggleable layout, inclues an inner debug toggle. """
 
     # outer fold
-    open, box = draw_toggleBox(data_inspector, "meta_show_props", layout, text, scaleBox, scaleOpen, returnCol)
+    open, box = draw_toggleBox(data_inspector, propToggle_name, layout, text, scaleBox, scaleOpen, returnCol)
     if open:
-        # top of filter
-        split = box.split(factor=0.25)
-        split.prop(data_inspector, "meta_propShowId")
-        split.prop(data_inspector, "meta_propDefault")
-        split.prop(data_inspector, "meta_propEdit")
-        showDefault = getattr(data_inspector, "meta_propDefault")
-        showId = getattr(data_inspector, "meta_propShowId")
-        editable = getattr(data_inspector, "meta_propEdit")
-        propFilter = getattr(data_inspector, "meta_propFilter")
+        # top of filter (fixed prop names)
+        if userCustom:
+            split = box.split(factor=0.25)
+            split.prop(data_inspector, "meta_propShowId")
+            split.prop(data_inspector, "meta_propDefault")
+            split.prop(data_inspector, "meta_propEdit")
+            box.prop(data_inspector, "meta_propFilter", text="")
 
         # filter props
-        box.prop(data_inspector, "meta_propFilter", text="")
         prop_names = getProps_namesFiltered(data, propFilter, exc_nonBlProp=True, showDefault=showDefault)
 
         # split debug props
-        splitDebug = getattr(data_inspector, "meta_show_debug_split")
         if splitDebug:
             prop_names, debug_names = getProps_splitDebug(prop_names)
-        else:
-            debug_names = None
-
-        if (debug_names):
-            # debug inner fold
-            open_debug, box_debug = draw_toggleBox(data_inspector, "meta_show_debug_props", box, scaleBox=scaleDebug, scaleOpen=scaleOpen)
-            if open_debug:
-                col = box_debug.column()
-                col.enabled = editable
-                draw_props_raw(data, debug_names, col, showId)
+            if (debug_names):
+                # debug inner fold
+                open_debug, box_debug = draw_toggleBox(data_inspector, propToggle_debug_name, box, text_debug, scaleBox=scaleDebug, scaleOpen=scaleOpen)
+                if open_debug:
+                    col = box_debug.column()
+                    col.enabled = editable
+                    draw_props_raw(data, debug_names, col, showId)
 
         # draw the list of props
         col         = box.column()
@@ -102,35 +92,18 @@ def draw_propsToggle(data, data_inspector:Prop_inspector, layout:types.UILayout,
 
     return open, box
 
-def draw_propsToggle_custom(data, data_inspector:Prop_inspector, layout:types.UILayout, text:str="Properties",
-                            propFilter="-meta", showDefault=True, showId=False, editable=True, splitDebug=True,
-                            scaleBox=1, scaleOpen=0.9, scaleDebug=0.9, returnCol=True) -> tuple[bool, types.UILayout]:
-    """ Draw some properties of an object under a custom toggleable layout. """
+def draw_propsToggle_full(data, data_inspector:Prop_inspector, layout:types.UILayout, text:str="Properties",
+                          splitDebug = True, scaleBox=1, scaleOpen=0.9, scaleDebug=0.9, returnCol=True, userCustom=True) -> tuple[bool, types.UILayout]:
+    """ Draw some properties of an object under a custom toggleable layout, inclues an inner debug toggle. """
 
-    # outer fold
-    open, box = draw_toggleBox(data_inspector, "meta_show_props", layout, text, scaleBox, scaleOpen, returnCol)
-    if open:
+    # read from inspector some of the config
+    propFilter = getattr(data_inspector, "meta_propFilter")
+    showDefault = getattr(data_inspector, "meta_propDefault")
+    showId = getattr(data_inspector, "meta_propShowId")
+    editable = getattr(data_inspector, "meta_propEdit")
 
-        # filter props
-        prop_names = getProps_namesFiltered(data, propFilter, exc_nonBlProp=True, showDefault=showDefault)
-
-        # split debug props
-        if splitDebug:
-            prop_names, debug_names = getProps_splitDebug(prop_names)
-        else:
-            debug_names = None
-
-        if (debug_names):
-            # debug inner fold
-            open_debug, box_debug = draw_toggleBox(data_inspector, "meta_show_debug_props", box, scaleBox=scaleDebug, scaleOpen=scaleOpen)
-            if open_debug:
-                col = box_debug.column()
-                col.enabled = editable
-                draw_props_raw(data, debug_names, col, showId)
-
-        # draw the list of props
-        col         = box.column()
-        col.enabled = editable
-        draw_props_raw(data, prop_names, col, showId)
-
-    return open, box
+    return draw_propsToggle_custom(
+        data, data_inspector, layout, text=text,
+        propFilter=propFilter, showDefault=showDefault, showId=showId, editable=editable, splitDebug=splitDebug,
+        scaleBox=scaleBox, scaleOpen=scaleOpen, scaleDebug=scaleDebug, returnCol=returnCol, userCustom=userCustom
+        )

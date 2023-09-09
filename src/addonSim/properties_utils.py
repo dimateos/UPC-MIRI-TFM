@@ -57,19 +57,22 @@ class Prop_inspector(types.PropertyGroup):
     )
 
     # group foldable sections with "debug" as part of its name
-    meta_show_debug_split: props.BoolProperty(
-        name="Split debug", description="Show debug props apart",
-        default=True,
-    )
     meta_show_debug_props: props.BoolProperty(
         name="debug...", description="Show debug properties",
         default=False,
         update=set_meta_show_toggled
     )
 
-    # additional debug prop for a different toggle
-    meta_show_debug: props.BoolProperty(
-        name="debug...", description="Development stuff...",
+    # additional toggles in the menus, no description and name set outside
+    meta_show_1: props.BoolProperty(
+        default=False,
+        update=set_meta_show_toggled
+    )
+    meta_show_2: props.BoolProperty(
+        default=False,
+        update=set_meta_show_toggled
+    )
+    meta_show_3: props.BoolProperty(
         default=False,
         update=set_meta_show_toggled
     )

@@ -94,12 +94,8 @@ class MW_gen_OT(_StartRefresh_OT):
         rowsub.prop(cfg, "margin_box_bounds")
         rowsub.prop(cfg, "margin_face_bounds")
 
-        open, box = ui.draw_toggleBox(getPrefs().gen_PT_meta_inspector, "meta_show_debug_props", layout, scaleBox=0.85)
-        if open:
-            box.prop(cfg, "debug_rnd_seed")
-            box.prop(cfg, "debug_precisionWalls")
-            box.prop(cfg, "debug_ensure_noDoubles")
-            box.prop(cfg, "debug_flipCellNormals")
+        # debug settings
+        open, box = ui.draw_propsToggle_custom(cfg, getPrefs().gen_PT_meta_inspector, layout, "meta_show_debug_props", propFilter="debug", scaleBox=0.85)
 
     # NOTE:: no poll because the button is removed from ui in draw instead
     #@classmethod
@@ -427,7 +423,18 @@ class MW_sim_step_OT(_StartRefresh_OT):
 
     def draw(self, context: types.Context):
         super().draw(context)
-        ui.draw_props(self.cfg, "", self.layout.box(), True)
+        cfg : MW_gen_cfg = self.cfg
+        layout = self.layout
+        col = layout.box().column()
+
+        # step
+        col.prop(cfg, "step_infiltrations")
+        col.prop(cfg, "step_maxDepth")
+        col.prop(cfg, "step_deg")
+
+        # debug
+        prefs = getPrefs()
+        open, box = ui.draw_propsToggle_custom(cfg, getPrefs().sim_PT_meta_inspector, layout, "meta_show_debug_props", propFilter="debug", scaleBox=0.85)
 
     @classmethod
     def poll(cls, context):

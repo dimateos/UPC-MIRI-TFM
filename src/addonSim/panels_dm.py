@@ -71,10 +71,11 @@ class Info_inpect_PT(types.Panel):
                 col.label(text=f"{colName}: {len(collection)}", icon="LIBRARY_DATA_OVERRIDE_NONEDITABLE")
 
         # debug options
-        open, box = ui.draw_toggleBox(prefs.dm_prefs, "meta_show_debug", layout, scaleBox=0.85)
-        if open:
-            box.operator(ops_util.Debug_testColors_OT.bl_idname, icon="RESTRICT_COLOR_ON")
-            box.operator(ops_util.Debug_testCode_OT.bl_idname, icon="MATSHADERBALL")
+        if DEV.DEBUG_UI:
+            open, box = ui.draw_toggleBox(prefs.dm_prefs, "meta_show_debug", layout, "debug...", scaleBox=0.85)
+            if open:
+                box.operator(ops_util.Debug_testColors_OT.bl_idname, icon="RESTRICT_COLOR_ON")
+                box.operator(ops_util.Debug_testCode_OT.bl_idname, icon="MATSHADERBALL")
 
     def drawMode_object(self, context, obj, box):
         # draw tranforms with specific precision

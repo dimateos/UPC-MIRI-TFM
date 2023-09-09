@@ -98,7 +98,7 @@ class MW_gen_PT(types.Panel):
         # inspect root or selected?
         gen_cfg = root.mw_gen if prefs.all_PT_meta_show_root else selected.mw_gen
 
-        open, box = ui.draw_propsToggle(gen_cfg, prefs.gen_PT_meta_inspector, layout, text="Container props")
+        open, box = ui.draw_propsToggle_full(gen_cfg, prefs.gen_PT_meta_inspector, layout, text="Container props")
         if open:
             col_rowSplit = layout.row().split()
             col_rowSplit.prop(prefs, "all_PT_meta_show_root", text="Root props:" if prefs.all_PT_meta_show_root else "Child props:")
@@ -122,7 +122,7 @@ class MW_gen_PT(types.Panel):
         # visuals inspect
         #vis_cfg = context.scene.mw_vis -> scene data is affected by operator undo
         vis_cfg = prefs.mw_vis
-        open, box = ui.draw_propsToggle_custom(vis_cfg, prefs.vis_PT_meta_inspector, layout, "Visuals...")
+        open, box = ui.draw_propsToggle_custom(vis_cfg, prefs.vis_PT_meta_inspector, layout, text="Visuals...")
 
     def draw_debug(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
@@ -130,46 +130,43 @@ class MW_gen_PT(types.Panel):
         fract : MW_Fract = MW_global_selected.fract
         cont : MW_Cont = MW_global_selected.fract.cont if fract else None
 
-        open, box = ui.draw_toggleBox(prefs.gen_PT_meta_inspector, "meta_show_debug", layout, scaleBox=0.85, returnCol=False)
+        open, box = ui.draw_toggleBox(prefs.gen_PT_meta_inspector, "meta_show_1", layout, "debug...", scaleBox=0.85, returnCol=False)
         if open:
             # recalculate fracture
             box.operator(ops.MW_gen_recalc_OT.bl_idname, icon="ZOOM_PREVIOUS")
 
-            # cell data
-            if curr:
+            if DEV.DEBUG_UI:
+                # cell data
+                if curr:
+                    cell_id = curr.mw_id.cell_id
+                    boxSelected = box.box().column()
+                    col_rowSplit = boxSelected.row()
+                    col_rowSplit.label(text=f"{curr.mw_id.meta_type}, sID: {curr.mw_id.storage_id}, cID: {cell_id}", icon="MESH_ICOSPHERE")
+                    # state data from cont or the cell
+                    col_rowSplit = boxSelected.row()
+                    stateCont = STATE_ENUM.to_str(MW_global_selected.fract.cont.cells_state[cell_id]) if fract and cont else "~"
+                    col_rowSplit.label(text=f"  cState: {STATE_ENUM.to_str(curr.mw_id.cell_state)}  // cont: {stateCont}")
+
+                # cont POV
+                if fract:
+                    if cont:
+                        boxCont = box.box().column()
+                        boxCont.label(text=f"-CONT-  root: {cont.root.name if not utils_scene.needsSanitize(cont.root) else '~'}", icon="CON_PIVOT")
+                        cell_sample = cont.cells_objs[0].name if not utils_scene.needsSanitize(cont.cells_objs[0]) else '~'
+                        mesh_sample = cont.cells_meshes[0].name if not utils_scene.needsSanitize(cont.cells_meshes[0]) else '~'
+                        boxCont.label(text=f"  samples [{len(cont.cells_objs)}],  c: {cell_sample}, m: {mesh_sample}")
+
+                # global selected
                 boxSelected = box.box().column()
-                col_rowSplit = boxSelected.row().split(factor=0.5)
-                col_rowSplit.label(text=f"{curr.mw_id.meta_type}", icon="COPY_ID")
-                col_rowSplit.label(text=f"s: {curr.mw_id.storage_id}")
-                cell_id = curr.mw_id.cell_id
-                col_rowSplit.label(text=f"c: {cell_id}")
-                # state data from cont or the cell
-                col_rowSplit = boxSelected.row()
                 col_rowSplit = boxSelected.row().split(factor=0.6)
-                col_rowSplit.label(text=f"State: {STATE_ENUM.to_str(curr.mw_id.cell_state)}", icon="CON_PIVOT")
-                if fract and cont:
-                    col_rowSplit.label(text=f"c: {STATE_ENUM.to_str(MW_global_selected.fract.cont.cells_state[cell_id])}")
-
-
-            # cont POV
-            if fract:
-                if cont:
-                    boxCont = box.box().column()
-                    boxCont.label(text=f"Root:  {cont.root.name if not utils_scene.needsSanitize(cont.root) else '~'}")
-                    boxCont.label(text=f"Cells: { cont.cells_objs[0].name if not utils_scene.needsSanitize(cont.cells_objs[0]) else '~'} ({len(cont.cells_objs)})")
-                    boxCont.label(text=f"Meshes: { cont.cells_meshes[0].name if not utils_scene.needsSanitize(cont.cells_meshes[0]) else '~'} ({len(cont.cells_meshes)})")
-
-            # global selected
-            boxSelected = box.box().column()
-            col_rowSplit = boxSelected.row().split(factor=0.6)
-            col_rowSplit.label(text=f"Root:  {MW_global_selected.root.name if MW_global_selected.root else '~'}", icon="RESTRICT_SELECT_ON")
-            col_rowSplit.label(text=f"{MW_global_selected.prevalid_root.name if MW_global_selected.prevalid_root else '~'}", icon="FRAME_PREV")
-            col_rowSplit = boxSelected.row().split(factor=0.6)
-            col_rowSplit.label(text=f"Current: {curr.name if curr else '~'}", icon="RESTRICT_SELECT_OFF")
-            col_rowSplit.label(text=f"{MW_global_selected.prevalid_current.name if MW_global_selected.prevalid_current else '~'}", icon="FRAME_PREV")
-            col_rowSplit = boxSelected.row().split(factor=0.6)
-            col_rowSplit.label(text=f"Active: {context.active_object.name if context.active_object else '~'}", icon="SELECT_INTERSECT")
-            col_rowSplit.label(text=f"{len(MW_global_selected.selection) if MW_global_selected.selection else '~'}", icon="SELECT_SET")
+                col_rowSplit.label(text=f"Root:  {MW_global_selected.root.name if MW_global_selected.root else '~'}", icon="RESTRICT_SELECT_ON")
+                col_rowSplit.label(text=f"{MW_global_selected.prevalid_root.name if MW_global_selected.prevalid_root else '~'}", icon="FRAME_PREV")
+                col_rowSplit = boxSelected.row().split(factor=0.6)
+                col_rowSplit.label(text=f"Current: {curr.name if curr else '~'}", icon="RESTRICT_SELECT_OFF")
+                col_rowSplit.label(text=f"{MW_global_selected.prevalid_current.name if MW_global_selected.prevalid_current else '~'}", icon="FRAME_PREV")
+                col_rowSplit = boxSelected.row().split(factor=0.6)
+                col_rowSplit.label(text=f"Active: {context.active_object.name if context.active_object else '~'}", icon="SELECT_INTERSECT")
+                col_rowSplit.label(text=f"{len(MW_global_selected.selection) if MW_global_selected.selection else '~'}", icon="SELECT_SET")
 
             # delete all fractures
             boxLinks = box.box()
@@ -220,11 +217,11 @@ class MW_sim_PT(types.Panel):
         col_rowSplit.operator(ops.MW_sim_reset_OT.bl_idname, text="RESET", icon="ORPHAN_DATA")
         col_rowSplit.prop(prefs, "sim_step_OT_clearCfg")
 
-
-        #root = MW_global_selected.root if
-        #MW_global_selected.root
-        #gen_cfg = root.mw_gen if prefs.all_PT_meta_show_root else selected.mw_gen
-        #open, box = ui.draw_propsToggle_custom(vis_cfg, prefs.sim_PT_meta_inspector, col, "Parameters", "-step,-debug")
+        # inspect root or selected?
+        root = MW_global_selected.last_root()
+        if root:
+            open, box = ui.draw_propsToggle_custom(root.mw_sim, prefs.sim_PT_meta_inspector, col, text="Parameters", propFilter="-step,-debug")
+            #open, box = ui.draw_propsToggle_custom(root.mw_sim, prefs.sim_PT_meta_inspector, col, text="Parameters", propFilter="-step", splitDebug=True)
 
 
 #-------------------------------------------------------------------
@@ -244,14 +241,15 @@ class MW_addon_PT(types.Panel):
         prefs = getPrefs()
         layout = self.layout.column()
 
-        #ui.draw_propsToggle(prefs, prefs.prefs_PT_meta_inspector, layout)
-        ui.draw_propsToggle_custom(prefs.dev_PT_meta_cfg, prefs.dev_PT_meta_cfg, layout, text="DEV", splitDebug=False)
+        #ui.draw_propsToggle_full(prefs, prefs.prefs_PT_meta_inspector, layout)
+        ui.draw_propsToggle_custom(prefs.dev_PT_meta_cfg, prefs.dev_PT_meta_cfg, layout, text="DEV", propFilter="")
 
-        open, box = ui.draw_toggleBox(prefs.prefs_PT_meta_inspector, "meta_show_debug", layout, scaleBox=0.85)
-        if open:
-            col = box.column()
-            # check region width
-            DEV.draw_val(col, "context.region.width", context.region.width)
+        if DEV.DEBUG_UI:
+            open, box = ui.draw_toggleBox(prefs.prefs_PT_meta_inspector, "meta_show_1", layout, "debug...", scaleBox=0.85)
+            if open:
+                col = box.column()
+                # check region width
+                DEV.draw_val(col, "context.region.width", context.region.width)
 
 
 #-------------------------------------------------------------------
