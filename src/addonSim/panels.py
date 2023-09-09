@@ -185,11 +185,13 @@ class MW_gen_PT(types.Panel):
                 icon = "X" if utils_scene.needsSanitize(obj) else "CHECKMARK"
                 col.label(text=f"{id}: {len(fract.cont.voro_cont)} cells + {len(fract.links.link_map)} links", icon=icon)
 
-
             # more stuff
             col = layout.column()
             col.operator(ops.MW_util_comps_OT.bl_idname, icon="NODE_COMPOSITING")
-            col.operator(ops.MW_util_bool_OT.bl_idname, icon="MOD_BOOLEAN")
+
+            col_rowSplit = col.row().split(factor=0.66)
+            col_rowSplit.operator(ops.MW_util_bool_OT.bl_idname, icon="MOD_BOOLEAN")
+            col_rowSplit.prop(prefs, "util_bool_OT_apply")
 
 
 #-------------------------------------------------------------------

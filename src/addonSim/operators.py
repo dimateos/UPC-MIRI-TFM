@@ -346,12 +346,8 @@ class MW_cell_state_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        # OPT:: if the cells store the state, then there is no need to poll fract + could recover it
+        # NOTE:: the cells store the state so could be extracted from there, but better with just the cont
         return MW_global_selected.fract and MW_id_utils.hasCellId(MW_global_selected.current)
-
-    def draw(self, context: types.Context):
-        # override parent class drawing, just the enum
-        self.layout.prop(self, "set_state")
 
     def invoke(self, context, event):
         # set to current state
@@ -362,6 +358,10 @@ class MW_cell_state_OT(_StartRefresh_OT):
         # set args before execution to confirm
         wm = context.window_manager
         return wm.invoke_props_dialog(self)
+
+    def draw(self, context: types.Context):
+        # override parent class drawing, just the enum
+        self.layout.prop(self, "set_state")
 
     def execute(self, context: types.Context):
         self.start_op()
@@ -411,8 +411,6 @@ class MW_sim_step_OT(_StartRefresh_OT):
 
     bl_options = {'PRESET', 'REGISTER', 'UNDO'}
     cfg: props.PointerProperty(type=MW_sim_cfg)
-    sim: mw_sim.MW_Sim = None
-    links: MW_Links = None
 
     def __init__(self) -> None:
         super().__init__()
@@ -433,7 +431,6 @@ class MW_sim_step_OT(_StartRefresh_OT):
         col.prop(cfg, "step_deg")
 
         # debug
-        prefs = getPrefs()
         open, box = ui.draw_propsToggle_custom(cfg, getPrefs().sim_PT_meta_inspector, layout, "meta_show_debug_props", propFilter="debug", scaleBox=0.85)
 
     @classmethod
@@ -441,21 +438,22 @@ class MW_sim_step_OT(_StartRefresh_OT):
         return MW_global_selected.fract
 
     def invoke(self, context, event):
-        # create simulation object
+        getPrefs().gen_PT_meta_inspector.reset_meta_show_toggled()
+        # TODO:: rework create simulation object
         self.links = MW_global_selected.fract.links
         self.sim = mw_sim.MW_Sim(self.links)
-
         return super().invoke(context, event)
 
     def execute(self, context: types.Context):
         self.start_op()
-        sim_cfg : MW_sim_cfg= self.cfg
+        prefs = getPrefs()
 
         # handle refresh
-        cancel = self.checkRefresh_cancel()
-        if cancel: return self.end_op_refresh(skipLog=True)
+        if self.checkRefresh_cancel() or prefs.gen_PT_meta_inspector.skip_meta_show_toggled():
+            return self.end_op_refresh(skipLog=True)
 
         # achieve constructive results during adjust op menu
+        sim_cfg : MW_sim_cfg= self.cfg
         self.sim.resetSim(sim_cfg.debug_addSeed)
         self.sim.set_deg(sim_cfg.step_deg)
         DEV.log_msg(f"step_infiltrations({sim_cfg.step_infiltrations}) step_maxDepth({sim_cfg.step_maxDepth}) step_deg({sim_cfg.step_deg})", {'SETUP'})
@@ -502,7 +500,7 @@ class MW_sim_reset_OT(_StartRefresh_OT):
 class MW_util_comps_OT(_StartRefresh_OT):
     bl_idname = "mw.util_comps"
     bl_label = "check comps"
-    bl_description = "WIP: check connected components"
+    bl_description = "UTIL: check connected components"
 
     bl_options = {'INTERNAL', 'UNDO'}
 
@@ -522,7 +520,7 @@ class MW_util_comps_OT(_StartRefresh_OT):
 class MW_util_bool_OT(_StartRefresh_OT):
     bl_idname = "mw.util_bool"
     bl_label = "bool mod"
-    bl_description = "WIP: add bool modifier"
+    bl_description = "WIP: add bool modifier to original"
 
     bl_options = {'INTERNAL', 'UNDO'}
 
@@ -542,7 +540,7 @@ class MW_util_bool_OT(_StartRefresh_OT):
             prefs = getPrefs()
             obj_original = utils_scene.get_child(obj, prefs.names.original_copy, mode="STARTS_WITH")
             obj_cells = utils_scene.get_child(obj, prefs.names.cells)
-            mw_extraction.boolean_mod_add(obj_original, obj_cells, context)
+            mw_extraction.boolean_mod_add(obj_original, obj_cells, context, prefs.util_bool_OT_apply)
 
         return self.end_op()
 

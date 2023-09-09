@@ -78,7 +78,12 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, context: types.Contex
     # build convex hull with only verts
     bm = bmesh.new()
     bm.from_mesh(obj_c.data)
-    ch = bmesh.ops.convex_hull(bm, input=bm.verts)
+    try:
+        ch = bmesh.ops.convex_hull(bm, input=bm.verts)
+    except RuntimeError:
+        import traceback
+        traceback.print_exc()
+
     # either delete unused and interior or build another mesh with "geom"
     bmesh.ops.delete(
             bm,
@@ -94,7 +99,11 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, context: types.Contex
     utils_scene.set_child(obj_d, obj)
 
     # dissolve faces based on angle limit
-    bmesh.ops.dissolve_limit(bm, angle_limit=radians(1.7), use_dissolve_boundaries=True, verts=bm.verts, edges=bm.edges)
+    try:
+        bmesh.ops.dissolve_limit(bm, angle_limit=radians(1.7), use_dissolve_boundaries=True, verts=bm.verts, edges=bm.edges)
+    except RuntimeError:
+        import traceback
+        traceback.print_exc()
     bm.to_mesh(obj_d.data)
 
     # Scene viewport

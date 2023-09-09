@@ -57,8 +57,8 @@ class Info_inpect_PT(types.Panel):
         if open:
             # fix orphan meshes
             col_rowSplit = box.row().split(factor=0.8)
-            col_rowSplit.label(text=f"Scene DATA - orphans", icon="SCENE_DATA")
-            col_rowSplit.operator(ops_util.Util_deleteOrphanData_OT.bl_idname, icon="UNLINKED", text="")
+            col_rowSplit.label(text=f"Orphan DATA", icon="SCENE_DATA")
+            col_rowSplit.operator(ops_util.Util_deleteOrphanData_OT.bl_idname, icon="SETTINGS", text="")
 
             box.prop(prefs.dm_prefs, "orphans_collection")
             col = box.column()

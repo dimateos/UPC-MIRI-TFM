@@ -16,7 +16,7 @@ from .stats import getStats
 # IDEA:: vis step_infiltrations with a curve
 # IDEA:: vis probs with a heatmap
 # IDEA:: manually pick step/ entry? by num?
-
+# IDEA:: run until break
 # IDEA:: bridges neighbours? too aligned wall links, vertically aligned internal -> when broken? cannot go though?
 
 class SubStepData:
