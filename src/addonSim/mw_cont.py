@@ -303,6 +303,8 @@ class MW_Cont:
             state = self.cells_state[id]
             stateMap[state].append(id)
 
+        return stateMap
+
     def setCells_missing(self, broken:list[int]):
         """ Mark as DELETED to be treated as AIR but without access to geometry, dont touch other arrays """
         self.deletedId_prev = self.deletedId

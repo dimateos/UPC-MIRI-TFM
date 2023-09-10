@@ -2,6 +2,7 @@ import bpy
 import bpy.types as types
 from mathutils import Vector, Matrix
 from random import uniform
+import numpy as np
 
 from . import utils
 
@@ -179,17 +180,23 @@ class ATTRS:
 # NOTE:: all similar functions but then access different paths in the mesh/data e.g. uv.data[i].uv,vc.data[i].color,attr.data[i].value
 # NOTE:: set random functions do the same iteration to avoid allocating twice the memory in a tmp list, could change for less code dupe
 
-def gen_meshUV(mesh: types.Mesh, uv_base:Vector|list[Vector] = None, name="UV_map",) -> types.MeshUVLoopLayer:
+def gen_meshUV(mesh: types.Mesh, uv_base:Vector|list[Vector] = None, name="UV_map", val_repeats = 1) -> types.MeshUVLoopLayer:
     """ Add a UV layer to the mesh: 2D float PER loop corner """
     uv = mesh.uv_layers.new(name=name)
-    if uv_base: set_meshUV(mesh, uv, uv_base)
+    if uv_base: set_meshUV(mesh, uv, uv_base, val_repeats)
     return uv
 
-def set_meshUV(mesh: types.Mesh, uv: types.MeshUVLoopLayer|str, uv_base:Vector|list[Vector]):
+def set_meshUV(mesh: types.Mesh, uv: types.MeshUVLoopLayer|str, uv_base:Vector|list[Vector], val_repeats = 1):
     if isinstance(uv, str): uv = mesh.uv_layers[uv]
     uv_base = utils.assure_list(uv_base)
-    for i, faceL in enumerate(mesh.loops):
-        val = uv_base[i % len(uv_base)]
+
+    # input repetition options on top of periodically repeat val_base over source extent
+    assert val_repeats > 0, "val_repeats must be at least 1"
+    gen_repIndices = [i for i in range(len(uv_base)) for _ in range(val_repeats)]
+
+    for i, datum in enumerate(mesh.loops):
+        i_value = gen_repIndices[i % len(gen_repIndices)]
+        val = uv_base[i_value]
         uv.data[i].uv = val
 
 def set_meshUV_rnd(mesh: types.Mesh, uv: types.MeshUVLoopLayer|str, minC=0.0, maxC=1.0):
@@ -340,8 +347,8 @@ def set_meshAttr_perFace(mesh: types.Mesh, dataAttr, values, val_repeats = 1):
 
 #-------------------------------------------------------------------
 
-# NOTE:: materials can also by aded to the object instead of the data?
 def gen_test_colors(obj, mesh, alpha, matName):
+    """ # NOTE:: materials can also by aded to the object instead of the data? """
     obj.active_material = get_randomMat(alpha=alpha, matName=matName)
 
     # test uv and if attr float 2d is mapped to UV too
@@ -366,3 +373,62 @@ def gen_test_colors(obj, mesh, alpha, matName):
     set_meshAttr_rnd(mesh, at)
     atc = gen_meshAttr(mesh, COLORS.blue.to_4d(), adomain="CORNER", atype="FLOAT_COLOR", name="ATtestcolor")
     set_meshAttr_rnd(mesh, atc)
+
+#-------------------------------------------------------------------
+
+class GRADIENTS:
+    def lerp(pos, min=0, max=256):
+        return (pos-min) / max
+
+    def red(pos, min=0, max=256):
+        red = GRADIENTS.lerp(pos, min, max)
+        return Vector((red,0,0,1))
+
+
+def gen_gradientMat(uv_layer:str, width=256, height=256, name="gradient", colorFn = GRADIENTS.red):
+    """ 1D gradients, but add height to visualize better the UV coords """
+
+    image = bpy.data.images.new(name=name+"_img", width=width, height=height)
+
+    # Create a NumPy array to store the image data
+    pixels = np.empty(width * height * 4, dtype=np.float32)
+    for y in range(height):
+        for x in range(width):
+            c = colorFn(x, max=width)
+            # Set the pixel values (RGBA)
+            index = (y * width + x) * 4
+            pixels[index]     = c[0]
+            pixels[index + 1] = c[1]
+            pixels[index + 2] = c[2]
+            pixels[index + 3] = c[3]
+
+    # Flatten the NumPy array and assign it to the image
+    image.pixels = pixels.tolist()
+
+    # Create a new material and add it
+    mat = bpy.data.materials.new(name=name+"_mat")
+
+    # Cfg default nodes
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    for node in nodes: nodes.remove(node)
+
+    # Add a ShaderNodeTexImage node
+    texture_node = nodes.new(type='ShaderNodeTexImage')
+    texture_node.location = (0, 0)
+    texture_node.image = image
+
+    # Add an Input node for UV coordinates
+    uv_map_node = nodes.new(type='ShaderNodeUVMap')
+    uv_map_node.location = (-200, 0)
+    uv_map_node.uv_map = uv_layer
+
+    # Add an Output node
+    output_node = nodes.new(type='ShaderNodeOutputMaterial')
+    output_node.location = (400, 0)
+
+    # Connect the nodes
+    mat.node_tree.links.new(uv_map_node.outputs['UV'], texture_node.inputs['Vector'])
+    mat.node_tree.links.new(texture_node.outputs['Color'], output_node.inputs['Surface'])
+
+    return mat

@@ -95,6 +95,20 @@ class MW_Sim:
 
     #-------------------------------------------------------------------
 
+    def reset_links(self, life=1.0):
+        for key in self.links.links_graph.nodes():
+            l = self.links.get_link(key)
+            l.reset(life)
+
+    def reset_links_rnd(self, min=0, max=1):
+        for key in self.links.links_graph.nodes():
+            l = self.links.get_link(key)
+            r = rnd.random()
+            #l.reset(r*max + (1-r)*min)
+            l.reset(r*(max-min) + min)
+
+    #-------------------------------------------------------------------
+
     def step_reset(self):
         self.entryL              : Link  = None
         self.currentL            : Link  = None
@@ -208,7 +222,7 @@ class MW_Sim:
             return 0
 
         # weight using face areaFactor (could use regular area instead)
-        w *= d * l.areaFactor
+        w *= d * l.area
 
         return w
 

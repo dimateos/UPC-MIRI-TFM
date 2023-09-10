@@ -50,9 +50,15 @@ class MW_id_utils:
         """ Check if this is a root object, core the fracture (holds most of the config) """
         return "ROOT" in obj.mw_id.meta_type
     @staticmethod
-    def isChild(obj: types.Object) -> bool:
+    def setRoot(obj: types.Object):
+        obj.mw_id.meta_type = {"ROOT"}
+    @staticmethod
+    def isMetaChild(obj: types.Object) -> bool:
         """ Check if this is a child object part of a fracture (but could be either a cell, link, or intermediate object) """
         return "CHILD" in obj.mw_id.meta_type
+    @staticmethod
+    def setMetaChild(obj: types.Object):
+        obj.mw_id.meta_type = {"CHILD"}
 
     @staticmethod
     def hasRoot(obj: types.Object) -> bool:
@@ -95,7 +101,7 @@ class MW_id_utils:
         return roots
 
     @staticmethod
-    def setMetaType(obj: types.Object, type: set[str], skipParent = False, childrenRec = True):
+    def setMetaType_rec(obj: types.Object, type: set[str], skipParent = False, childrenRec = True):
         """ Set the property to the object and all its children (dictionary ies copied, not referenced)
             # NOTE:: acessing obj children is O(len(bpy.data.objects)), so just call it on the root again
             # OPT:: could avoid using this and just set the children like for cell_id?
@@ -108,6 +114,7 @@ class MW_id_utils:
         for child in toSet:
             child.mw_id.meta_type = type.copy()
 
+    @staticmethod
     def resetMetaType(obj: types.Object):
         obj.mw_id.meta_type = {"NONE"}
 

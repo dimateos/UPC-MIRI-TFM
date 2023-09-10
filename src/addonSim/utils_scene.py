@@ -255,10 +255,9 @@ def gen_childReuse(
         #  NOTE:: subtitute to unlink and then delete prev data, otherwise deleting it deletes the object?
         if obj_child.data:
             prevMesh = obj_child.data
-            obj_child.data = mesh
             delete_data(prevMesh, obj_child.type)
 
-        #set_child(obj_child, obj, keepTrans, noInv)
+        obj_child.data = mesh
         obj_child.hide_set(hide)
         return obj_child
 

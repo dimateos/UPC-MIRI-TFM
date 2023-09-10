@@ -17,7 +17,7 @@ from .mw_cont import MW_Cont, VORO_Container, CELL_STATE_ENUM
 from .mw_links import MW_Links
 from .mw_fract import MW_Fract # could import all from here
 
-from . import utils, utils_scene, utils_mat, utils_mesh
+from . import utils, utils_scene, utils_trans, utils_mat, utils_mesh
 from .utils_dev import DEV
 from .stats import getStats
 
@@ -34,7 +34,7 @@ def copy_original(obj: types.Object, cfg: MW_gen_cfg, context: types.Context, na
 
     # Duplicate the original object
     obj_copy = utils_scene.copy_objectRec(obj, context, namePreffix=namePreffix)
-    #MW_id_utils.setMetaType(obj_copy, {"CHILD"})
+    #MW_id_utils.setMetaType_rec(obj_copy, {"CHILD"})
 
     # Scene viewport
     obj.select_set(False)
@@ -72,7 +72,7 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, context: types.Contex
     # Duplicate again the copy and set child too
     obj_c = utils_scene.copy_objectRec(obj_copy, context, keep_mods=False)
     obj_c.name = nameConvex
-    #MW_id_utils.setMetaType(obj_c, {"CHILD"})
+    #MW_id_utils.setMetaType_rec(obj_c, {"CHILD"})
     utils_scene.set_child(obj_c, obj)
 
     # build convex hull with only verts
@@ -95,7 +95,7 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, context: types.Contex
     # Second copy with the face dissolve
     obj_d = utils_scene.copy_objectRec(obj_c, context, keep_mods=False)
     obj_d.name = nameDissolved
-    #MW_id_utils.setMetaType(obj_d, {"CHILD"})
+    #MW_id_utils.setMetaType_rec(obj_d, {"CHILD"})
     utils_scene.set_child(obj_d, obj)
 
     # dissolve faces based on angle limit
@@ -279,175 +279,82 @@ def set_cellsState(fract: MW_Fract, root: types.Object, cells: list[types.Object
 #-------------------------------------------------------------------
 
 def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
-    vis_cfg : MW_vis_cfg= root.mw_vis
-    name = getPrefs().names.links
-    baseColor = utils_mat.COLORS.red
+    prefs = getPrefs()
+    cfg : MW_vis_cfg= root.mw_vis
 
-    # some undo could break it
+    points       : list[Vector]               = []
+    verts        : list[tuple[Vector,Vector]] = []
+    lifeWidths   : list[float]                = []
+    id_life      : list[tuple[int,float]]     = []
+    pick_entries : list[tuple[int,int]]       = []
 
     # iterate the global map and store vert pairs for the tube mesh generation
-    verts: list[tuple[Vector,Vector]] = []
-    lifeWidths: list[float] = []
-    lifeColor: list[Vector] = []
-    points: list[Vector] = []
-    for l in fract.links.internal:
-        life = l.life_clamped
-
+    for n, l in enumerate(fract.links.internal):
+        # point from face to face
         k1, k2 = l.key_cells
         kf1, kf2 = l.key_faces
         c1 = fract.cont.cells_objs[k1]
         f1 = fract.cont.getFaces(k1,kf1)
         c2 = fract.cont.cells_objs[k2]
         f2 = fract.cont.getFaces(k2,kf2)
-
-        # TODO:: avoid p1 p2 being equial
-
         p1 = c1.matrix_world @ f1.center
         p2 = c2.matrix_world @ f2.center
+
+        # pick a valid normal
+        pdir : Vector= p2-p1
+        if utils_trans.almostNull(pdir):
+            pdir = f1.normal
+        else:
+            pdir.normalize()
+
+        # add a bit of additional depth
+        p1 -= pdir*cfg.links_depth*0.5
+        p2 += pdir*cfg.links_depth*0.5
         verts.append((p1, p2))
 
         # original center
         points.append(l.pos)
 
-        #verts.append((l.pos-l.dir*vis_cfg.links_depth, l.pos+l.dir*vis_cfg.links_depth))
-        lifeColor.append( (baseColor*life).to_4d() )
-        #lifeColor[-1].w = 0.5
+        # query some props
+        life = l.life_clamped
+        id_life.append((n,life))
+        pick_entries.append((l.picks, l.picks_entry))
 
-        if vis_cfg.links_widthModLife == {"UNIFORM"}:
-            lifeWidths.append(vis_cfg.links_widthDead * (1-life) + vis_cfg.links_width * life)
-        elif vis_cfg.links_widthModLife == {"BINARY"}:
-            lifeWidths.append(vis_cfg.links_widthDead if life<1 else vis_cfg.links_width)
-
-    resFaces = utils_mesh.get_resFaces_fromCurveRes(vis_cfg.debug_links_res)
+        # lerp the width
+        if cfg.links_width__mode == {"UNIFORM"}:
+            lifeWidths.append(cfg.links_width_broken * (1-life) + cfg.links_width_base * life)
+        elif cfg.links_width__mode == {"BINARY"}:
+            lifeWidths.append(cfg.links_width_broken if life<1 else cfg.links_width_base)
+        # DISABLED: no scaling with life, color only
 
     # single mesh with tubes
-    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidths, name, 1.0, resFaces, vis_cfg.links_smoothShade)
-    # TODO:: delete prev
+    resFaces = utils_mesh.get_resFaces_fromCurveRes(cfg.debug_links_res)
+    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidths, prefs.names.links, 1.0, resFaces, cfg.links_smoothShade)
+
+    # potentially reuse child and clean mesh
+    obj_links = utils_scene.gen_childReuse(root, prefs.names.links, context, mesh, keepTrans=True)
+    MW_id_utils.setMetaChild(obj_links)
 
     # color encoded attributes for viewing in viewport edit mode
-    utils_mat.gen_meshAttr(mesh, lifeColor, resFaces*2, "FLOAT_COLOR", "POINT", "life")
+    utils_mat.gen_meshUV(mesh, id_life, "uv_life", resFaces*2)
+    utils_mat.gen_meshUV(mesh, pick_entries, "uv_picks", resFaces*2)
+    obj_links.active_material = utils_mat.gen_gradientMat("uv_life")
 
-    # potentially reuse child
-    obj_links = utils_scene.gen_childReuse(root, name, context, mesh, keepTrans=True)
-    mesh.name = name
+    # add points object too
+    obj_points = gen_pointsObject(root, points, context, prefs.names.links_points, reuse=True)
+    MW_id_utils.setMetaChild(obj_points)
 
-    # add points
-    gen_pointsObject(root, points, context, getPrefs().names.links_points, reuse=True)
-
-    MW_id_utils.setMetaType(obj_links, {"CHILD"}, childrenRec=False)
     getStats().logDt("generated links object")
     return obj_links
 
-def gen_linksWallObject(fract: MW_Fract, root: types.Object, context: types.Context, weights : list[float] = None):
-    vis_cfg : MW_vis_cfg= root.mw_vis
-    name = getPrefs().names.links_air
-    wallsExtraScale = vis_cfg.links_wallExtraScale
-
-    # iterate the global map and store vert pairs for the tube mesh generation
-    verts: list[tuple[Vector,Vector]] = []
-    lifeWidth: list[float] = []
-    for i,l in enumerate(fract.links.external):
-        #DEV.log_msg(f"life {l.life}")
-
-        # skip drawing entry links with no probability
-        #if weights and weights[i] == 0: continue
-
-        # WIP:: also skip drawing non picked?
-        if not l.picks: continue
-
-        lifeWidth.append(vis_cfg.links_width*wallsExtraScale*l.life)
-        verts.append((l.pos, l.pos+l.dir*vis_cfg.links_depth))
-
-    resFaces = utils_mesh.get_resFaces_fromCurveRes(vis_cfg.debug_links_res)
-    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidth, name, 1+vis_cfg.links_width*wallsExtraScale, resFaces, vis_cfg.links_smoothShade)
-
-    # potentially reuse child
-    obj_wallLinks = utils_scene.gen_childReuse(root, name, context, mesh, keepTrans=True)
-    mesh.name = name
-
-    # set global material
-    color = utils_mat.COLORS.blue+utils_mat.COLORS.white * 0.33
-    wallsMat = utils_mat.get_colorMat(color, "linkWallsMat")
-    obj_wallLinks.active_material = wallsMat
-
-    # WIP:: additional attr to visualize in the ame view mode
-    utils_mat.gen_meshAttr(mesh, color, 1, "FLOAT_COLOR", "POINT", "blueColor")
-
-    MW_id_utils.setMetaType(obj_wallLinks, {"CHILD"}, childrenRec=False)
-    getStats().logDt("generated wall links object")
-    return obj_wallLinks
-
-#-------------------------------------------------------------------
-
-def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: MW_Links, context: types.Context):
-    prefs = getPrefs()
-    wallsMat = utils_mat.get_colorMat(utils_mat.COLORS.blue+utils_mat.COLORS.white * 0.33, 1.0, "linkWallsMat")
-    #objLinks = None
-    #objWall = None
-
-    # iterate the global map
-    for links_data in links.links_graph.nodes(data=True):
-        #l = links_data[]
-        l = None
-        c1, c2 = l.key_cells
-        f1, f2 = l.key_faces
-
-        # links to walls
-        if l.airLink:
-            if not objWall: continue
-            obj = objWall
-            name= f"w{c1}_c{c2}-f{f2}"
-
-            # start at the face outward
-            p1 = Vector()
-            p2 = l.dir*0.1
-            #p3 = l.dir*0.8
-            #p4 = l.dir*1.8
-
-            # vary curve props
-            res = (prefs.prop_links_res+1) +2
-            #res = prefs.prop_links_res
-            width = prefs.links_width * 1.5
-            mat = wallsMat
-
-        # regular links
-        else:
-            if not objLinks: continue
-            obj = objLinks
-            name= f"c{c1}_c{c2}-f{f1}_f{f2}"
-
-            # two points around the face
-            p1 = +l.dir*0.1
-            p2 = -l.dir*0.1
-
-            # vary curve props
-            res = prefs.prop_links_res
-            width = prefs.links_widthDead * (1-l.life) + prefs.links_width * l.life
-            color = utils_mat.COLORS.red.copy() *l.life
-            #alpha = l.life+0.1 if prefs.links_matAlpha else 1.0
-            #color.w = alpha
-            mat = utils_mat.get_colorMat(color, name)
-
-        res = utils_mesh.get_resFaces_fromCurveRes(res)
-        curve= utils_mesh.get_tubeMesh_pairsQuad([(p1, p2)], None, name, width, res)
-        obj_link = utils_scene.gen_child(obj, name, context, curve, keepTrans=True)
-        obj_link.location = l.pos
-        obj_link.active_material = mat
-
-    MW_id_utils.setMetaType(objLinks.parent, {"CHILD"}, skipParent=True)
-    getStats().logDt("generated links to walls objects")
-
-def genWIP_linksCellObjects(objParent: types.Object, voro_cont: VORO_Container, context: types.Context):
+def gen_links_LEGACY(objParent: types.Object, voro_cont: VORO_Container, context: types.Context):
     prefs = getPrefs()
     prefs.names.fmt_setAmount(len(voro_cont))
 
-    # WIP:: links better generated from map isntead of cont? + done in a separate op
-    # WIP:: atm just hiding reps -> maybe generate using a different map instead of iterating the raw cont
-    #   maybe merge cell/link loop
+    # will detect repeated and hide one of each pair, but add to the scene to have the info
     neigh_set = set()
 
     for cell in voro_cont:
-        # NOTE:: in the case of directly iterating the cont there could be missing ones
         if cell is None: continue
 
         # group the links by cell using a parent
@@ -456,7 +363,6 @@ def genWIP_linksCellObjects(objParent: types.Object, voro_cont: VORO_Container, 
         #obj_group.matrix_world = Matrix.Identity(4)
         #obj_group.location = cell.centroid()
 
-        # WIP:: position world/local?
         cell_centroid = Vector(cell.centroid())
 
         # iterate the cell neighbours
@@ -468,7 +374,7 @@ def genWIP_linksCellObjects(objParent: types.Object, voro_cont: VORO_Container, 
                 obj_link = utils_scene.gen_child(obj_group, name, context, None, keepTrans=False)
                 continue
 
-            # TODO:: so some cells actually connect with the missing ones...
+            # potential assymetries
             if voro_cont[n_id] is None:
                 continue
 
@@ -487,5 +393,5 @@ def genWIP_linksCellObjects(objParent: types.Object, voro_cont: VORO_Container, 
             obj_link.hide_set(key_rep)
             #obj_link.location = cell.centroid()
 
-    MW_id_utils.setMetaType(objParent, {"CHILD"}, skipParent=False)
+    MW_id_utils.setMetaType_rec(objParent, {"CHILD"}, skipParent=False)
     getStats().logDt("generated links per cell objects")

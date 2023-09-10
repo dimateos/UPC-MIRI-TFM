@@ -305,7 +305,7 @@ class MW_Links():
 
         # create a subgraph with no air, no missing cells and no additional walls
         stateMap = self.cont.getCells_splitID_state()
-        valid = stateMap[CELL_STATE_ENUM.SOLID] + CELL_STATE_ENUM.SOLID[CELL_STATE_ENUM.CORE]
+        valid = stateMap[CELL_STATE_ENUM.SOLID] + stateMap[CELL_STATE_ENUM.CORE]
         self.comps_subgraph = self.cells_graph.subgraph(valid)
 
         # calc components
@@ -331,8 +331,3 @@ class MW_Links():
     def get_link_neighs(self, key:neigh_key_t) -> list[Link]:
         """ The links neighs unordered by face or anything """
         return [ self.get_link(k) for k in self.get_link_neighsId(key) ]
-
-    def reset_links(self):
-        for key in self.links_graph.nodes():
-            l = self.get_link(key)
-            l.reset()

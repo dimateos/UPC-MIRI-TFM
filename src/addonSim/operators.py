@@ -245,7 +245,7 @@ class MW_gen_OT(_StartRefresh_OT):
             # copy any cfg that may have changed during execute
             copyProps(self.obj_root.mw_gen, self.cfg)
             # set the meta type to all objects at once
-            MW_id_utils.setMetaType(self.obj_root, {"CHILD"}, skipParent=True)
+            MW_id_utils.setMetaType_rec(self.obj_root, {"CHILD"}, skipParent=True)
             utils_scene.select_unhide(self.obj_root, self.ctx)
 
         # keep the panel updated
@@ -406,7 +406,7 @@ class MW_gen_links_OT(_StartRefresh_OT):
     def end_op(self, msg="", skipLog=False, retPass=False):
         """ # OVERRIDE:: end_op to perform assign child to all """
         obj = MW_global_selected.root
-        if obj: MW_id_utils.setMetaType(obj, {"CHILD"}, skipParent=True)
+        if obj: MW_id_utils.setMetaType_rec(obj, {"CHILD"}, skipParent=True)
         return super().end_op(msg, skipLog, retPass)
 
 #-------------------------------------------------------------------
@@ -648,7 +648,7 @@ class MW_util_bake_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_global_selected.current and MW_id_utils.isChild(MW_global_selected.current)
+        return MW_global_selected.current and MW_id_utils.isMetaChild(MW_global_selected.current)
 
     def execute(self, context: types.Context):
         self.start_op(skipStats=True)

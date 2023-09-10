@@ -240,7 +240,7 @@ class MW_vis_cfg(types.PropertyGroup):
 
     #-------------------------------------------------------------------
     # debug one are non-dynamic, only affects subsequent runs but get written to root too
-    # OPT:: most could be easily dynamic but probably not worth it
+    # OPT:: most could be easily dynamic but probably not worth it or jus regen all mesh
 
     debug_links_res: props.IntProperty(
         name="Link mesh resolution", description="Affect the number of faces per tube",
@@ -250,39 +250,32 @@ class MW_vis_cfg(types.PropertyGroup):
 
     #-------------------------------------------------------------------
 
-    struct_linksScale: props.FloatProperty(
-        name="Links scale", description="Reduce some bits to be able to see the links better",
-        default=1, min=0.25, max=3,
-        #update=struct_linksScale_update
-    )
-
     links_depth: props.FloatProperty(
-        name="WIP: Const link depth", description="Constant link d",
-        default=0.15, min=0.01, max=0.4, step=0.05, precision=4
+        name="Link depth", description="Minimun depth inside faces",
+        default=0.15, min=0.01, max=0.4, step=0.05, precision=4,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links_depth")
     )
-    links_width: props.FloatProperty(
-        name="WIP: Link width", description="Max link w",
-        default=0.05, min=0.01, max=0.2, step=0.05, precision=4
+    links_width_base: props.FloatProperty(
+        name="Link width base", description="Max link w",
+        default=0.05, min=0.01, max=0.2, step=0.05, precision=4,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links_width_base")
     )
-    links_widthDead: props.FloatProperty(
-        name="WIP: Dead link width", description="Min link w",
-        default=0.005, min=0.001, max=0.01, step=0.05, precision=4
+    links_width_broken: props.FloatProperty(
+        name="Link width broken", description="Min link w",
+        default=0.005, min=0.001, max=0.01, step=0.05, precision=4,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links_width_broken")
     )
 
-    links_widthModLife: props.EnumProperty(
-        name="WIP: Life affects width",
+    links_width__mode: props.EnumProperty(
+        name="Link dynamic width",
         items=(
             ('DISABLED', "Disabled", "No effect on width"),
             ('UNIFORM', "Uniform effect", "Uniform effect on width"),
             ('BINARY', "Binary", "Any differece from full life affects drastically"),
         ),
-        default={'BINARY'},
+        default={'UNIFORM'},
         options={'ENUM_FLAG'},
-    )
-
-    links_wallExtraScale: props.FloatProperty(
-        name="WIP: Link walls extra", description="WIP: extra scaling",
-        default=1.25, min=0.25, max=3,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links_width__mode")
     )
 
 
