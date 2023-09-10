@@ -10,7 +10,8 @@ from .properties import (
 from .mw_cont import MW_Cont
 from .mw_links import MW_Links, Link
 
-from . import utils
+from . import utils, utils_trans
+from .utils_trans import VECTORS
 from .utils_dev import DEV
 from .stats import getStats
 
@@ -44,44 +45,10 @@ class StepData:
         self.exitL              : Link              = None
         self.break_msg          : str               = "NO_BREAK"
 
-class SIM_CONST:
-    """ # WIP:: Some sim constants, maybe moved """
-    upY = Vector((0,1,0))
-    backZ = Vector((0,0,-1))
-    dot_aligned_threshold = 1-1e-6
-
-    def aligned(v1:Vector, v2:Vector, bothDir = False):
-        return SIM_CONST.aligned_min(v1,v2,SIM_CONST.dot_aligned_threshold, bothDir)
-
-    def aligned_min(v1:Vector, v2:Vector, minDot:float, bothDir = False):
-        d = v1.dot(v2)
-        if bothDir: d = abs(d)
-        return d > minDot
-
-    def aligned_max(v1:Vector, v2:Vector, maxDot:float, bothDir = False):
-        d = v1.dot(v2)
-        if bothDir: d = abs(d)
-        return d < maxDot
-
-# TODO:: edit in UI some panel
-class SIM_CFG:
-    """ Sim config values to tweak """
-    link_entry_minAlign = 0.1
-    link_next_minAlign = -0.1
-
-    water_baseCost = 0.01
-    water_linkCost = 0.2
-    water_minAbsorb_check = 0.3
-    water_minAbsorb_continueProb = 0.9
-
-    # add test, deg, log, etc here
-
 #-------------------------------------------------------------------
 
 class MW_Sim:
     def __init__(self, cont: MW_Cont, links: MW_Links):
-        self.storeRnd()
-
         if DEV.DEBUG_MODEL:
             DEV.log_msg(f" > init : DEBUG_MODEL flag set", {"SIM", "LOG", "STEP"})
 
@@ -92,15 +59,15 @@ class MW_Sim:
         self.links_iniLife     = [ l.life for l in self.links.internal ]
         self.links_iniLife_air = [ l.life for l in self.links.external  ]
 
-        self.resetCurrent()
+        self.step_reset()
         self.step_id = self.sub_id = -1
 
         self.trace_data : list[StepData] = list()
         self.step_trace : StepData       = None
         self.sub_trace  : SubStepData    = None
 
-    def resetSim(self, debug_addSeed = 0, initialAirToo = True):
-        self.restoreRnd(debug_addSeed)
+    def reset(self, debug_addSeed = 0, initialAirToo = True):
+        self.rnd_restore(debug_addSeed)
 
         # WIP:: should use reset function etc
         for i,l in enumerate(self.links.internal):
@@ -109,7 +76,7 @@ class MW_Sim:
             for i,l in enumerate(self.links.external):
                 l.reset(self.links_iniLife_air[i])
 
-        self.resetCurrent()
+        self.step_reset()
         self.step_id    = self.sub_id = -1
 
         # reset log
@@ -118,14 +85,9 @@ class MW_Sim:
             self.step_trace = None
             self.sub_trace  = None
 
-    def resetCurrent(self):
-        self.entryL              : Link  = None
-        self.currentL            : Link  = None
-        self.waterLevel          : float = 1.0
-
-    def storeRnd(self):
+    def rnd_store(self):
         self.rndState = rnd.getstate()
-    def restoreRnd(self, addState=0):
+    def rnd_restore(self, addState=0):
         """ # NOTE:: just call some amount of randoms to modify seed, could modify state but requires copying a 600 elemnt tuple """
         utils.debug_rnd_seed(addState)
         #rnd.setstate(self.rndState)
@@ -133,18 +95,17 @@ class MW_Sim:
 
     #-------------------------------------------------------------------
 
-    def setAll(self, life= 1.0):
-        for l in self.links.internal:
-            l.reset(life)
+    def step_reset(self):
+        self.entryL              : Link  = None
+        self.currentL            : Link  = None
+        self.waterLevel          : float = 1.0
 
-    def stepAll(self):
+    def step_all(self):
         for l in self.links.internal:
             l.degrade(self.cfg.step_deg)
 
-    #-------------------------------------------------------------------
-
     def step(self):
-        self.resetCurrent()
+        self.step_reset()
         self.step_id += 1
 
         # writing the full trace slows down the process, even more when print to console!
@@ -233,17 +194,17 @@ class MW_Sim:
     def get_entryWeight(self, l:Link):
         if DEV.DEBUG_MODEL:
             # WIP:: limit axis for the hill model
-            if SIM_CONST.aligned(l.dir, SIM_CONST.backZ, bothDir=True):
+            if utils_trans.aligned(l.dir, VECTORS.backZ, bothDir=True):
                 return 0
         w = 1
 
         # relative position gravity align
         # IDEA:: maybe shift vector a bit by some wind factor?
-        water_dir_inv = SIM_CONST.upY
+        water_dir_inv = VECTORS.upY
         d = l.dir.dot(water_dir_inv)
 
         # cut-off
-        if d < SIM_CFG.link_entry_minAlign:
+        if d < self.cfg.link_entry_minAlign:
             return 0
 
         # weight using face areaFactor (could use regular area instead)
@@ -281,17 +242,17 @@ class MW_Sim:
     def get_nextWeight(self, l:Link):
         if DEV.DEBUG_MODEL:
             # WIP:: limit axis for the hill model also for next links (e.g. exit wall links)
-            if SIM_CONST.aligned(l.dir, SIM_CONST.backZ, bothDir=True):
+            if utils_trans.aligned(l.dir, VECTORS.backZ, bothDir=True):
                 return 0
         w = 1
 
         # relative pos align
-        water_dir_inv = -SIM_CONST.upY
+        water_dir_inv = -VECTORS.upY
         dpos = l.pos - self.currentL.pos
         d = dpos.normalized().dot(water_dir_inv)
 
         # cut-off
-        if d < SIM_CFG.link_next_minAlign:
+        if d < self.cfg.link_next_minAlign:
             return 0
 
         # weight using only the angle
@@ -320,11 +281,11 @@ class MW_Sim:
 
     def water_degradation(self):
         # minimun degradation that also happens when the water runs through a exterior face
-        d = SIM_CFG.water_baseCost * self.currentL.areaFactor * self.currentL.resistance
+        d = self.cfg.water_baseCost * self.currentL.areaFactor * self.currentL.resistance
 
         # interior also takes into account current link life
         if not self.currentL.airLink:
-            d += SIM_CFG.water_linkCost * self.currentL.areaFactor * self.currentL.life_clamped
+            d += self.cfg.water_linkCost * self.currentL.areaFactor * self.currentL.life_clamped
 
         self.waterLevel -= d
 
@@ -333,9 +294,9 @@ class MW_Sim:
             self.sub_trace.waterLevel_deg = d
 
         # check complete water absortion event
-        if self.waterLevel < SIM_CFG.water_minAbsorb_check and self.waterLevel > 0:
-            minAbsorb = self.waterLevel / SIM_CFG.water_minAbsorb_check
-            if minAbsorb * SIM_CFG.water_minAbsorb_continueProb < rnd.random():
+        if self.waterLevel < self.cfg.water_minAbsorb_check and self.waterLevel > 0:
+            minAbsorb = self.waterLevel / self.cfg.water_minAbsorb_check
+            if minAbsorb * self.cfg.water_minAbsorb_continueProb < rnd.random():
                 self.waterLevel = -1
 
     #-------------------------------------------------------------------
@@ -361,9 +322,3 @@ class MW_Sim:
             return False
 
         return True
-
-
-# WIP:: simulation instance only resides in the OP -> move to MWcont and share across OP invokes
-def resetLife(links: MW_Links, life = 1.0):
-    for l in links.link_map.values():
-        l.reset()

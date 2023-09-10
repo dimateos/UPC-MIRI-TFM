@@ -302,3 +302,9 @@ class MW_Links():
         newSplit = prevLen != self.comps_len
         getStats().logDt(f"calculated components: {self.comps_len} {'[new SPLIT]' if newSplit else ''}")
         return newSplit
+
+    #-------------------------------------------------------------------
+
+    def reset_links(self):
+        for l in self.link_map.values():
+            l.reset()

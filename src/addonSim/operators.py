@@ -105,11 +105,14 @@ class MW_gen_OT(_StartRefresh_OT):
     #    return MW_global_selected.last
 
     def invoke(self, context, event):
+        # copy prop from obj once
         self.invoked_once = False
         # avoid last stored operation overide and recalculating everything
         getPrefs().gen_PT_meta_inspector.reset_meta_show_toggled()
+
         # id of last fract calculated stored (outside the operator)
         self.last_storageID = None
+
         return super().invoke(context, event)
 
     #-------------------------------------------------------------------
@@ -444,11 +447,17 @@ class MW_sim_step_OT(_StartRefresh_OT):
         return MW_global_selected.fract
 
     def invoke(self, context, event):
+        # copy prop from obj once
         self.invoked_once = False
         # avoid last stored operation overide and recalculating everything
         getPrefs().gen_PT_meta_inspector.reset_meta_show_toggled()
-        # create simulation and store original rnd seed
-        self.sim = MW_Sim(MW_global_selected.fract.cont, MW_global_selected.fract.links)
+
+        # create simulation if it does not exist yet
+        if not MW_global_selected.fract.sim:
+            MW_global_selected.fract.sim = MW_Sim(MW_global_selected.fract.cont, MW_global_selected.fract.links)
+        # store current random state
+        MW_global_selected.fract.sim.rnd_store()
+
         return super().invoke(context, event)
 
     def execute(self, context: types.Context):
@@ -467,19 +476,26 @@ class MW_sim_step_OT(_StartRefresh_OT):
         else:
             copyProps(self.cfg, MW_global_selected.root.mw_sim)
 
-        # achieve constructive results during adjust op menu
+
+        # restore state to get constructive results
+        sim : MW_Sim = MW_global_selected.fract.sim
+        sim.rnd_restore()
+        # TODO:: links life from mesh
+
+        # steps
         sim_cfg : MW_sim_cfg= self.cfg
-        self.sim.resetSim(sim_cfg.debug_addSeed)
         DEV.log_msg(f"step_infiltrations({sim_cfg.step_infiltrations}) step_maxDepth({sim_cfg.step_maxDepth}) step_deg({sim_cfg.step_deg})", {'SIM'})
-
         for step in range(sim_cfg.step_infiltrations):
-            if sim_cfg.debug_uniformDeg: self.sim.stepAll()
-            else: self.sim.step()
+            if sim_cfg.debug_uniformDeg: sim.step_all()
+            else: sim.step()
 
+
+        # update links mesh
+        # TODO:: links life to mesh
         # IDEA:: store copy or original or button to recalc links from start? -> set all life to 1 but handle any dynamic list
         mw_setup.gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
         mw_setup.gen_linksWallObject(MW_global_selected.fract, MW_global_selected.root, context,
-                                    self.sim.step_trace.entryL_candidatesW if sim_cfg.debug_trace else None)
+                                    sim.step_trace.entryL_candidatesW if sim_cfg.debug_trace else None)
 
         return self.end_op()
 
@@ -496,17 +512,11 @@ class MW_sim_reset_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_global_selected.fract
+        return MW_global_selected.fract and MW_global_selected.fract.sim
 
     def execute(self, context: types.Context):
         self.start_op()
-
-        # TODO:: global sim atm
-        self.links = MW_global_selected.fract.links
-        mw_sim.resetLife(self.links)
-
-        mw_setup.gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
-        mw_setup.gen_linksWallObject(MW_global_selected.fract, MW_global_selected.root, context)
+        MW_global_selected.fract.sim.reset()
         return self.end_op()
 
 #-------------------------------------------------------------------

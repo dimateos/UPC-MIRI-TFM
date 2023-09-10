@@ -322,6 +322,7 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
 
     # single mesh with tubes
     mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidths, name, 1.0, resFaces, vis_cfg.links_smoothShade)
+    # TODO:: delete prev
 
     # color encoded attributes for viewing in viewport edit mode
     utils_mat.gen_meshAttr(mesh, lifeColor, resFaces*2, "FLOAT_COLOR", "POINT", "life")

@@ -7,13 +7,37 @@ from . import utils
 # transform utils: math and 3D algebra + some scene interaction
 #-------------------------------------------------------------------
 
-getPerpendicular_stable_minMagSq = 1e-4*1e-4
-""" small magnitudes will be unstable when normalizing """
+class VECTORS:
+    """ Some common vectors and thresholds """
+    upY = Vector((0,1,0))
+    backZ = Vector((0,0,-1))
+    rightX = Vector((1,0,0))
+
+    dot_aligned_threshold = 1-1e-6
+    """ min value to consider above zero to still have the same sign """
+    perp_stable_minMagSq = 1e-4*1e-4
+    """ small magnitudes will be unstable when normalizing (divide close to zero) """
+
+def aligned(v1:Vector, v2:Vector, bothDir = False):
+    """ v1 and v2 are aligned (above a common threshold) """
+    return aligned_min(v1,v2,VECTORS.dot_aligned_threshold, bothDir)
+
+def aligned_min(v1:Vector, v2:Vector, minDot:float, bothDir = False):
+    """ v1 and v2 are aligned at above minDot """
+    d = v1.dot(v2)
+    if bothDir: d = abs(d)
+    return d > minDot
+
+def aligned_max(v1:Vector, v2:Vector, maxDot:float, bothDir = False):
+    """ v1 and v2 are aligned less than maxDot, so could say that checking for not aligned """
+    d = v1.dot(v2)
+    if bothDir: d = abs(d)
+    return d < maxDot
 
 def almostNull(v:Vector):
-    global getPerpendicular_stable_minMagSq
-    if getPerpendicular_stable_minMagSq:
-        return v.length_squared < getPerpendicular_stable_minMagSq
+    """ length_squared is almost zero """
+    if VECTORS.perp_stable_minMagSq:
+        return v.length_squared < VECTORS.perp_stable_minMagSq
     return True
 
 def getPerpendicular_stable(v:Vector, normalize=True):
