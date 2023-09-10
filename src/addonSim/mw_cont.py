@@ -89,20 +89,34 @@ class MW_Cont:
         """ Precalculate/query data such as valid neighbours and mapping faces, also adds storage and cell id to cell objects """
         stats = getStats()
 
+        # init wall dict with just empty lists (some will remain empty)
+        self.wallsId : list[int] = self.voro_cont.get_conainerId_limitWalls()+self.voro_cont.walls_cont_idx
+        self.keys_perWall: dict[int, list[neigh_key_t]] = {
+            id: list() for id in self.wallsId
+        }
+        # cell dict lists will have the same size of neighs/faces so fill in the following loop while checking for missing ones
+        self.keys_perCell: dict[int, list[neigh_key_t] | int] = dict()
+        """ # NOTE:: missing cells are filled with a placeholder id to preserve original position idx """
+
+
         # calculate missing cells and query neighs (also with placeholders idx)
-        self.wallsId   : list[int]           = self.voro_cont.get_conainerId_limitWalls()+self.voro_cont.walls_cont_idx
         self.foundId   : list[int]           = []
         self.missingId : list[int]           = []
         self.deletedId : list[int]           = [] # NOTE:: will be treated as AIR cells, but missing geometry!
+        self.deletedId_prev = self.deletedId.copy()
         self.neighs    : list[list[int]|int] = [CELL_ERROR_ENUM.MISSING]*len(self.voro_cont)
 
         for idx_cell, obj_cell in enumerate(self.voro_cont):
             if obj_cell is None:
                 self.missingId.append(idx_cell)
+                self.keys_perCell[idx_cell] = CELL_ERROR_ENUM.MISSING
             else:
                 self.foundId.append(idx_cell)
                 neighs_cell = obj_cell.neighbors()
                 self.neighs[idx_cell] = neighs_cell
+                # prefill with asymmetry keys too
+                key = (CELL_ERROR_ENUM.ASYMMETRY, idx_cell)
+                self.keys_perCell[idx_cell] = [key]*len(neighs_cell)
 
         msg = f"calculated voro cell neighs: {len(self.missingId)} / {len(self.voro_cont)} missing"
         if self.missingId: msg += f" {str(self.missingId[:20])}"
@@ -161,6 +175,8 @@ class MW_Cont:
                     if neighs_other == CELL_ERROR_ENUM.MISSING:
                         self.neighs_keys_missing.append((idx_cell,idx_neigh))
                         neighs_cell[idx_face] = CELL_ERROR_ENUM.MISSING
+                        # also reasign the exact error code in the keys_perCell structure too (started as asymmetry)
+                        self.keys_perCell[idx_cell][idx_face] = (CELL_ERROR_ENUM.MISSING, idx_cell)
 
                     # try to find valid face matching index
                     else:
@@ -274,6 +290,18 @@ class MW_Cont:
                 ok.append(id)
 
         return ok, broken+broken_prev, error
+
+    def getCells_splitID_state(self):
+        """ Detect broken references to scene objects
+            # OPT:: store and only update?
+        """
+        stateMap = {
+            state : [] for state in CELL_STATE_ENUM.all
+        }
+
+        for id in self.foundId:
+            state = self.cells_state[id]
+            stateMap[state].append(id)
 
     def setCells_missing(self, broken:list[int]):
         """ Mark as DELETED to be treated as AIR but without access to geometry, dont touch other arrays """

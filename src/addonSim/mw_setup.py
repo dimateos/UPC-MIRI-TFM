@@ -386,7 +386,9 @@ def genWIP_linksObjects(objLinks: types.Object, objWall: types.Object, links: MW
     #objWall = None
 
     # iterate the global map
-    for key,l in links.link_map.items():
+    for links_data in links.links_graph.nodes(data=True):
+        #l = links_data[]
+        l = None
         c1, c2 = l.key_cells
         f1, f2 = l.key_faces
 

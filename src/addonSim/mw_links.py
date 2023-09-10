@@ -3,7 +3,7 @@ from mathutils import Vector, Matrix
 INF_FLOAT = float("inf")
 import networkx as nx
 
-from .mw_cont import MW_Cont, CELL_ERROR_ENUM, neigh_key_t, neighFaces_key_t
+from .mw_cont import MW_Cont, CELL_ERROR_ENUM, CELL_STATE_ENUM, neigh_key_t, neighFaces_key_t
 from . import mw_resistance
 
 from . import utils, utils_trans
@@ -100,11 +100,12 @@ class MW_Links():
         self.cells_graph = nx.Graph()
         """ Graph connecting the cells to find connected components, also adds walls with negative indices
             # NOTE:: edges for a given node are not returned sorted by face, for this query the faceKey inside the link
-            # NOTE:: removing nodes from the graphs takes all their edges too
+            # NOTE:: removing nodes from the graphs takes all their edges too, adding edges creates nodess
         """
+
         self.comps = []
         """ List of sets with connected components cells id """
-        self.cells_graph.add_nodes_from(cont.foundId+cont.wallsId)
+        self.comps_subgraph = nx.Graph() # used to leave cells_graph untouched (edges get removed along nodes)
         self.comps_len = -1
 
         self.links_graph = nx.Graph()
@@ -182,6 +183,9 @@ class MW_Links():
                     self.cells_graph.add_edge(*key, l=l)
                     self.links_graph.add_node(key, l=l)
                     self.external.append(l)
+                    # also static cont maps
+                    cont.keys_perWall[idx_neighCell].append(key)
+                    cont.keys_perCell[idx_cell][idx_face] = key
 
                 else:
                     # internal link, check unique between cells (networkx works without swapping the key tho)
@@ -198,11 +202,14 @@ class MW_Links():
                     self.cells_graph.add_edge(*key, l=l)
                     self.links_graph.add_node(key, l=l)
                     self.internal.append(l)
+                    # also static cont maps
+                    cont.keys_perCell[idx_cell][idx_face] = key
+                    cont.keys_perCell[idx_neighCell][idx_neighFace] = key
 
 
         # count the links and calcualte averages
         self.links_len = self.links_graph.number_of_nodes()
-        if (self.links_len):
+        if self.links_len:
             self.avg_area /= float(self.links_len)
 
         stats.logDt(f"created link map: {self.links_len}")
@@ -217,24 +224,20 @@ class MW_Links():
             if idx_cell in cont.deletedId:
                 continue
 
-            # keys from cell to cell are the edges per node in cells_graph
-            edges_perCell = list(self.cells_graph.edges(idx_cell, data=True))
-
-            # the face id is not indexed by the order in edges_perCell, hence enumerate() is not warranted
-            for edge_data in edges_perCell:
-                key = tuple(edge_data[:2])
-                data = edge_data[2]
+            # the face id is not indexed by the order in edges_perCell, then use static cont map that includes missing ones
+            keys_perFace = cont.keys_perCell[idx_cell]
+            for idx_face,key in enumerate(keys_perFace):
 
                 # skip possible asymmetries
                 if key[0] in CELL_ERROR_ENUM.all:
                     continue
 
                 # avoid recalculating link neighs (and duplicating them)
-                if len(self.links_graph.edges(key)):
+                if len(self.get_link_neighsId(key)):
                     continue
 
                 # retrieve valid link
-                l : Link = data["l"]
+                l = self.get_link(key)
                 #DEV.log_msg(f"l {l.key_cells} {l.key_cells}")
 
                 # calculate area factor relative to avg area (avg wont be zero when there are links_graph.nodes)
@@ -243,9 +246,8 @@ class MW_Links():
                 # no AIR links
                 if l.state == LINK_STATE_ENUM.WALL:
                     # walls only add local faces from the same cell
-                    idx_face = l.key_faces[0]
                     wf_neighs = cont.cells_meshes_FtoF[idx_cell][idx_face]
-                    w_neighs = [ tuple(edges_perCell[f][:2]) for f in wf_neighs ]
+                    w_neighs = [ keys_perFace[f] for f in wf_neighs ]
                     self.links_graph.add_edges_from(w_neighs)
 
                 else:
@@ -259,19 +261,21 @@ class MW_Links():
                     f2_neighs = m2_neighs[f2]
 
                     # the key is sorted, so query the keys per cell per each one
-                    c1_keys = list(self.cells_graph.edges(c1))
-                    c2_keys = list(self.cells_graph.edges(c2))
+                    c1_keys = cont.keys_perCell[c1]
+                    c2_keys = cont.keys_perCell[c2]
                     c1_neighs = [ c1_keys[f] for f in f1_neighs ]
                     c2_neighs = [ c2_keys[f] for f in f2_neighs ]
                     self.links_graph.add_edges_from(c1_neighs + c2_neighs)
 
         stats.logDt("aggregated link neighbours")
 
+        # initial components subgraph calculation
         self.comps_recalc()
 
         logType = {"CALC", "LINKS"}
-        if not self.link_map: logType |= {"ERROR"}
-        DEV.log_msg(f"Found {len(self.link_map)} links: {len(self.external)} external | {len(self.internal)} internal", logType)
+        if not self.links_len:
+            logType |= {"ERROR"}
+        DEV.log_msg(f"Found {self.links_len} links: {len(self.external)} external | {len(self.internal)} internal", logType)
         self.initialized = True
 
     def sanitize(self, root):
@@ -282,15 +286,14 @@ class MW_Links():
         if not self.cont.deletedId or self.cont.deletedId == self.cont.deletedId_prev:
             return cleaned
 
-        # detect changes
-        curr = set(self.cont.deletedId)
-        prev = set(self.cont.deletedId_prev)
-        newDeleted = curr - prev
-        newAdded = prev - curr
-
-        # add / remove cells
-        self.cells_graph.add_nodes_from(newAdded)
-        self.cells_graph.remove_nodes_from(newDeleted)
+        ## detect changes -> not ok cause removing nodes removes past edges
+        #curr = set(self.cont.deletedId)
+        #prev = set(self.cont.deletedId_prev)
+        #newDeleted = curr - prev
+        #newAdded = prev - curr
+        ## add / remove cells
+        #self.cells_graph.add_nodes_from(newAdded)
+        #self.cells_graph.remove_nodes_from(newDeleted)
 
         # recalculate the components
         self.comps_recalc()
@@ -299,14 +302,37 @@ class MW_Links():
     def comps_recalc(self):
         """ Recalc cell connected componentes, return true when changed """
         prevLen = self.comps_len
-        self.comps = list(nx.connected_components(self.cells_graph))
+
+        # create a subgraph with no air, no missing cells and no additional walls
+        stateMap = self.cont.getCells_splitID_state()
+        valid = stateMap[CELL_STATE_ENUM.SOLID] + CELL_STATE_ENUM.SOLID[CELL_STATE_ENUM.CORE]
+        self.comps_subgraph = self.cells_graph.subgraph(valid)
+
+        # calc components
+        self.comps = list(nx.connected_components(self.comps_subgraph))
         self.comps_len = len(self.comps)
+
         newSplit = prevLen != self.comps_len
         getStats().logDt(f"calculated components: {self.comps_len} {'[new SPLIT]' if newSplit else ''}")
         return newSplit
 
+    def comps_linkBreak(self, key):
+        l = self.get_link(key)
+
     #-------------------------------------------------------------------
 
+    def get_link(self, key:neigh_key_t) -> Link:
+        return self.links_graph.nodes[key]["l"]
+
+    def get_link_neighsId(self, key:neigh_key_t) -> list[neigh_key_t]:
+        """ The links neighs ID unordered by face or anything """
+        return list(self.links_graph.edges(key))
+
+    def get_link_neighs(self, key:neigh_key_t) -> list[Link]:
+        """ The links neighs unordered by face or anything """
+        return [ self.get_link(k) for k in self.get_link_neighsId(key) ]
+
     def reset_links(self):
-        for l in self.link_map.values():
+        for key in self.links_graph.nodes():
+            l = self.get_link(key)
             l.reset()

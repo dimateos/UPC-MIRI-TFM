@@ -540,13 +540,14 @@ class MW_util_comps_OT(_StartRefresh_OT):
         self.start_op()
         #comps = mw_extraction.get_connected_comps_unionFind(MW_global_selected.fract)
 
-        # check potentially deleted cells etc
-        MW_global_selected.fract.sanitize(MW_global_selected.root)
-
         # query comps from links
         links : MW_Links = MW_global_selected.fract.links
-        comps = links.comps
-        DEV.log_msg(f"Current components: {len(comps)}")
+        DEV.log_msg(f"Prev components: {links.comps_len}")
+
+        # TODO:: which one?
+        # check potentially deleted cells etc
+        MW_global_selected.fract.sanitize(MW_global_selected.root)
+        links.comps_recalc()
 
         if getPrefs().util_comps_OT_apply:
             pass
