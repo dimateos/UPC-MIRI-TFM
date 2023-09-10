@@ -18,8 +18,8 @@ from .stats import getStats
 
 #-------------------------------------------------------------------
 
-linkCells_key_t = tuple[int, int]
-linkFaces_key_t = tuple[int, int]
+neigh_key_t      = tuple[int, int]
+neighFaces_key_t = tuple[int, int]
 
 class CELL_ERROR_ENUM:
     """ Use leftover indices between cont boundaries and custom walls for filler error idx?
@@ -89,15 +89,8 @@ class MW_Cont:
         """ Precalculate/query data such as valid neighbours and mapping faces, also adds storage and cell id to cell objects """
         stats = getStats()
 
-        # init wall dict with just empty lists (some will remain empty)
-        self.keys_perWall: dict[int, list[linkCells_key_t]] = {
-            id: list() for id in self.voro_cont.get_conainerId_limitWalls()+self.voro_cont.walls_cont_idx
-        }
-        # cell dict lists will have the same size of neighs/faces so fill in the following loop while checking for missing ones
-        self.keys_perCell: dict[int, list[linkCells_key_t] | int] = dict()
-        """ # NOTE:: missing cells are filled with a placeholder id to preserve original position idx """
-
         # calculate missing cells and query neighs (also with placeholders idx)
+        self.wallsId   : list[int]           = self.voro_cont.get_conainerId_limitWalls()+self.voro_cont.walls_cont_idx
         self.foundId   : list[int]           = []
         self.missingId : list[int]           = []
         self.deletedId : list[int]           = [] # NOTE:: will be treated as AIR cells, but missing geometry!
@@ -106,14 +99,10 @@ class MW_Cont:
         for idx_cell, obj_cell in enumerate(self.voro_cont):
             if obj_cell is None:
                 self.missingId.append(idx_cell)
-                self.keys_perCell[idx_cell] = CELL_ERROR_ENUM.MISSING
             else:
                 self.foundId.append(idx_cell)
                 neighs_cell = obj_cell.neighbors()
                 self.neighs[idx_cell] = neighs_cell
-                # prefill with asymmetry keys too
-                key = (CELL_ERROR_ENUM.ASYMMETRY, idx_cell)
-                self.keys_perCell[idx_cell] = [key]*len(neighs_cell)
 
         msg = f"calculated voro cell neighs: {len(self.missingId)} / {len(self.voro_cont)} missing"
         if self.missingId: msg += f" {str(self.missingId[:20])}"
@@ -151,9 +140,9 @@ class MW_Cont:
         stats.logDt("calculated cells mesh dicts (interleaved missing cells)")
 
         # build symmetric face map of the found cells
-        self.keys_asymmetry : list[linkCells_key_t]    = []
-        self.keys_missing   : list[linkCells_key_t]    = []
-        self.neighs_faces   : list[list[int]|int] = [CELL_ERROR_ENUM.MISSING]*len(self.voro_cont)
+        self.neighs_keys_asymmetry : list[neigh_key_t]   = []
+        self.neighs_keys_missing   : list[neigh_key_t]   = []
+        self.neighs_faces          : list[list[int]|int] = [CELL_ERROR_ENUM.MISSING]*len(self.voro_cont)
         """ # NOTE:: missing cells and neigh asymmetries are filled with a placeholder id too """
 
         for idx_cell in self.foundId:
@@ -170,10 +159,8 @@ class MW_Cont:
 
                     # check missing whole cell -> alter neighs acording to found error
                     if neighs_other == CELL_ERROR_ENUM.MISSING:
-                        self.keys_missing.append((idx_cell,idx_neigh))
+                        self.neighs_keys_missing.append((idx_cell,idx_neigh))
                         neighs_cell[idx_face] = CELL_ERROR_ENUM.MISSING
-                        # also reasign the exact error code in the keys_perCell structure too (started as asymmetry)
-                        self.keys_perCell[idx_cell][idx_face] = (CELL_ERROR_ENUM.MISSING, idx_cell)
 
                     # try to find valid face matching index
                     else:
@@ -183,15 +170,15 @@ class MW_Cont:
 
                         # symmetry checked with .index exception -> also alter neighs
                         except ValueError:
-                            self.keys_asymmetry.append((idx_cell,idx_neigh))
+                            self.neighs_keys_asymmetry.append((idx_cell,idx_neigh))
                             neighs_cell[idx_face] = CELL_ERROR_ENUM.ASYMMETRY
 
             # add the merged list of faces
             self.neighs_faces[idx_cell] = faces
 
-        stats.logDt(f"calculated cell neighs faces: {len(self.keys_missing)} broken due missing")
-        msg =       f"      ...found {len(self.keys_asymmetry)} asymmetries"
-        if self.keys_asymmetry: msg += f": {str(self.keys_asymmetry[:10])}"
+        stats.logDt(f"calculated cell neighs faces: {len(self.neighs_keys_missing)} broken due missing")
+        msg =       f"      ...found {len(self.neighs_keys_asymmetry)} asymmetries"
+        if self.neighs_keys_asymmetry: msg += f": {str(self.neighs_keys_asymmetry[:10])}"
         stats.logDt(msg) # uncut=True
         self.precalculated = True
 
