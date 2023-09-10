@@ -9,7 +9,7 @@ from .properties_global import (
     MW_global_selected,
 )
 from .mw_fract import MW_Fract
-from .mw_cont import MW_Cont, STATE_ENUM
+from .mw_cont import MW_Cont, CELL_STATE_ENUM
 
 from . import operators as ops
 from .panels_dm import util_classes_pt
@@ -144,8 +144,8 @@ class MW_gen_PT(types.Panel):
                     col_rowSplit.label(text=f"{curr.mw_id.meta_type}, sID: {curr.mw_id.storage_id}, cID: {cell_id}", icon="MESH_ICOSPHERE")
                     # state data from cont or the cell
                     col_rowSplit = boxSelected.row()
-                    stateCont = STATE_ENUM.to_str(MW_global_selected.fract.cont.cells_state[cell_id]) if fract and cont else "~"
-                    col_rowSplit.label(text=f"  cState: {STATE_ENUM.to_str(curr.mw_id.cell_state)}  // cont: {stateCont}")
+                    stateCont = CELL_STATE_ENUM.to_str(MW_global_selected.fract.cont.cells_state[cell_id]) if fract and cont else "~"
+                    col_rowSplit.label(text=f"  cState: {CELL_STATE_ENUM.to_str(curr.mw_id.cell_state)}  // cont: {stateCont}")
 
                 # cont POV
                 if fract:

@@ -18,7 +18,7 @@ from .operators_dm import _StartRefresh_OT, util_classes_op
 
 from . import mw_setup, mw_extraction
 from .mw_links import MW_Links
-from .mw_cont import MW_Cont, STATE_ENUM
+from .mw_cont import MW_Cont, CELL_STATE_ENUM
 from .mw_fract import MW_Fract
 from .mw_sim import MW_Sim
 
@@ -356,7 +356,7 @@ class MW_cell_state_OT(_StartRefresh_OT):
         # set to current state
         cell_id = MW_global_selected.current.mw_id.cell_id
         cell_state = MW_global_selected.fract.cont.cells_state[cell_id]
-        self.set_state = {STATE_ENUM.to_str(cell_state)}
+        self.set_state = {CELL_STATE_ENUM.to_str(cell_state)}
 
         # set args before execution to confirm
         wm = context.window_manager
@@ -368,7 +368,7 @@ class MW_cell_state_OT(_StartRefresh_OT):
 
     def execute(self, context: types.Context):
         self.start_op()
-        state = STATE_ENUM.from_str(self.set_state.pop())
+        state = CELL_STATE_ENUM.from_str(self.set_state.pop())
         mw_setup.set_cellsState(MW_global_selected.fract, MW_global_selected.root, MW_global_selected.selection, state)
         # TODO:: recalc some link stuff + components
         return self.end_op()

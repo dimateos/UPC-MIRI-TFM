@@ -13,7 +13,7 @@ from .properties import (
     MW_vis_cfg,
 )
 
-from .mw_cont import MW_Cont, VORO_Container, STATE_ENUM
+from .mw_cont import MW_Cont, VORO_Container, CELL_STATE_ENUM
 from .mw_links import MW_Links
 from .mw_fract import MW_Fract # could import all from here
 
@@ -255,14 +255,14 @@ def gen_cells_LEGACY(voro_cont: VORO_Container, root: types.Object, context: typ
 
 def set_cellsState(fract: MW_Fract, root: types.Object, cells: list[types.Object], state:int):
     prefs = getPrefs()
-    assert(state in STATE_ENUM.all)
+    assert(state in CELL_STATE_ENUM.all)
 
     # take respective parent object
-    if state == STATE_ENUM.SOLID:
+    if state == CELL_STATE_ENUM.SOLID:
         root_cells = utils_scene.get_child(root, prefs.names.cells)
-    elif state == STATE_ENUM.CORE:
+    elif state == CELL_STATE_ENUM.CORE:
         root_cells = utils_scene.get_child(root, prefs.names.cells_core)
-    elif state == STATE_ENUM.AIR:
+    elif state == CELL_STATE_ENUM.AIR:
         root_cells = utils_scene.get_child(root, prefs.names.cells_air)
 
     for cell in cells:

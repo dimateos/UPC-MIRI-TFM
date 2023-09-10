@@ -21,7 +21,7 @@ from .stats import getStats
 linkCells_key_t = tuple[int, int]
 linkFaces_key_t = tuple[int, int]
 
-class ERROR_ENUM:
+class CELL_ERROR_ENUM:
     """ Use leftover indices between cont boundaries and custom walls for filler error idx?
         # NOTE:: could be using any number, sequentiality not used
     """
@@ -43,7 +43,7 @@ class ERROR_ENUM:
         if idx == cls.DELETED: return "DELETED"
         return "unknown"
 
-class STATE_ENUM:
+class CELL_STATE_ENUM:
     """ Current cell state, preserves some sequentiality"""
     SOLID = 0
     CORE = 1
@@ -57,15 +57,15 @@ class STATE_ENUM:
         if e == cls.SOLID:  return "SOLID"
         if e == cls.CORE:   return "CORE"
         if e == cls.AIR:    return "AIR"
-        if e in ERROR_ENUM.all: return "ERROR_ENUM"
+        if e in CELL_ERROR_ENUM.all: return "ERROR_ENUM"
         return "none"
-        #raise ValueError(f"STATE_ENUM: {e} is not in {cls.all}")
+        #raise ValueError(f"CELL_STATE_ENUM: {e} is not in {cls.all}")
     @classmethod
     def from_str(cls, s:str):
         if s == "SOLID":    return cls.SOLID
         if s == "CORE":     return cls.CORE
         if s == "AIR":      return cls.AIR
-        raise ValueError(f"STATE_ENUM: {s} is not in {cls.all_str}")
+        raise ValueError(f"CELL_STATE_ENUM: {s} is not in {cls.all_str}")
 
 #-------------------------------------------------------------------
 
@@ -101,18 +101,18 @@ class MW_Cont:
         self.foundId   : list[int]           = []
         self.missingId : list[int]           = []
         self.deletedId : list[int]           = [] # NOTE:: will be treated as AIR cells, but missing geometry!
-        self.neighs    : list[list[int]|int] = [ERROR_ENUM.MISSING]*len(self.voro_cont)
+        self.neighs    : list[list[int]|int] = [CELL_ERROR_ENUM.MISSING]*len(self.voro_cont)
 
         for idx_cell, obj_cell in enumerate(self.voro_cont):
             if obj_cell is None:
                 self.missingId.append(idx_cell)
-                self.keys_perCell[idx_cell] = ERROR_ENUM.MISSING
+                self.keys_perCell[idx_cell] = CELL_ERROR_ENUM.MISSING
             else:
                 self.foundId.append(idx_cell)
                 neighs_cell = obj_cell.neighbors()
                 self.neighs[idx_cell] = neighs_cell
                 # prefill with asymmetry keys too
-                key = (ERROR_ENUM.ASYMMETRY, idx_cell)
+                key = (CELL_ERROR_ENUM.ASYMMETRY, idx_cell)
                 self.keys_perCell[idx_cell] = [key]*len(neighs_cell)
 
         msg = f"calculated voro cell neighs: {len(self.missingId)} / {len(self.voro_cont)} missing"
@@ -120,10 +120,10 @@ class MW_Cont:
         stats.logDt(msg) # uncut=True
 
         # retrieve objs, meshes -> dicts per cell
-        self.cells_objs        : list[types.Object|int] = [ERROR_ENUM.MISSING]* len(self.voro_cont)
-        self.cells_meshes      : list[types.Mesh|int]   = [ERROR_ENUM.MISSING]* len(self.voro_cont)
-        self.cells_meshes_FtoF : list[dict|int]         = [ERROR_ENUM.MISSING]* len(self.voro_cont)
-        self.cells_state       : list[types.Object|int] = [ERROR_ENUM.MISSING]* len(self.voro_cont)
+        self.cells_objs        : list[types.Object|int] = [CELL_ERROR_ENUM.MISSING]* len(self.voro_cont)
+        self.cells_meshes      : list[types.Mesh|int]   = [CELL_ERROR_ENUM.MISSING]* len(self.voro_cont)
+        self.cells_meshes_FtoF : list[dict|int]         = [CELL_ERROR_ENUM.MISSING]* len(self.voro_cont)
+        self.cells_state       : list[types.Object|int] = [CELL_ERROR_ENUM.MISSING]* len(self.voro_cont)
         prefs = getPrefs()
         self.cells_root = utils_scene.get_child(self.root, prefs.names.cells)
         self.cells_root_core = utils_scene.get_child(self.root, prefs.names.cells_core)
@@ -139,8 +139,8 @@ class MW_Cont:
             obj_cell.mw_id.storage_id = self.root.mw_id.storage_id
 
             # initial state is SOLD
-            self.cells_state[idx_cell] = STATE_ENUM.SOLID
-            obj_cell.mw_id.cell_state = STATE_ENUM.SOLID
+            self.cells_state[idx_cell] = CELL_STATE_ENUM.SOLID
+            obj_cell.mw_id.cell_state = CELL_STATE_ENUM.SOLID
 
             # store mesh and faces map
             mesh = obj_cell.data
@@ -153,13 +153,13 @@ class MW_Cont:
         # build symmetric face map of the found cells
         self.keys_asymmetry : list[linkCells_key_t]    = []
         self.keys_missing   : list[linkCells_key_t]    = []
-        self.neighs_faces   : list[list[int]|int] = [ERROR_ENUM.MISSING]*len(self.voro_cont)
+        self.neighs_faces   : list[list[int]|int] = [CELL_ERROR_ENUM.MISSING]*len(self.voro_cont)
         """ # NOTE:: missing cells and neigh asymmetries are filled with a placeholder id too """
 
         for idx_cell in self.foundId:
             neighs_cell = self.neighs[idx_cell]
 
-            faces: list[int] = [ERROR_ENUM.ASYMMETRY] * len(neighs_cell)
+            faces: list[int] = [CELL_ERROR_ENUM.ASYMMETRY] * len(neighs_cell)
             for idx_face,idx_neigh in enumerate(neighs_cell):
                 # wall connection always ok, so simply add its index
                 if idx_neigh < 0: faces.append(idx_neigh)
@@ -169,11 +169,11 @@ class MW_Cont:
                     neighs_other = self.neighs[idx_neigh]
 
                     # check missing whole cell -> alter neighs acording to found error
-                    if neighs_other == ERROR_ENUM.MISSING:
+                    if neighs_other == CELL_ERROR_ENUM.MISSING:
                         self.keys_missing.append((idx_cell,idx_neigh))
-                        neighs_cell[idx_face] = ERROR_ENUM.MISSING
+                        neighs_cell[idx_face] = CELL_ERROR_ENUM.MISSING
                         # also reasign the exact error code in the keys_perCell structure too (started as asymmetry)
-                        self.keys_perCell[idx_cell][idx_face] = (ERROR_ENUM.MISSING, idx_cell)
+                        self.keys_perCell[idx_cell][idx_face] = (CELL_ERROR_ENUM.MISSING, idx_cell)
 
                     # try to find valid face matching index
                     else:
@@ -184,7 +184,7 @@ class MW_Cont:
                         # symmetry checked with .index exception -> also alter neighs
                         except ValueError:
                             self.keys_asymmetry.append((idx_cell,idx_neigh))
-                            neighs_cell[idx_face] = ERROR_ENUM.ASYMMETRY
+                            neighs_cell[idx_face] = CELL_ERROR_ENUM.ASYMMETRY
 
             # add the merged list of faces
             self.neighs_faces[idx_cell] = faces
@@ -274,12 +274,12 @@ class MW_Cont:
             cell = self.cells_objs[id]
 
             # skip build error
-            if cell == ERROR_ENUM.MISSING or cell == ERROR_ENUM.ASYMMETRY:
+            if cell == CELL_ERROR_ENUM.MISSING or cell == CELL_ERROR_ENUM.ASYMMETRY:
                 error.append(id)
                 continue
 
             # deleted broken references
-            if cell == ERROR_ENUM.DELETED:
+            if cell == CELL_ERROR_ENUM.DELETED:
                 broken_prev.append(id)
             elif utils_scene.needsSanitize(cell):
                 broken.append(id)
@@ -294,9 +294,9 @@ class MW_Cont:
         self.deletedId = broken
 
         for id in broken:
-            self.cells_objs[id] = ERROR_ENUM.DELETED
-            self.cells_meshes[id] = ERROR_ENUM.DELETED
-            self.cells_state[id] = STATE_ENUM.AIR
+            self.cells_objs[id] = CELL_ERROR_ENUM.DELETED
+            self.cells_meshes[id] = CELL_ERROR_ENUM.DELETED
+            self.cells_state[id] = CELL_STATE_ENUM.AIR
 
     #-------------------------------------------------------------------
 

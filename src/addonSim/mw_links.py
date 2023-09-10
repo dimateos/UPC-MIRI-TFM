@@ -3,7 +3,7 @@ from mathutils import Vector, Matrix
 INF_FLOAT = float("inf")
 import networkx as nx
 
-from .mw_cont import MW_Cont, ERROR_ENUM, linkCells_key_t, linkFaces_key_t
+from .mw_cont import MW_Cont, CELL_ERROR_ENUM, linkCells_key_t, linkFaces_key_t
 from . import mw_resistance
 
 from . import utils, utils_trans
@@ -12,6 +12,29 @@ from .stats import getStats
 
 
 #-------------------------------------------------------------------
+
+class LINK_STATE_ENUM:
+    """ Current links state, preserves some sequentiality"""
+    SOLID = 0
+    WALL = 1
+    AIR = 2
+
+    all = [ SOLID, WALL, AIR ]
+    all_str = [ "SOLID", "WALL", "AIR" ]
+
+    @classmethod
+    def to_str(cls, e:int):
+        if e == cls.SOLID:  return "SOLID"
+        if e == cls.WALL:   return "WALL"
+        if e == cls.AIR:    return "AIR"
+        return "none"
+        #raise ValueError(f"CELL_STATE_ENUM: {e} is not in {cls.all}")
+    @classmethod
+    def from_str(cls, s:str):
+        if s == "SOLID":    return cls.SOLID
+        if s == "WALL":     return cls.WALL
+        if s == "AIR":      return cls.AIR
+        raise ValueError(f"CELL_STATE_ENUM: {s} is not in {cls.all_str}")
 
 class Link():
     """ # OPT:: could use a class or an array of props? pyhton already slow so ok class?"""
@@ -87,7 +110,7 @@ class Link():
     def addNeighs(self, newNeighsKeys:list[linkCells_key_t]):
         """ Classify by key and add queried links to the respective neigh list """
         for kn in newNeighsKeys:
-            if   kn[0] in ERROR_ENUM.all: self.neighs_error.append(kn)
+            if   kn[0] in CELL_ERROR_ENUM.all: self.neighs_error.append(kn)
             elif kn[0] < 0                  : self.neighs_Air_Cell.append(self.collection.link_map[kn])
             else                            : self.neighs_Cell_Cell.append(self.collection.link_map[kn])
 
@@ -151,7 +174,7 @@ class MW_Links():
             for idx_face, idx_neighCell in enumerate(cont.neighs[idx_cell]):
 
                 # skip asymmetric (already prefilled keys_perCell)
-                if idx_neighCell in ERROR_ENUM.all:
+                if idx_neighCell in CELL_ERROR_ENUM.all:
                     continue
                 if idx_neighCell in cont.deletedId:
                     continue
@@ -227,7 +250,7 @@ class MW_Links():
             keys_perFace = cont.keys_perCell[idx_cell]
             for idx_face,key in enumerate(keys_perFace):
                 # skip possible asymmetries
-                if key[0] in ERROR_ENUM.all:
+                if key[0] in CELL_ERROR_ENUM.all:
                     continue
 
                 # retrieve valid link
