@@ -9,6 +9,7 @@ from .properties import (
 
 from .mw_cont import MW_Cont
 from .mw_links import MW_Links
+from .mw_sim import MW_Sim
 
 from .utils_dev import DEV
 from .stats import getStats
@@ -20,12 +21,9 @@ class MW_Fract:
     """ Wrapper class around the core separate fracture related classes """
 
     def __init__(self):
-
-        # TODO:: reference to root?
-
-        self.cont  : MW_Cont = None
-        self.links : MW_Links     = None
-        self.sim = None
+        self.cont  : MW_Cont  = None
+        self.links : MW_Links = None
+        self.sim   : MW_Sim   = None
 
     def sanitize(self, root):
         cleaned = False

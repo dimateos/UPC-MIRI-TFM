@@ -20,7 +20,7 @@ from . import mw_setup, mw_extraction
 from .mw_links import MW_Links
 from .mw_cont import MW_Cont, STATE_ENUM
 from .mw_fract import MW_Fract
-from . import mw_sim
+from .mw_sim import MW_Sim
 
 from . import ui
 from . import utils, utils_scene, utils_trans
@@ -105,8 +105,8 @@ class MW_gen_OT(_StartRefresh_OT):
     #    return MW_global_selected.last
 
     def invoke(self, context, event):
-        # avoid last stored operation overide and recalculating everything
         self.invoked_once = False
+        # avoid last stored operation overide and recalculating everything
         getPrefs().gen_PT_meta_inspector.reset_meta_show_toggled()
         # id of last fract calculated stored (outside the operator)
         self.last_storageID = None
@@ -391,6 +391,11 @@ class MW_gen_links_OT(_StartRefresh_OT):
 
     def execute(self, context: types.Context):
         self.start_op()
+
+        # check potentially deleted cells etc
+        MW_global_selected.fract.sanitize(MW_global_selected.root)
+
+        # regenerate the mesh
         mw_setup.gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
         #mw_setup.gen_linksWallObject(MW_global_selected.fract, MW_global_selected.root, context)
         return self.end_op()
@@ -429,18 +434,21 @@ class MW_sim_step_OT(_StartRefresh_OT):
         col.prop(cfg, "step_maxDepth")
         col.prop(cfg, "step_deg")
 
-        # debug
-        open, box = ui.draw_propsToggle_custom(cfg, getPrefs().sim_PT_meta_inspector, layout, "meta_show_debug_props", propFilter="debug", scaleBox=0.85)
+        # params and debug
+        prefs = getPrefs()
+        open, box = ui.draw_propsToggle_custom(cfg, prefs.sim_PT_meta_inspector, layout, "meta_show_1", text="Parameters", propFilter="-step,-debug")
+        open, box = ui.draw_propsToggle_custom(cfg, prefs.sim_PT_meta_inspector, layout, "meta_show_debug_props", propFilter="debug", scaleBox=0.85)
 
     @classmethod
     def poll(cls, context):
         return MW_global_selected.fract
 
     def invoke(self, context, event):
+        self.invoked_once = False
+        # avoid last stored operation overide and recalculating everything
         getPrefs().gen_PT_meta_inspector.reset_meta_show_toggled()
-        # TODO:: rework create simulation object
-        self.links = MW_global_selected.fract.links
-        self.sim = mw_sim.MW_Sim(self.links)
+        # create simulation and store original rnd seed
+        self.sim = MW_Sim(MW_global_selected.fract.cont, MW_global_selected.fract.links)
         return super().invoke(context, event)
 
     def execute(self, context: types.Context):
@@ -448,23 +456,30 @@ class MW_sim_step_OT(_StartRefresh_OT):
         prefs = getPrefs()
 
         # handle refresh
-        if self.checkRefresh_cancel() or prefs.gen_PT_meta_inspector.skip_meta_show_toggled():
+        if self.checkRefresh_cancel() or prefs.sim_PT_meta_inspector.skip_meta_show_toggled():
             return self.end_op_refresh(skipLog=True)
+
+        # copy the params config from the object once, later copy all cfg to it from op
+        if not self.invoked_once:
+            self.invoked_once = True
+            DEV.log_msg("cfg found once: copying props to OP", {'SIM'})
+            copyProps(MW_global_selected.root.mw_sim, self.cfg, "-step,-debug")
+        else:
+            copyProps(self.cfg, MW_global_selected.root.mw_sim)
 
         # achieve constructive results during adjust op menu
         sim_cfg : MW_sim_cfg= self.cfg
         self.sim.resetSim(sim_cfg.debug_addSeed)
-        self.sim.set_deg(sim_cfg.step_deg)
-        DEV.log_msg(f"step_infiltrations({sim_cfg.step_infiltrations}) step_maxDepth({sim_cfg.step_maxDepth}) step_deg({sim_cfg.step_deg})", {'SETUP'})
+        DEV.log_msg(f"step_infiltrations({sim_cfg.step_infiltrations}) step_maxDepth({sim_cfg.step_maxDepth}) step_deg({sim_cfg.step_deg})", {'SIM'})
 
         for step in range(sim_cfg.step_infiltrations):
             if sim_cfg.debug_uniformDeg: self.sim.stepAll()
-            else: self.sim.step(sim_cfg.step_maxDepth)
+            else: self.sim.step()
 
         # IDEA:: store copy or original or button to recalc links from start? -> set all life to 1 but handle any dynamic list
         mw_setup.gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
         mw_setup.gen_linksWallObject(MW_global_selected.fract, MW_global_selected.root, context,
-                                    self.sim.step_trace.entryL_candidatesW if self.sim.trace else None)
+                                    self.sim.step_trace.entryL_candidatesW if sim_cfg.debug_trace else None)
 
         return self.end_op()
 

@@ -3,9 +3,6 @@ import bpy.types as types
 from mathutils import Vector
 
 from .preferences import getPrefs
-from .properties import (
-    MW_gen_cfg,
-)
 from .properties_global import (
     MW_global_selected, MW_id_utils
 )

@@ -48,7 +48,7 @@ def draw_props_raw(data, prop_names:list[str], layout: types.UILayout, showId=Fa
 def draw_props(data, propFilter:str, layout: types.UILayout, showId=False, showDefault=True):
     """ Query and draw all properties of an object in a sub layout. """
     # get the props filtered without the non prop ones
-    prop_names = getProps_namesFiltered(data, propFilter, exc_nonBlProp=True, showDefault=showDefault)
+    prop_names = getProps_namesFiltered(data, propFilter, addDefault=showDefault, exc_nonBlProp=True)
     draw_props_raw(data, prop_names, layout, showId)
 
 #-------------------------------------------------------------------
@@ -72,7 +72,7 @@ def draw_propsToggle_custom(data, data_inspector:Prop_inspector, layout:types.UI
             box.prop(data_inspector, "meta_propFilter", text="")
 
         # filter props
-        prop_names = getProps_namesFiltered(data, propFilter, exc_nonBlProp=True, showDefault=showDefault)
+        prop_names = getProps_namesFiltered(data, propFilter, addDefault=showDefault, exc_nonBlProp=True)
 
         # split debug props
         if splitDebug:

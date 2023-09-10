@@ -3,7 +3,11 @@ from mathutils import Vector, Matrix
 import random as rnd
 
 from .preferences import getPrefs
+from .properties import (
+    MW_sim_cfg,
+)
 
+from .mw_cont import MW_Cont
 from .mw_links import MW_Links, Link
 
 from . import utils
@@ -75,27 +79,25 @@ class SIM_CFG:
 #-------------------------------------------------------------------
 
 class MW_Sim:
-    def __init__(self, links_initial: MW_Links, deg = 0.05, log = True):
+    def __init__(self, cont: MW_Cont, links: MW_Links):
         self.storeRnd()
 
         if DEV.DEBUG_MODEL:
             DEV.log_msg(f" > init : DEBUG_MODEL flag set", {"SIM", "LOG", "STEP"})
 
-        self.links             = links_initial
+        self.cfg : MW_sim_cfg = cont.root.mw_sim
+        self.cont : MW_Cont = cont
+        self.links : MW_Links = links
+
         self.links_iniLife     = [ l.life for l in self.links.internal ]
         self.links_iniLife_air = [ l.life for l in self.links.external  ]
-        self.deg               = deg
 
         self.resetCurrent()
         self.step_id = self.sub_id = -1
 
-        self.trace      : bool           = log
         self.trace_data : list[StepData] = list()
         self.step_trace : StepData       = None
         self.sub_trace  : SubStepData    = None
-
-    def set_deg(self, deg):
-        self.deg = deg
 
     def resetSim(self, debug_addSeed = 0, initialAirToo = True):
         self.restoreRnd(debug_addSeed)
@@ -111,7 +113,7 @@ class MW_Sim:
         self.step_id    = self.sub_id = -1
 
         # reset log
-        if self.trace:
+        if self.cfg.debug_trace:
             self.trace_data.clear()
             self.step_trace = None
             self.sub_trace  = None
@@ -137,25 +139,27 @@ class MW_Sim:
 
     def stepAll(self):
         for l in self.links.internal:
-            l.degrade(self.deg)
+            l.degrade(self.cfg.step_deg)
 
     #-------------------------------------------------------------------
 
-    def step(self, step_maxDepth = 10, inlineLog = True):
+    def step(self):
         self.resetCurrent()
         self.step_id += 1
 
-        # TODO:: improve this, also src of slowness?
-        if (self.trace):
+        # writing the full trace slows down the process, even more when print to console!
+        if (self.cfg.debug_trace):
+            inlineLog = self.cfg.debug_log
             self.step_trace = StepData()
             self.trace_data.append(self.step_trace)
-        else: inlineLog = False
+        else:
+            inlineLog = False
 
         # get entry and degrade it some amount (visual change + step counter)
         self.get_entryLink()
         if self.entryL:
             self.currentL = self.entryL
-            self.entryL.degrade(self.deg*10)
+            self.entryL.degrade(self.cfg.step_deg*10)
 
         # LOG entry
         if inlineLog:
@@ -166,9 +170,9 @@ class MW_Sim:
 
         # main loop with a break condition
         self.sub_id = -1
-        while self.check_continue(step_maxDepth):
+        while self.check_continue():
             self.sub_id += 1
-            if (self.trace):
+            if (self.cfg.debug_trace):
                 self.sub_trace = SubStepData()
                 self.step_trace.subs.append(self.sub_trace)
 
@@ -190,7 +194,7 @@ class MW_Sim:
 
 
         # LOG exit
-        if (self.trace):
+        if (self.cfg.debug_trace):
             self.step_trace.exitL = self.currentL
         if inlineLog:
             DEV.log_msg(f" > ({self.step_id}) : exit ({self.step_trace.break_msg})"
@@ -221,7 +225,7 @@ class MW_Sim:
                 self.entryL = None
 
         # continuous trace data
-        if self.trace:
+        if self.cfg.debug_trace:
             self.step_trace.entryL = self.entryL
             self.step_trace.entryL_candidates = candidates
             self.step_trace.entryL_candidatesW = weights
@@ -269,7 +273,7 @@ class MW_Sim:
                 self.currentL = None
 
         # continuous trace data
-        if self.trace:
+        if self.cfg.debug_trace:
             self.sub_trace.currentL = self.currentL
             self.sub_trace.currentL_candidates = candidates
             self.sub_trace.currentL_candidatesW = weights
@@ -303,12 +307,12 @@ class MW_Sim:
 
     def link_degradation(self):
         # calcultate degradation
-        d = self.deg * self.waterLevel
+        d = self.cfg.step_deg * self.waterLevel
 
         # apply degradation
         self.currentL.degrade(d)
 
-        if self.trace:
+        if self.cfg.debug_trace:
             self.sub_trace.currentL_life = self.currentL.life
             self.sub_trace.currentL_deg = d
 
@@ -324,7 +328,7 @@ class MW_Sim:
 
         self.waterLevel -= d
 
-        if self.trace:
+        if self.cfg.debug_trace:
             self.sub_trace.waterLevel = self.waterLevel
             self.sub_trace.waterLevel_deg = d
 
@@ -336,23 +340,23 @@ class MW_Sim:
 
     #-------------------------------------------------------------------
 
-    def check_continue(self, step_maxDepth):
+    def check_continue(self):
         # no next link was found
         if not self.currentL:
-            if self.trace:
+            if self.cfg.debug_trace:
                 self.step_trace.break_msg = "NO_LINK"
             return False
 
         # no more water
         if self.waterLevel < 0:
-            if self.trace:
+            if self.cfg.debug_trace:
                 if self.waterLevel == -1: self.step_trace.break_msg = "NO_WATER_RND"
                 else: self.step_trace.break_msg = "NO_WATER"
             return False
 
         # max iterations when enabled
-        if step_maxDepth and self.sub_id >= step_maxDepth-1:
-            if self.trace:
+        if self.cfg.step_maxDepth and self.sub_id >= self.cfg.step_maxDepth-1:
+            if self.cfg.debug_trace:
                 self.step_trace.break_msg = "MAX_ITERS"
             return False
 

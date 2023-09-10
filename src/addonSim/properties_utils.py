@@ -131,10 +131,10 @@ def getProps_names(data, addDefault=True, exc_nonBlProp=True):
         props_names.append(prop_name)
     return props_names
 
-def getProps_namesFiltered(data, propFilter:str=None, exc_nonBlProp=True, showDefault=True):
+def getProps_namesFiltered(data, propFilter:str=None, addDefault=True, exc_nonBlProp=True):
     """ Get all properties names filtered """
     # build dynamic filter prop
-    prop_names = getProps_names(data, showDefault, exc_nonBlProp)
+    prop_names = getProps_names(data, addDefault, exc_nonBlProp)
     if propFilter:
         propFilter_clean = propFilter.replace(" ","").lower()
         filters =  [ f for f in propFilter_clean.split(",") if f]
@@ -175,9 +175,14 @@ def getProps_splitDebug(prop_namesFiltered):
     return prop_names, debug_names
 
 
-def copyProps(src, dest, copyDefault=True, exc_nonBlProp=True):
-    """ Copy all props of an object, e.g. potentially not just the modified ones in PropertyGroup.keys() """
-    # The whole property is read-only but its values can be modified, avoid writing it one by one...
-    props_names = getProps_names(src, copyDefault, exc_nonBlProp)
+def copyProps(src, dest, propFilter:str=None, addDefault=True, exc_nonBlProp=True):
+    """ Copy all props of an object, e.g. potentially not just the modified ones in PropertyGroup.keys()
+        # The whole property is read-only but its values can be modified, avoid writing it one by one...
+    """
+    if propFilter:
+        props_names = getProps_namesFiltered(src, propFilter, addDefault, exc_nonBlProp)
+    else:
+        props_names = getProps_names(src, addDefault, exc_nonBlProp)
+
     for prop_name in props_names:
         setattr(dest, prop_name, getattr(src, prop_name))

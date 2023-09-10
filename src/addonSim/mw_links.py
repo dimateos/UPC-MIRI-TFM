@@ -13,9 +13,9 @@ from .stats import getStats
 
 #-------------------------------------------------------------------
 
-# OPT:: could use a class or an array of props? pyhton already slow so ok class?
-# IDEA:: augmented cell class instead of array of props? cont -> cell -> link... less key map indirections
 class Link():
+    """ # OPT:: could use a class or an array of props? pyhton already slow so ok class?"""
+
     def __init__(self, col: "MW_Links", key_cells: linkCells_key_t, key_faces: linkFaces_key_t, pos_world:Vector, dir_world:Vector, face_area:float, airLink=False):
         # no directionality but tuple key instead of set
         self.key_cells : linkCells_key_t       = key_cells
@@ -105,9 +105,9 @@ class MW_Links():
 
         self.cells_graph = nx.Graph()
         """ Graph connecting the cells to find connected components """
-        self.cells_graph.add_nodes_from(cont.foundId)
         self.comps = []
         """ List of sets with connected components cells id """
+        self.cells_graph.add_nodes_from(cont.foundId)
         self.comps_len = -1
 
         self.link_map: dict[linkCells_key_t, Link] = dict()
@@ -141,7 +141,7 @@ class MW_Links():
             if idx_cell in cont.deletedId:
                 continue
 
-            # XXX:: data to calculate global pos here or leave for links to do?
+            # Will store some constant precalculated global data in the links
             obj        = cont.cells_objs[idx_cell]
             me         = cont.cells_meshes[idx_cell]
             m_toWorld  = utils_trans.get_worldMatrix_unscaled(obj, update=True)
