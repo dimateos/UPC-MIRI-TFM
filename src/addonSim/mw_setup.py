@@ -374,8 +374,7 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
 
     # iterate the global map and store vert pairs for the tube mesh generation
     for id, l in enumerate(fract.links.external):
-        if sim.skip_debugModel(l):
-            continue
+        #if MW_Links.skip_link_debugModel(l): continue # just not generated
 
         # point from original global pos + normal
         p1 = l.pos

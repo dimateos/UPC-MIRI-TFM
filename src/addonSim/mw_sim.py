@@ -49,9 +49,6 @@ class StepData:
 
 class MW_Sim:
     def __init__(self, cont: MW_Cont, links: MW_Links):
-        if DEV.DEBUG_MODEL:
-            DEV.log_msg(f" > init : DEBUG_MODEL flag set", {"SIM", "LOG", "STEP"})
-
         self.cfg : MW_sim_cfg = cont.root.mw_sim
         self.cont : MW_Cont = cont
         self.links : MW_Links = links
@@ -206,8 +203,7 @@ class MW_Sim:
             self.step_trace.entryL_candidatesW = weights
 
     def get_entryWeight(self, l:Link):
-        if self.skip_debugModel(l):
-            return 0
+        #if MW_Links.skip_link_debugModel(l): return 0 # just not generated
         w = 1
 
         # relative position water dir
@@ -223,11 +219,6 @@ class MW_Sim:
         w *= d * l.area
 
         return w
-
-    def skip_debugModel(self, l:Link):
-        if DEV.DEBUG_MODEL:
-            return utils_trans.aligned(l.dir, VECTORS.backZ, bothDir=True)
-        return False
 
     #-------------------------------------------------------------------
 
@@ -257,8 +248,7 @@ class MW_Sim:
             self.sub_trace.currentL_candidatesW = weights
 
     def get_nextWeight(self, l:Link):
-        if self.skip_debugModel(l):
-            return 0
+        #if MW_Links.skip_link_debugModel(l): return 0 # just not generated
         w = 1
 
         # relative pos align

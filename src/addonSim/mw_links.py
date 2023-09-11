@@ -7,19 +7,19 @@ from .mw_cont import MW_Cont, CELL_ERROR_ENUM, CELL_STATE_ENUM, neigh_key_t, nei
 from . import mw_resistance
 
 from . import utils, utils_trans
+from .utils_trans import VECTORS
 from .utils_dev import DEV
 from .stats import getStats
 
 #-------------------------------------------------------------------
 
 class LINK_STATE_ENUM:
-    """ Current links state, preserves some sequentiality"""
+    """ Current links state, preserves some sequentiality """
     SOLID = 0
     WALL = 1
     AIR = 2
 
-    all = [ SOLID, WALL, AIR ]
-    all_str = [ "SOLID", "WALL", "AIR" ]
+    all = { SOLID, WALL, AIR }
 
     @classmethod
     def to_str(cls, e:int):
@@ -33,7 +33,7 @@ class LINK_STATE_ENUM:
         if s == "SOLID":    return cls.SOLID
         if s == "WALL":     return cls.WALL
         if s == "AIR":      return cls.AIR
-        raise ValueError(f"CELL_STATE_ENUM: {s} is not in {cls.all_str}")
+        raise ValueError(f"CELL_STATE_ENUM: {s} is not in {set(LINK_STATE_ENUM.to_str(s) for s in cls.all)}")
 
 class Link():
     """ # OPT:: could use separate array of props? pyhton already slow so ok class?"""
@@ -147,13 +147,20 @@ class MW_Links():
                 if idx_neighCell in cont.deletedId:
                     continue
 
-                # get world props
+                # get link dir props
                 face: types.MeshPolygon = me.polygons[idx_face]
-                pos = m_toWorld @ face.center
                 normal = mn_toWorld @ face.normal
-                area = face.area
                 # NOTE:: rotated normals may potentially have a length of 1.0 +- 1e-8 but not worth normalizing
                 #DEV.log_msg(f"face.normal {face.normal} (l: {face.normal.length}) -> world {normal} (l: {normal.length})", cut=False)
+
+                # skip aligned with z for debug model
+                if MW_Links.skip_dir_debugModel(normal):
+                    # could set IGNORED error idx but not worth it
+                    continue
+
+                # get world props, some normalized afterwards
+                pos = m_toWorld @ face.center
+                area = face.area
 
                 # check min/max
                 if self.min_pos.x > pos.x: self.min_pos.x = pos.x
@@ -357,3 +364,15 @@ class MW_Links():
     def getKey(k1,k2, swap) -> neigh_key_t:
         key = (k1, k2) if not swap else (k2, k1)
         return key
+
+    # debug model is basically 2D
+    @staticmethod
+    def skip_dir_debugModel(d:Vector):
+        if DEV.DEBUG_MODEL:
+            return utils_trans.aligned(d, VECTORS.backZ, bothDir=True)
+        return False
+    @staticmethod
+    def skip_link_debugModel(l:Link):
+        if DEV.DEBUG_MODEL:
+            return MW_Links.skip_dir_debugModel(l.dir)
+        return False

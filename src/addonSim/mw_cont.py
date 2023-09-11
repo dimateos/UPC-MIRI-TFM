@@ -24,23 +24,29 @@ neighFaces_key_t = tuple[int, int]
 class CELL_ERROR_ENUM:
     """ Use leftover indices between cont boundaries and custom walls for filler error idx?
         # NOTE:: could be using any number, sequentiality not used
+        # OPT:: sequential check of id in all, so in case of slow process just use a unique error etc
     """
-    _zerosForHighlight = 1000000 # could use original ID to preserve it?
+    # could use original ID to preserve it? anyway need to be either very high or between 7-9 (walls id)
+    _zerosForHighlight = 1000000
 
-    MISSING = -7 *_zerosForHighlight
+    MISSING = -1 *_zerosForHighlight
     """ Missing a whole cell / object """
-    ASYMMETRY = -8 *_zerosForHighlight
+    ASYMMETRY = -2 *_zerosForHighlight
     """ Missing connection at in the supposed neighbour """
-    DELETED = -9 *_zerosForHighlight
+    DELETED = -3 *_zerosForHighlight
     """ Deleted from the scene """
+    #IGNORED = -4 *_zerosForHighlight
+    #""" Model debug ignored """
 
-    all = [ MISSING, ASYMMETRY, DELETED ]
+    all = { MISSING, ASYMMETRY, DELETED }
+    build_process = { MISSING, ASYMMETRY }
 
     @classmethod
     def str(cls, idx):
-        if idx == cls.MISSING: return "MISSING"
+        if idx == cls.MISSING:   return "MISSING"
         if idx == cls.ASYMMETRY: return "ASYMMETRY"
-        if idx == cls.DELETED: return "DELETED"
+        if idx == cls.DELETED:   return "DELETED"
+        #if idx == cls.IGNORED:   return "IGNORED"
         return "unknown"
 
 class CELL_STATE_ENUM:
@@ -49,8 +55,7 @@ class CELL_STATE_ENUM:
     CORE = 1
     AIR = 2
 
-    all = [ SOLID, CORE, AIR ]
-    all_str = [ "SOLID", "CORE", "AIR" ]
+    all = { SOLID, CORE, AIR }
 
     @classmethod
     def to_str(cls, e:int):
@@ -65,7 +70,7 @@ class CELL_STATE_ENUM:
         if s == "SOLID":    return cls.SOLID
         if s == "CORE":     return cls.CORE
         if s == "AIR":      return cls.AIR
-        raise ValueError(f"CELL_STATE_ENUM: {s} is not in {cls.all_str}")
+        raise ValueError(f"CELL_STATE_ENUM: {s} is not in { set(CELL_STATE_ENUM.to_str(s) for s in cls.all) }")
 
 #-------------------------------------------------------------------
 
@@ -171,7 +176,7 @@ class MW_Cont:
                 else:
                     neighs_other = self.neighs[idx_neigh]
 
-                    # check missing whole cell -> alter neighs acording to found error
+                    # check missing whole cell (self.neighs default value) -> alter neighs acording to found error
                     if neighs_other == CELL_ERROR_ENUM.MISSING:
                         self.neighs_keys_missing.append((idx_cell,idx_neigh))
                         neighs_cell[idx_face] = CELL_ERROR_ENUM.MISSING
@@ -277,13 +282,14 @@ class MW_Cont:
             cell = self.cells_objs[id]
 
             # skip build error
-            if cell == CELL_ERROR_ENUM.MISSING or cell == CELL_ERROR_ENUM.ASYMMETRY:
+            if cell in CELL_ERROR_ENUM.build_process:
                 error.append(id)
                 continue
 
-            # deleted broken references
+            # already broken
             if cell == CELL_ERROR_ENUM.DELETED:
                 broken_prev.append(id)
+            # deleted broken references
             elif utils_scene.needsSanitize(cell):
                 broken.append(id)
             else:
