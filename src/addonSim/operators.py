@@ -13,7 +13,7 @@ from .properties import (
     MW_gen_cfg,
     MW_sim_cfg,
 )
-from .properties_utils import copyProps
+from . import properties_utils
 from .operators_dm import _StartRefresh_OT, op_utils_classes
 
 from . import mw_setup, mw_extraction
@@ -105,10 +105,20 @@ class MW_gen_OT(_StartRefresh_OT):
     #    return MW_global_selected.last
 
     def invoke(self, context, event):
-        # copy prop from obj once
-        self.invoked_once = False
         # avoid last stored operation overide and recalculating everything
+        prefs = getPrefs()
         getPrefs().gen_PT_meta_inspector.reset_meta_show_toggled()
+
+        # maybe reset the config
+        if prefs.gen_calc_OT_clearCfg:
+            prefs.gen_calc_OT_clearCfg = False
+            DEV.log_msg("cfg reset once: skip copy props", {'SIM'})
+            properties_utils.resetProps(self.cfg)
+            self.invoked_once = True
+
+        # copy prop from obj once
+        else:
+            self.invoked_once = False
 
         # id of last fract calculated stored (outside the operator)
         self.last_storageID = None
@@ -140,7 +150,7 @@ class MW_gen_OT(_StartRefresh_OT):
                 DEV.log_msg("cfg NOT found: new frac", {'SETUP'})
                 obj_root, obj_original = mw_setup.copy_original(MW_global_selected.current, self.cfg, context, prefs.names.original_copy)
                 # Sync prefs panel with the object -> ok callbacks because obj is None
-                copyProps(prefs.mw_vis, obj_root.mw_vis)
+                properties_utils.copyProps(prefs.mw_vis, obj_root.mw_vis)
                 return self.execute_fresh(obj_root, obj_original)
 
             # Fracture the same original object, copy props for a duplicated result to tweak parameters
@@ -150,7 +160,7 @@ class MW_gen_OT(_StartRefresh_OT):
                 if not self.invoked_once:
                     self.invoked_once = True
                     DEV.log_msg("cfg found once: copying props to OP", {'SETUP'})
-                    copyProps(obj.mw_gen, self.cfg)
+                    properties_utils.copyProps(obj.mw_gen, self.cfg)
 
                 # optionally unhide the original fracture object but always unselect
                 obj.select_set(False)
@@ -172,7 +182,7 @@ class MW_gen_OT(_StartRefresh_OT):
 
         # work with the properties stored in the object
         self.obj_root = obj_root
-        copyProps(self.cfg, obj_root.mw_gen)
+        properties_utils.copyProps(self.cfg, obj_root.mw_gen)
         cfg: MW_gen_cfg = obj_root.mw_gen
         cfg.debug_rnd_seed = utils.debug_rnd_seed(cfg.debug_rnd_seed)
 
@@ -246,7 +256,7 @@ class MW_gen_OT(_StartRefresh_OT):
 
         if self.obj_root:
             # copy any cfg that may have changed during execute
-            copyProps(self.obj_root.mw_gen, self.cfg)
+            properties_utils.copyProps(self.obj_root.mw_gen, self.cfg)
             # set the meta type to all objects at once
             MW_id_utils.setMetaType_rec(self.obj_root, {"CHILD"}, skipParent=True)
             utils_scene.select_unhide(self.obj_root, self.ctx)
@@ -404,6 +414,7 @@ class MW_gen_links_OT(_StartRefresh_OT):
         # regenerate the mesh
         mw_setup.gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
         mw_setup.gen_linksMesh_air(MW_global_selected.fract, MW_global_selected.root, context)
+        mw_setup.gen_linksMesh_neighs(MW_global_selected.fract, MW_global_selected.root, context)
         return self.end_op()
 
 #-------------------------------------------------------------------
@@ -444,10 +455,20 @@ class MW_sim_step_OT(_StartRefresh_OT):
         return MW_global_selected.fract and MW_global_selected.fract.sim
 
     def invoke(self, context, event):
-        # copy prop from obj once
-        self.invoked_once = False
         # avoid last stored operation overide and recalculating everything
-        getPrefs().gen_PT_meta_inspector.reset_meta_show_toggled()
+        prefs = getPrefs()
+        prefs.gen_PT_meta_inspector.reset_meta_show_toggled()
+
+        # maybe reset the config
+        if prefs.sim_step_OT_clearCfg:
+            prefs.sim_step_OT_clearCfg = False
+            DEV.log_msg("cfg reset once: skip copy props", {'SIM'})
+            properties_utils.resetProps(self.cfg)
+            self.invoked_once = True
+
+        # copy prop from obj once
+        else:
+            self.invoked_once = False
 
         # store current random state
         MW_global_selected.fract.sim.rnd_store()
@@ -466,10 +487,12 @@ class MW_sim_step_OT(_StartRefresh_OT):
         if not self.invoked_once:
             self.invoked_once = True
             DEV.log_msg("cfg found once: copying props to OP", {'SIM'})
-            copyProps(MW_global_selected.root.mw_sim, self.cfg, "-step,-debug")
+            properties_utils.copyProps(MW_global_selected.root.mw_sim, self.cfg, "-step,-debug")
         else:
-            copyProps(self.cfg, MW_global_selected.root.mw_sim)
+            properties_utils.copyProps(self.cfg, MW_global_selected.root.mw_sim)
 
+        # WIP::
+        return self.end_op()
 
         # restore state to get constructive results
         sim : MW_Sim = MW_global_selected.fract.sim
@@ -575,6 +598,30 @@ class MW_util_bool_OT(_StartRefresh_OT):
 
         return self.end_op()
 
+class MW_util_bake_OT(_StartRefresh_OT):
+    bl_idname = "mw.util_bake"
+    bl_label = "Bake"
+    bl_description = "Copy and unlink the cell from the fracture, e.g. to recursive fracture it"
+
+    # UNDO as part of bl_options will cancel any edit last operation pop up
+    bl_options = {'INTERNAL', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return MW_global_selected.current and MW_id_utils.isMetaChild(MW_global_selected.current)
+
+    def execute(self, context: types.Context):
+        self.start_op(skipStats=True)
+        cell = utils_scene.copy_object(MW_global_selected.current, context)
+
+        cell.parent = None
+        MW_id_utils.resetMetaType(cell)
+        utils_scene.select_nothing()
+        utils_scene.select_unhide(cell, context)
+        return self.end_op(skipLog=True)
+
+#-------------------------------------------------------------------
+
 class MW_util_delete_OT(_StartRefresh_OT):
     bl_idname = "mw.util_delete"
     bl_label = "Delete fracture object"
@@ -631,29 +678,37 @@ class MW_util_delete_all_OT(_StartRefresh_OT):
         MW_global_selected.setSelected(context.selected_objects)
         return self.end_op()
 
-#-------------------------------------------------------------------
-
-class MW_util_bake_OT(_StartRefresh_OT):
-    bl_idname = "mw.util_bake"
-    bl_label = "Bake"
-    bl_description = "Copy and unlink the cell from the fracture, e.g. to recursive fracture it"
+class MW_util_resetCFG_OT(_StartRefresh_OT):
+    bl_idname = "dm.reset_cfg"
+    bl_label = "Reset all CFG"
+    bl_description = "Reset config and preferences"
 
     # UNDO as part of bl_options will cancel any edit last operation pop up
     bl_options = {'INTERNAL', 'UNDO'}
 
-    @classmethod
-    def poll(cls, context):
-        return MW_global_selected.current and MW_id_utils.isMetaChild(MW_global_selected.current)
+    def __init__(self) -> None:
+        super().__init__()
+        # config some base class log flags...
 
     def execute(self, context: types.Context):
-        self.start_op(skipStats=True)
-        cell = utils_scene.copy_object(MW_global_selected.current, context)
+        self.start_op()
+        prefs = getPrefs()
 
-        cell.parent = None
-        MW_id_utils.resetMetaType(cell)
-        utils_scene.select_nothing()
-        utils_scene.select_unhide(cell, context)
-        return self.end_op(skipLog=True)
+        # does not seem to work from inside the OP execute
+        #bpy.ops.wm.operator_defaults()
+        #layout.operator("wm.operator_defaults")
+
+        # reset ALL props, but cannot access the operators
+        #properties_utils.resetProps(prefs)
+        #properties_utils.resetProps_groups(prefs, "dev")
+        properties_utils.resetProps_rec(prefs)
+
+        # reset ALL props -> will also set OT_clearCfg that will clear stuff later
+        if MW_global_selected.root:
+            properties_utils.resetProps(MW_global_selected.root.mw_sim)
+
+        return self.end_op()
+
 
 #-------------------------------------------------------------------
 # Blender events
@@ -670,9 +725,11 @@ classes = [
 
     MW_util_comps_OT,
     MW_util_bool_OT,
+    MW_util_bake_OT,
+
     MW_util_delete_OT,
     MW_util_delete_all_OT,
-    MW_util_bake_OT,
+    MW_util_resetCFG_OT,
 ] + op_utils_classes
 
 register, unregister = bpy.utils.register_classes_factory(classes)

@@ -172,9 +172,10 @@ class MW_sim_cfg(types.PropertyGroup):
     #-------------------------------------------------------------------
 
     water_entry_dir: props.FloatVectorProperty(
+        description="Kind of wind direction, normalized after execution",
         subtype='XYZ',
         size=3,
-        default=(0, -1, 0),
+        default=(1, -0.5, 0),
     )
 
     link_entry_minAlign: props.FloatProperty(
@@ -256,7 +257,7 @@ class MW_vis_cfg(types.PropertyGroup):
 
     links_depth: props.FloatProperty(
         name="Link depth", description="Minimun depth inside faces",
-        default=0.15, min=0.01, max=0.4, step=0.05, precision=4,
+        default=0.1, min=0.01, max=0.4, step=0.05, precision=4,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links_depth")
     )
     links_width_base: props.FloatProperty(
@@ -296,7 +297,7 @@ class MW_vis_cfg(types.PropertyGroup):
     )
     wall_links_width_base: props.FloatProperty(
         name="Air link width",
-        default=0.33, min=0.1, max=2, step=0.1, precision=4,
+        default=0.075, min=0.05, max=0.5, step=0.1, precision=4,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "wall_links_width_base")
     )
 

@@ -97,12 +97,13 @@ class MW_Sim:
             l = self.links.get_link(key)
             l.reset(life, picks)
 
-    def reset_links_rnd(self, min=0, max=1, picks = 16):
+    def reset_links_rnd(self, min=0, max=1, max_picks = 16):
         for key in self.links.links_graph.nodes():
             l = self.links.get_link(key)
             r = rnd.random()
             life = r*(max-min) + min
-            l.reset(life, life*picks)
+            picks = int(life*max_picks)
+            l.reset(life, picks)
 
     #-------------------------------------------------------------------
 
@@ -207,8 +208,7 @@ class MW_Sim:
         w = 1
 
         # relative position water dir
-        #water_dir_inv = VECTORS.upY
-        water_dir_inv = self.cfg.water_entry_dir
+        water_dir_inv = -self.cfg.water_entry_dir.normalized()
         d = l.dir.dot(water_dir_inv)
 
         # cut-off

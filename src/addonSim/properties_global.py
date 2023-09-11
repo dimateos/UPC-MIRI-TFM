@@ -254,6 +254,8 @@ class MW_global_storage:
             if id in cls.id_fracts:
                 cls.freeFract_fromID(id)
 
+    #-------------------------------------------------------------------
+
     # callback triggers
     enable_autoPurge_default = False
     enable_autoPurge = enable_autoPurge_default

@@ -275,7 +275,7 @@ class MW_addon_PT(types.Panel):
         layout = self.layout.column()
 
         # reset all cfg
-        op = layout.operator(ops_utils.CFG_reset_OT.bl_idname, icon="SCREEN_BACK")
+        op = layout.operator(ops.MW_util_resetCFG_OT.bl_idname, icon="SCREEN_BACK")
 
         #ui.draw_propsToggle_full(prefs, prefs.prefs_PT_meta_inspector, layout)
         ui.draw_propsToggle_custom(prefs.dev_PT_meta_cfg, prefs.dev_PT_meta_cfg, layout, text="DEV", propFilter="")

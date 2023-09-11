@@ -5,7 +5,6 @@ from mathutils import Vector, Matrix
 from math import ceil
 
 from .preferences import getPrefs, ADDON
-from . import properties_utils
 
 from . import ui
 from . import utils, utils_scene, utils_trans, utils_geo, utils_mat, utils_mesh
@@ -158,29 +157,6 @@ class _StartRefresh_OT(types.Operator):
             self.report(rtype, f"{msg}")
             # regular log no need as report also shows up in terminal
             #DEV.log_msg(f"{msg} (report)", rtype)
-
-class CFG_reset_OT(_StartRefresh_OT):
-    bl_idname = "dm.reset_cfg"
-    bl_label = "Reset all CFG"
-    bl_description = "Reset config and preferences"
-
-    # UNDO as part of bl_options will cancel any edit last operation pop up
-    bl_options = {'INTERNAL', 'UNDO'}
-
-    def __init__(self) -> None:
-        super().__init__()
-        # config some base class log flags...
-
-    def execute(self, context: types.Context):
-        self.start_op()
-        prefs = getPrefs()
-        #bpy.ops.wm.operator_defaults()
-
-        #properties_utils.resetProps(prefs)
-        #properties_utils.resetProps_groups(prefs, "dev")
-        properties_utils.resetProps_rec(prefs)
-
-        return self.end_op()
 
 #-------------------------------------------------------------------
 
@@ -708,8 +684,6 @@ class Debug_testCode_OT(types.Operator):
 # Blender events
 
 op_utils_classes = [
-    CFG_reset_OT,
-
     Util_spawnIndices_OT,
     Util_deleteIndices_OT,
     Util_deleteOrphanData_OT,

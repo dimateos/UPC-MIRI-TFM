@@ -235,9 +235,14 @@ class MW_prefs(bpy.types.AddonPreferences):
         name="WIP: links", description="WIP: Redraw the links (should always)",
         default=False,
     )
+
+    gen_calc_OT_clearCfg: props.BoolProperty(
+        name="clear", description="Next execution will clear the config",
+        default=True,
+    )
     sim_step_OT_clearCfg: props.BoolProperty(
-        name="cfg", description="Execute with the default configuration",
-        default=False,
+        name="clear", description="Next execution will clear the config",
+        default=True,
     )
 
     util_delete_OT_unhideSelect: props.BoolProperty(

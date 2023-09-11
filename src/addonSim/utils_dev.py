@@ -12,6 +12,17 @@ class DEV:
     ASSERT_CELL_POS       = False   # assert some local and global pos match
     LEGACY_CONT           = False   # check some stats of legacy cont
 
+    # tiny util to setup flags in reload time and then execute only once
+    RELOAD_FLAGS : dict[str,bool] = dict()
+    @classmethod
+    def RELOAD_FLAGS_check(cls,s):
+        if cls.RELOAD_FLAGS[s]:
+            cls.RELOAD_FLAGS[s] = False
+            return True
+        return False
+
+    #-------------------------------------------------------------------
+
     # OPT:: generated string messages are being constructed anyway: slow? -> if type: log()
     logs             = True
     logs_stats_dt    = True
