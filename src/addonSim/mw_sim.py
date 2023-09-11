@@ -216,10 +216,12 @@ class MW_Sim:
 
         return w
 
-    def get_entryAlign(self, vdir:Vector):
+    def get_entryAlign(self, vdir:Vector, bothDir=False):
         # relative position water dir
         water_dir_inv = -self.cfg.water_entry_dir.normalized()
         d = vdir.dot(water_dir_inv)
+        if bothDir: d = abs(d)
+
         # cut-off
         if d < self.cfg.link_entry_minAlign:
             return 0
@@ -265,10 +267,12 @@ class MW_Sim:
 
         return max(w, 0.0001)
 
-    def get_nextAlign(self, vdir:Vector):
+    def get_nextAlign(self, vdir:Vector, bothDir=False):
         # relative pos align
         water_dir_inv = -VECTORS.upY
         d = vdir.normalized().dot(water_dir_inv)
+        if bothDir: d = abs(d)
+
         # cut-off
         if d < self.cfg.link_next_minAlign:
             return 0

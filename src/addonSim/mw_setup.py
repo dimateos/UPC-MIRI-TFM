@@ -358,7 +358,7 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     obj_points = gen_pointsObject(root, points, context, prefs.names.links_points, reuse=True)
     MW_id_utils.setMetaChild(obj_points)
 
-    getStats().logDt("generated links object")
+    getStats().logDt("generated internal links mesh object")
     return obj_links
 
 def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Context):
@@ -435,7 +435,7 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
     obj_linksAir_in.active_material = utils_mat.gen_gradientMat("id_prob", name_in, colorFn=utils_mat.GRADIENTS.blue)
     obj_linksAir_in.active_material.diffuse_color = utils_mat.COLORS.blue
 
-    getStats().logDt("generated links object")
+    getStats().logDt("generated external links mesh object")
     return obj_linksAir, obj_linksAir_in
 
 def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Context):
@@ -466,12 +466,13 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
             p2 = ln.pos
             verts.append((p1, p2))
 
-            # grav mod
-            g = sim.get_nextAlign( (p1-p2).normalized() )
-
             # query keys
             l1k1_l1k2.append(l.key_cells)
             l2k1_l2k2.append(ln.key_cells)
+
+            # grav mod
+            g = sim.get_nextAlign( (p1-p2).normalized(), bothDir=True)
+            id_grav.append((id_normalized, g))
 
     # single mesh with tubes
     name = prefs.names.links_neighs
@@ -484,11 +485,13 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
 
     # color encoded attributes for viewing in viewport edit mode
     numCorners=resFaces*4
+    utils_mat.gen_meshUV(mesh, id_grav, "id_grav", numCorners)
     utils_mat.gen_meshUV(mesh, l1k1_l1k2, "l1k1_l1k2", numCorners)
     utils_mat.gen_meshUV(mesh, l2k1_l2k2, "l2k1_l2k2", numCorners)
-    obj_neighs.active_material = utils_mat.get_colorMat(utils_mat.COLORS.yellow, name)
+    obj_neighs.active_material = utils_mat.gen_gradientMat("id_grav", name, colorFn=utils_mat.GRADIENTS.white_yellow)
+    obj_neighs.active_material.diffuse_color = utils_mat.COLORS.yellow
 
-    getStats().logDt("generated links object")
+    getStats().logDt("generated neighs links mesh object")
     return obj_neighs
 
 def gen_links_LEGACY(objParent: types.Object, voro_cont: VORO_Container, context: types.Context):
@@ -538,4 +541,4 @@ def gen_links_LEGACY(objParent: types.Object, voro_cont: VORO_Container, context
             #obj_link.location = cell.centroid()
 
     MW_id_utils.setMetaType_rec(objParent, {"CHILD"}, skipParent=False)
-    getStats().logDt("generated links per cell objects")
+    getStats().logDt("generated legacy links per cell objects")

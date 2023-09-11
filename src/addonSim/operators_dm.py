@@ -552,7 +552,7 @@ class Debug_testCode_OT(types.Operator):
         # NOTE:: could go to script files, but this tests the exact same environment the extension has after loading the modules
     """
     bl_idname = "dm.debug_test_code"
-    bl_label = "DEBUG: addGradient"
+    bl_label = "DEBUG: particleSystem"
     bl_description = "Run TMP test code"
     bl_options = {'INTERNAL'}
 
@@ -562,8 +562,7 @@ class Debug_testCode_OT(types.Operator):
 
     def execute(self, context: types.Context):
         #self.resistField(context)
-        #self.particleSystem(context)
-        self.addGradient(context)
+        self.particleSystem(context)
         return {'FINISHED'}
 
     def particleSystem(self, context: types.Context):
@@ -618,66 +617,6 @@ class Debug_testCode_OT(types.Operator):
         from . import mw_resistance
         rest_colors = [ mw_resistance.get2D_color4D(v.co.x, v.co.y) for v in mesh.vertices ]
         utils_mat.gen_meshAttr(mesh, rest_colors, 1, "FLOAT_COLOR", "POINT", "resistance")
-
-    def addGradient(self, context: types.Context):
-        # Add UV coordinates
-        obj = context.active_object
-        if not obj and obj.type != "MESH":
-            return
-
-        # Clean UV and generate a new one
-        mesh: types.Mesh = obj.data
-        utils_mat.delete_meshUV(mesh)
-        uv = utils_mat.gen_meshUV(mesh, [Vector([0.0, 0.9])], name="UV_life") # [Vector([0.2, 0.2]), Vector([0.5, 0.5]), Vector([0.8, 0.8])]
-
-        # Create a new image
-        width = 256
-        height = 256
-        image = bpy.data.images.new(name="RedGradient", width=width, height=height)
-
-        # Create a NumPy array to store the image data
-        import numpy as np
-        pixels = np.empty(width * height * 4, dtype=np.float32)
-        for y in range(height):
-            for x in range(width):
-                # Calculate the red value based on the Y position (top to bottom gradient)
-                red = y / (height - 1)
-                # Set the pixel values (RGBA)
-                index = (y * width + x) * 4
-                pixels[index] = red
-                pixels[index + 1] = 0.0
-                pixels[index + 2] = 0.0
-                pixels[index + 3] = 1.0
-
-        # Flatten the NumPy array and assign it to the image
-        image.pixels = pixels.tolist()
-
-        # Create a new material and add it
-        mat = bpy.data.materials.new(name="GradientMaterial")
-        obj.active_material = mat
-
-        # Cfg default nodes
-        mat.use_nodes = True
-        nodes = mat.node_tree.nodes
-        for node in nodes: nodes.remove(node)
-
-        # Add a ShaderNodeTexImage node
-        texture_node = nodes.new(type='ShaderNodeTexImage')
-        texture_node.location = (0, 0)
-        texture_node.image = image
-
-        # Add an Input node for UV coordinates
-        uv_map_node = nodes.new(type='ShaderNodeUVMap')
-        uv_map_node.location = (-200, 0)
-        uv_map_node.uv_map = "UVMap"  # Replace with the name of your UV map if needed
-
-        # Add an Output node
-        output_node = nodes.new(type='ShaderNodeOutputMaterial')
-        output_node.location = (400, 0)
-
-        # Connect the nodes
-        mat.node_tree.links.new(uv_map_node.outputs['UV'], texture_node.inputs['Vector'])
-        mat.node_tree.links.new(texture_node.outputs['Color'], output_node.inputs['Surface'])
 
 
 #-------------------------------------------------------------------

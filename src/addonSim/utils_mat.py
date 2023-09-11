@@ -425,12 +425,13 @@ class GRADIENTS:
         else:
             return GRADIENTS.lerp_colors( (u-0.5) / 0.5, c2, c3)
 
-    red =  lambda p, h=_default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c1=COLORS.red)
-    blue =  lambda p, h=_default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c1=COLORS.blue)
-    red_blue =  lambda p, h=_default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c1=COLORS.red, c2=COLORS.blue)
-    warm_cool = lambda p, h=_default_res: GRADIENTS.lerp_colors_trio(1-GRADIENTS.lerp_u(p, max_val=h))
+    red          = lambda p, h = _default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c1=COLORS.red)
+    blue         = lambda p, h = _default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c1=COLORS.blue)
+    white_yellow = lambda p, h = _default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c1=COLORS.white, c2=COLORS.yellow)
+    red_blue     = lambda p, h = _default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c1=COLORS.red, c2=COLORS.blue)
+    warm_cool    = lambda p, h = _default_res: GRADIENTS.lerp_colors_trio(1-GRADIENTS.lerp_u(p, max_val=h))
 
-def gen_gradientMat(uv_layer:str, name:str, width=GRADIENTS._default_res, height=GRADIENTS._default_res*0.5, colorFn = GRADIENTS.red, forceNew = True):
+def gen_gradientMat(uv_layer:str, name:str, width=GRADIENTS._default_res, height=GRADIENTS._default_res*0.5, colorFn = GRADIENTS.red, forceNew = False):
     """ 1D gradients, but add height to visualize better the UV coords
         # NOTE:: tries to shared prev gradient image by matching name (skipped with forceNew)
     """
