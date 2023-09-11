@@ -295,6 +295,7 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     id_life      : list[tuple[int,float]]     = [None]*numLinks
     id_picks     : list[tuple[int,int]]       = [None]*numLinks
     lifeWidths   : list[float]                = [None]*numLinks
+    # IDEA:: k1 k2 from link + f1 f2
 
     # iterate the global map and store vert pairs for the tube mesh generation
     for id, l in enumerate(fract.links.internal):
@@ -371,6 +372,7 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
     verts_in   : list[tuple[Vector,Vector]] = []
     id_prob    : list[tuple[int,float]]     = []
     id_entries : list[tuple[int,int]]       = []
+    # IDEA:: k1 k2 from link + f1 f2
 
     # max prob for normalizeing probabilty
     probs = [ sim.get_entryWeight(l) for l in fract.links.external ]
@@ -437,58 +439,57 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
     return obj_linksAir, obj_linksAir_in
 
 def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Context):
-    return
     prefs = getPrefs()
     cfg : MW_vis_cfg = root.mw_vis
     sim : MW_Sim     = MW_global_selected.fract.sim
-    sim.reset_links_rnd()
-    #sim.reset_links(0.1, 8)
 
-    numLinks = len(fract.links.external)
-    verts        : list[tuple[Vector,Vector]] = [] # not sized cause some may be skipped
-    id_prob      : list[tuple[int,int]]       = []
-    pick_entries : list[tuple[int,int]]       = []
+    numLinks = len(fract.links.internal) # not sized cause some may be skipped
+    verts     : list[tuple[Vector,Vector]] = []
+    l1k1_l1k2 : list[tuple[int,int]]       = []
+    l2k1_l2k2 : list[tuple[int,int]]       = []
+    id_grav   : list[tuple[int,float]]     = []
 
-    # max prob for normalizeing probabilty
-    probs = [ sim.get_entryWeight(l) for l in fract.links.external ]
-    probsMax = max(probs) if probs else 1
-    if probsMax == 0: probsMax = 1
+    # avoid repetitions
+    checked = set()
 
     # iterate the global map and store vert pairs for the tube mesh generation
-    for id, l in enumerate(fract.links.external):
-        #if MW_Links.skip_link_debugModel(l): continue # just not generated
-
-        # point from original global pos + normal
-        p1 = l.pos
-        picks = l.picks_entry
-        p2 = p1 + l.dir * (cfg.wall_links_depth_base + picks * cfg.wall_links_depth_incr)
-        verts.append((p1, p2))
-
-        # query props
-        prob = sim.get_entryWeight(l)
-        prob_normalized = prob / probsMax
+    for id, l in enumerate(fract.links.internal):
         id_normalized = id / float(numLinks)
-        id_prob.append((id_normalized, prob_normalized))
-        pick_entries.append((l.picks, l.picks_entry))
+
+        # allow once from outer loop
+        checked.add(l.key_cells)
+        for ln in fract.links.get_link_neighs(l.key_cells):
+            if ln.key_cells in checked: continue
+
+            # point from links
+            p1 = l.pos
+            p2 = ln.pos
+            verts.append((p1, p2))
+
+            # grav mod
+            g = sim.get_nextAlign( (p1-p2).normalized() )
+
+            # query keys
+            l1k1_l1k2.append(l.key_cells)
+            l2k1_l2k2.append(ln.key_cells)
 
     # single mesh with tubes
-    name = prefs.names.links_air
-    resFaces = utils_mesh.get_resFaces_fromCurveRes(cfg.walls_links_res)
-    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, None, name, cfg.wall_links_width_base, resFaces, cfg.links_smoothShade)
+    name = prefs.names.links_neighs
+    resFaces = utils_mesh.get_resFaces_fromCurveRes(-1)
+    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, None, name, cfg.neigh_links_width, resFaces, cfg.links_smoothShade)
 
     # potentially reuse child and clean mesh
-    obj_linksAir = utils_scene.gen_childReuse(root, name, context, mesh, keepTrans=True)
-    MW_id_utils.setMetaChild(obj_linksAir)
+    obj_neighs = utils_scene.gen_childReuse(root, name, context, mesh, keepTrans=True)
+    MW_id_utils.setMetaChild(obj_neighs)
 
     # color encoded attributes for viewing in viewport edit mode
     numCorners=resFaces*4
-    utils_mat.gen_meshUV(mesh, id_prob, "id_prob", numCorners)
-    utils_mat.gen_meshUV(mesh, pick_entries, "pick_entry", numCorners)
-    obj_linksAir.active_material = utils_mat.gen_gradientMat("id_prob", name, colorFn=utils_mat.GRADIENTS.red)
-    obj_linksAir.active_material.diffuse_color = utils_mat.COLORS.blue
+    utils_mat.gen_meshUV(mesh, l1k1_l1k2, "l1k1_l1k2", numCorners)
+    utils_mat.gen_meshUV(mesh, l2k1_l2k2, "l2k1_l2k2", numCorners)
+    obj_neighs.active_material = utils_mat.get_colorMat(utils_mat.COLORS.yellow, name)
 
     getStats().logDt("generated links object")
-    return obj_linksAir
+    return obj_neighs
 
 def gen_links_LEGACY(objParent: types.Object, voro_cont: VORO_Container, context: types.Context):
     prefs = getPrefs()

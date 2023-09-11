@@ -339,7 +339,7 @@ class MW_Links():
 
     def get_link_neighsId(self, key:neigh_key_t) -> list[neigh_key_t]:
         """ The links neighs ID unordered by face or anything """
-        return list(self.links_graph.edges(key))
+        return list(self.links_graph.neighbors(key))
     def get_link_neighs(self, key:neigh_key_t) -> list[Link]:
         """ The links neighs unordered by face or anything """
         return [ self.get_link(k) for k in self.get_link_neighsId(key) ]

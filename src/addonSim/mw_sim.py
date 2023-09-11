@@ -207,21 +207,23 @@ class MW_Sim:
     def get_entryWeight(self, l:Link):
         #if MW_Links.skip_link_debugModel(l): return 0 # just not generated
 
-        # relative position water dir
-        water_dir_inv = -self.cfg.water_entry_dir.normalized()
-        d = l.dir.dot(water_dir_inv)
-
-        # cut-off
-        if d < self.cfg.link_entry_minAlign:
-            return 0
-
-        w = d
+        # link dir align (face normal)
+        w = self.get_entryAlign(l.dir)
 
         # weight using face area (normalized)
         if self.cfg.link_entry_areaWeigthed:
             w*= l.area
 
         return w
+
+    def get_entryAlign(self, vdir:Vector):
+        # relative position water dir
+        water_dir_inv = -self.cfg.water_entry_dir.normalized()
+        d = vdir.dot(water_dir_inv)
+        # cut-off
+        if d < self.cfg.link_entry_minAlign:
+            return 0
+        return d
 
     #-------------------------------------------------------------------
 
@@ -252,25 +254,25 @@ class MW_Sim:
 
     def get_nextWeight(self, l:Link):
         #if MW_Links.skip_link_debugModel(l): return 0 # just not generated
-        w = 1
 
         # relative pos align
-        water_dir_inv = -VECTORS.upY
         dpos = l.pos - self.currentL.pos
-        d = dpos.normalized().dot(water_dir_inv)
-
-        # cut-off
-        if d < self.cfg.link_next_minAlign:
-            return 0
-
-        # weight using only the angle
-        w *= d
+        w = self.get_nextAlign(dpos.normalized())
 
         # check link resistance field
         r = 1 - l.resistance
         w *= r
 
         return max(w, 0.0001)
+
+    def get_nextAlign(self, vdir:Vector):
+        # relative pos align
+        water_dir_inv = -VECTORS.upY
+        d = vdir.normalized().dot(water_dir_inv)
+        # cut-off
+        if d < self.cfg.link_next_minAlign:
+            return 0
+        return d
 
     #-------------------------------------------------------------------
 
