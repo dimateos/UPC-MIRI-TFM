@@ -403,7 +403,7 @@ class MW_gen_links_OT(_StartRefresh_OT):
 
         # regenerate the mesh
         mw_setup.gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
-        #mw_setup.gen_linksWallObject(MW_global_selected.fract, MW_global_selected.root, context)
+        mw_setup.gen_linksMesh_air(MW_global_selected.fract, MW_global_selected.root, context)
         return self.end_op()
 
 #-------------------------------------------------------------------
@@ -487,9 +487,9 @@ class MW_sim_step_OT(_StartRefresh_OT):
         # update links mesh
         # TODO:: links life to mesh
         # IDEA:: store copy or original or button to recalc links from start? -> set all life to 1 but handle any dynamic list
-        mw_setup.gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
-        mw_setup.gen_linksWallObject(MW_global_selected.fract, MW_global_selected.root, context,
-                                    sim.step_trace.entryL_candidatesW if sim_cfg.debug_trace else None)
+        #mw_setup.gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
+        #mw_setup.gen_linksWallObject(MW_global_selected.fract, MW_global_selected.root, context,
+        #                            sim.step_trace.entryL_candidatesW if sim_cfg.debug_trace else None)
 
         return self.end_op()
 

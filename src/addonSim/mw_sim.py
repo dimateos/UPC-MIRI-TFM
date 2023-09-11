@@ -95,17 +95,17 @@ class MW_Sim:
 
     #-------------------------------------------------------------------
 
-    def reset_links(self, life=1.0):
+    def reset_links(self, life=1.0, picks=0):
         for key in self.links.links_graph.nodes():
             l = self.links.get_link(key)
-            l.reset(life)
+            l.reset(life, picks)
 
-    def reset_links_rnd(self, min=0, max=1):
+    def reset_links_rnd(self, min=0, max=1, picks = 16):
         for key in self.links.links_graph.nodes():
             l = self.links.get_link(key)
             r = rnd.random()
-            #l.reset(r*max + (1-r)*min)
-            l.reset(r*(max-min) + min)
+            life = r*(max-min) + min
+            l.reset(life, life*picks)
 
     #-------------------------------------------------------------------
 
@@ -206,9 +206,8 @@ class MW_Sim:
             self.step_trace.entryL_candidatesW = weights
 
     def get_entryWeight(self, l:Link):
-        if DEV.DEBUG_MODEL:
-            if utils_trans.aligned(l.dir, VECTORS.backZ, bothDir=True):
-                return 0
+        if self.skip_debugModel(l):
+            return 0
         w = 1
 
         # relative position water dir
@@ -224,6 +223,11 @@ class MW_Sim:
         w *= d * l.area
 
         return w
+
+    def skip_debugModel(self, l:Link):
+        if DEV.DEBUG_MODEL:
+            return utils_trans.aligned(l.dir, VECTORS.backZ, bothDir=True)
+        return False
 
     #-------------------------------------------------------------------
 
@@ -253,10 +257,8 @@ class MW_Sim:
             self.sub_trace.currentL_candidatesW = weights
 
     def get_nextWeight(self, l:Link):
-        if DEV.DEBUG_MODEL:
-            # WIP:: limit axis for the hill model also for next links (e.g. exit wall links)
-            if utils_trans.aligned(l.dir, VECTORS.backZ, bothDir=True):
-                return 0
+        if self.skip_debugModel(l):
+            return 0
         w = 1
 
         # relative pos align

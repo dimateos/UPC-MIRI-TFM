@@ -286,17 +286,17 @@ class MW_vis_cfg(types.PropertyGroup):
 
     wall_links_depth_base: props.FloatProperty(
         name="Air link depth base",
-        default=0.05, min=0.01, max=0.2, step=0.05, precision=4,
+        default=0.1, min=0.05, max=0.5, step=0.05, precision=4,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "wall_links_depth_base")
     )
     wall_links_depth_incr: props.FloatProperty(
         name="Air link depth incr",
-        default=0.05, min=0.01, max=0.2, step=0.05, precision=4,
+        default=0.05, min=0.01, max=0.1, step=0.01, precision=4,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "wall_links_depth_incr")
     )
     wall_links_width_base: props.FloatProperty(
         name="Air link width",
-        default=0.05, min=0.01, max=0.2, step=0.05, precision=4,
+        default=0.33, min=0.1, max=2, step=0.1, precision=4,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "wall_links_width_base")
     )
 

@@ -283,7 +283,7 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     cfg : MW_vis_cfg = root.mw_vis
     sim : MW_Sim     = MW_global_selected.fract.sim
     sim.reset_links_rnd()
-    #sim.reset_links(0.1)
+    #sim.reset_links(0.1, 8)
 
     numLinks = len(fract.links.internal)
     points       : list[Vector]               = [None]*numLinks
@@ -333,18 +333,19 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
         # DISABLED: no scaling with life, color only
 
     # single mesh with tubes
+    name = prefs.names.links
     resFaces = utils_mesh.get_resFaces_fromCurveRes(cfg.links_res)
-    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidths, prefs.names.links, 1.0, resFaces, cfg.links_smoothShade)
+    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidths, name, 1.0, resFaces, cfg.links_smoothShade)
 
     # potentially reuse child and clean mesh
-    obj_links = utils_scene.gen_childReuse(root, prefs.names.links, context, mesh, keepTrans=True)
+    obj_links = utils_scene.gen_childReuse(root, name, context, mesh, keepTrans=True)
     MW_id_utils.setMetaChild(obj_links)
 
     # color encoded attributes for viewing in viewport edit mode
     numCorners=resFaces*4
-    utils_mat.gen_meshUV(mesh, id_life, "uv_life", numCorners)
-    utils_mat.gen_meshUV(mesh, pick_entries, "uv_picks", numCorners)
-    obj_links.active_material = utils_mat.gen_gradientMat("uv_life")
+    utils_mat.gen_meshUV(mesh, id_life, "id_life", numCorners)
+    utils_mat.gen_meshUV(mesh, pick_entries, "pick_entry", numCorners)
+    obj_links.active_material = utils_mat.gen_gradientMat("id_life", name, colorFn=utils_mat.GRADIENTS.red)
     obj_links.active_material.diffuse_color = utils_mat.COLORS.red
 
     # add points object too
@@ -354,50 +355,59 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     getStats().logDt("generated links object")
     return obj_links
 
-#def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Context):
-#    prefs = getPrefs()
-#    cfg : MW_vis_cfg = root.mw_vis
-#    sim : MW_Sim     = MW_global_selected.fract.sim
+def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Context):
+    prefs = getPrefs()
+    cfg : MW_vis_cfg = root.mw_vis
+    sim : MW_Sim     = MW_global_selected.fract.sim
+    sim.reset_links_rnd()
+    #sim.reset_links(0.1, 8)
 
-#    numLinks = len(fract.links.internal)
-#    verts        : list[tuple[Vector,Vector]] = [None]*numLinks
-#    probWidths   : list[float]                = [None]*numLinks
-#    id_prob      : list[tuple[int,int]]       = [None]*numLinks
+    numLinks = len(fract.links.external)
+    verts        : list[tuple[Vector,Vector]] = [] # not sized cause some may be skipped
+    id_prob      : list[tuple[int,int]]       = []
+    pick_entries : list[tuple[int,int]]       = []
 
-#    # iterate the global map and store vert pairs for the tube mesh generation
-#    for id, l in enumerate(fract.links.internal):
-#        # point from original global pos + normal
-#        p1 = l.pos
-#        picks = l.picks_entry
-#        p2 = p1 + l.dir * cfg.wall_links_depth_base + picks * cfg.wall_links_depth_incr
-#        verts[id]=(p1, p2)
+    # max prob for normalizeing probabilty
+    probs = [ sim.get_entryWeight(l) for l in fract.links.external ]
+    probsMax = max(probs) if probs else 1
+    if probsMax == 0: probsMax = 1
 
-#        # query props
-#        prob = sim.get_entryWeight(l)
-#        id_normalized = id / float(numLinks)
-#        id_prob[id]=(id_normalized, prob)
+    # iterate the global map and store vert pairs for the tube mesh generation
+    for id, l in enumerate(fract.links.external):
+        if sim.skip_debugModel(l):
+            continue
 
-#    # single mesh with tubes
-#    resFaces = utils_mesh.get_resFaces_fromCurveRes(cfg.walls_links_res)
-#    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, probWidths, prefs.names.links_air, 1.0, resFaces, cfg.links_smoothShade)
+        # point from original global pos + normal
+        p1 = l.pos
+        picks = l.picks_entry
+        p2 = p1 + l.dir * (cfg.wall_links_depth_base + picks * cfg.wall_links_depth_incr)
+        verts.append((p1, p2))
 
-#    # potentially reuse child and clean mesh
-#    obj_linksAir = utils_scene.gen_childReuse(root, prefs.names.links_air, context, mesh, keepTrans=True)
-#    MW_id_utils.setMetaChild(obj_linksAir)
+        # query props
+        prob = sim.get_entryWeight(l)
+        prob_normalized = prob / probsMax
+        id_normalized = id / float(numLinks)
+        id_prob.append((id_normalized, prob_normalized))
+        pick_entries.append((l.picks, l.picks_entry))
 
-#    # color encoded attributes for viewing in viewport edit mode
-#    numCorners=resFaces*4
-#    utils_mat.gen_meshUV(mesh, id_prob, "uv_prob", numCorners)
-#    obj_linksAir.active_material = utils_mat.gen_gradientMat("uv_prob")
-#    obj_linksAir.active_material.diffuse_color = utils_mat.COLORS.blue
+    # single mesh with tubes
+    name = prefs.names.links_air
+    resFaces = utils_mesh.get_resFaces_fromCurveRes(cfg.walls_links_res)
+    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, None, name, cfg.wall_links_width_base, resFaces, cfg.links_smoothShade)
 
+    # potentially reuse child and clean mesh
+    obj_linksAir = utils_scene.gen_childReuse(root, name, context, mesh, keepTrans=True)
+    MW_id_utils.setMetaChild(obj_linksAir)
 
-#    # add points object too
-#    obj_points = gen_pointsObject(root, points, context, prefs.names.links_points, reuse=True)
-#    MW_id_utils.setMetaChild(obj_points)
+    # color encoded attributes for viewing in viewport edit mode
+    numCorners=resFaces*4
+    utils_mat.gen_meshUV(mesh, id_prob, "id_prob", numCorners)
+    utils_mat.gen_meshUV(mesh, pick_entries, "pick_entry", numCorners)
+    obj_linksAir.active_material = utils_mat.gen_gradientMat("id_prob", name, colorFn=utils_mat.GRADIENTS.red)
+    obj_linksAir.active_material.diffuse_color = utils_mat.COLORS.blue
 
-#    getStats().logDt("generated links object")
-#    return obj_linksAir
+    getStats().logDt("generated links object")
+    return obj_linksAir
 
 def gen_links_LEGACY(objParent: types.Object, voro_cont: VORO_Container, context: types.Context):
     prefs = getPrefs()
