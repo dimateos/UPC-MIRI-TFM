@@ -94,11 +94,21 @@ class MW_id_utils:
 
     @staticmethod
     def getSceneRoots(scene: types.Scene) -> list[types.Object]:
-        """ Retrieve the root objects in the scene
+        """ Retrieve the root objects in the scene, if any (empty list)
             # OPT:: in some cases could use the global storage instead of iterating the scene
         """
         roots = [ obj for obj in scene.objects if MW_id_utils.isRoot(obj) ]
         return roots
+
+    @staticmethod
+    def getSceneRoot_any(scene: types.Scene) -> list[types.Object]:
+        """ Retrieve the first root object found in the scene, if any
+            # OPT:: in some cases could use the global storage instead of iterating the scene
+        """
+        for obj in scene.objects:
+            if MW_id_utils.isRoot(obj):
+                return obj
+        return None
 
     @staticmethod
     def setMetaType_rec(obj: types.Object, type: set[str], skipParent = False, childrenRec = True):
@@ -402,7 +412,8 @@ class MW_global_selected:
 
     @classmethod
     def recheckSelected(cls):
-        cls.setSelected(cls.selection)
+        cls.justReloaded = False
+        cls.setSelected(bpy.context.selected_objects)
 
     @classmethod
     def logSelected(cls):
@@ -481,6 +492,16 @@ def register():
 
     # sanitize in case of reload module
     MW_global_selected.sanitize()
+
+    # cannot be done mid loading -> some classes not registered yet etc (fails no matter register order)
+    #if DEV.SELECT_ROOT_LOAD:
+    #    from .utils_scene import select_unhide
+    #    from .properties_global import MW_id_utils
+    #    root_any =  MW_id_utils.getSceneRoot_any()
+    #    if root_any:
+    #        utils_scene.select_unhide(root_any)
+    # do it afterwards once from the panel
+    MW_global_selected.justReloaded = DEV.SELECT_ROOT_LOAD
 
     # callbaks
     handlers.callback_selectionChange_actions.append(MW_global_selected.setSelected_callback)

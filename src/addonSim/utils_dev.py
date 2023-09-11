@@ -4,6 +4,7 @@
 class DEV:
     HANDLE_GLOBAL_EXCEPT  = False   # more robust extension global error but harder to debug
     CALLBACK_REGISTER_ALL = False   # inspect when all available callbacks are triggered
+    SELECT_ROOT_LOAD      = True    # try to select any root after reloading
 
     DEBUG_MODEL           = True    # fake 2D so ignore some directional links (at sim)
     DEBUG_UI              = True    # some additional debug UI

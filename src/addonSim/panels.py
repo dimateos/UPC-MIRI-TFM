@@ -36,6 +36,9 @@ class MW_gen_PT(types.Panel):
     def draw(self, context):
         layoutCol = self.layout.column()
 
+        if MW_global_selected.justReloaded:
+            MW_global_selected.recheckSelected()
+
         # draw the fracture generation ops
         self.draw_onSelected(context, layoutCol)
 
