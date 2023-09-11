@@ -46,6 +46,8 @@ class SHAPES:
         me.from_pydata(vertices=SHAPES.cuboid_verts, edges=[], faces=SHAPES.cuboid_faces)
         return me
 
+#-------------------------------------------------------------------
+
 def set_smoothShading(me: types.Mesh, active=True, faces_idx = None):
     """ set smooth shading for specified faces or for all when none provided """
     if faces_idx:
@@ -86,7 +88,7 @@ def get_resFaces_fromCurveRes(curveRes):
     """
     return 4 + curveRes*2
 
-    #-------------------------------------------------------------------
+#-------------------------------------------------------------------
 
 def get_ringVerts(v:Vector, radii:float, resFaces:float, step:float, vertsOut:list[Vector], axisU = Vector((1,0,0)), axisV=Vector((0,1,0))):
     for i in range(resFaces):

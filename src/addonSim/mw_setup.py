@@ -116,7 +116,7 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, context: types.Contex
 
 #-------------------------------------------------------------------
 
-def gen_pointsObject(obj: types.Object, points: list[Vector], context: types.Context, name:str, reuse=False):
+def gen_pointsObject(obj: types.Object, points: list[Vector], context: types.Context, name:str, reuse=True):
     # Create a new mesh data block and add only verts
     mesh = bpy.data.meshes.new(name)
     mesh.from_pydata(points, [], [])
@@ -126,7 +126,7 @@ def gen_pointsObject(obj: types.Object, points: list[Vector], context: types.Con
     else:       obj_points = utils_scene.gen_child(obj, name, context, mesh, keepTrans=False)
     return obj_points
 
-def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], context: types.Context, name:str, reuse=False):
+def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], context: types.Context, name:str, reuse=True):
     # Create a new mesh data block and add only verts
     mesh = bpy.data.meshes.new(name)
     mesh.from_pydata(bb, [], [])
@@ -137,6 +137,16 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], context: types.Cont
 
     obj_bb.show_bounds = True
     return obj_bb
+
+def gen_arrowObject(obj: types.Object, vdir:Vector, pos:Vector, context: types.Context, name:str, reuse=True):
+    if reuse:
+        find = utils_scene.get_object_fromScene(context.scene, name)
+        if find:
+            utils_scene.delete_object(find)
+
+    obj_arrow = utils_scene.getEmpty_arrowDir(context, vdir, pos, scale=2.0, name=name)
+    utils_scene.set_child(obj_arrow, obj)
+    return obj_arrow
 
 #-------------------------------------------------------------------
 

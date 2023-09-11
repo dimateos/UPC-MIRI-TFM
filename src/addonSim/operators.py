@@ -415,6 +415,10 @@ class MW_gen_links_OT(_StartRefresh_OT):
         mw_setup.gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
         mw_setup.gen_linksMesh_air(MW_global_selected.fract, MW_global_selected.root, context)
         mw_setup.gen_linksMesh_neighs(MW_global_selected.fract, MW_global_selected.root, context)
+
+        # additional arrows
+        mw_setup.gen_arrowObject( MW_global_selected.root, MW_global_selected.root.mw_sim.water_entry_dir,
+                                 utils_trans.VECTORS.O, context, getPrefs().names.links_waterDir)
         return self.end_op()
 
 #-------------------------------------------------------------------

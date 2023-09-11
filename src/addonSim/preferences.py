@@ -162,6 +162,7 @@ class MW_prefs(bpy.types.AddonPreferences):
         links_air = links+"_air"
         links_neighs = links+"_neighs"
         links_points = links+"_points"
+        links_waterDir = links+"_waterDir"
 
         # TODO:: no more legacy support
         links_legacy = links+"_legacy"

@@ -173,6 +173,24 @@ def get_children(obj: types.Object, names: list[str], rec=False, mode="") -> lis
     toSearch = obj.children if not rec else obj.children_recursive
     return get_multiObject_fromList(toSearch, names, mode)
 
+def getEmpty_arrowDir(context: types.Context, vdir=utils_trans.VECTORS.upZ, pos=utils_trans.VECTORS.O, scale=1.0, name="ArrowEmpty", type='SINGLE_ARROW'):
+    """ returns an empty arrow type OBJ (not mesh) """
+    rot = vdir.to_track_quat('Z', 'Y')
+
+    # Create an empty object with a single arrow shape
+    empty = bpy.data.objects.new(name, None)
+    empty.location = pos
+    empty.rotation_mode = 'QUATERNION'
+    empty.rotation_quaternion = rot
+    empty.scale = utils_trans.VECTORS.I * scale
+
+    # type of display
+    empty.empty_display_type = type
+
+    # Link the empty to the scene
+    context.scene.collection.objects.link(empty)
+    return empty
+
 #-------------------------------------------------------------------
 
 def select_nothing():
