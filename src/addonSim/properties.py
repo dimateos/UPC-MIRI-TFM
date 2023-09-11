@@ -171,6 +171,12 @@ class MW_sim_cfg(types.PropertyGroup):
 
     #-------------------------------------------------------------------
 
+    water_entry_dir: props.FloatVectorProperty(
+        subtype='XYZ',
+        size=3,
+        default=(0, -1, 0),
+    )
+
     link_entry_minAlign: props.FloatProperty(
         default=0.1, precision=3
     )
@@ -242,13 +248,11 @@ class MW_vis_cfg(types.PropertyGroup):
     # debug one are non-dynamic, only affects subsequent runs but get written to root too
     # OPT:: most could be easily dynamic but probably not worth it or jus regen all mesh
 
-    debug_links_res: props.IntProperty(
+    links_res: props.IntProperty(
         name="Link mesh resolution", description="Affect the number of faces per tube",
         default=0, min=-1, max=8,
-        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "debug_links_res")
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links_res")
     )
-
-    #-------------------------------------------------------------------
 
     links_depth: props.FloatProperty(
         name="Link depth", description="Minimun depth inside faces",
@@ -256,12 +260,12 @@ class MW_vis_cfg(types.PropertyGroup):
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links_depth")
     )
     links_width_base: props.FloatProperty(
-        name="Link width base", description="Max link w",
+        name="Link width base",
         default=0.05, min=0.01, max=0.2, step=0.05, precision=4,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links_width_base")
     )
     links_width_broken: props.FloatProperty(
-        name="Link width broken", description="Min link w",
+        name="Link width broken",
         default=0.005, min=0.001, max=0.01, step=0.05, precision=4,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links_width_broken")
     )
@@ -278,6 +282,29 @@ class MW_vis_cfg(types.PropertyGroup):
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links_width__mode")
     )
 
+    #-------------------------------------------------------------------
+
+    wall_links_depth_base: props.FloatProperty(
+        name="Air link depth base",
+        default=0.05, min=0.01, max=0.2, step=0.05, precision=4,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "wall_links_depth_base")
+    )
+    wall_links_depth_incr: props.FloatProperty(
+        name="Air link depth incr",
+        default=0.05, min=0.01, max=0.2, step=0.05, precision=4,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "wall_links_depth_incr")
+    )
+    wall_links_width_base: props.FloatProperty(
+        name="Air link width",
+        default=0.05, min=0.01, max=0.2, step=0.05, precision=4,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "wall_links_width_base")
+    )
+
+    walls_links_res: props.IntProperty(
+        name="Air link resolution", description="Affect the number of faces per tube",
+        default=-1, min=-1, max=8,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "walls_links_res")
+    )
 
 #-------------------------------------------------------------------
 # Blender events

@@ -236,6 +236,9 @@ class MW_gen_OT(_StartRefresh_OT):
         if not links.initialized:
             return self.end_op_error("found no links... recalc different params?")
 
+        # create an empty simulation too
+        fract.sim = MW_Sim(fract.cont, fract.links)
+
         return self.end_op()
 
     def end_op(self, msg="", skipLog=False, retPass=False):
@@ -403,12 +406,6 @@ class MW_gen_links_OT(_StartRefresh_OT):
         #mw_setup.gen_linksWallObject(MW_global_selected.fract, MW_global_selected.root, context)
         return self.end_op()
 
-    def end_op(self, msg="", skipLog=False, retPass=False):
-        """ # OVERRIDE:: end_op to perform assign child to all """
-        obj = MW_global_selected.root
-        if obj: MW_id_utils.setMetaType_rec(obj, {"CHILD"}, skipParent=True)
-        return super().end_op(msg, skipLog, retPass)
-
 #-------------------------------------------------------------------
 
 class MW_sim_step_OT(_StartRefresh_OT):
@@ -444,7 +441,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_global_selected.fract
+        return MW_global_selected.fract and MW_global_selected.fract.sim
 
     def invoke(self, context, event):
         # copy prop from obj once
@@ -452,9 +449,6 @@ class MW_sim_step_OT(_StartRefresh_OT):
         # avoid last stored operation overide and recalculating everything
         getPrefs().gen_PT_meta_inspector.reset_meta_show_toggled()
 
-        # create simulation if it does not exist yet
-        if not MW_global_selected.fract.sim:
-            MW_global_selected.fract.sim = MW_Sim(MW_global_selected.fract.cont, MW_global_selected.fract.links)
         # store current random state
         MW_global_selected.fract.sim.rnd_store()
 

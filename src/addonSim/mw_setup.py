@@ -6,7 +6,7 @@ from math import radians
 
 from .preferences import getPrefs
 from .properties_global import (
-    MW_id, MW_id_utils,
+    MW_id, MW_id_utils, MW_global_selected
 )
 from .properties import (
     MW_gen_cfg,
@@ -15,7 +15,7 @@ from .properties import (
 
 from .mw_cont import MW_Cont, VORO_Container, CELL_STATE_ENUM
 from .mw_links import MW_Links
-from .mw_fract import MW_Fract # could import all from here
+from .mw_fract import MW_Fract, MW_Sim # could import all from here
 
 from . import utils, utils_scene, utils_trans, utils_mat, utils_mesh
 from .utils_dev import DEV
@@ -281,15 +281,20 @@ def set_cellsState(fract: MW_Fract, root: types.Object, cells: list[types.Object
 def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     prefs = getPrefs()
     cfg : MW_vis_cfg= root.mw_vis
+    numLinks = len(fract.links.internal)
 
-    points       : list[Vector]               = []
-    verts        : list[tuple[Vector,Vector]] = []
-    lifeWidths   : list[float]                = []
-    id_life      : list[tuple[int,float]]     = []
-    pick_entries : list[tuple[int,int]]       = []
+    points       : list[Vector]               = [None]*numLinks
+    verts        : list[tuple[Vector,Vector]] = [None]*numLinks
+    lifeWidths   : list[float]                = [None]*numLinks
+    id_life      : list[tuple[int,float]]     = [None]*numLinks
+    pick_entries : list[tuple[int,int]]       = [None]*numLinks
+
+    sim : MW_Sim = MW_global_selected.fract.sim
+    sim.reset_links_rnd()
+    #sim.reset_links(0.1)
 
     # iterate the global map and store vert pairs for the tube mesh generation
-    for n, l in enumerate(fract.links.internal):
+    for id, l in enumerate(fract.links.internal):
         # point from face to face
         k1, k2 = l.key_cells
         kf1, kf2 = l.key_faces
@@ -310,22 +315,68 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
         # add a bit of additional depth
         p1 -= pdir*cfg.links_depth*0.5
         p2 += pdir*cfg.links_depth*0.5
-        verts.append((p1, p2))
+        verts[id]= (p1, p2)
 
         # original center
-        points.append(l.pos)
+        points[id]= l.pos
 
-        # query some props
+        # query props
         life = l.life_clamped
-        id_life.append((n,life))
-        pick_entries.append((l.picks, l.picks_entry))
+        id_normalized = id / float(numLinks)
+        id_life[id]= (id_normalized, life)
+        pick_entries[id]= (l.picks, l.picks_entry)
 
         # lerp the width
         if cfg.links_width__mode == {"UNIFORM"}:
-            lifeWidths.append(cfg.links_width_broken * (1-life) + cfg.links_width_base * life)
+            lifeWidths[id]= cfg.links_width_broken * (1-life) + cfg.links_width_base * life
         elif cfg.links_width__mode == {"BINARY"}:
-            lifeWidths.append(cfg.links_width_broken if life<1 else cfg.links_width_base)
+            lifeWidths[id]= cfg.links_width_broken if life<1 else cfg.links_width_base
         # DISABLED: no scaling with life, color only
+
+    # single mesh with tubes
+    resFaces = utils_mesh.get_resFaces_fromCurveRes(cfg.links_res)
+    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidths, prefs.names.links, 1.0, resFaces, cfg.links_smoothShade)
+
+    # potentially reuse child and clean mesh
+    obj_links = utils_scene.gen_childReuse(root, prefs.names.links, context, mesh, keepTrans=True)
+    MW_id_utils.setMetaChild(obj_links)
+
+    # color encoded attributes for viewing in viewport edit mode
+    numCorners=resFaces*4
+    utils_mat.gen_meshUV(mesh, id_life, "uv_life", numCorners)
+    utils_mat.gen_meshUV(mesh, pick_entries, "uv_picks", numCorners)
+    obj_links.active_material = utils_mat.gen_gradientMat("uv_life")
+    obj_links.active_material.diffuse_color = utils_mat.COLORS.red
+
+    # add points object too
+    obj_points = gen_pointsObject(root, points, context, prefs.names.links_points, reuse=True)
+    MW_id_utils.setMetaChild(obj_points)
+
+    getStats().logDt("generated links object")
+    return obj_links
+
+#def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Context):
+#    prefs = getPrefs()
+#    cfg : MW_vis_cfg = root.mw_vis
+#    sim : MW_Sim     = MW_global_selected.fract.sim
+#    numLinks = len(fract.links.internal)
+
+#    verts        : list[tuple[Vector,Vector]] = [None]*numLinks
+#    probWidths   : list[float]                = [None]*numLinks
+#    id_prob      : list[tuple[int,int]]       = [None]*numLinks
+
+#    # iterate the global map and store vert pairs for the tube mesh generation
+#    for n, l in enumerate(fract.links.internal):
+#        # point from original global pos + normal
+#        p1 = l.pos
+#        picks = l.picks_entry
+#        p2 = p1 + l.dir * cfg.wall_links_depth_base + picks * cfg.wall_links_depth_incr
+#        verts[id]=(p1, p2)
+
+#        # query props
+#        prob = sim.get_entryWeight(l)
+#        id_normalized = id / float(numLinks)
+#        id_prob[id]=(id_normalized, prob)
 
     # single mesh with tubes
     resFaces = utils_mesh.get_resFaces_fromCurveRes(cfg.debug_links_res)

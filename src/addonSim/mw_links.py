@@ -64,11 +64,13 @@ class Link():
         self.picks = self.picks_entry = 0
 
     def __str__(self):
-        s = f"k{self.key_cells}: a({self.area:.3f}) life({self.life:.3f}) p{self.picks, self.picks_entry}) s({self.state,self.state_initial})"
-        if self.airLink_initial:
-            s += f" [AIR-WALL] dir{self.dir.to_tuple(2)}"
-        elif self.airLink: s += f" [AIR]"
-        return s
+        #a({self.area:.2f}), p({self.picks},{self.picks_entry}),
+        if self.state == LINK_STATE_ENUM.WALL:
+            return f"W{self.key_cells[0]}: p({self.picks_entry}), dir{self.dir.to_tuple(2)}"
+        elif self.state == LINK_STATE_ENUM.AIR:
+            return f"kA{self.key_cells}: l({self.life:.3f}), dir{self.dir.to_tuple(2)}"
+        else:
+            return f"k{self.key_cells}: l({self.life:.3f}), dir{self.dir.to_tuple(2)}"
 
     def degrade(self, deg):
         """ Degrade link life, return true when broken """
@@ -99,8 +101,9 @@ class MW_Links():
 
         self.cells_graph = nx.Graph()
         """ Graph connecting the cells to find connected components, also adds walls with negative indices
-            # NOTE:: edges for a given node are not returned sorted by face, for this query the faceKey inside the link
-            # NOTE:: removing nodes from the graphs takes all their edges too, adding edges creates nodess
+            # NOTE:: edges for a given node are not returned sorted by face, use faceKey inside the link to get the actual face index
+            # NOTE:: adding edges creates nodes, but added edges might swap the indices order! use getKey_swap to make sure
+            # NOTE:: removing nodes from the graphs takes all their edges too (use subgraphs)
         """
 
         self.comps = []
@@ -121,15 +124,6 @@ class MW_Links():
         self.min_area = INF_FLOAT
         self.max_area = -INF_FLOAT
         self.avg_area = 0
-
-        # key is always sorted numerically -> negative walls id go at the beginning
-        def getKey_swap(k1,k2) -> tuple[neigh_key_t,bool]:
-            swap = k1 > k2
-            key = (k1, k2) if not swap else (k2, k1)
-            return key,swap
-        def getKey(k1,k2, swap) -> neigh_key_t:
-            key = (k1, k2) if not swap else (k2, k1)
-            return key
 
 
         # FIRST loop to build the global dictionaries
@@ -181,7 +175,7 @@ class MW_Links():
 
                     # add to graphs and external
                     self.cells_graph.add_edge(*key, l=l)
-                    self.links_graph.add_node(key, l=l)
+                    #self.links_graph.add_node(key, l=l)
                     self.external.append(l)
                     # also static cont maps
                     cont.keys_perWall[idx_neighCell].append(key)
@@ -189,18 +183,19 @@ class MW_Links():
 
                 else:
                     # internal link, check unique between cells (networkx works without swapping the key tho)
-                    key,swap = getKey_swap(idx_cell, idx_neighCell)
-                    if self.links_graph.has_node(key):
+                    key,swap = self.getKey_swap(idx_cell, idx_neighCell)
+                    if self.cells_graph.has_edge(*key):
+                    #if self.links_graph.has_node(key):
                         continue
 
                     # build the link
                     idx_neighFace = cont.neighs_faces[idx_cell][idx_face]
-                    key_faces = getKey(idx_face, idx_neighFace, swap)
+                    key_faces = self.getKey(idx_face, idx_neighFace, swap)
                     l = Link(key, key_faces, pos, normal, area, LINK_STATE_ENUM.SOLID)
 
                     # add to graphs and internal
                     self.cells_graph.add_edge(*key, l=l)
-                    self.links_graph.add_node(key, l=l)
+                    #self.links_graph.add_node(key, l=l)
                     self.internal.append(l)
                     # also static cont maps
                     cont.keys_perCell[idx_cell][idx_face] = key
@@ -208,7 +203,7 @@ class MW_Links():
 
 
         # count the links and calcualte averages
-        self.links_len = self.links_graph.number_of_nodes()
+        self.links_len = self.cells_graph.number_of_edges()
         if self.links_len:
             self.avg_area /= float(self.links_len)
 
@@ -232,13 +227,12 @@ class MW_Links():
                 if key[0] in CELL_ERROR_ENUM.all:
                     continue
 
-                # avoid recalculating link neighs (and duplicating them)
-                if len(self.get_link_neighsId(key)):
-                    continue
-
-                # retrieve valid link
-                l = self.get_link(key)
-                #DEV.log_msg(f"l {l.key_cells} {l.key_cells}")
+                # avoid recalculating link neighs, create a node in links_graph now
+                if self.links_graph.has_node(key):
+                    if "l" in self.links_graph.nodes[key]:
+                        continue
+                l : Link = self.cells_graph.edges[key]["l"]
+                self.links_graph.add_node(key, l=l)
 
                 # calculate area factor relative to avg area (avg wont be zero when there are links_graph.nodes)
                 l.area = l.area / self.avg_area
@@ -248,7 +242,7 @@ class MW_Links():
                     # walls only add local faces from the same cell
                     wf_neighs = cont.cells_meshes_FtoF[idx_cell][idx_face]
                     w_neighs = [ keys_perFace[f] for f in wf_neighs ]
-                    self.links_graph.add_edges_from(w_neighs)
+                    self.add_links_neigs(key, w_neighs)
 
                 else:
                     # regular links add both neigh faces from same and the other cell
@@ -265,12 +259,15 @@ class MW_Links():
                     c2_keys = cont.keys_perCell[c2]
                     c1_neighs = [ c1_keys[f] for f in f1_neighs ]
                     c2_neighs = [ c2_keys[f] for f in f2_neighs ]
-                    self.links_graph.add_edges_from(c1_neighs + c2_neighs)
+                    self.add_links_neigs(key, c1_neighs + c2_neighs)
 
         stats.logDt("aggregated link neighbours")
 
         # initial components subgraph calculation
         self.comps_recalc()
+
+        #assert(len(list(self.cells_graph.edges)) == len(list(self.links_graph.nodes)))
+        #assert( { getKey_swap(k[0],k[1])[0] for k in self.cells_graph.edges } == set(self.links_graph.nodes))
 
         logType = {"CALC", "LINKS"}
         if not self.links_len:
@@ -319,15 +316,44 @@ class MW_Links():
     def comps_linkBreak(self, key):
         l = self.get_link(key)
 
+    def add_links_neigs(self, key, newNeighs):
+        #self.links_graph.add_edges_from(newNeighs)
+        for nn in newNeighs:
+            if nn[0] not in CELL_ERROR_ENUM.all:
+                self.links_graph.add_edge(key, nn)
+
     #-------------------------------------------------------------------
 
     def get_link(self, key:neigh_key_t) -> Link:
         return self.links_graph.nodes[key]["l"]
+    def get_links(self, keys:list[neigh_key_t]) -> list [Link]:
+        return [self.links_graph.nodes[k]["l"] for k in keys ]
 
     def get_link_neighsId(self, key:neigh_key_t) -> list[neigh_key_t]:
         """ The links neighs ID unordered by face or anything """
         return list(self.links_graph.edges(key))
-
     def get_link_neighs(self, key:neigh_key_t) -> list[Link]:
         """ The links neighs unordered by face or anything """
         return [ self.get_link(k) for k in self.get_link_neighsId(key) ]
+
+    def get_cell_linksKeys(self, idx:int) -> list[Link]:
+        """ The links ID from a given cell with properly sorted keys """
+        return [ self.getKey_swap(k[0],k[1])[0] for k in self.cells_graph.edges(idx) ]
+
+    def get_cell_links(self, idx:int) -> list[Link]:
+        """ The links from a given cell """
+        return self.get_links(self.get_cell_linksKeys(idx))
+
+    #-------------------------------------------------------------------
+
+    # key is always sorted numerically -> negative walls id go at the beginning
+    # tuples are inmutable so need to return a new one
+    @staticmethod
+    def getKey_swap(k1,k2) -> tuple[neigh_key_t,bool]:
+        swap = k1 > k2
+        key = (k1, k2) if not swap else (k2, k1)
+        return key,swap
+    @staticmethod
+    def getKey(k1,k2, swap) -> neigh_key_t:
+        key = (k1, k2) if not swap else (k2, k1)
+        return key

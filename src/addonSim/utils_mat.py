@@ -377,33 +377,43 @@ def gen_test_colors(obj, mesh, alpha, matName):
 #-------------------------------------------------------------------
 
 class GRADIENTS:
-    def lerp(pos, min=0, max=256):
+    default_res = 128
+
+    def lerp(pos, min=0, max=default_res):
         return (pos-min) / max
 
-    def red(pos, min=0, max=256):
+    def red(pos, min=0, max=default_res):
         red = GRADIENTS.lerp(pos, min, max)
         return Vector((red,0,0,1))
 
+def gen_gradientMat(uv_layer:str, width=GRADIENTS.default_res, height=GRADIENTS.default_res*0.5, name="gradient", colorFn = GRADIENTS.red, forceNew = False):
+    """ 1D gradients, but add height to visualize better the UV coords
+        # NOTE:: tries to shared prev gradient image by matching name (skipped with forceNew)
+    """
+    image = bpy.data.images.get(name+"_img") if not forceNew else None
+    if image:
+        print(f"WARNING: reusing image {image.name}")
 
-def gen_gradientMat(uv_layer:str, width=256, height=256, name="gradient", colorFn = GRADIENTS.red):
-    """ 1D gradients, but add height to visualize better the UV coords """
+    else:
+        # create new image
+        width=int(width)
+        height=int(height)
+        image = bpy.data.images.new(name=name+"_img", width=width, height=height)
 
-    image = bpy.data.images.new(name=name+"_img", width=width, height=height)
+        # Create a NumPy array to store the image data
+        pixels = np.empty(width * height * 4, dtype=np.float32)
+        for y in range(height):
+            for x in range(width):
+                c = colorFn(y, max=height)
+                # Set the pixel values (RGBA)
+                index = (y * width + x) * 4
+                pixels[index]     = c[0]
+                pixels[index + 1] = c[1]
+                pixels[index + 2] = c[2]
+                pixels[index + 3] = c[3]
 
-    # Create a NumPy array to store the image data
-    pixels = np.empty(width * height * 4, dtype=np.float32)
-    for y in range(height):
-        for x in range(width):
-            c = colorFn(x, max=width)
-            # Set the pixel values (RGBA)
-            index = (y * width + x) * 4
-            pixels[index]     = c[0]
-            pixels[index + 1] = c[1]
-            pixels[index + 2] = c[2]
-            pixels[index + 3] = c[3]
-
-    # Flatten the NumPy array and assign it to the image
-    image.pixels = pixels.tolist()
+        # Flatten the NumPy array and assign it to the image
+        image.pixels = pixels.tolist()
 
     # Create a new material and add it
     mat = bpy.data.materials.new(name=name+"_mat")

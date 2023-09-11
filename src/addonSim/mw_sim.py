@@ -56,8 +56,8 @@ class MW_Sim:
         self.cont : MW_Cont = cont
         self.links : MW_Links = links
 
-        self.links_iniLife     = [ l.life for l in self.links.internal ]
-        self.links_iniLife_air = [ l.life for l in self.links.external  ]
+        #self.links_iniLife     = [ l.life for l in self.links.internal ]
+        #self.links_iniLife_air = [ l.life for l in self.links.external ]
 
         self.step_reset()
         self.step_id = self.sub_id = -1
@@ -67,7 +67,7 @@ class MW_Sim:
         self.sub_trace  : SubStepData    = None
 
     def reset(self, debug_addSeed = 0, initialAirToo = True):
-        self.rnd_restore(debug_addSeed)
+        #self.rnd_restore(debug_addSeed)
 
         # WIP:: should use reset function etc
         for i,l in enumerate(self.links.internal):
@@ -207,21 +207,20 @@ class MW_Sim:
 
     def get_entryWeight(self, l:Link):
         if DEV.DEBUG_MODEL:
-            # WIP:: limit axis for the hill model
             if utils_trans.aligned(l.dir, VECTORS.backZ, bothDir=True):
                 return 0
         w = 1
 
-        # relative position gravity align
-        # IDEA:: maybe shift vector a bit by some wind factor?
-        water_dir_inv = VECTORS.upY
+        # relative position water dir
+        #water_dir_inv = VECTORS.upY
+        water_dir_inv = self.cfg.water_entry_dir
         d = l.dir.dot(water_dir_inv)
 
         # cut-off
         if d < self.cfg.link_entry_minAlign:
             return 0
 
-        # weight using face areaFactor (could use regular area instead)
+        # weight using face area (normalized)
         w *= d * l.area
 
         return w

@@ -127,7 +127,7 @@ class DM_utils(types.PropertyGroup):
     # data
     orphans_collection: props.StringProperty(
         name="", description="E.g. meshes, mats, curves, etc",
-        default="meshes, materials, curves",
+        default="meshes, curves, materials, images",
     )
 
 #-------------------------------------------------------------------

@@ -256,6 +256,8 @@ def gen_childReuse(
         if obj_child.data:
             prevMesh = obj_child.data
             delete_data(prevMesh, obj_child.type)
+        if obj_child.active_material:
+            delete_mat(obj_child.active_material, do_unlink=True)
 
         obj_child.data = mesh
         obj_child.hide_set(hide)

@@ -10,6 +10,7 @@ from .properties_global import (
 )
 from .mw_fract import MW_Fract
 from .mw_cont import MW_Cont, CELL_STATE_ENUM
+from .mw_links import MW_Links, LINK_STATE_ENUM
 
 from . import operators as ops
 from .panels_dm import util_classes_pt
@@ -40,6 +41,9 @@ class MW_gen_PT(types.Panel):
 
         # more options
         self.draw_debug(context, layoutCol)
+
+        if DEV.DEBUG_UI:
+            self.draw_debugInspect(context, layoutCol)
 
     def draw_onSelected(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
@@ -126,47 +130,10 @@ class MW_gen_PT(types.Panel):
 
     def draw_debug(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
-        curr = MW_global_selected.current
-        fract : MW_Fract = MW_global_selected.fract
-        cont : MW_Cont = MW_global_selected.fract.cont if fract else None
-
         open, box = ui.draw_toggleBox(prefs.gen_PT_meta_inspector, "meta_show_1", layout, "debug...", scaleBox=0.85, returnCol=False)
         if open:
             # recalculate fracture
             box.operator(ops.MW_gen_recalc_OT.bl_idname, icon="ZOOM_PREVIOUS")
-
-            if DEV.DEBUG_UI:
-                # cell data
-                if curr:
-                    cell_id = curr.mw_id.cell_id
-                    boxSelected = box.box().column()
-                    col_rowSplit = boxSelected.row()
-                    col_rowSplit.label(text=f"{curr.mw_id.meta_type}, sID: {curr.mw_id.storage_id}, cID: {cell_id}", icon="MESH_ICOSPHERE")
-                    # state data from cont or the cell
-                    col_rowSplit = boxSelected.row()
-                    stateCont = CELL_STATE_ENUM.to_str(MW_global_selected.fract.cont.cells_state[cell_id]) if fract and cont else "~"
-                    col_rowSplit.label(text=f"  cState: {CELL_STATE_ENUM.to_str(curr.mw_id.cell_state)}  // cont: {stateCont}")
-
-                # cont POV
-                if fract:
-                    if cont:
-                        boxCont = box.box().column()
-                        boxCont.label(text=f"-CONT-  root: {cont.root.name if not utils_scene.needsSanitize(cont.root) else '~'}", icon="CON_PIVOT")
-                        cell_sample = cont.cells_objs[0].name if not utils_scene.needsSanitize(cont.cells_objs[0]) else '~'
-                        mesh_sample = cont.cells_meshes[0].name if not utils_scene.needsSanitize(cont.cells_meshes[0]) else '~'
-                        boxCont.label(text=f"  samples [{len(cont.cells_objs)}],  c: {cell_sample}, m: {mesh_sample}")
-
-                # global selected
-                boxSelected = box.box().column()
-                col_rowSplit = boxSelected.row().split(factor=0.6)
-                col_rowSplit.label(text=f"Root:  {MW_global_selected.root.name if MW_global_selected.root else '~'}", icon="RESTRICT_SELECT_ON")
-                col_rowSplit.label(text=f"{MW_global_selected.prevalid_root.name if MW_global_selected.prevalid_root else '~'}", icon="FRAME_PREV")
-                col_rowSplit = boxSelected.row().split(factor=0.6)
-                col_rowSplit.label(text=f"Current: {curr.name if curr else '~'}", icon="RESTRICT_SELECT_OFF")
-                col_rowSplit.label(text=f"{MW_global_selected.prevalid_current.name if MW_global_selected.prevalid_current else '~'}", icon="FRAME_PREV")
-                col_rowSplit = boxSelected.row().split(factor=0.6)
-                col_rowSplit.label(text=f"Active: {context.active_object.name if context.active_object else '~'}", icon="SELECT_INTERSECT")
-                col_rowSplit.label(text=f"{len(MW_global_selected.selection) if MW_global_selected.selection else '~'}", icon="SELECT_SET")
 
             # delete all fractures
             boxLinks = box.box()
@@ -186,7 +153,7 @@ class MW_gen_PT(types.Panel):
                 col.label(text=f"{id}: {len(fract.cont.voro_cont)} cells + {fract.links.links_len} links", icon=icon)
 
             # more stuff
-            col = layout.column()
+            col = box.column()
             col_rowSplit = col.row().split(factor=0.66)
             col_rowSplit.operator(ops.MW_util_comps_OT.bl_idname, icon="NODE_COMPOSITING")
             col_rowSplit.prop(prefs, "util_comps_OT_apply")
@@ -195,6 +162,64 @@ class MW_gen_PT(types.Panel):
             col_rowSplit.operator(ops.MW_util_bool_OT.bl_idname, icon="MOD_BOOLEAN")
             col_rowSplit.prop(prefs, "util_bool_OT_apply")
 
+    def draw_debugInspect(self, context: types.Context, layout: types.UILayout):
+        prefs = getPrefs()
+        curr = MW_global_selected.current
+        fract, cont, links, sim = [None]*4
+        if MW_global_selected.fract:
+            fract : MW_Fract = MW_global_selected.fract
+            cont : MW_Cont = fract.cont
+            links : MW_Links = fract.links
+
+        open, box = ui.draw_toggleBox(prefs.gen_PT_meta_inspector, "meta_show_2", layout, "inspect...", scaleBox=0.85, returnCol=False)
+        if open:
+
+            # global selected
+            boxSelected = box.box().column()
+            col_rowSplit = boxSelected.row().split(factor=0.6)
+            col_rowSplit.label(text=f"Root:  {MW_global_selected.root.name if MW_global_selected.root else '~'}", icon="RESTRICT_SELECT_ON")
+            col_rowSplit.label(text=f"{MW_global_selected.prevalid_root.name if MW_global_selected.prevalid_root else '~'}", icon="FRAME_PREV")
+            col_rowSplit = boxSelected.row().split(factor=0.6)
+            col_rowSplit.label(text=f"Current: {curr.name if curr else '~'}", icon="RESTRICT_SELECT_OFF")
+            col_rowSplit.label(text=f"{MW_global_selected.prevalid_current.name if MW_global_selected.prevalid_current else '~'}", icon="FRAME_PREV")
+            col_rowSplit = boxSelected.row().split(factor=0.6)
+            col_rowSplit.label(text=f"Active: {context.active_object.name if context.active_object else '~'}", icon="SELECT_INTERSECT")
+            col_rowSplit.label(text=f"{len(MW_global_selected.selection) if MW_global_selected.selection else '~'}", icon="SELECT_SET")
+
+            # cell data
+            if curr:
+                cell_id = curr.mw_id.cell_id
+                boxSelected = box.box().column()
+                col_rowSplit = boxSelected.row()
+                col_rowSplit.label(text=f"{curr.mw_id.meta_type}, sID: {curr.mw_id.storage_id}, cID: {cell_id}", icon="MESH_ICOSPHERE")
+                # state data from cont or the cell
+                col_rowSplit = boxSelected.row()
+                stateCont = CELL_STATE_ENUM.to_str(MW_global_selected.fract.cont.cells_state[cell_id]) if fract and cont else "~"
+                col_rowSplit.label(text=f"  cState: {CELL_STATE_ENUM.to_str(curr.mw_id.cell_state)}  // cont: {stateCont}")
+
+            # fract POV
+            if fract:
+                if cont:
+                    boxCont = box.box().column()
+                    boxCont.label(text=f"-CONT-  root: {cont.root.name if not utils_scene.needsSanitize(cont.root) else '~'}", icon="CON_PIVOT")
+                    cell_sample = cont.cells_objs[0].name if not utils_scene.needsSanitize(cont.cells_objs[0]) else '~'
+                    mesh_sample = cont.cells_meshes[0].name if not utils_scene.needsSanitize(cont.cells_meshes[0]) else '~'
+                    boxCont.label(text=f"  samples [{len(cont.cells_objs)}],  c: {cell_sample}, m: {mesh_sample}")
+                if links:
+                    boxLinks = box.box().column()
+                    linksText = f"-LINKS-  comps: {links.comps_len}"
+                    boxLinks.label(text=linksText, icon="OUTLINER_DATA_CURVES")
+                    if curr and MW_id_utils.hasCellId(curr):
+                        open, subboxLinks = ui.draw_toggleBox(prefs.gen_PT_meta_inspector, "meta_show_3", boxLinks, "neigs...", scaleBox=0.85, returnCol=False)
+                        if open:
+                            for l in links.get_cell_links(curr.mw_id.cell_id):
+                                lText = f"{l}"
+                                iconMap = {
+                                    LINK_STATE_ENUM.WALL : "SURFACE_NCURVE",
+                                    LINK_STATE_ENUM.AIR  : "CURVE_NCURVE",
+                                    LINK_STATE_ENUM.SOLID: "OUTLINER_DATA_CURVE",
+                                }
+                                boxLinks.label(text=lText, icon=iconMap[l.state])
 
 #-------------------------------------------------------------------
 
