@@ -306,6 +306,7 @@ class MW_vis_cfg(types.PropertyGroup):
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "walls_links_res")
     )
 
+
 #-------------------------------------------------------------------
 # Blender events
 

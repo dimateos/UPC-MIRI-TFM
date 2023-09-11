@@ -87,3 +87,14 @@ def vec3_to_string(v, fmt:str = ".2f"):
 def key_to_string(k:tuple[int,int], fmt:str = ">2"):
     fmt_vec = f"({{:{fmt}}},{{:{fmt}}})"
     return f"{fmt_vec}".format(*k)
+
+def clamp(value, min_value=0, max_value=1):
+    return max(min(value, max_value), min_value)
+
+def clamp_inplace(value_seq, min_value=0, max_value=1):
+    """ Clapm values in place, any size """
+    for i in range(len(value_seq)):
+        value_seq[i] = clamp(value_seq[i], min_value, max_value)
+
+    # return tho in place in case it was used before assigning
+    return value_seq

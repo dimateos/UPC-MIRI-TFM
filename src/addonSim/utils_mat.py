@@ -11,27 +11,37 @@ from . import utils
 
 class COLORS:
     """ Common colors and generators, using vec4 with alpha"""
-    default_alpha = 1.0
+    _default_alpha = 1.0
+    def from_256(c):
+        c.xyz *= 1.0 / 256.0
+        return c # return in case of used before assigment
 
-    red   = Vector([1.0, 0.0, 0.0, default_alpha])
-    green = Vector([0.0, 1.0, 0.0, default_alpha])
-    blue  = Vector([0.0, 0.0, 1.0, default_alpha])
+    red      = Vector([1.0, 0.0, 0.0, _default_alpha])
+    green    = Vector([0.0, 1.0, 0.0, _default_alpha])
+    blue     = Vector([0.0, 0.0, 1.0, _default_alpha])
     list_rgb = [red, green, blue]
 
-    yellow  = (red+green) * 0.5
-    orange  = (red+yellow) * 0.5
-    pink    = (red+blue) * 0.5
-    aqua    = (green+blue) * 0.5
+    yellow    = (red+green) * 0.5
+    orange    = (red+yellow) * 0.5
+    pink      = (red+blue) * 0.5
+    aqua      = (green+blue) * 0.5
     list_fade = [red, orange, yellow, green, aqua, blue, pink]
 
-    black   = Vector([0.0, 0.0, 0.0, default_alpha])
-    white   = Vector([1.0, 1.0, 1.0, default_alpha])
-    gray   = white * 0.5
+    black     = Vector([0.0, 0.0, 0.0, _default_alpha])
+    white     = Vector([1.0, 1.0, 1.0, _default_alpha])
+    gray      = (white+black) * 0.5
     list_gray = [black, gray, white]
 
-    default_name = "colorMat"
-    default_precision = 1
-    def rounded(c: Vector, precision=default_precision, alphaToo = False):
+    cool     = from_256(Vector([97, 130, 234,  _default_alpha]))
+    white_cw = from_256(Vector([221, 221, 221, _default_alpha]))
+    warm     = from_256(Vector([220, 94, 75,   _default_alpha]))
+
+    _default_name = "colorMat"
+    _default_precision = 1
+
+    @staticmethod
+    def rounded(c: Vector, precision=_default_precision, alphaToo = False):
+        """ Limit color precision (alpha too or not), returns a new vector (expects alpha) """
         cc = Vector().to_4d()
         cc[0] = round(c[0], precision)
         cc[1] = round(c[1], precision)
@@ -39,11 +49,24 @@ class COLORS:
         cc[3] = round(c[3], precision) if alphaToo else c[3]
         return cc
 
-    def get_random(minC=0.0, maxC=1.0, alpha=default_alpha) -> Vector:
+    @staticmethod
+    def clamp(c: Vector, min=0, max=1):
+        """ Clapm color values, returns a new vector (expects alpha) """
+        cc = Vector().to_4d()
+        cc[0] = utils.clamp(c[0], min, max)
+        cc[1] = utils.clamp(c[1], min, max)
+        cc[2] = utils.clamp(c[2], min, max)
+        cc[3] = utils.clamp(c[3], min, max)
+        return cc
+
+    @staticmethod
+    def get_random(minC=0.0, maxC=1.0, alpha=_default_alpha) -> Vector:
         c = Vector( [uniform(minC,maxC), uniform(minC,maxC), uniform(minC,maxC), alpha] )
         return c
 
-    def get_ramp(start = 0.1, stop = 0.9, step = 0.2, alpha=default_alpha) -> list[Vector]:
+    @staticmethod
+    def get_ramp(start = 0.1, stop = 0.9, step = 0.2, alpha=_default_alpha) -> list[Vector]:
+        """ List of colors lerping all RGB """
         startV = Vector( [start]*3 )
         stepV = Vector( [step]*3 )
 
@@ -52,13 +75,13 @@ class COLORS:
             for y in range(int((stop - start) / step) + 1):
                 for z in range(int((stop - start) / step) + 1):
                     c = startV + Vector( [x,y,z] ) *stepV
-                    c.to_4d()
+                    c = c.to_4d()
                     c.w = alpha
                     colors.append(c)
         return colors
 
 def get_colorMat(color=COLORS.red, matName: str=None):
-    if not matName: matName = COLORS.default_name
+    if not matName: matName = COLORS._default_name
     mat = bpy.data.materials.new(matName)
     mat.use_nodes = False
 
@@ -69,7 +92,7 @@ def get_colorMat(color=COLORS.red, matName: str=None):
     mat.diffuse_color[3] = color[3]
     return mat
 
-def get_randomMat(minC=0.0, maxC=1.0, alpha=COLORS.default_alpha, matName: str=None):
+def get_randomMat(minC=0.0, maxC=1.0, alpha=COLORS._default_alpha, matName: str=None):
     if not matName: matName = "randomMat"
     color = COLORS.get_random(minC, maxC, alpha)
     mat = get_colorMat(color, matName)
@@ -94,7 +117,7 @@ class ATTRS:
         else: raise TypeError(f"{adomain} not in {ATTRS.attrs_adomain}")
 
     @staticmethod
-    def get_value_inType(atype:str, v, alpha = COLORS.default_alpha):
+    def get_value_inType(atype:str, v, alpha = COLORS._default_alpha):
         """ Get a value of the type aprox """
         if   atype == "FLOAT"       : val= v
         elif atype == "FLOAT_COLOR" : val= Vector((v,v,v, alpha))
@@ -134,7 +157,7 @@ class ATTRS:
     #-------------------------------------------------------------------
 
     @staticmethod
-    def get_rnd_inType(atype:str, minC = 0.0, maxC = 1.0, alpha = COLORS.default_alpha):
+    def get_rnd_inType(atype:str, minC = 0.0, maxC = 1.0, alpha = COLORS._default_alpha):
         """ Get a random value of the type aprox """
         if   atype == "FLOAT"       : rnd= uniform(minC, maxC)
         elif atype == "FLOAT_COLOR" : rnd= COLORS.get_random(minC, maxC, alpha)
@@ -149,7 +172,7 @@ class ATTRS:
         return rnd
 
     @staticmethod
-    def get_periodic_inType(atype:str, minC = 0.0, maxC = 1.0, period_id:int = None, period = 2, alpha = COLORS.default_alpha):
+    def get_periodic_inType(atype:str, minC = 0.0, maxC = 1.0, period_id:int = None, period = 2, alpha = COLORS._default_alpha):
         """ Get periodic value in the type (building a ramp from 0-1 in period)"""
         step = int((period_id % period) / period) + 1
         stepVal = minC + step * maxC
@@ -159,7 +182,7 @@ class ATTRS:
     rndRep_vals = { atype: list() for atype in attrs_atype }
     rndRep_count = { atype: 0 for atype in attrs_atype }
     @staticmethod
-    def get_rnd_periodic_inType(atype:str, minC = 0.0, maxC = 1.0, period = 2, alpha = COLORS.default_alpha):
+    def get_rnd_periodic_inType(atype:str, minC = 0.0, maxC = 1.0, period = 2, alpha = COLORS._default_alpha):
         """ Get a random value of the type with certain periodicity (limit rnd values) """
         if len(ATTRS.rndRep_vals[atype]) < period:
             ATTRS.rndRep_vals[atype].append(ATTRS.get_rnd_inType(atype, minC, maxC, alpha))
@@ -170,7 +193,7 @@ class ATTRS:
         return rndRep
 
     @staticmethod
-    def get_deferred_inType(atype:str, minC = 0.0, maxC = 1.0, period_id:int = None, period = 2, alpha=COLORS.default_alpha):
+    def get_deferred_inType(atype:str, minC = 0.0, maxC = 1.0, period_id:int = None, period = 2, alpha=COLORS._default_alpha):
         """ Proxy function to pick the random method used in other functions"""
         return ATTRS.get_rnd_inType(atype, minC, maxC, alpha)
         #return ATTRS.get_periodic_inType(atype, minC, maxC, period_id, period, alpha)
@@ -371,22 +394,42 @@ def gen_test_colors(obj, mesh, alpha, matName):
     # test non color attr
     at = gen_meshAttr(mesh, adomain="FACE")
     set_meshAttr_rnd(mesh, at)
-    atc = gen_meshAttr(mesh, COLORS.blue.to_4d(), adomain="CORNER", atype="FLOAT_COLOR", name="ATtestcolor")
+    atc = gen_meshAttr(mesh, COLORS.blue, adomain="CORNER", atype="FLOAT_COLOR", name="ATtestcolor")
     set_meshAttr_rnd(mesh, atc)
 
 #-------------------------------------------------------------------
 
 class GRADIENTS:
-    default_res = 128
+    _default_res = 128
 
-    def lerp(pos, min=0, max=default_res):
-        return (pos-min) / max
+    @staticmethod
+    def lerp_u(p, min_value=0, max_value=_default_res):
+        return (p-min_value) / max_value
 
-    def red(pos, min=0, max=default_res):
-        red = GRADIENTS.lerp(pos, min, max)
-        return Vector((red,0,0,1))
+    @staticmethod
+    def lerp_colors(u, c1 = COLORS.white, c2=COLORS.black):
+        """ Alpha is not lerped (preserved from c1), return as new vector """
+        cc1 = c1.xyz*(1-u)
+        cc2 = c2.xyz*u
+        c = Vector(cc1+cc2)
+        utils.clamp_inplace(c) # already done by blender?
+        c = c.to_4d()
+        c.w = c1.w
+        return c
 
-def gen_gradientMat(uv_layer:str, width=GRADIENTS.default_res, height=GRADIENTS.default_res*0.5, name="gradient", colorFn = GRADIENTS.red, forceNew = False):
+    @staticmethod
+    def lerp_colors_trio(u, c1 = COLORS.cool, c2=COLORS.white_cw, c3=COLORS.warm):
+        """ Alpha is not lerped (preserved from c1), return as new vector """
+        if u < 0.5:
+            return GRADIENTS.lerp_colors(u / 0.5, c1, c2)
+        else:
+            return GRADIENTS.lerp_colors( (u-0.5) / 0.5, c2, c3)
+
+    red =  lambda p, h=_default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_value=h), c1=COLORS.red)
+    red_blue =  lambda p, h=_default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_value=h), c1=COLORS.red, c2=COLORS.blue)
+    warm_cool = lambda p, h=_default_res: GRADIENTS.lerp_colors_trio(1-GRADIENTS.lerp_u(p, max_value=h))
+
+def gen_gradientMat(uv_layer:str, width=GRADIENTS._default_res, height=GRADIENTS._default_res*0.5, name="gradient", colorFn = GRADIENTS.red, forceNew = True):
     """ 1D gradients, but add height to visualize better the UV coords
         # NOTE:: tries to shared prev gradient image by matching name (skipped with forceNew)
     """
@@ -404,7 +447,14 @@ def gen_gradientMat(uv_layer:str, width=GRADIENTS.default_res, height=GRADIENTS.
         pixels = np.empty(width * height * 4, dtype=np.float32)
         for y in range(height):
             for x in range(width):
-                c = colorFn(y, max=height)
+                # 0,0 at bottom left
+                #if y < 5: c = COLORS.black
+                #elif x < 5: c = COLORS.white
+                #else: c = COLORS.gray
+
+                # inverse Y to have gradient from top to bot
+                c = colorFn(height-y, height)
+
                 # Set the pixel values (RGBA)
                 index = (y * width + x) * 4
                 pixels[index]     = c[0]

@@ -280,18 +280,17 @@ def set_cellsState(fract: MW_Fract, root: types.Object, cells: list[types.Object
 
 def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     prefs = getPrefs()
-    cfg : MW_vis_cfg= root.mw_vis
-    numLinks = len(fract.links.internal)
+    cfg : MW_vis_cfg = root.mw_vis
+    sim : MW_Sim     = MW_global_selected.fract.sim
+    sim.reset_links_rnd()
+    #sim.reset_links(0.1)
 
+    numLinks = len(fract.links.internal)
     points       : list[Vector]               = [None]*numLinks
     verts        : list[tuple[Vector,Vector]] = [None]*numLinks
     lifeWidths   : list[float]                = [None]*numLinks
     id_life      : list[tuple[int,float]]     = [None]*numLinks
     pick_entries : list[tuple[int,int]]       = [None]*numLinks
-
-    sim : MW_Sim = MW_global_selected.fract.sim
-    sim.reset_links_rnd()
-    #sim.reset_links(0.1)
 
     # iterate the global map and store vert pairs for the tube mesh generation
     for id, l in enumerate(fract.links.internal):
@@ -359,14 +358,14 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
 #    prefs = getPrefs()
 #    cfg : MW_vis_cfg = root.mw_vis
 #    sim : MW_Sim     = MW_global_selected.fract.sim
-#    numLinks = len(fract.links.internal)
 
+#    numLinks = len(fract.links.internal)
 #    verts        : list[tuple[Vector,Vector]] = [None]*numLinks
 #    probWidths   : list[float]                = [None]*numLinks
 #    id_prob      : list[tuple[int,int]]       = [None]*numLinks
 
 #    # iterate the global map and store vert pairs for the tube mesh generation
-#    for n, l in enumerate(fract.links.internal):
+#    for id, l in enumerate(fract.links.internal):
 #        # point from original global pos + normal
 #        p1 = l.pos
 #        picks = l.picks_entry
@@ -378,25 +377,27 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
 #        id_normalized = id / float(numLinks)
 #        id_prob[id]=(id_normalized, prob)
 
-    # single mesh with tubes
-    resFaces = utils_mesh.get_resFaces_fromCurveRes(cfg.debug_links_res)
-    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidths, prefs.names.links, 1.0, resFaces, cfg.links_smoothShade)
+#    # single mesh with tubes
+#    resFaces = utils_mesh.get_resFaces_fromCurveRes(cfg.walls_links_res)
+#    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, probWidths, prefs.names.links_air, 1.0, resFaces, cfg.links_smoothShade)
 
-    # potentially reuse child and clean mesh
-    obj_links = utils_scene.gen_childReuse(root, prefs.names.links, context, mesh, keepTrans=True)
-    MW_id_utils.setMetaChild(obj_links)
+#    # potentially reuse child and clean mesh
+#    obj_linksAir = utils_scene.gen_childReuse(root, prefs.names.links_air, context, mesh, keepTrans=True)
+#    MW_id_utils.setMetaChild(obj_linksAir)
 
-    # color encoded attributes for viewing in viewport edit mode
-    utils_mat.gen_meshUV(mesh, id_life, "uv_life", resFaces*2)
-    utils_mat.gen_meshUV(mesh, pick_entries, "uv_picks", resFaces*2)
-    obj_links.active_material = utils_mat.gen_gradientMat("uv_life")
+#    # color encoded attributes for viewing in viewport edit mode
+#    numCorners=resFaces*4
+#    utils_mat.gen_meshUV(mesh, id_prob, "uv_prob", numCorners)
+#    obj_linksAir.active_material = utils_mat.gen_gradientMat("uv_prob")
+#    obj_linksAir.active_material.diffuse_color = utils_mat.COLORS.blue
 
-    # add points object too
-    obj_points = gen_pointsObject(root, points, context, prefs.names.links_points, reuse=True)
-    MW_id_utils.setMetaChild(obj_points)
 
-    getStats().logDt("generated links object")
-    return obj_links
+#    # add points object too
+#    obj_points = gen_pointsObject(root, points, context, prefs.names.links_points, reuse=True)
+#    MW_id_utils.setMetaChild(obj_points)
+
+#    getStats().logDt("generated links object")
+#    return obj_linksAir
 
 def gen_links_LEGACY(objParent: types.Object, voro_cont: VORO_Container, context: types.Context):
     prefs = getPrefs()
