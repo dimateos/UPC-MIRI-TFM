@@ -228,7 +228,7 @@ class MW_prefs(bpy.types.AddonPreferences):
 
     gen_duplicate_OT_hidePrev: props.BoolProperty(
         name="hide", description="Hide the original fractured object after duplication",
-        default=True,
+        default=False,
     )
 
     sim_step_OT_genLinks: props.BoolProperty(

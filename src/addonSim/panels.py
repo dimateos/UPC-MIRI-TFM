@@ -13,6 +13,7 @@ from .mw_cont import MW_Cont, CELL_STATE_ENUM
 from .mw_links import MW_Links, LINK_STATE_ENUM
 
 from . import operators as ops
+from . import operators_dm as ops_utils
 from .panels_dm import util_classes_pt
 
 from . import ui
@@ -272,6 +273,9 @@ class MW_addon_PT(types.Panel):
     def draw(self, context):
         prefs = getPrefs()
         layout = self.layout.column()
+
+        # reset all cfg
+        op = layout.operator(ops_utils.CFG_reset_OT.bl_idname, icon="SCREEN_BACK")
 
         #ui.draw_propsToggle_full(prefs, prefs.prefs_PT_meta_inspector, layout)
         ui.draw_propsToggle_custom(prefs.dev_PT_meta_cfg, prefs.dev_PT_meta_cfg, layout, text="DEV", propFilter="")

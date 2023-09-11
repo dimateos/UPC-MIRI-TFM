@@ -14,7 +14,7 @@ from .properties import (
     MW_sim_cfg,
 )
 from .properties_utils import copyProps
-from .operators_dm import _StartRefresh_OT, util_classes_op
+from .operators_dm import _StartRefresh_OT, op_utils_classes
 
 from . import mw_setup, mw_extraction
 from .mw_links import MW_Links
@@ -623,7 +623,8 @@ class MW_util_delete_all_OT(_StartRefresh_OT):
         # iterate and delete roots
         roots = MW_id_utils.getSceneRoots(context.scene)
         for obj_root in roots:
-            MW_global_selected.setSelected([obj_root])
+            # manual override MW_global_selected.root to avoid touching the context between operators
+            MW_global_selected.root = obj_root
             bpy.ops.mw.util_delete()
 
         #MW_global_selected.resetSelected()
@@ -672,6 +673,6 @@ classes = [
     MW_util_delete_OT,
     MW_util_delete_all_OT,
     MW_util_bake_OT,
-] + util_classes_op
+] + op_utils_classes
 
 register, unregister = bpy.utils.register_classes_factory(classes)
