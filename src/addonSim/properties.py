@@ -175,9 +175,16 @@ class MW_sim_cfg(types.PropertyGroup):
         description="Kind of wind direction, normalized after execution",
         subtype='XYZ',
         size=3,
-        default=(1, -0.5, 0),
+        default=(1, -0.5, -0.5),
+        #default=(0, 1, 0),
     )
 
+    link_entry_areaWeigthed: props.BoolProperty(
+        default=True,
+    )
+    link_entry_visAll: props.BoolProperty(
+        default=False,
+    )
     link_entry_minAlign: props.FloatProperty(
         default=0.1, precision=3
     )
@@ -262,12 +269,12 @@ class MW_vis_cfg(types.PropertyGroup):
     )
     links_width_base: props.FloatProperty(
         name="Link width base",
-        default=0.05, min=0.01, max=0.2, step=0.05, precision=4,
+        default=0.05, min=0.01, max=0.2, step=0.01, precision=4,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links_width_base")
     )
     links_width_broken: props.FloatProperty(
         name="Link width broken",
-        default=0.005, min=0.001, max=0.01, step=0.05, precision=4,
+        default=0.005, min=0.001, max=0.001, step=0.05, precision=4,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links_width_broken")
     )
 

@@ -88,13 +88,13 @@ def key_to_string(k:tuple[int,int], fmt:str = ">2"):
     fmt_vec = f"({{:{fmt}}},{{:{fmt}}})"
     return f"{fmt_vec}".format(*k)
 
-def clamp(value, min_value=0, max_value=1):
-    return max(min(value, max_value), min_value)
+def clamp(value, min_val=0, max_val=1):
+    return max(min(value, max_val), min_val)
 
-def clamp_inplace(value_seq, min_value=0, max_value=1):
+def clamp_inplace(value_seq, min_val=0, max_val=1):
     """ Clapm values in place, any size """
     for i in range(len(value_seq)):
-        value_seq[i] = clamp(value_seq[i], min_value, max_value)
+        value_seq[i] = clamp(value_seq[i], min_val, max_val)
 
     # return tho in place in case it was used before assigning
     return value_seq

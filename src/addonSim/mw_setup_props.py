@@ -65,15 +65,3 @@ def links_smoothShade_update(cfg):
     links = utils_scene.get_child(root, getPrefs().names.links)
     if links and links.data:
         utils_mesh.set_smoothShading(links.data, smooth)
-
-    links_air = utils_scene.get_child(root, getPrefs().names.links_air)
-    if links_air and links_air.data:
-        utils_mesh.set_smoothShading(links_air.data, smooth)
-
-#def struct_linksScale_update(self, context):
-#    obj = MW_global_selected.root
-#    if not obj: return
-#    links = utils_scene.get_child(obj, getPrefs().names.links)
-#    if links: utils_trans.scale_objectChildren(links, self.struct_linksScale)
-#    links_Air_Cell = utils_scene.get_child(obj, getPrefs().names.links_air)
-#    if links_Air_Cell: utils_trans.scale_objectChildren(links_Air_Cell, self.struct_linksScale)

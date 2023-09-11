@@ -81,7 +81,9 @@ def get_curveData(points: list[Vector], name ="poly-curve", w=0.05, resFaces=0):
     return curve_data
 
 def get_resFaces_fromCurveRes(curveRes):
-    """ return the number sample points (or side faces) the curve profile will have """
+    """ return the number sample points (or side faces) the curve profile will have
+        # NOTE:: most mesh attrs use CORNERS, so multiply by 2 to get triangles in each quad
+    """
     return 4 + curveRes*2
 
     #-------------------------------------------------------------------

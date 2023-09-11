@@ -97,13 +97,14 @@ class MW_Sim:
             l = self.links.get_link(key)
             l.reset(life, picks)
 
-    def reset_links_rnd(self, min=0, max=1, max_picks = 16):
+    def reset_links_rnd(self, min_val=0, max_val=1, max_picks = 8, max_entry = 8):
         for key in self.links.links_graph.nodes():
             l = self.links.get_link(key)
-            r = rnd.random()
-            life = r*(max-min) + min
-            picks = int(life*max_picks)
-            l.reset(life, picks)
+            r = lambda : rnd.random() * (max_val-min_val) + min_val
+            life = r()
+            picks = int(r()*max_picks)
+            entry = int(r()*self.get_entryWeight(l)*max_entry)
+            l.reset(life, picks, entry)
 
     #-------------------------------------------------------------------
 
@@ -205,7 +206,6 @@ class MW_Sim:
 
     def get_entryWeight(self, l:Link):
         #if MW_Links.skip_link_debugModel(l): return 0 # just not generated
-        w = 1
 
         # relative position water dir
         water_dir_inv = -self.cfg.water_entry_dir.normalized()
@@ -215,8 +215,11 @@ class MW_Sim:
         if d < self.cfg.link_entry_minAlign:
             return 0
 
+        w = d
+
         # weight using face area (normalized)
-        w *= d * l.area
+        if self.cfg.link_entry_areaWeigthed:
+            w*= l.area
 
         return w
 

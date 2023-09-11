@@ -57,11 +57,12 @@ class Link():
         #self.resistance = 0.5 + 0.5* mw_resistance.get2D(self.pos.x, self.pos.y)
         self.resistance = mw_resistance.get2D(self.pos.x, self.pos.y)
 
-    def reset(self, life=1.0, picks=0):
+    def reset(self, life=1.0, picks=0, picks_entry=0):
         """ Reset simulation parameters """
         self.state = self.state_initial
         self.life = life
-        self.picks = self.picks_entry = picks
+        self.picks = picks
+        self.picks_entry = picks_entry
 
     def __str__(self):
         #a({self.area:.2f}), p({self.picks},{self.picks_entry}),

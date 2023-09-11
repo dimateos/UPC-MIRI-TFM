@@ -403,8 +403,8 @@ class GRADIENTS:
     _default_res = 128
 
     @staticmethod
-    def lerp_u(p, min_value=0, max_value=_default_res):
-        return (p-min_value) / max_value
+    def lerp_u(p, min_val=0, max_val=_default_res):
+        return (p-min_val) / max_val
 
     @staticmethod
     def lerp_colors(u, c1 = COLORS.white, c2=COLORS.black):
@@ -425,12 +425,12 @@ class GRADIENTS:
         else:
             return GRADIENTS.lerp_colors( (u-0.5) / 0.5, c2, c3)
 
-    red =  lambda p, h=_default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_value=h), c1=COLORS.red)
-    blue =  lambda p, h=_default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_value=h), c1=COLORS.blue)
-    red_blue =  lambda p, h=_default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_value=h), c1=COLORS.red, c2=COLORS.blue)
-    warm_cool = lambda p, h=_default_res: GRADIENTS.lerp_colors_trio(1-GRADIENTS.lerp_u(p, max_value=h))
+    red =  lambda p, h=_default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c1=COLORS.red)
+    blue =  lambda p, h=_default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c1=COLORS.blue)
+    red_blue =  lambda p, h=_default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c1=COLORS.red, c2=COLORS.blue)
+    warm_cool = lambda p, h=_default_res: GRADIENTS.lerp_colors_trio(1-GRADIENTS.lerp_u(p, max_val=h))
 
-def gen_gradientMat(uv_layer:str, name:str, width=GRADIENTS._default_res, height=GRADIENTS._default_res*0.5, colorFn = GRADIENTS.red, forceNew = False):
+def gen_gradientMat(uv_layer:str, name:str, width=GRADIENTS._default_res, height=GRADIENTS._default_res*0.5, colorFn = GRADIENTS.red, forceNew = True):
     """ 1D gradients, but add height to visualize better the UV coords
         # NOTE:: tries to shared prev gradient image by matching name (skipped with forceNew)
     """
@@ -478,6 +478,7 @@ def gen_gradientMat(uv_layer:str, name:str, width=GRADIENTS._default_res, height
     texture_node = nodes.new(type='ShaderNodeTexImage')
     texture_node.location = (0, 0)
     texture_node.image = image
+    texture_node.extension = "EXTEND" # NOTE:: better than repeat to debug UV outside ranges
 
     # Add an Input node for UV coordinates
     uv_map_node = nodes.new(type='ShaderNodeUVMap')
