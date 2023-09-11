@@ -204,7 +204,7 @@ def points_addNoise(points: list[Vector], cfg: MW_gen_cfg, bb_radius: float):
 
     if DEV.DEBUG_MODEL:
         # collapse to the plane (non uniform random side effect)
-        points[:] = [p * Vector((1,1,0)) for p in points]
+        points[:] = [p * Vector((1,0,1)) for p in points]
 
 def points_noDoubles(points: list[Vector], cfg: MW_gen_cfg):
     if cfg.debug_ensure_noDoubles:

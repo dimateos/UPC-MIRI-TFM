@@ -80,7 +80,7 @@ class MW_gen_cfg(types.PropertyGroup):
     # mod faces container shape
     shape_useConvexHull: props.BoolProperty(
         name="Convex hull", description="Apply convex hull op beforehand",
-        default=True,
+        default=False, # upZ oriented hill gets BAD normals when doing the convex hull...
     )
     shape_useWalls: props.BoolProperty(
         name="Wall planes", description="Keep the object faces as container walls (kind of like boolean op)",

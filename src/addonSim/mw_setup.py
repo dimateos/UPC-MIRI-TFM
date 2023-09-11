@@ -64,9 +64,9 @@ def copy_originalPrev(obj: types.Object, context: types.Context, namePreffix:str
     getStats().logDt("generated copy object from prev frac")
     return obj_root, obj_copy
 
-def copy_convex(obj: types.Object, obj_copy: types.Object, context: types.Context, nameConvex:str, nameDissolved:str):
+def copy_convex(obj: types.Object, obj_copy: types.Object, context: types.Context, nameConvex:str, nameDissolved:str, angleRad = 10):
     """ Make a copy and find its convex hull
-        # NOTE:: not recursive!
+        # NOTE:: not recursive! but copies the child objects too
     """
 
     # Duplicate again the copy and set child too
@@ -100,7 +100,7 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, context: types.Contex
 
     # dissolve faces based on angle limit
     try:
-        bmesh.ops.dissolve_limit(bm, angle_limit=radians(1.7), use_dissolve_boundaries=True, verts=bm.verts, edges=bm.edges)
+        bmesh.ops.dissolve_limit(bm, angle_limit=radians(angleRad), use_dissolve_boundaries=True, verts=bm.verts, edges=bm.edges)
     except RuntimeError:
         import traceback
         traceback.print_exc()

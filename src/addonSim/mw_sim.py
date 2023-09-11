@@ -269,7 +269,7 @@ class MW_Sim:
 
     def get_nextAlign(self, vdir:Vector, bothDir=False):
         # relative pos align
-        water_dir_inv = -VECTORS.upY
+        water_dir_inv = -VECTORS.upZ
         d = vdir.normalized().dot(water_dir_inv)
         if bothDir: d = abs(d)
 

@@ -370,7 +370,7 @@ class MW_Links():
     @staticmethod
     def skip_dir_debugModel(d:Vector):
         if DEV.DEBUG_MODEL:
-            return utils_trans.aligned(d, VECTORS.backZ, bothDir=True)
+            return utils_trans.aligned(d, VECTORS.backY, bothDir=True)
         return False
     @staticmethod
     def skip_link_debugModel(l:Link):

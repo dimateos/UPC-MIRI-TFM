@@ -88,11 +88,11 @@ class MW_gen_OT(_StartRefresh_OT):
         col = box.column()
         col.label(text="Generation:")
         rowsub = col.row(align=True)
-        rowsub.prop(cfg, "shape_useConvexHull")
         rowsub.prop(cfg, "shape_useWalls")
+        rowsub.prop(cfg, "shape_useConvexHull")
         rowsub = col.row(align=True)
-        rowsub.prop(cfg, "margin_box_bounds")
         rowsub.prop(cfg, "margin_face_bounds")
+        rowsub.prop(cfg, "margin_box_bounds")
 
         # debug settings
         open, box = ui.draw_propsToggle_custom(cfg, getPrefs().gen_PT_meta_inspector, layout, "meta_show_debug_props", propFilter="debug", scaleBox=0.85)

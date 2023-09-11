@@ -8,9 +8,12 @@ from . import utils
 #-------------------------------------------------------------------
 
 class VECTORS:
-    """ Some common vectors and thresholds """
-    upY = Vector((0,1,0))
-    backZ = Vector((0,0,-1))
+    """ Some common 3D vectors and thresholds """
+    O = Vector((0,0,0))
+    I = Vector((1,1,1))
+
+    upZ = Vector((0,0,1))
+    backY = Vector((0,-1,0))
     rightX = Vector((1,0,0))
 
     dot_aligned_threshold = 1-1e-6
