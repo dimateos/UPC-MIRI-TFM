@@ -110,7 +110,7 @@ class MW_Links():
         self.comps = []
         """ List of sets with connected components cells id """
         self.comps_subgraph = nx.Graph() # used to leave cells_graph untouched (edges get removed along nodes)
-        self.comps_len = -1
+        self.comps_len = 1               # initial expected
 
         self.links_graph = nx.Graph()
         """ Graph connecting links! Links connect with other links from adjacent faces from both cells """
@@ -283,10 +283,19 @@ class MW_Links():
         DEV.log_msg(f"Found {self.links_len} links: {len(self.external)} external | {len(self.internal)} internal", logType)
         self.initialized = True
 
+    def add_links_neigs(self, key, newNeighs):
+        #self.links_graph.add_edges_from(newNeighs)
+        for nn in newNeighs:
+            if nn[0] not in CELL_ERROR_ENUM.all:
+                self.links_graph.add_edge(key, nn)
+
+    #-------------------------------------------------------------------
+
     def sanitize(self, root):
         """ Remove deleted cells from the graph and recalculate comps
             # OPT:: due to potential UNDO/REDO making cells reapear all foundID are added again
         """
+        # TODO:: undo/redo not full
         cleaned = False
         if not self.cont.deletedId or self.cont.deletedId == self.cont.deletedId_prev:
             return cleaned
@@ -308,10 +317,8 @@ class MW_Links():
         """ Recalc cell connected componentes, return true when changed """
         prevLen = self.comps_len
 
-        # create a subgraph with no air, no missing cells and no additional walls
-        stateMap = self.cont.getCells_splitID_state()
-        valid = stateMap[CELL_STATE_ENUM.SOLID] + stateMap[CELL_STATE_ENUM.CORE]
-        self.comps_subgraph = self.cells_graph.subgraph(valid)
+        # create a subgraph excluding missing cells and links
+        self.comps_recalc_subgraph()
 
         # calc components
         self.comps = list(nx.connected_components(self.comps_subgraph))
@@ -321,14 +328,25 @@ class MW_Links():
         getStats().logDt(f"calculated components: {self.comps_len} {'[new SPLIT]' if newSplit else ''}")
         return newSplit
 
-    def comps_linkBreak(self, key):
-        l = self.get_link(key)
+    def comps_recalc_subgraph(self):
+        # create a subgraph with no air, no missing cells and no additional walls
+        stateMap = self.cont.getCells_splitID_state()
+        valid = stateMap[CELL_STATE_ENUM.SOLID] + stateMap[CELL_STATE_ENUM.CORE]
+        self.comps_subgraph : nx.Graph = self.cells_graph.subgraph(valid)
 
-    def add_links_neigs(self, key, newNeighs):
-        #self.links_graph.add_edges_from(newNeighs)
-        for nn in newNeighs:
-            if nn[0] not in CELL_ERROR_ENUM.all:
-                self.links_graph.add_edge(key, nn)
+        # remove missing links too
+        stateMap_links = self.get_link_splitID_state()
+        removed = stateMap_links[LINK_STATE_ENUM.AIR] + stateMap_links[LINK_STATE_ENUM.WALL]
+        #self.comps_subgraph.remove_edges_from(removed)
+
+    def comps_recalc_frontier(self):
+        """ Check new internal and external links, also changes cells state to air """
+
+    def comps_linkBreak(self, key):
+        """ Check the broken link than may divide the comps """
+        l = self.get_link(key)
+        c1,c2 = l.key_cells
+        breaking = not nx.has_path(self.cells_graph, c1, c2)
 
     #-------------------------------------------------------------------
 
@@ -351,6 +369,20 @@ class MW_Links():
     def get_cell_links(self, idx:int) -> list[Link]:
         """ The links from a given cell """
         return self.get_links(self.get_cell_linksKeys(idx))
+
+    def get_link_splitID_state(self):
+        """ Split links by state
+            # OPT:: store and only update?
+        """
+        stateMap = {
+            state : [] for state in LINK_STATE_ENUM.all
+        }
+
+        for key in self.links_graph.nodes():
+            l = self.get_link(key)
+            stateMap[l.state].append(key)
+
+        return stateMap
 
     #-------------------------------------------------------------------
 

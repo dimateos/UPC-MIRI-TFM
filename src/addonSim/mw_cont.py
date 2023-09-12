@@ -298,7 +298,7 @@ class MW_Cont:
         return ok, broken+broken_prev, error
 
     def getCells_splitID_state(self):
-        """ Detect broken references to scene objects
+        """ Split cells by state
             # OPT:: store and only update?
         """
         stateMap = {
@@ -311,6 +311,8 @@ class MW_Cont:
 
         return stateMap
 
+    #-------------------------------------------------------------------
+
     def setCells_missing(self, broken:list[int]):
         """ Mark as DELETED to be treated as AIR but without access to geometry, dont touch other arrays """
         self.deletedId_prev = self.deletedId
@@ -320,6 +322,11 @@ class MW_Cont:
             self.cells_objs[id] = CELL_ERROR_ENUM.DELETED
             self.cells_meshes[id] = CELL_ERROR_ENUM.DELETED
             self.cells_state[id] = CELL_STATE_ENUM.AIR
+
+    def setCell_state(self, idx:int, state:int):
+        """ Mark both the array and the cell object """
+        self.cells_objs[idx].mw_id.cell_state = state
+        self.cells_state[idx] = state
 
     #-------------------------------------------------------------------
 

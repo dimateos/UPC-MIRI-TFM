@@ -281,8 +281,9 @@ def set_cellsState(fract: MW_Fract, root: types.Object, cells: list[types.Object
         if not MW_id_utils.sameStorageId(root, cell): continue
 
         # set the state and the parent (also the same mat as the parent)
-        fract.cont.cells_state[cell.mw_id.cell_id] = state
-        cell.mw_id.cell_state = state
+        fract.cont.setCell_state(cell.mw_id.cell_id, state)
+        #fract.cont.cells_state[cell.mw_id.cell_id] = state
+        #cell.mw_id.cell_state = state
         cell.active_material = root_cells.active_material
         cell.parent = root_cells
 
