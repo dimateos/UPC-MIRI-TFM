@@ -64,6 +64,10 @@ class Link():
         self.picks = picks
         self.picks_entry = picks_entry
 
+    def set_broken(self):
+        self.life = 0
+        self.state = LINK_STATE_ENUM.AIR
+
     def __str__(self):
         #a({self.area:.2f}), p({self.picks},{self.picks_entry}),
         if self.state == LINK_STATE_ENUM.WALL:
@@ -75,7 +79,6 @@ class Link():
 
     def degrade(self, deg):
         """ Degrade link life, return true when broken """
-        self.picks +=1
         self.life -= deg
         return self.life <= 0
 
@@ -314,7 +317,7 @@ class MW_Links():
         return cleaned
 
     def comps_recalc(self):
-        """ Recalc cell connected componentes, return true when changed """
+        """ Recalc cell connected componentes, return true and recalc frontier when changed """
         prevLen = self.comps_len
 
         # create a subgraph excluding missing cells and links
@@ -326,27 +329,40 @@ class MW_Links():
 
         newSplit = prevLen != self.comps_len
         getStats().logDt(f"calculated components: {self.comps_len} {'[new SPLIT]' if newSplit else ''}")
+        if newSplit:
+            self.comps_recalc_frontier()
         return newSplit
 
     def comps_recalc_subgraph(self):
         # create a subgraph with no air, no missing cells and no additional walls
         stateMap = self.cont.getCells_splitID_state()
-        valid = stateMap[CELL_STATE_ENUM.SOLID] + stateMap[CELL_STATE_ENUM.CORE]
-        self.comps_subgraph : nx.Graph = self.cells_graph.subgraph(valid)
+        removed = stateMap[CELL_STATE_ENUM.AIR]
+        self.comps_subgraph : nx.Graph = self.cells_graph.copy()
+        self.comps_subgraph.remove_nodes_from(removed)
 
         # remove missing links too
         stateMap_links = self.get_link_splitID_state()
-        removed = stateMap_links[LINK_STATE_ENUM.AIR] + stateMap_links[LINK_STATE_ENUM.WALL]
-        #self.comps_subgraph.remove_edges_from(removed)
+        removed_links = stateMap_links[LINK_STATE_ENUM.AIR] + stateMap_links[LINK_STATE_ENUM.WALL]
+        #self.comps_subgraph.remove_edges_from(removed_links)
+
+    def comps_check_linkBreak(self, key):
+        """ Check the broken link than may divide the comps, return true and recalc frontier when changed """
+        l = self.get_link(key)
+        l.set_broken()
+        c1,c2 = l.key_cells
+        self.comps_subgraph.remove_edge(l.key_cells)
+
+        breaking = not nx.has_path(self.cells_graph, c1, c2)
+        if breaking:
+            self.comps_recalc_frontier()
+        return breaking
 
     def comps_recalc_frontier(self):
         """ Check new internal and external links, also changes cells state to air """
-
-    def comps_linkBreak(self, key):
-        """ Check the broken link than may divide the comps """
-        l = self.get_link(key)
-        c1,c2 = l.key_cells
-        breaking = not nx.has_path(self.cells_graph, c1, c2)
+        stateMap_links = self.get_link_splitID_state()
+        #self.internal = stateMap_links[LINK_STATE_ENUM.SOLID]
+        # TODO:: change to air part of fract!
+        # external
 
     #-------------------------------------------------------------------
 
@@ -371,7 +387,7 @@ class MW_Links():
         return self.get_links(self.get_cell_linksKeys(idx))
 
     def get_link_splitID_state(self):
-        """ Split links by state
+        """ Split links ID by state
             # OPT:: store and only update?
         """
         stateMap = {
@@ -381,6 +397,20 @@ class MW_Links():
         for key in self.links_graph.nodes():
             l = self.get_link(key)
             stateMap[l.state].append(key)
+
+        return stateMap
+
+    def get_link_split_state(self):
+        """ Split links by state
+            # OPT:: store and only update? + same code almost
+        """
+        stateMap = {
+            state : [] for state in LINK_STATE_ENUM.all
+        }
+
+        for key in self.links_graph.nodes():
+            l = self.get_link(key)
+            stateMap[l.state].append(l)
 
         return stateMap
 
