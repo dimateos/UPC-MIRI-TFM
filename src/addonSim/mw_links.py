@@ -1,7 +1,9 @@
+import bpy
 import bpy.types as types
 from mathutils import Vector, Matrix
 INF_FLOAT = float("inf")
 import networkx as nx
+import itertools
 
 from .mw_cont import MW_Cont, CELL_ERROR_ENUM, CELL_STATE_ENUM, neigh_key_t, neighFaces_key_t
 from . import mw_resistance
@@ -38,7 +40,7 @@ class LINK_STATE_ENUM:
 class Link():
     """ # OPT:: could use separate array of props? pyhton already slow so ok class?"""
 
-    def __init__(self, key_cells: neigh_key_t, key_faces: neighFaces_key_t, pos_world:Vector, dir_world:Vector, face_area:float, state=LINK_STATE_ENUM.SOLID):
+    def __init__(self, key_cells: neigh_key_t, key_faces: neighFaces_key_t, pos_world:Vector, dir_world:Vector, dir_from:int, face_area:float, state=LINK_STATE_ENUM.SOLID):
         # no directionality but tuple key instead of set
         self.key_cells : neigh_key_t      = key_cells
         self.key_faces : neighFaces_key_t = key_faces
@@ -50,6 +52,7 @@ class Link():
         # properties in world space
         self.pos = pos_world
         self.dir = dir_world
+        self.dir_from = dir_from
         # properties to later normalize
         self.area = face_area
 
@@ -65,10 +68,17 @@ class Link():
         self.picks_entry = picks_entry
 
     def set_broken(self):
-        self.life = 0
         self.state = LINK_STATE_ENUM.AIR
         # TODO:: count exit, picks_exit?
+        #self.life = 0
         self.picks = 0
+
+    def flip_dir(self):
+        self.dir = -self.dir
+        if self.dir_from == self.key_cells[0]:
+            self.dir_from = self.key_cells[1]
+        else:
+            self.dir_from = self.key_cells[0]
 
     def __str__(self):
         #a({self.area:.2f}), p({self.picks},{self.picks_entry}),
@@ -184,7 +194,7 @@ class MW_Links():
                     # link to a wall, wont be repeated
                     key = (idx_neighCell, idx_cell)
                     key_faces = (idx_neighCell, idx_face)
-                    l = Link(key, key_faces, pos, normal, area, LINK_STATE_ENUM.WALL)
+                    l = Link(key, key_faces, pos, normal, idx_cell, area, LINK_STATE_ENUM.WALL)
 
                     # add to graphs and external
                     self.cells_graph.add_edge(*key, l=l)
@@ -204,7 +214,7 @@ class MW_Links():
                     # build the link
                     idx_neighFace = cont.neighs_faces[idx_cell][idx_face]
                     key_faces = self.getKey(idx_face, idx_neighFace, swap)
-                    l = Link(key, key_faces, pos, normal, area, LINK_STATE_ENUM.SOLID)
+                    l = Link(key, key_faces, pos, normal, idx_cell, area, LINK_STATE_ENUM.SOLID)
 
                     # add to graphs and internal
                     self.cells_graph.add_edge(*key, l=l)
@@ -300,10 +310,10 @@ class MW_Links():
         """ Remove deleted cells from the graph and recalculate comps
             # OPT:: due to potential UNDO/REDO making cells reapear all foundID are added again
         """
-        # TODO:: undo/redo not full
+        # TODO:: undo/redo not fully working + exepcts with deleted cells?
         cleaned = False
-        #if not self.cont.deletedId or self.cont.deletedId == self.cont.deletedId_prev:
-            #return cleaned
+        if not self.cont.deletedId or self.cont.deletedId == self.cont.deletedId_prev:
+            return cleaned
 
         ## detect changes -> not ok cause removing nodes removes past edges
         #curr = set(self.cont.deletedId)
@@ -324,7 +334,8 @@ class MW_Links():
 
         # create a subgraph excluding missing cells and links
         self.comps_recalc_subgraph()
-        # TODO:: shared statemaps across methods, or keep uptodate
+        # OPT:: shared statemaps across methods, or keep uptodate
+        # OPT:: too much link/id interchange and requery too..
 
         # calc components
         self.comps = list(nx.connected_components(self.comps_subgraph))
@@ -332,8 +343,8 @@ class MW_Links():
 
         newSplit = prevLen != self.comps_len
         getStats().logDt(f"calculated components: {self.comps_len} {'[new SPLIT]' if newSplit else ''}")
-        #if newSplit:
-        self.comps_recalc_frontier()
+        if newSplit:
+            self.comps_recalc_frontier()
         return newSplit
 
     def comps_recalc_subgraph(self):
@@ -354,10 +365,23 @@ class MW_Links():
         if self.comps_len > 1:
             self.comps_detach_frontier()
 
-        stateMap_links = self.get_link_splitID_state()
+        # all solid are internal
+        stateMap_linksRaw = self.get_link_split_state()
+        self.internal = stateMap_linksRaw[LINK_STATE_ENUM.SOLID]
 
-        #self.internal = stateMap_links[LINK_STATE_ENUM.SOLID]
-        # external
+        # external pick only the ones with at least a solid at the other side
+        self.external.clear()
+        for l in stateMap_linksRaw[LINK_STATE_ENUM.WALL] + stateMap_linksRaw[LINK_STATE_ENUM.AIR]:
+            c1,c2 = l.key_cells
+            s2 = self.cont.cells_state[c2]
+            if s2 == LINK_STATE_ENUM.SOLID:
+                self.external.append(l)
+
+            # walls have negative id, there is no cell associated
+            if l.state != LINK_STATE_ENUM.WALL:
+                s1 = self.cont.cells_state[c1]
+                if s1 == LINK_STATE_ENUM.SOLID:
+                    self.external.append(l)
 
     def comps_detach_frontier(self):
         stateMap = self.cont.getCells_splitID_state()
@@ -366,7 +390,7 @@ class MW_Links():
         comp_notCore = []
         for i, comp_cells in enumerate(self.comps):
             notCore = True
-            # TODO:: could just iterate once and check states, no need for state map either
+            # OPT:: could just iterate once and check states, no need for state map either
             for coreId in stateMap[CELL_STATE_ENUM.CORE]:
                 if coreId in comp_cells:
                     notCore = False
@@ -383,36 +407,54 @@ class MW_Links():
 
         # some core so remove the rest
         if len(comp_notCore) != len(self.comps):
-            for i, candidate_cells in enumerate(comps_canditates):
-                self.cont.setCells_state(candidate_cells, CELL_STATE_ENUM.AIR)
-
+            new_air_cells = list(itertools.chain.from_iterable(comps_canditates))
         # no core so remove all but largest one
         else:
             comps_canditates = sorted(comps_canditates, key=len)
-            for i, candidate_cells in enumerate(comps_canditates[:-1]):
-                self.cont.setCells_state(candidate_cells, CELL_STATE_ENUM.AIR)
+            new_air_cells = list(itertools.chain.from_iterable(comps_canditates[:-1]))
 
-        # iterate the
 
-        # update in the scene
-        from .mw_setup import update_cellsState
-        update_cellsState(self.cont, self.cont.root)
+        # set the state for all and update in the scene
+        self.cont.setCells_state(new_air_cells, CELL_STATE_ENUM.AIR)
+        from . import mw_setup
+        mw_setup.update_cellsState(self.cont, self.cont.root)
+
+        # break links between air cells
+        for cell_id in new_air_cells:
+            for key in self.get_cell_linksKeys(cell_id):
+                self.check_link_air(key)
+
+        # OPT:: update all visuals? should be reusing meshes?
+        #mw_setup.gen_linksAll(bpy.context)
 
     #-------------------------------------------------------------------
 
-    def set_link_broken(self, key):
+    def check_link_break(self, key, apply=True):
         """ Check the broken link than may divide the comps, return true and recalc frontier when changed """
         l = self.get_link(key)
         l.set_broken()
         c1,c2 = l.key_cells
-        self.comps_subgraph.remove_edge(l.key_cells)
+        self.comps_subgraph.remove_edges_from([l.key_cells])
+        # TODO:: handle links to deleted cells (remove_edges_from silently ignore missing)
 
-        breaking = not nx.has_path(self.cells_graph, c1, c2)
-        if breaking:
-            self.comps_recalc_frontier()
-        return breaking
+        if apply:
+            breaking = not nx.has_path(self.cells_graph, c1, c2)
+            if breaking:
+                self.comps_recalc_frontier()
+            return breaking
+        return False
 
-    #def set_link
+    def check_link_air(self, key):
+        l = self.get_link(key)
+
+        # break all that were solid
+        if l.state != LINK_STATE_ENUM.SOLID:
+            return
+        self.check_link_break(key, False)
+
+        # potentially flip normals
+        if self.cont.cells_state[l.dir_from] != CELL_STATE_ENUM.SOLID:
+            l.flip_dir()
 
     #-------------------------------------------------------------------
 

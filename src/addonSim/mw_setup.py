@@ -275,6 +275,7 @@ def set_cellsState(cont: MW_Cont, root: types.Object, cells: list[types.Object],
     elif state == CELL_STATE_ENUM.AIR:
         root_cells = utils_scene.get_child(root, prefs.names.cells_air)
 
+    cells_id = []
     for cell in cells:
         # some selection could be an outside obj or a cell from other fract!
         if not MW_id_utils.hasCellId(cell): continue
@@ -286,6 +287,9 @@ def set_cellsState(cont: MW_Cont, root: types.Object, cells: list[types.Object],
         #cell.mw_id.cell_state = state
         cell.active_material = root_cells.active_material
         cell.parent = root_cells
+
+        cells_id.append(cell.mw_id.cell_id)
+    return cells_id
 
 def update_cellsState(cont: MW_Cont, root: types.Object):
     prefs = getPrefs()
@@ -316,6 +320,16 @@ def update_cellsState(cont: MW_Cont, root: types.Object):
 #-------------------------------------------------------------------
 
 DEV.RELOAD_FLAGS["rnd_links"] = True
+
+def gen_linksAll(context: types.Context):
+    # regenerate the mesh
+    gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
+    gen_linksMesh_air(MW_global_selected.fract, MW_global_selected.root, context)
+    gen_linksMesh_neighs(MW_global_selected.fract, MW_global_selected.root, context)
+
+    # additional arrows
+    gen_arrowObject(MW_global_selected.root, MW_global_selected.root.mw_sim.water_entry_dir,
+                                utils_trans.VECTORS.O, context, getPrefs().names.links_waterDir)
 
 def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     prefs = getPrefs()

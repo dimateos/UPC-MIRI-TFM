@@ -382,8 +382,14 @@ class MW_cell_state_OT(_StartRefresh_OT):
     def execute(self, context: types.Context):
         self.start_op()
         state = CELL_STATE_ENUM.from_str(self.set_state.pop())
-        mw_setup.set_cellsState(MW_global_selected.fract.cont, MW_global_selected.root, MW_global_selected.selection, state)
-        # TODO:: recalc some link stuff + components
+        cells_id = mw_setup.set_cellsState(MW_global_selected.fract.cont, MW_global_selected.root, MW_global_selected.selection, state)
+
+        # break links between air cells
+        links : MW_Links = MW_global_selected.fract.links
+        for idx in cells_id:
+            for key in links.get_cell_linksKeys(idx):
+                links.check_link_air(key)
+
         return self.end_op()
 
 #-------------------------------------------------------------------
@@ -410,15 +416,7 @@ class MW_gen_links_OT(_StartRefresh_OT):
 
         # check potentially deleted cells etc
         MW_global_selected.fract.sanitize(MW_global_selected.root)
-
-        # regenerate the mesh
-        mw_setup.gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
-        mw_setup.gen_linksMesh_air(MW_global_selected.fract, MW_global_selected.root, context)
-        mw_setup.gen_linksMesh_neighs(MW_global_selected.fract, MW_global_selected.root, context)
-
-        # additional arrows
-        mw_setup.gen_arrowObject( MW_global_selected.root, MW_global_selected.root.mw_sim.water_entry_dir,
-                                 utils_trans.VECTORS.O, context, getPrefs().names.links_waterDir)
+        mw_setup.gen_linksAll(context)
         return self.end_op()
 
 #-------------------------------------------------------------------
@@ -565,13 +563,12 @@ class MW_util_comps_OT(_StartRefresh_OT):
         links : MW_Links = MW_global_selected.fract.links
         DEV.log_msg(f"Prev components: {links.comps_len}")
 
-        # TODO:: which one?
         # check potentially deleted cells etc
         MW_global_selected.fract.sanitize(MW_global_selected.root)
         links.comps_recalc()
 
         if getPrefs().util_comps_OT_apply:
-            pass
+            mw_setup.gen_linksAll(context)
 
         return self.end_op()
 
