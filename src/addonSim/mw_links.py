@@ -67,6 +67,8 @@ class Link():
     def set_broken(self):
         self.life = 0
         self.state = LINK_STATE_ENUM.AIR
+        # TODO:: count exit, picks_exit?
+        self.picks = 0
 
     def __str__(self):
         #a({self.area:.2f}), p({self.picks},{self.picks_entry}),
@@ -300,8 +302,8 @@ class MW_Links():
         """
         # TODO:: undo/redo not full
         cleaned = False
-        if not self.cont.deletedId or self.cont.deletedId == self.cont.deletedId_prev:
-            return cleaned
+        #if not self.cont.deletedId or self.cont.deletedId == self.cont.deletedId_prev:
+            #return cleaned
 
         ## detect changes -> not ok cause removing nodes removes past edges
         #curr = set(self.cont.deletedId)
@@ -322,6 +324,7 @@ class MW_Links():
 
         # create a subgraph excluding missing cells and links
         self.comps_recalc_subgraph()
+        # TODO:: shared statemaps across methods, or keep uptodate
 
         # calc components
         self.comps = list(nx.connected_components(self.comps_subgraph))
@@ -329,23 +332,75 @@ class MW_Links():
 
         newSplit = prevLen != self.comps_len
         getStats().logDt(f"calculated components: {self.comps_len} {'[new SPLIT]' if newSplit else ''}")
-        if newSplit:
-            self.comps_recalc_frontier()
+        #if newSplit:
+        self.comps_recalc_frontier()
         return newSplit
 
     def comps_recalc_subgraph(self):
         # create a subgraph with no air, no missing cells and no additional walls
         stateMap = self.cont.getCells_splitID_state()
-        removed = stateMap[CELL_STATE_ENUM.AIR]
-        self.comps_subgraph : nx.Graph = self.cells_graph.copy()
-        self.comps_subgraph.remove_nodes_from(removed)
+        valid = stateMap[CELL_STATE_ENUM.SOLID] + stateMap[CELL_STATE_ENUM.CORE]
+        # copy the read only subgraph, cannot copy and remove because there are extra edges from virtual wall cells
+        self.comps_subgraph : nx.Graph = self.cells_graph.subgraph(valid).copy()
 
         # remove missing links too
         stateMap_links = self.get_link_splitID_state()
         removed_links = stateMap_links[LINK_STATE_ENUM.AIR] + stateMap_links[LINK_STATE_ENUM.WALL]
-        #self.comps_subgraph.remove_edges_from(removed_links)
+        self.comps_subgraph.remove_edges_from(removed_links)
 
-    def comps_check_linkBreak(self, key):
+    def comps_recalc_frontier(self):
+        """ Check new internal and external links, also changes cells state to air """
+        # potential detach of cells
+        if self.comps_len > 1:
+            self.comps_detach_frontier()
+
+        stateMap_links = self.get_link_splitID_state()
+
+        #self.internal = stateMap_links[LINK_STATE_ENUM.SOLID]
+        # external
+
+    def comps_detach_frontier(self):
+        stateMap = self.cont.getCells_splitID_state()
+
+        # filter core comps
+        comp_notCore = []
+        for i, comp_cells in enumerate(self.comps):
+            notCore = True
+            # TODO:: could just iterate once and check states, no need for state map either
+            for coreId in stateMap[CELL_STATE_ENUM.CORE]:
+                if coreId in comp_cells:
+                    notCore = False
+                    break
+            if notCore:
+                comp_notCore.append(i)
+
+        # all core, do nothing
+        if not comp_notCore:
+            return
+
+        comps_canditates = [ self.comps[i] for i in comp_notCore ]
+        new_air_cells = []
+
+        # some core so remove the rest
+        if len(comp_notCore) != len(self.comps):
+            for i, candidate_cells in enumerate(comps_canditates):
+                self.cont.setCells_state(candidate_cells, CELL_STATE_ENUM.AIR)
+
+        # no core so remove all but largest one
+        else:
+            comps_canditates = sorted(comps_canditates, key=len)
+            for i, candidate_cells in enumerate(comps_canditates[:-1]):
+                self.cont.setCells_state(candidate_cells, CELL_STATE_ENUM.AIR)
+
+        # iterate the
+
+        # update in the scene
+        from .mw_setup import update_cellsState
+        update_cellsState(self.cont, self.cont.root)
+
+    #-------------------------------------------------------------------
+
+    def set_link_broken(self, key):
         """ Check the broken link than may divide the comps, return true and recalc frontier when changed """
         l = self.get_link(key)
         l.set_broken()
@@ -357,12 +412,7 @@ class MW_Links():
             self.comps_recalc_frontier()
         return breaking
 
-    def comps_recalc_frontier(self):
-        """ Check new internal and external links, also changes cells state to air """
-        stateMap_links = self.get_link_splitID_state()
-        #self.internal = stateMap_links[LINK_STATE_ENUM.SOLID]
-        # TODO:: change to air part of fract!
-        # external
+    #def set_link
 
     #-------------------------------------------------------------------
 

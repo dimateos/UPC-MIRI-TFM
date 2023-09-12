@@ -292,7 +292,7 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
         DEV.log_msg("Retrieving fracture data (objects and points)", {'SETUP'})
         if gen_cfg.shape_useConvexHull:
             obj_toFrac = utils_scene.get_child(obj_root, prefs.names.original_dissolve)
-        else: obj_toFrac = utils_scene.get_child(obj_root, prefs.names.original_copy)
+        else: obj_toFrac = utils_scene.get_child(obj_root, prefs.names.original_copy, mode="STARTS_WITH")
 
         points = mw_extraction.get_points_from_fracture(obj_root)
         if not points:
@@ -382,7 +382,7 @@ class MW_cell_state_OT(_StartRefresh_OT):
     def execute(self, context: types.Context):
         self.start_op()
         state = CELL_STATE_ENUM.from_str(self.set_state.pop())
-        mw_setup.set_cellsState(MW_global_selected.fract, MW_global_selected.root, MW_global_selected.selection, state)
+        mw_setup.set_cellsState(MW_global_selected.fract.cont, MW_global_selected.root, MW_global_selected.selection, state)
         # TODO:: recalc some link stuff + components
         return self.end_op()
 

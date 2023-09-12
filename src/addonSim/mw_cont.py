@@ -328,6 +328,13 @@ class MW_Cont:
         self.cells_objs[idx].mw_id.cell_state = state
         self.cells_state[idx] = state
 
+    # TODO:: snake case or no? links getters?
+    def setCells_state(self, idx_list:list[int], state:int):
+        """ Mark both the array and the cell object """
+        for idx in idx_list:
+            self.cells_objs[idx].mw_id.cell_state = state
+            self.cells_state[idx] = state
+
     #-------------------------------------------------------------------
 
     def getCells(self, idx: list[int]|int) -> list[types.Object]|types.Object:

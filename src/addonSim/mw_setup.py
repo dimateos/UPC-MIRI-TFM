@@ -263,7 +263,7 @@ def gen_cells_LEGACY(voro_cont: VORO_Container, root: types.Object, context: typ
     stArea = np.std(surface_area)
     getStats().logDt("calculated stats (use breakpoints to see)")
 
-def set_cellsState(fract: MW_Fract, root: types.Object, cells: list[types.Object], state:int):
+def set_cellsState(cont: MW_Cont, root: types.Object, cells: list[types.Object], state:int):
     prefs = getPrefs()
     assert(state in CELL_STATE_ENUM.all)
 
@@ -281,11 +281,37 @@ def set_cellsState(fract: MW_Fract, root: types.Object, cells: list[types.Object
         if not MW_id_utils.sameStorageId(root, cell): continue
 
         # set the state and the parent (also the same mat as the parent)
-        fract.cont.setCell_state(cell.mw_id.cell_id, state)
+        cont.setCell_state(cell.mw_id.cell_id, state)
         #fract.cont.cells_state[cell.mw_id.cell_id] = state
         #cell.mw_id.cell_state = state
         cell.active_material = root_cells.active_material
         cell.parent = root_cells
+
+def update_cellsState(cont: MW_Cont, root: types.Object):
+    prefs = getPrefs()
+
+    # take respective parent object
+    root_cells = utils_scene.get_child(root, prefs.names.cells)
+    root_core = utils_scene.get_child(root, prefs.names.cells_core)
+    root_air = utils_scene.get_child(root, prefs.names.cells_air)
+
+    # iterate just the valid ones
+    ok, broken, error = cont.getCells_splitID_needsSanitize()
+    for idx in ok:
+        cell = cont.cells_objs[idx]
+        state = cell.mw_id.cell_state
+
+        # shift material and parent
+        if state == CELL_STATE_ENUM.SOLID:
+            cell.active_material = root_cells.active_material
+            cell.parent = root_cells
+        elif state == CELL_STATE_ENUM.CORE:
+            cell.active_material = root_core.active_material
+            cell.parent = root_core
+        elif state == CELL_STATE_ENUM.AIR:
+            cell.active_material = root_air.active_material
+            cell.parent = root_air
+
 
 #-------------------------------------------------------------------
 
