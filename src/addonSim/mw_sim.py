@@ -8,7 +8,7 @@ from .properties import (
 )
 
 from .mw_cont import MW_Cont
-from .mw_links import MW_Links, Link
+from .mw_links import MW_Links, Link, LINK_STATE_ENUM
 
 from . import utils, utils_trans
 from .utils_trans import VECTORS
@@ -65,16 +65,10 @@ class MW_Sim:
 
     def reset(self, debug_addSeed = 0, initialAirToo = True):
         #self.rnd_restore(debug_addSeed)
-
-        # WIP:: should use reset function etc
-        for i,l in enumerate(self.links.internal):
-            l.reset(self.links_iniLife[i])
-        if initialAirToo:
-            for i,l in enumerate(self.links.external):
-                l.reset(self.links_iniLife_air[i])
+        self.reset_links()
 
         self.step_reset()
-        self.step_id    = self.sub_id = -1
+        self.step_id = self.sub_id = -1
 
         # reset log
         if self.cfg.debug_trace:
@@ -133,7 +127,6 @@ class MW_Sim:
         self.get_entryLink()
         if self.entryL:
             self.currentL = self.entryL
-            self.entryL.degrade(self.cfg.step_deg*10)
 
         # LOG entry
         if inlineLog:
@@ -194,6 +187,7 @@ class MW_Sim:
             try:
                 picks = rnd.choices(candidates, weights)
                 self.entryL = picks[0]
+                self.entryL.picks_entry +=1
 
             except ValueError as e:
                 self.entryL = None
@@ -231,7 +225,7 @@ class MW_Sim:
 
     def get_nextLink(self):
         # merge neighs, the water could scape to the outer surface
-        candidates = self.currentL.neighs_Cell_Cell + self.currentL.neighs_Air_Cell
+        candidates = self.links.get_link_neighs(self.currentL.key_cells)
 
         # candidates not found
         if not candidates:
@@ -244,6 +238,7 @@ class MW_Sim:
             try:
                 picks = rnd.choices(candidates, weights)
                 self.currentL = picks[0]
+                self.currentL.picks += 1
 
             except ValueError as e:
                 self.currentL = None
@@ -284,22 +279,21 @@ class MW_Sim:
         # calcultate degradation
         d = self.cfg.step_deg * self.waterLevel
 
-        # apply degradation
-        self.currentL.degrade(d)
+        # apply degradation -> potential break
+        if (self.currentL.degrade(d)):
+            self.links.check_link_break(self.currentL.key_cells)
 
         if self.cfg.debug_trace:
             self.sub_trace.currentL_life = self.currentL.life
             self.sub_trace.currentL_deg = d
 
-        # TODO:: trigger breaking?
-
     def water_degradation(self):
         # minimun degradation that also happens when the water runs through a exterior face
-        d = self.cfg.water_baseCost * self.currentL.areaFactor * self.currentL.resistance
+        d = self.cfg.water_baseCost * self.currentL.area * self.currentL.resistance
 
         # interior also takes into account current link life
-        if not self.currentL.airLink:
-            d += self.cfg.water_linkCost * self.currentL.areaFactor * self.currentL.life_clamped
+        if self.currentL.state == LINK_STATE_ENUM.SOLID:
+            d += self.cfg.water_linkCost * self.currentL.area * self.currentL.life_clamped
 
         self.waterLevel -= d
 
@@ -312,6 +306,8 @@ class MW_Sim:
             minAbsorb = self.waterLevel / self.cfg.water_minAbsorb_check
             if minAbsorb * self.cfg.water_minAbsorb_continueProb < rnd.random():
                 self.waterLevel = -1
+
+        # TODO:: degradation before or after cost?
 
     #-------------------------------------------------------------------
 

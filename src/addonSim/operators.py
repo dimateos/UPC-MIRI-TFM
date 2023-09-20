@@ -186,7 +186,6 @@ class MW_gen_OT(_StartRefresh_OT):
         cfg: MW_gen_cfg = obj_root.mw_gen
         cfg.debug_rnd_seed = utils.debug_rnd_seed(cfg.debug_rnd_seed)
 
-
         # Add to global storage to generate the fracture id
         fract = MW_Fract()
         self.last_storageID = MW_global_storage.addFract(fract, obj_root)
@@ -473,7 +472,8 @@ class MW_sim_step_OT(_StartRefresh_OT):
             self.invoked_once = False
 
         # store current random state
-        MW_global_selected.fract.sim.rnd_store()
+        #MW_global_selected.fract.sim.rnd_store()
+        # TODO:: preserve rnd inside same OP
 
         return super().invoke(context, event)
 
@@ -493,13 +493,10 @@ class MW_sim_step_OT(_StartRefresh_OT):
         else:
             properties_utils.copyProps(self.cfg, MW_global_selected.root.mw_sim)
 
-        # WIP::
-        return self.end_op()
-
         # restore state to get constructive results
         sim : MW_Sim = MW_global_selected.fract.sim
-        sim.rnd_restore()
-        # TODO:: links life from mesh
+        #sim.rnd_restore()
+        # TODO:: read links life from mesh
 
         # steps
         sim_cfg : MW_sim_cfg= self.cfg
@@ -508,14 +505,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
             if sim_cfg.debug_uniformDeg: sim.step_all()
             else: sim.step()
 
-
-        # update links mesh
-        # TODO:: links life to mesh
-        # IDEA:: store copy or original or button to recalc links from start? -> set all life to 1 but handle any dynamic list
-        #mw_setup.gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
-        #mw_setup.gen_linksWallObject(MW_global_selected.fract, MW_global_selected.root, context,
-        #                            sim.step_trace.entryL_candidatesW if sim_cfg.debug_trace else None)
-
+        mw_setup.gen_linksAll(context)
         return self.end_op()
 
 class MW_sim_reset_OT(_StartRefresh_OT):
@@ -536,6 +526,7 @@ class MW_sim_reset_OT(_StartRefresh_OT):
     def execute(self, context: types.Context):
         self.start_op()
         MW_global_selected.fract.sim.reset()
+        mw_setup.gen_linksAll(context)
         return self.end_op()
 
 #-------------------------------------------------------------------
