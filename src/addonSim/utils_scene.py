@@ -291,7 +291,7 @@ def needsSanitize(obj):
     try:
         name_obj = obj.name
         return False
-    except ReferenceError:
+    except:
         return True
 
 def returnSanitized(obj):

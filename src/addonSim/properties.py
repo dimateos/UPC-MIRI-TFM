@@ -163,10 +163,10 @@ class MW_sim_cfg(types.PropertyGroup):
     )
 
     debug_trace: props.BoolProperty(
-        default=True,
+        default=False,
     )
     debug_log: props.BoolProperty(
-        default=True,
+        default=False,
     )
 
     #-------------------------------------------------------------------

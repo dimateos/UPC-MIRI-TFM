@@ -91,6 +91,9 @@ class Link():
 
     def degrade(self, deg):
         """ Degrade link life, return true when broken """
+        if self.state != LINK_STATE_ENUM.SOLID:
+            return False
+
         self.life -= deg
         return self.life <= 0
 
@@ -342,12 +345,14 @@ class MW_Links():
         self.comps_len = len(self.comps)
 
         newSplit = prevLen != self.comps_len
-        getStats().logDt(f"calculated components: {self.comps_len} {'[new SPLIT]' if newSplit else ''}")
+        getStats().logDt(f"calculated COMPS: {self.comps_len} {'[new SPLIT]' if newSplit else ''}")
         if newSplit:
             self.comps_recalc_frontier()
         return newSplit
 
     def comps_recalc_subgraph(self):
+        DEV.log_msg(f"Recalc COMPS subgraph", {"LINK"})
+
         # create a subgraph with no air, no missing cells and no additional walls
         stateMap = self.cont.getCells_splitID_state()
         valid = stateMap[CELL_STATE_ENUM.SOLID] + stateMap[CELL_STATE_ENUM.CORE]
@@ -364,6 +369,7 @@ class MW_Links():
         # potential detach of cells
         if self.comps_len > 1:
             self.comps_detach_frontier()
+        DEV.log_msg(f"Recalc FRONT", {"LINK"})
 
         # all solid are internal
         stateMap_linksRaw = self.get_link_split_state()
@@ -384,6 +390,7 @@ class MW_Links():
                     self.external.append(l)
 
     def comps_detach_frontier(self):
+        DEV.log_msg(f"Detach FRONT cells", {"LINK"})
         stateMap = self.cont.getCells_splitID_state()
 
         # filter core comps
@@ -413,7 +420,6 @@ class MW_Links():
             comps_canditates = sorted(comps_canditates, key=len)
             new_air_cells = list(itertools.chain.from_iterable(comps_canditates[:-1]))
 
-
         # set the state for all and update in the scene
         self.cont.setCells_state(new_air_cells, CELL_STATE_ENUM.AIR)
         from . import mw_setup
@@ -431,7 +437,9 @@ class MW_Links():
 
     def check_link_break(self, key, apply=True):
         """ Check the broken link than may divide the comps, return true and recalc frontier when changed """
+        DEV.log_msg(f"Check link BREAK {key}", {"LINK"})
         l = self.get_link(key)
+
         l.set_broken()
         c1,c2 = l.key_cells
         self.comps_subgraph.remove_edges_from([l.key_cells])
@@ -445,6 +453,7 @@ class MW_Links():
         return False
 
     def check_link_air(self, key):
+        DEV.log_msg(f"Check link AIR {key}", {"LINK"})
         l = self.get_link(key)
 
         # break all that were solid

@@ -319,9 +319,10 @@ def update_cellsState(cont: MW_Cont, root: types.Object):
 
 #-------------------------------------------------------------------
 
-DEV.RELOAD_FLAGS["rnd_links"] = True
+DEV.RELOAD_FLAGS["rnd_links"] = False
 
 def gen_linksAll(context: types.Context):
+
     # regenerate the mesh
     gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
     gen_linksMesh_air(MW_global_selected.fract, MW_global_selected.root, context)

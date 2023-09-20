@@ -198,7 +198,7 @@ class MW_gen_PT(types.Panel):
                 col_rowSplit.label(text=f"{curr.mw_id.meta_type}, sID: {curr.mw_id.storage_id}, cID: {cell_id}", icon="MESH_ICOSPHERE")
                 # state data from cont or the cell
                 col_rowSplit = boxSelected.row()
-                stateCont = CELL_STATE_ENUM.to_str(MW_global_selected.fract.cont.cells_state[cell_id]) if fract and cont else "~"
+                stateCont = CELL_STATE_ENUM.to_str(MW_global_selected.fract.cont.cells_state[cell_id]) if fract and cont and cell_id != -1 else "~"
                 col_rowSplit.label(text=f"  cState: {CELL_STATE_ENUM.to_str(curr.mw_id.cell_state)}  // cont: {stateCont}")
 
             # fract POV

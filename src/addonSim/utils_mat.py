@@ -435,11 +435,12 @@ def gen_gradientMat(uv_layer:str, name:str, width=GRADIENTS._default_res, height
     """ 1D gradients, but add height to visualize better the UV coords
         # NOTE:: tries to shared prev gradient image by matching name (skipped with forceNew)
     """
-    image = bpy.data.images.get(name+"_img") if not forceNew else None
-    if image:
-        print(f"WARNING: reusing image {image.name}")
+    image = bpy.data.images.get(name+"_img")
+    if forceNew:
+        if image: print(f"WARNING: reusing image {image.name}")
+        image = None
 
-    else:
+    if image is None:
         # create new image
         width=int(width)
         height=int(height)
