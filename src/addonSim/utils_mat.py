@@ -407,7 +407,7 @@ class GRADIENTS:
         return (p-min_val) / max_val
 
     @staticmethod
-    def lerp_colors(u, c1 = COLORS.white, c2=COLORS.black):
+    def lerp_colors(u, c1 = COLORS.black, c2=COLORS.white):
         """ Alpha is not lerped (preserved from c1), return as new vector """
         cc1 = c1.xyz*(1-u)
         cc2 = c2.xyz*u
@@ -418,21 +418,26 @@ class GRADIENTS:
         return c
 
     @staticmethod
-    def lerp_colors_trio(u, c1 = COLORS.cool, c2=COLORS.white_cw, c3=COLORS.warm):
+    def lerp_colors_trio(u, c1=COLORS.warm, c2=COLORS.white_cw, c3 = COLORS.cool):
         """ Alpha is not lerped (preserved from c1), return as new vector """
         if u < 0.5:
             return GRADIENTS.lerp_colors(u / 0.5, c1, c2)
         else:
             return GRADIENTS.lerp_colors( (u-0.5) / 0.5, c2, c3)
 
-    red          = lambda p, h = _default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c1=COLORS.red)
-    blue         = lambda p, h = _default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c1=COLORS.blue)
-    white_yellow = lambda p, h = _default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c1=COLORS.white, c2=COLORS.yellow)
-    red_blue     = lambda p, h = _default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c1=COLORS.red, c2=COLORS.blue)
-    warm_cool    = lambda p, h = _default_res: GRADIENTS.lerp_colors_trio(1-GRADIENTS.lerp_u(p, max_val=h))
+    red          = lambda p, h=_default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c2=COLORS.red)
+    blue         = lambda p, h=_default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c2=COLORS.blue)
+    yellow_white = lambda p, h=_default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c1=COLORS.yellow, c2=COLORS.white)
+    blue_red     = lambda p, h=_default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c1=COLORS.blue, c2=COLORS.red)
+    cool_warm    = lambda p, h=_default_res: GRADIENTS.lerp_colors_trio(1-GRADIENTS.lerp_u(p, max_val=h))
 
-def gen_gradientMat(uv_layer:str, name:str, width=GRADIENTS._default_res, height=GRADIENTS._default_res*0.5, colorFn = GRADIENTS.red, forceNew = False):
-    """ 1D gradients, but add height to visualize better the UV coords
+    def red_2D_blue(x, y, w=_default_res, h=_default_res):
+        c1 = GRADIENTS.lerp_colors(GRADIENTS.lerp_u(x, max_val=w), c2=COLORS.red)
+        c2 =  GRADIENTS.lerp_colors(GRADIENTS.lerp_u(y, max_val=h), c2=COLORS.blue)
+        return GRADIENTS.lerp_colors(0.5, c1, c2)
+
+def gen_gradientMat_1D(uv_layer:str, name:str, width=GRADIENTS._default_res, height=GRADIENTS._default_res*0.5, colorFn = GRADIENTS.red, forceNew = False):
+    """ 1D gradients, but add height to visualize better the UV coords in an image
         # NOTE:: tries to shared prev gradient image by matching name (skipped with forceNew)
     """
     image = bpy.data.images.get(name+"_img")
@@ -455,8 +460,68 @@ def gen_gradientMat(uv_layer:str, name:str, width=GRADIENTS._default_res, height
                 #elif x < 5: c = COLORS.white
                 #else: c = COLORS.gray
 
-                # inverse Y to have gradient from top to bot
-                c = colorFn(height-y, height)
+                c = colorFn(y, height)
+
+                # Set the pixel values (RGBA)
+                index = (y * width + x) * 4
+                pixels[index]     = c[0]
+                pixels[index + 1] = c[1]
+                pixels[index + 2] = c[2]
+                pixels[index + 3] = c[3]
+
+        # Flatten the NumPy array and assign it to the image
+        image.pixels = pixels.tolist()
+
+    # Create a new material and add it
+    mat = bpy.data.materials.new(name=name+"_mat")
+
+    # Cfg default nodes
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    for node in nodes: nodes.remove(node)
+
+    # Add a ShaderNodeTexImage node
+    texture_node = nodes.new(type='ShaderNodeTexImage')
+    texture_node.location = (0, 0)
+    texture_node.image = image
+    texture_node.extension = "EXTEND" # NOTE:: better than repeat to debug UV outside ranges
+
+    # Add an Input node for UV coordinates
+    uv_map_node = nodes.new(type='ShaderNodeUVMap')
+    uv_map_node.location = (-200, 0)
+    uv_map_node.uv_map = uv_layer
+
+    # Add an Output node
+    output_node = nodes.new(type='ShaderNodeOutputMaterial')
+    output_node.location = (400, 0)
+
+    # Connect the nodes
+    mat.node_tree.links.new(uv_map_node.outputs['UV'], texture_node.inputs['Vector'])
+    mat.node_tree.links.new(texture_node.outputs['Color'], output_node.inputs['Surface'])
+
+    return mat
+
+def gen_gradientMat_2D(uv_layer:str, name:str, width=GRADIENTS._default_res, height=GRADIENTS._default_res*0.5, colorFn = GRADIENTS.red_2D_blue, forceNew = False):
+    """ 2D gradients using a regular image
+        # NOTE:: tries to shared prev gradient image by matching name (skipped with forceNew)
+    """
+    image = bpy.data.images.get(name+"_img")
+    if forceNew:
+        if image: print(f"WARNING: reusing image {image.name}")
+        image = None
+
+    if image is None:
+        # create new image
+        width=int(width)
+        height=int(height)
+        image = bpy.data.images.new(name=name+"_img", width=width, height=height)
+
+        # Create a NumPy array to store the image data
+        pixels = np.empty(width * height * 4, dtype=np.float32)
+        for y in range(height):
+            for x in range(width):
+                # 0,0 at bottom left
+                c = colorFn(x, y, width, height)
 
                 # Set the pixel values (RGBA)
                 index = (y * width + x) * 4

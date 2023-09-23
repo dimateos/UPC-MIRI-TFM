@@ -403,7 +403,8 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     numCorners=resFaces*4
     utils_mat.gen_meshUV(mesh, id_life, "id_life", numCorners)
     utils_mat.gen_meshUV(mesh, id_picks, "id_picks", numCorners)
-    obj_links.active_material = utils_mat.gen_gradientMat("id_life", name, colorFn=utils_mat.GRADIENTS.red)
+    obj_links.active_material = utils_mat.gen_gradientMat_1D("id_life", name, colorFn=utils_mat.GRADIENTS.red)
+    #obj_links.active_material = utils_mat.gen_gradientMat_2D("id_life", name, colorFn=utils_mat.GRADIENTS.red_2D_blue, forceNew=True)
     obj_links.active_material.diffuse_color = utils_mat.COLORS.red
 
     # add points object too
@@ -479,12 +480,12 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
     # color encoded attributes for viewing in viewport edit mode
     numCorners=resFaces*4
     utils_mat.gen_meshUV(mesh, id_picks, "id_picks", numCorners)
-    obj_linksAir.active_material = utils_mat.get_colorMat(utils_mat.COLORS.pink, name)
+    obj_linksAir.active_material = utils_mat.get_colorMat(utils_mat.COLORS.yellow, name)
 
     # entries have encoded the probabilty
     utils_mat.gen_meshUV(mesh_in, id_prob, "id_prob", numCorners)
     utils_mat.gen_meshUV(mesh_in, id_entries, "id_entries", numCorners)
-    obj_linksAir_in.active_material = utils_mat.gen_gradientMat("id_prob", name_in, colorFn=utils_mat.GRADIENTS.blue)
+    obj_linksAir_in.active_material = utils_mat.gen_gradientMat_1D("id_prob", name_in, colorFn=utils_mat.GRADIENTS.blue)
     obj_linksAir_in.active_material.diffuse_color = utils_mat.COLORS.blue
 
     getStats().logDt("generated external links mesh object")
@@ -540,7 +541,7 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
     utils_mat.gen_meshUV(mesh, id_grav, "id_grav", numCorners)
     utils_mat.gen_meshUV(mesh, l1k1_l1k2, "l1k1_l1k2", numCorners)
     utils_mat.gen_meshUV(mesh, l2k1_l2k2, "l2k1_l2k2", numCorners)
-    obj_neighs.active_material = utils_mat.gen_gradientMat("id_grav", name, colorFn=utils_mat.GRADIENTS.white_yellow)
+    obj_neighs.active_material = utils_mat.gen_gradientMat_1D("id_grav", name, colorFn=utils_mat.GRADIENTS.yellow_white)
     obj_neighs.active_material.diffuse_color = utils_mat.COLORS.yellow
 
     getStats().logDt("generated neighs links mesh object")

@@ -52,9 +52,13 @@ class MW_gen_PT(types.Panel):
     def draw_onSelected(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
         col = layout.column()
-        curr = MW_global_selected.current
+
+        ## HACK:: avoid some crashes when something is deleted by user while selected? very rare
+        #if utils_scene.needsSanitize(MW_global_selected.current):
+        #    MW_global_selected.reset()
 
         # Something selected, not last active
+        curr = MW_global_selected.current
         if not curr:
             col.label(text="No object selected...", icon="ERROR")
             return
