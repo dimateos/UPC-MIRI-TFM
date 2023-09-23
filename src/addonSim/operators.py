@@ -558,6 +558,8 @@ class MW_util_comps_OT(_StartRefresh_OT):
         MW_global_selected.fract.sanitize(MW_global_selected.root)
         links.comps_recalc()
 
+        # TODO:: recalc front even if no cell detach -> no outer cell with non solid connection
+
         if getPrefs().util_comps_OT_apply:
             mw_setup.gen_linksAll(context)
 
