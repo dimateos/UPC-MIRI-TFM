@@ -334,9 +334,6 @@ def gen_linksAll(context: types.Context):
     gen_arrowObject(MW_global_selected.root, MW_global_selected.root.mw_sim.water_entry_dir,
                                 utils_trans.VECTORS.O, context, getPrefs().names.links_waterDir)
 
-    # additional test model
-    gen_resistField_DEBUG_MODEL(MW_global_selected.root, context)
-
 def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     prefs = getPrefs()
     cfg : MW_vis_cfg = root.mw_vis
@@ -601,14 +598,13 @@ def gen_links_LEGACY(objParent: types.Object, voro_cont: VORO_Container, context
     MW_id_utils.setMetaType_rec(objParent, {"CHILD"}, skipParent=False)
     getStats().logDt("generated legacy links per cell objects")
 
-def gen_resistField_DEBUG_MODEL(obj: types.Object, context: types.Context):
+def gen_resistField_DEBUG(obj: types.Object, context: types.Context, res = 8, scale = 1):
     prefs = getPrefs()
     name = prefs.names.fielt_resist
 
     # Create a 2D new grid mesh
-    sizeX = 20
-    sizeZ = 10
-    res = 8
+    sizeX = 30 * scale
+    sizeZ = 10 * scale
     resX = int(res*sizeX)
     resZ = int(res*sizeZ)
     rot = Matrix.Rotation(radians(-90), 4, "X")

@@ -531,10 +531,32 @@ class MW_sim_reset_OT(_StartRefresh_OT):
 
 #-------------------------------------------------------------------
 
+class MW_util_draw_r_OT(_StartRefresh_OT):
+    bl_idname = "mw.util_draw_r"
+    bl_label = "draw R field"
+    bl_description = "WIP:: Draw the resistance fild approx on a grid object"
+
+    bl_options = {'INTERNAL', 'UNDO'}
+
+    def __init__(self) -> None:
+        super().__init__()
+        # config some base class log flags...
+
+    @classmethod
+    def poll(cls, context):
+        return MW_global_selected.root
+
+    def execute(self, context: types.Context):
+        self.start_op()
+        prefs = getPrefs()
+        mw_setup.gen_resistField_DEBUG(MW_global_selected.root, context, prefs.util_drawR_OT_res)
+
+        return self.end_op()
+
 class MW_util_comps_OT(_StartRefresh_OT):
     bl_idname = "mw.util_comps"
     bl_label = "check comps"
-    bl_description = "UTIL: check connected components"
+    bl_description = "WIP:: check connected components"
 
     bl_options = {'INTERNAL', 'UNDO'}
 
@@ -568,7 +590,7 @@ class MW_util_comps_OT(_StartRefresh_OT):
 class MW_util_bool_OT(_StartRefresh_OT):
     bl_idname = "mw.util_bool"
     bl_label = "bool mod"
-    bl_description = "WIP: add bool modifier to original"
+    bl_description = "WIP:: add bool modifier to original"
 
     bl_options = {'INTERNAL', 'UNDO'}
 
@@ -717,6 +739,7 @@ classes = [
     MW_sim_step_OT,
     MW_sim_reset_OT,
 
+    MW_util_draw_r_OT,
     MW_util_comps_OT,
     MW_util_bool_OT,
     MW_util_bake_OT,
