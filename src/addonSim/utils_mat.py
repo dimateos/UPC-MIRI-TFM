@@ -5,7 +5,7 @@ from random import uniform
 import numpy as np
 
 from . import utils
-
+from .utils_dev import DEV
 
 #-------------------------------------------------------------------
 
@@ -428,21 +428,23 @@ class GRADIENTS:
         else:
             return GRADIENTS.lerp_colors( (u-0.5) / 0.5, c2, c3)
 
-    red          = lambda p, h=_default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c2=COLORS.red)
-    green        = lambda p, h=_default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c2=COLORS.green)
-    blue         = lambda p, h=_default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c2=COLORS.blue)
-    orange       = lambda p, h=_default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c2=COLORS.orange)
-    yellow_white = lambda p, h=_default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c1=COLORS.yellow, c2=COLORS.white)
-    blue_red     = lambda p, h=_default_res: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c1=COLORS.blue, c2=COLORS.red)
-    cool_warm    = lambda p, h=_default_res: GRADIENTS.lerp_colors_trio(1-GRADIENTS.lerp_u(p, max_val=h))
+    red          = lambda p, h: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c2=COLORS.red)
+    green        = lambda p, h: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c2=COLORS.green)
+    blue         = lambda p, h: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c2=COLORS.blue)
+    yellow_white = lambda p, h: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c1=COLORS.yellow, c2=COLORS.white)
+    blue_red     = lambda p, h: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c1=COLORS.blue, c2=COLORS.red)
+    cool_warm    = lambda p, h: GRADIENTS.lerp_colors_trio(1-GRADIENTS.lerp_u(p, max_val=h))
 
-    def chess_2D_board(x, y, w=_default_res, h=_default_res):
+    def lerp_common(c, end = COLORS.black):
+        return lambda p, h: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c2=c, c1=end)
+
+    def chess_2D_board(x, y, w, h):
         flip = y < h * 0.5
         if x <  w * 0.5:
             return COLORS.black if not flip else COLORS.white
         else: return COLORS.white if not flip else COLORS.black
 
-    def red_2D_blue(x, y, w=_default_res, h=_default_res):
+    def red_2D_blue(x, y, w, h):
         c1 = GRADIENTS.lerp_colors(GRADIENTS.lerp_u(x, max_val=w), c2=COLORS.red)
         c2 =  GRADIENTS.lerp_colors(GRADIENTS.lerp_u(y, max_val=h), c2=COLORS.blue)
         return GRADIENTS.lerp_colors(0.5, c1, c2)
@@ -452,7 +454,7 @@ def gen_textureMat(uv_layer:str, name:str, width=GRADIENTS._default_res, height=
         # NOTE:: tries to shared prev image by matching name (skipped with forceNew)
     """
     image = bpy.data.images.get(name+"_img")
-    if forceNew:
+    if forceNew or DEV.FORCE_NEW_MATS:
         if image: print(f"WARNING: reusing image {image.name}")
         image = None
 

@@ -164,6 +164,8 @@ class MW_prefs(bpy.types.AddonPreferences):
         links_points = links+"_points"
         links_waterDir = links+"_waterDir"
 
+        fielt_resist = "field_resist"
+
         # TODO:: no more legacy support
         links_legacy = links+"_legacy"
         links_group = "L"

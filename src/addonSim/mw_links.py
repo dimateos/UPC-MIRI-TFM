@@ -6,7 +6,7 @@ import networkx as nx
 import itertools
 
 from .mw_cont import MW_Cont, CELL_ERROR_ENUM, CELL_STATE_ENUM, neigh_key_t, neighFaces_key_t
-from . import mw_resistance
+from .mw_resistance import MW_field_R
 
 from . import utils, utils_trans
 from .utils_trans import VECTORS
@@ -56,9 +56,8 @@ class Link():
         # properties to later normalize
         self.area = face_area
 
-        # TODO:: resistance
-        #self.resistance = 0.5 + 0.5* mw_resistance.get2D(self.pos.x, self.pos.y)
-        self.resistance = mw_resistance.get2D(self.pos.x, self.pos.y)
+        # TODO:: resistance atm defined by 2D field
+        self.resistance = MW_field_R.get2D(self.pos.x, self.pos.z)
 
     def reset(self, life=1.0, picks=0, picks_entry=0):
         """ Reset simulation parameters """

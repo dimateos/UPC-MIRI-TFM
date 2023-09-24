@@ -16,8 +16,10 @@ from .properties import (
 from .mw_cont import MW_Cont, VORO_Container, CELL_STATE_ENUM
 from .mw_links import MW_Links
 from .mw_fract import MW_Fract, MW_Sim # could import all from here
+from .mw_resistance import MW_field_R
 
 from . import utils, utils_scene, utils_trans, utils_mat, utils_mesh
+from .utils_mat import GRADIENTS, COLORS
 from .utils_dev import DEV
 from .stats import getStats
 
@@ -332,6 +334,9 @@ def gen_linksAll(context: types.Context):
     gen_arrowObject(MW_global_selected.root, MW_global_selected.root.mw_sim.water_entry_dir,
                                 utils_trans.VECTORS.O, context, getPrefs().names.links_waterDir)
 
+    # additional test model
+    gen_resistField_DEBUG_MODEL(MW_global_selected.root, context)
+
 def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     prefs = getPrefs()
     cfg : MW_vis_cfg = root.mw_vis
@@ -403,9 +408,9 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     repMatchCorners=resFaces*4
     utils_mat.gen_meshUV(mesh, id_life, "id_life", repMatchCorners)
     utils_mat.gen_meshUV(mesh, id_picks, "id_picks", repMatchCorners)
-    obj_links.active_material = utils_mat.gen_gradientMat("id_life", name, colorFn=utils_mat.GRADIENTS.red)
-    #obj_links.active_material = utils_mat.gen_textureMat("id_life", name, colorFn=utils_mat.GRADIENTS.red_2D_blue, forceNew=True)
-    obj_links.active_material.diffuse_color = utils_mat.COLORS.red
+    obj_links.active_material = utils_mat.gen_gradientMat("id_life", name, colorFn=GRADIENTS.red)
+    #obj_links.active_material = utils_mat.gen_textureMat("id_life", name, colorFn=GRADIENTS.red_2D_blue)
+    obj_links.active_material.diffuse_color = COLORS.red
 
     # add points object too
     obj_points = gen_pointsObject(root, points, context, prefs.names.links_points, reuse=True)
@@ -480,13 +485,13 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
     # color encoded attributes for viewing in viewport edit mode
     repMatchCorners=resFaces*4
     utils_mat.gen_meshUV(mesh, id_picks, "id_picks", repMatchCorners)
-    obj_linksAir.active_material = utils_mat.get_colorMat(utils_mat.COLORS.yellow, name)
+    obj_linksAir.active_material = utils_mat.get_colorMat(COLORS.blue, name)
 
     # entries have encoded the probabilty
     utils_mat.gen_meshUV(mesh_in, id_prob, "id_prob", repMatchCorners)
     utils_mat.gen_meshUV(mesh_in, id_entries, "id_entries", repMatchCorners)
-    obj_linksAir_in.active_material = utils_mat.gen_gradientMat("id_prob", name_in, colorFn=utils_mat.GRADIENTS.blue)
-    obj_linksAir_in.active_material.diffuse_color = utils_mat.COLORS.blue
+    obj_linksAir_in.active_material = utils_mat.gen_gradientMat("id_prob", name_in, colorFn=GRADIENTS.lerp_common(COLORS.yellow))
+    obj_linksAir_in.active_material.diffuse_color = COLORS.yellow
 
     getStats().logDt("generated external links mesh object")
     return obj_linksAir, obj_linksAir_in
@@ -541,8 +546,8 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
     utils_mat.gen_meshUV(mesh, id_grav, "id_grav", repMatchCorners)
     utils_mat.gen_meshUV(mesh, l1k1_l1k2, "l1k1_l1k2", repMatchCorners)
     utils_mat.gen_meshUV(mesh, l2k1_l2k2, "l2k1_l2k2", repMatchCorners)
-    obj_neighs.active_material = utils_mat.gen_gradientMat("id_grav", name, colorFn=utils_mat.GRADIENTS.yellow_white)
-    obj_neighs.active_material.diffuse_color = utils_mat.COLORS.yellow
+    obj_neighs.active_material = utils_mat.gen_gradientMat("id_grav", name, colorFn=GRADIENTS.blue)
+    obj_neighs.active_material.diffuse_color = COLORS.blue
 
     getStats().logDt("generated neighs links mesh object")
     return obj_neighs
@@ -595,3 +600,43 @@ def gen_links_LEGACY(objParent: types.Object, voro_cont: VORO_Container, context
 
     MW_id_utils.setMetaType_rec(objParent, {"CHILD"}, skipParent=False)
     getStats().logDt("generated legacy links per cell objects")
+
+def gen_resistField_DEBUG_MODEL(obj: types.Object, context: types.Context):
+    prefs = getPrefs()
+    name = prefs.names.fielt_resist
+
+    # Create a 2D new grid mesh
+    sizeX = 20
+    sizeZ = 10
+    res = 8
+    resX = int(res*sizeX)
+    resZ = int(res*sizeZ)
+    rot = Matrix.Rotation(radians(-90), 4, "X")
+    trans =  rot @ Matrix.Translation(Vector([0.5, -4, 0.5])) # relative to original axis
+    #trans = rot
+
+    # utils from SV
+    from . import sv_geom_primitives
+    mesh = bpy.data.meshes.new(name)
+    verts, edges, faces = sv_geom_primitives.grid(sizeX,sizeZ, resX,resZ)
+    utils_trans.transform_points(verts, trans)
+    mesh.from_pydata(verts, edges, faces)
+
+    # potentially reuse child and clean mesh
+    obj_R = utils_scene.gen_childReuse(obj, name, context, mesh, keepTrans=True)
+    MW_id_utils.setMetaChild(obj_R)
+
+    # Instead, encode resistance in world pos as UV and use texture for vis
+    numCornerVerts = len(mesh.loops)
+    id_resist : list[tuple[int,float]]     = [None]*numCornerVerts
+
+    # iterate the global map and store vert pairs for the tube mesh generation
+    for id, l in enumerate(mesh.loops):
+        id_normalized = id / float(numCornerVerts)
+        v = mesh.vertices[l.vertex_index]
+        id_resist[id]= (id_normalized, MW_field_R.get2D(v.co.x, v.co.z))
+
+    # color encoded attributes for viewing in viewport edit mode
+    utils_mat.gen_meshUV(mesh, id_resist, "id_resist")
+    obj_R.active_material = utils_mat.gen_gradientMat("id_resist", name, resX, resZ, colorFn=GRADIENTS.lerp_common(COLORS.orange))
+    obj_R.active_material.diffuse_color = utils_mat.COLORS.green

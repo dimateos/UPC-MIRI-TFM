@@ -6,8 +6,6 @@ from math import ceil, radians
 
 from .preferences import getPrefs, ADDON
 
-from . import mw_resistance
-
 from . import ui
 from . import utils, utils_scene, utils_trans, utils_geo, utils_mat, utils_mesh
 from . import utils_mat
@@ -554,7 +552,7 @@ class Debug_testCode_OT(types.Operator):
         # NOTE:: could go to script files, but this tests the exact same environment the extension has after loading the modules
     """
     bl_idname = "dm.debug_test_code"
-    bl_label = "DEBUG: resistField"
+    bl_label = "DEBUG: particleSystem"
     bl_description = "Run TMP test code"
     bl_options = {'INTERNAL'}
 
@@ -563,8 +561,7 @@ class Debug_testCode_OT(types.Operator):
         return True
 
     def execute(self, context: types.Context):
-        self.resistField(context)
-        #self.particleSystem(context)
+        self.particleSystem(context)
         return {'FINISHED'}
 
     def particleSystem(self, context: types.Context):
@@ -600,42 +597,6 @@ class Debug_testCode_OT(types.Operator):
         bb, bb_center, bb_radius = utils_trans.get_bb_data(obj, worldSpace=True)
         cfg.grid_resolution = ceil(bb_radius) *5
         cfg.grid_random = 0
-
-    def resistField(self, context: types.Context):
-        # Create a new grid mesh
-        sizeX = 20
-        sizeZ = 10
-        res = 8
-        resX = int(res*sizeX)
-        resZ = int(res*sizeZ)
-        name = "TestGrid"
-        rot = Matrix.Rotation(radians(-90), 4, "X")
-        trans =  rot @ Matrix.Translation(Vector([0.5,-4,0])) # relative to original axis
-        #trans = rot
-
-        # utils from SV
-        from . import sv_geom_primitives
-        mesh = bpy.data.meshes.new(name)
-        verts, edges, faces = sv_geom_primitives.grid(sizeX,sizeZ, resX,resZ)
-        utils_trans.transform_points(verts, trans)
-        mesh.from_pydata(verts, edges, faces)
-        obj = bpy.data.objects.new(name, mesh)
-        context.scene.collection.objects.link(obj)
-
-        # Instead, encode resistance in world pos as UV and use texture for vis
-        numCornerVerts = len(mesh.loops)
-        id_resist : list[tuple[int,float]]     = [None]*numCornerVerts
-
-        # iterate the global map and store vert pairs for the tube mesh generation
-        for id, l in enumerate(mesh.loops):
-            id_normalized = id / float(numCornerVerts)
-            v = mesh.vertices[l.vertex_index]
-            id_resist[id]= (id_normalized, mw_resistance.get2D(v.co.x, v.co.z))
-
-        # color encoded attributes for viewing in viewport edit mode
-        utils_mat.gen_meshUV(mesh, id_resist, "id_resist")
-        obj.active_material = utils_mat.gen_gradientMat("id_resist", name, resX, resZ, colorFn=utils_mat.GRADIENTS.orange)
-        obj.active_material.diffuse_color = utils_mat.COLORS.green
 
 
 #-------------------------------------------------------------------
