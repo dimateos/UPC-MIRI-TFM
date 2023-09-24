@@ -127,6 +127,10 @@ class MW_gen_PT(types.Panel):
         # more actions
         layout.operator(ops.MW_gen_links_OT.bl_idname, icon="OUTLINER_DATA_GREASEPENCIL")
 
+        col_rowSplit = layout.row().split(factor=0.66)
+        col_rowSplit.operator(ops.MW_gen_field_r_OT.bl_idname, icon="NODE_TEXTURE")
+        col_rowSplit.prop(gen_cfg, "debug_drawR_res", text="res")
+
         # warning no fract
         if not MW_global_selected.fract:
             layout.label(text="Root without storage! Recalc...", icon="ERROR")
@@ -162,10 +166,6 @@ class MW_gen_PT(types.Panel):
 
             # more stuff
             col = box.column()
-            col_rowSplit = col.row().split(factor=0.66)
-            col_rowSplit.operator(ops.MW_util_draw_r_OT.bl_idname, icon="NODE_TEXTURE")
-            col_rowSplit.prop(prefs, "util_drawR_OT_res")
-
             col_rowSplit = col.row().split(factor=0.66)
             col_rowSplit.operator(ops.MW_util_comps_OT.bl_idname, icon="NODE_COMPOSITING")
             col_rowSplit.prop(prefs, "util_comps_OT_apply")

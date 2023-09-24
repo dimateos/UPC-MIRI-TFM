@@ -33,7 +33,7 @@ from .stats import getStats
 class MW_gen_OT(_StartRefresh_OT):
     bl_idname = "mw.gen"
     bl_label = "Cells generation"
-    bl_description = "Voronoi cells generation using voro++"
+    bl_description = "Voronoi cells generation (also internal links)"
 
     # REGISTER + UNDO pops the edit last op window
     bl_options = {'PRESET', 'REGISTER', 'UNDO'}
@@ -130,7 +130,7 @@ class MW_gen_OT(_StartRefresh_OT):
     def execute(self, context: types.Context):
         self.start_op()
         self.obj_root = None
-        self.ctx = context
+        self.context = context
         prefs = getPrefs()
 
         # handle refresh
@@ -194,7 +194,7 @@ class MW_gen_OT(_StartRefresh_OT):
         DEV.log_msg("Initial object setup", {'SETUP'})
         if cfg.shape_useConvexHull:
             # NOTE:: convex hull triangulates the faces... e.g. UV sphere ends with more!
-            obj_toFrac = mw_setup.copy_convex(obj_root, obj_original, self.ctx, prefs.names.original_convex, prefs.names.original_dissolve)
+            obj_toFrac = mw_setup.copy_convex(obj_root, obj_original, self.context, prefs.names.original_convex, prefs.names.original_dissolve)
         else: obj_toFrac = obj_original
 
 
@@ -208,8 +208,8 @@ class MW_gen_OT(_StartRefresh_OT):
 
 
         DEV.log_msg("Start calc points", {'CALC'})
-        mw_extraction.detect_points_from_object(obj_original, cfg, self.ctx)
-        points = mw_extraction.get_points_from_object_fallback(obj_original, cfg, self.ctx)
+        mw_extraction.detect_points_from_object(obj_original, cfg, self.context)
+        points = mw_extraction.get_points_from_object_fallback(obj_original, cfg, self.context)
         cfg.source_numFound = len(points)
         if not points:
             return self.end_op_error("found no points...")
@@ -218,8 +218,8 @@ class MW_gen_OT(_StartRefresh_OT):
         mw_extraction.points_transformCfg(points, cfg, bb_radius)
 
         # Add some reference of the points to the scene
-        mw_setup.gen_pointsObject(obj_root, points, self.ctx, prefs.names.source_points)
-        mw_setup.gen_boundsObject(obj_root, bb, self.ctx, prefs.names.source_wallsBB)
+        mw_setup.gen_pointsObject(obj_root, points, self.context, prefs.names.source_points)
+        mw_setup.gen_boundsObject(obj_root, bb, self.context, prefs.names.source_wallsBB)
         getStats().logDt("generated point and bound objects")
 
 
@@ -230,11 +230,11 @@ class MW_gen_OT(_StartRefresh_OT):
 
         #test some legacy or statistics cont stuff
         if DEV.LEGACY_CONT:
-            mw_setup.gen_cells_LEGACY(cont.voro_cont, obj_root, self.ctx)
+            mw_setup.gen_cells_LEGACY(cont.voro_cont, obj_root, self.context)
             return self.end_op("DEV.LEGACY_CONT stop...")
 
         # precalculate/query neighs and other data with generated cells mesh
-        cells = mw_setup.gen_cellsObjects(fract, obj_root, self.ctx, scale=obj_root.mw_vis.cell_scale, flipN=cfg.debug_flipCellNormals)
+        cells = mw_setup.gen_cellsObjects(fract, obj_root, self.context, scale=obj_root.mw_vis.cell_scale, flipN=cfg.debug_flipCellNormals)
         cont.precalculations(cells)
         if not cont.precalculated:
             return self.end_op_error("error during container precalculations!")
@@ -245,8 +245,14 @@ class MW_gen_OT(_StartRefresh_OT):
         if not links.initialized:
             return self.end_op_error("found no links... recalc different params?")
 
+
         # create an empty simulation too
         fract.sim = MW_Sim(fract.cont, fract.links)
+
+        # optional field visualiztion
+        if cfg.debug_drawR:
+            DEV.log_msg("Visual field R", {'SETUP'})
+            mw_setup.gen_field_R(obj_root, self.context, cfg.debug_drawR_res)
 
         return self.end_op()
 
@@ -258,7 +264,7 @@ class MW_gen_OT(_StartRefresh_OT):
             properties_utils.copyProps(self.obj_root.mw_gen, self.cfg)
             # set the meta type to all objects at once
             MW_id_utils.setMetaType_rec(self.obj_root, {"CHILD"}, skipParent=True)
-            utils_scene.select_unhide(self.obj_root, self.ctx)
+            utils_scene.select_unhide(self.obj_root, self.context)
 
         # keep the panel updated
         MW_global_selected.recheckSelected()
@@ -396,7 +402,7 @@ class MW_cell_state_OT(_StartRefresh_OT):
 class MW_gen_links_OT(_StartRefresh_OT):
     bl_idname = "mw.gen_links"
     bl_label = "Generate links object"
-    bl_description = "Generate a visual representation of the links of a fracture object"
+    bl_description = "Generate the visual representation of the links of a fracture object"
 
     # UNDO as part of bl_options will cancel any edit last operation pop up
     bl_options = {'INTERNAL', 'UNDO'}
@@ -416,6 +422,29 @@ class MW_gen_links_OT(_StartRefresh_OT):
         # check potentially deleted cells etc
         MW_global_selected.fract.sanitize(MW_global_selected.root)
         mw_setup.gen_linksAll(context)
+        return self.end_op()
+
+class MW_gen_field_r_OT(_StartRefresh_OT):
+    bl_idname = "mw.gen_field_r"
+    bl_label = "Update field vis"
+    bl_description = "Generate or update the visual representation of the resistance field"
+
+    bl_options = {'INTERNAL', 'UNDO'}
+
+    def __init__(self) -> None:
+        super().__init__()
+        # config some base class log flags...
+
+    @classmethod
+    def poll(cls, context):
+        return MW_global_selected.root
+
+    def execute(self, context: types.Context):
+        self.start_op()
+
+        # will generate or update it
+        mw_setup.gen_field_R(MW_global_selected.root, context, MW_global_selected.root.mw_gen.debug_drawR_res)
+
         return self.end_op()
 
 #-------------------------------------------------------------------
@@ -530,28 +559,6 @@ class MW_sim_reset_OT(_StartRefresh_OT):
         return self.end_op()
 
 #-------------------------------------------------------------------
-
-class MW_util_draw_r_OT(_StartRefresh_OT):
-    bl_idname = "mw.util_draw_r"
-    bl_label = "draw R field"
-    bl_description = "WIP:: Draw the resistance fild approx on a grid object"
-
-    bl_options = {'INTERNAL', 'UNDO'}
-
-    def __init__(self) -> None:
-        super().__init__()
-        # config some base class log flags...
-
-    @classmethod
-    def poll(cls, context):
-        return MW_global_selected.root
-
-    def execute(self, context: types.Context):
-        self.start_op()
-        prefs = getPrefs()
-        mw_setup.gen_resistField_DEBUG(MW_global_selected.root, context, prefs.util_drawR_OT_res)
-
-        return self.end_op()
 
 class MW_util_comps_OT(_StartRefresh_OT):
     bl_idname = "mw.util_comps"
@@ -735,11 +742,11 @@ classes = [
 
     MW_cell_state_OT,
     MW_gen_links_OT,
+    MW_gen_field_r_OT,
 
     MW_sim_step_OT,
     MW_sim_reset_OT,
 
-    MW_util_draw_r_OT,
     MW_util_comps_OT,
     MW_util_bool_OT,
     MW_util_bake_OT,

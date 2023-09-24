@@ -118,6 +118,16 @@ class MW_gen_cfg(types.PropertyGroup):
         default=True,
     )
 
+    debug_drawR: props.BoolProperty(
+        name="Generate R field visuals", description="Atm the resistance field is 2D, you can later modify the plane and regen.",
+        default=True,
+    )
+    debug_drawR_res: props.IntProperty(
+        name="Generated R field resolution", description="Resolution of the grid used for visualization, could slow substantially generation.",
+        default=2,
+        min=1, max=16
+    )
+
     #-------------------------------------------------------------------
 
     # mod final fract object name
@@ -137,16 +147,16 @@ class MW_gen_cfg(types.PropertyGroup):
 
 class MW_sim_cfg(types.PropertyGroup):
     step_infiltrations: props.IntProperty(
-        name="Number of iters", description="WIP: atm redo each modification",
+        name="Number of iters", description="WIP:: atm redo each modification",
         default=1, min=1, max=1000,
     )
     step_maxDepth: props.IntProperty(
-        name="Number of propagations per iter", description="WIP: atm redo each modification",
+        name="Number of propagations per iter", description="WIP:: atm redo each modification",
         default=10, min=0, max=100,
     )
 
     step_deg: props.FloatProperty(
-        name="Degradation", description="WIP: flat reduction",
+        name="Degradation", description="WIP:: flat reduction",
         default=0.25, min=0.05, max=0.75, step=1, precision=3
     )
 

@@ -252,11 +252,6 @@ class MW_prefs(bpy.types.AddonPreferences):
         name="unhide", description="Unhide the original object after deletion",
         default=True,
     )
-    util_drawR_OT_res: props.IntProperty(
-        name="res", description="Resolution of the grid used",
-        default=2,
-        min=1, max=16
-    )
     util_comps_OT_apply: props.BoolProperty(
         name="apply", description="Change the state to air to removed cells",
         default=False,

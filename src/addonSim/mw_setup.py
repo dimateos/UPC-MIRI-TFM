@@ -19,6 +19,7 @@ from .mw_fract import MW_Fract, MW_Sim # could import all from here
 from .mw_resistance import MW_field_R
 
 from . import utils, utils_scene, utils_trans, utils_mat, utils_mesh
+from . import sv_geom_primitives
 from .utils_mat import GRADIENTS, COLORS
 from .utils_dev import DEV
 from .stats import getStats
@@ -598,41 +599,68 @@ def gen_links_LEGACY(objParent: types.Object, voro_cont: VORO_Container, context
     MW_id_utils.setMetaType_rec(objParent, {"CHILD"}, skipParent=False)
     getStats().logDt("generated legacy links per cell objects")
 
-def gen_resistField_DEBUG(obj: types.Object, context: types.Context, res = 8, scale = 1):
-    prefs = getPrefs()
-    name = prefs.names.fielt_resist
+#-------------------------------------------------------------------
 
-    # Create a 2D new grid mesh
-    sizeX = 30 * scale
-    sizeZ = 10 * scale
-    resX = int(res*sizeX)
-    resZ = int(res*sizeZ)
+def gen_field_R(root: types.Object, context: types.Context, res = 8):
+    name = getPrefs().names.fielt_resist
+    regen = False
+
+    # check reuse and update existing obj + mesh
+    obj_field = utils_scene.get_child(root, name)
+    if obj_field and obj_field.data:
+        mesh = obj_field.data
+        prev_res = mesh["res"]
+        if res != prev_res:
+            regen = True
+    else:
+        regen = True
+
+    # potential regen including the object (deletes mat, mesh, etc)
+    if regen:
+        mesh = gen_field_mesh(res, name)
+        utils_mat.gen_meshUV(mesh, name="id_resist")
+        obj_field = utils_scene.gen_childReuse(root, name, context, mesh, keepTrans=True)
+        MW_id_utils.setMetaChild(obj_field)
+
+        # size of the image depends on resolution used
+        resX = mesh["resX"]
+        resZ = mesh["resZ"]
+        # basic linear gradient material
+        obj_field.active_material = utils_mat.gen_gradientMat("id_resist", name, resX, resZ, colorFn=GRADIENTS.lerp_common(COLORS.orange))
+        obj_field.active_material.diffuse_color = utils_mat.COLORS.orange
+
+    # Encode resistance in world pos as UV and use texture for vis
+    numCornerVerts = len(mesh.loops)
+    id_resist : list[tuple[int,float]]     = [None]*numCornerVerts
+    mToWorld = obj_field.matrix_world
+    for id, l in enumerate(mesh.loops):
+        id_normalized = id / float(numCornerVerts)
+        v = mToWorld @ mesh.vertices[l.vertex_index].co
+        id_resist[id]= (id_normalized, MW_field_R.get2D(v.x, v.z))
+
+    # reset instead of creating!
+    utils_mat.set_meshUV(mesh, mesh.uv_layers.get("id_resist"), id_resist)
+
+def gen_field_mesh(res = 8, name="grid"):
+    """ Generate a grid plane mesh, stores res, resX, resZ used as custom props """
+    sizeX = 20 # Aprox size for DEBUG_MODEL
+    sizeZ = 10
     rot = Matrix.Rotation(radians(-90), 4, "X")
     trans =  rot @ Matrix.Translation(Vector([0.5, -4, 0.5])) # relative to original axis
     #trans = rot
 
-    # utils from SV
-    from . import sv_geom_primitives
+    # util grid from SV +fixes
+    resX = int(res*sizeX)
+    resZ = int(res*sizeZ)
     mesh = bpy.data.meshes.new(name)
     verts, edges, faces = sv_geom_primitives.grid(sizeX,sizeZ, resX,resZ)
+
+    # points direclty in world space
     utils_trans.transform_points(verts, trans)
     mesh.from_pydata(verts, edges, faces)
 
-    # potentially reuse child and clean mesh
-    obj_R = utils_scene.gen_childReuse(obj, name, context, mesh, keepTrans=True)
-    MW_id_utils.setMetaChild(obj_R)
-
-    # Instead, encode resistance in world pos as UV and use texture for vis
-    numCornerVerts = len(mesh.loops)
-    id_resist : list[tuple[int,float]]     = [None]*numCornerVerts
-
-    # iterate the global map and store vert pairs for the tube mesh generation
-    for id, l in enumerate(mesh.loops):
-        id_normalized = id / float(numCornerVerts)
-        v = mesh.vertices[l.vertex_index]
-        id_resist[id]= (id_normalized, MW_field_R.get2D(v.co.x, v.co.z))
-
-    # color encoded attributes for viewing in viewport edit mode
-    utils_mat.gen_meshUV(mesh, id_resist, "id_resist")
-    obj_R.active_material = utils_mat.gen_gradientMat("id_resist", name, resX, resZ, colorFn=GRADIENTS.lerp_common(COLORS.orange))
-    obj_R.active_material.diffuse_color = utils_mat.COLORS.green
+    # store the resolution used
+    mesh["res"] = res
+    mesh["resX"] = resX
+    mesh["resZ"] = resZ
+    return mesh
