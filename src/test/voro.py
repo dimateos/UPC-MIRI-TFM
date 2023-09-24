@@ -1,6 +1,16 @@
-# %% Library class API
-from addon.info_inspect import *
+# NOTE:: notebook cells inside regular script?
 
+# %% Import relative module tmp using path
+try:
+    # bound to fail but triggers correct intellisense
+    from ..addon.info_inspect import *
+except:
+    import sys, os
+    moduleDir = os.path.abspath(os.path.dirname(__file__) + "/../addon")
+    if not moduleDir in sys.path: sys.path.append(moduleDir)
+    from info_inspect import *
+
+# %% Library class API
 print("\n-----------------------------------------------------------------------------------------")
 from tess import Container, Cell
 
