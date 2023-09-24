@@ -83,7 +83,9 @@ def transform_points(points: list[Vector] |  list[list], matrix) -> list[Vector]
         points[i] = matrix @ Vector(p)
 
 def get_verts(obj: types.Object, worldSpace=False) -> list[Vector, 6]:
-    """ Get the object vertices in world space """
+    """ Get the object vertices in world space
+        # OPT:: should be a generator otherwise bad for large meshes
+    """
     mesh = obj.data
 
     if worldSpace:

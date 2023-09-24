@@ -4,7 +4,7 @@ from mathutils import Vector, Matrix
 from random import uniform
 import numpy as np
 
-from . import utils
+from . import utils, utils_scene
 from .utils_dev import DEV
 
 #-------------------------------------------------------------------
@@ -454,9 +454,9 @@ def gen_textureMat(uv_layer:str, name:str, width=GRADIENTS._default_res, height=
         # NOTE:: tries to shared prev image by matching name (skipped with forceNew)
     """
     image = bpy.data.images.get(name+"_img")
-    if forceNew or DEV.FORCE_NEW_MATS:
-        if image: print(f"WARNING: reusing image {image.name}")
-        image = None
+    if image:
+        if forceNew or DEV.FORCE_NEW_MATS:
+            image = utils_scene.delete_data(image)
 
     if image is None:
         # create new image

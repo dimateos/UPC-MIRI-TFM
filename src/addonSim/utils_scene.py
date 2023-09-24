@@ -47,15 +47,15 @@ def copy_objectRec(obj: types.Object, context: types.Context, link_mesh = False,
 #-------------------------------------------------------------------
 
 def delete_object(obj: types.Object, ignore_data = False, ignore_mat = False):
-    data,type,mat = obj.data, obj.type, obj.active_material
+    data,mat = obj.data, obj.active_material
     #DEV.log_msg(f"Deleting {obj.name}", {"DELETE", "OBJ"})
     bpy.data.objects.remove(obj)
 
     # NOTE:: meshes/data is leftover otherwise, delete after removing the object user
     if not ignore_data and data:
-        delete_data(data, type)
+        delete_data(data)
     if not ignore_mat and mat:
-        delete_mat(mat)
+        delete_data(mat)
 
 def delete_objectRec(obj: types.Object, ignore_data = False, logAmount=False):
     """ Delete the object and children recursively """
@@ -73,22 +73,26 @@ def delete_objectChildren(ob_father: types.Object, ignore_data = False, rec=True
     for child in reversed(toDelete):
         delete_object(child, ignore_data)
 
-def delete_data(data, type = "MESH", do_unlink=False):
-    """ NOTE:: seems like deleting the data deletes the object? """
+def delete_data(data, do_unlink=False):
+    """ Deltes data depending on its rna_type, returns None so the user avoids RNA ref errors
+        # NOTE:: seems like deleting MESHES deletes the object, curves probably too?
+    """
     if not do_unlink and data.users: return
     #DEV.log_msg(f"Deleting {data.name}", {"DELETE", "DATA"})
+
+    dataType = data.bl_rna.identifier
     try:
-        if type == "MESH":      collection=bpy.data.meshes
-        elif type == "CURVE":   collection=bpy.data.curves
-        else: raise TypeError(f"Unimplemented data type {type} from {data.name}")
+        if dataType == "Mesh":       collection=bpy.data.meshes
+        elif dataType == "Curve":    collection=bpy.data.curves
+        elif dataType == "Material": collection=bpy.data.materials
+        elif dataType == "Image":    collection=bpy.data.images
+        else: raise TypeError(f"Unimplemented data type {dataType} from {data.name}")
+
         collection.remove(data, do_unlink=do_unlink)
 
     except Exception as e:
         DEV.log_msg(str(e), {"DELETE", "DATA", "ERROR"})
-
-def delete_mat(mat, do_unlink=False):
-    if not do_unlink and mat.users: return
-    bpy.data.materials.remove(mat, do_unlink=do_unlink)
+    return None
 
 def delete_orphanData(collectionNames = None, logAmount = True):
     """ When an object is deleted its mesh/data may be left over """
@@ -273,9 +277,10 @@ def gen_childReuse(
         #  NOTE:: subtitute to unlink and then delete prev data, otherwise deleting it deletes the object?
         if obj_child.data:
             prevMesh = obj_child.data
-            delete_data(prevMesh, obj_child.type)
+            obj_child.data = None
+            obj_child.data = delete_data(obj_child.data)
         if obj_child.active_material:
-            delete_mat(obj_child.active_material, do_unlink=True)
+            obj_child.active_material = delete_data(obj_child.active_material, do_unlink=True)
 
         obj_child.data = mesh
         obj_child.hide_set(hide)
