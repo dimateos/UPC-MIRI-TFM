@@ -73,11 +73,11 @@ def delete_objectChildren(ob_father: types.Object, ignore_data = False, rec=True
     for child in reversed(toDelete):
         delete_object(child, ignore_data)
 
-def delete_data(data, do_unlink=False):
+def delete_data(data, unlink=False):
     """ Deltes data depending on its rna_type, returns None so the user avoids RNA ref errors
         # NOTE:: seems like deleting MESHES deletes the object, curves probably too?
     """
-    if not do_unlink and data.users: return
+    if not unlink and data.users: return
     #DEV.log_msg(f"Deleting {data.name}", {"DELETE", "DATA"})
 
     dataType = data.bl_rna.identifier
@@ -88,11 +88,12 @@ def delete_data(data, do_unlink=False):
         elif dataType == "Image":    collection=bpy.data.images
         else: raise TypeError(f"Unimplemented data type {dataType} from {data.name}")
 
-        collection.remove(data, do_unlink=do_unlink)
+        collection.remove(data, do_unlink=unlink, do_id_user=unlink, do_ui_user=unlink)
+        data = None
 
     except Exception as e:
         DEV.log_msg(str(e), {"DELETE", "DATA", "ERROR"})
-    return None
+    return data
 
 def delete_orphanData(collectionNames = None, logAmount = True):
     """ When an object is deleted its mesh/data may be left over """
@@ -111,7 +112,7 @@ def delete_orphanData(collectionNames = None, logAmount = True):
 
         if logAmount: DEV.log_msg(f"Deleting {len(toDelete)}/{len(collection)} {colName}", {"DELETE"})
         for data in toDelete:
-            collection.remove(data, do_unlink=False)
+            collection.remove(data, unlink=False)
 
 #-------------------------------------------------------------------
 
@@ -274,15 +275,17 @@ def gen_childReuse(
     """ Generate a new child, reuse the previous one if found """
     obj_child = get_child(obj, name)
     if obj_child:
-        #  NOTE:: subtitute to unlink and then delete prev data, otherwise deleting it deletes the object?
+        # NOTE:: subtitute to unlink and then delete prev data, otherwise deleting it deletes the object?
+        # NOTE:: also, material is stored in the mesh not object even when created with .active_material...
         if obj_child.data:
             prevMesh = obj_child.data
-            obj_child.data = None
-            obj_child.data = delete_data(obj_child.data)
-        if obj_child.active_material:
-            obj_child.active_material = delete_data(obj_child.active_material, do_unlink=True)
+            prevMat = obj_child.active_material
+            obj_child.data = mesh
+            if prevMat: delete_data(prevMat, unlink=True)
+            delete_data(prevMesh, unlink=True)
+        else:
+            obj_child.data = mesh
 
-        obj_child.data = mesh
         obj_child.hide_set(hide)
         return obj_child
 
