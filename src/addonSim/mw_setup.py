@@ -602,6 +602,7 @@ def gen_links_LEGACY(objParent: types.Object, voro_cont: VORO_Container, context
 #-------------------------------------------------------------------
 
 def gen_field_R(root: types.Object, context: types.Context, res = 8):
+    """ Generate or reuse a grid mesh and texture to vis the field. res ==-1 reuse whatever available """
     name = getPrefs().names.fielt_resist
     regen = False
 
@@ -610,10 +611,11 @@ def gen_field_R(root: types.Object, context: types.Context, res = 8):
     if obj_field and obj_field.data:
         mesh = obj_field.data
         prev_res = mesh["res"]
-        if res != prev_res:
+        if res != prev_res and res != -1:
             regen = True
     else:
         regen = True
+        assert(res != -1)
 
     # potential regen including the object (deletes mat, mesh, etc)
     if regen:

@@ -12,6 +12,7 @@ class DEV:
     ASSERT_CELL_POS       = False   # assert some local and global pos match
     LEGACY_CONT           = False   # check some stats of legacy cont
     FORCE_NEW_MATS        = True    # force regeneration of gradient images to avoid debugging confussion
+    FIX_FIELD_IMAGE       = False   # workaround blender bug with image just being black after redo without touching it -> reexecutes the op
 
     # tiny util to setup flags in reload time and then execute only once
     RELOAD_FLAGS : dict[str,bool] = dict()

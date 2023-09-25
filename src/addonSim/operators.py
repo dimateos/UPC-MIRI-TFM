@@ -135,7 +135,13 @@ class MW_gen_OT(_StartRefresh_OT):
 
         # handle refresh
         if self.checkRefresh_cancel() or prefs.gen_PT_meta_inspector.skip_meta_show_toggled():
-            return self.end_op_refresh(skipLog=True)
+            # BUG:: optional field visualiztion here otherwise black state on autorefresh cancel -> did not work
+            #if DEV.FIX_FIELD_IMAGE:
+            #    if self.FIX_fieldR_obj:
+            #        DEV.log_msg("BUGFIX: Visual field R", {'SETUP'})
+            #        mw_setup.gen_field_R(self.FIX_fieldR_obj, self.context, -1)
+            if not DEV.FIX_FIELD_IMAGE:
+                return self.end_op_refresh(skipLog=True)
 
         # Potentially free existing storage -> now purged on undo callback dynamically (called by uperator redo)
         if self.last_storageID is not None:
@@ -250,16 +256,19 @@ class MW_gen_OT(_StartRefresh_OT):
         fract.sim = MW_Sim(fract.cont, fract.links)
 
         # optional field visualiztion
-        if cfg.debug_drawR:
+        if cfg.debug_fieldR:
             DEV.log_msg("Visual field R", {'SETUP'})
-            mw_setup.gen_field_R(obj_root, self.context, cfg.debug_drawR_res)
+            mw_setup.gen_field_R(obj_root, self.context, cfg.debug_fieldR_res)
+            #self.FIX_fieldR_obj = obj_root
 
         return self.end_op()
 
     def end_op(self, msg="", skipLog=False, retPass=False):
         """ # OVERRIDE:: end_op to perform stuff at the end """
+        #DEV.log_msg("end_op", {'SETUP'})
 
         if self.obj_root:
+            DEV.log_msg("end_op: copy props etc", {'SETUP'})
             # copy any cfg that may have changed during execute
             properties_utils.copyProps(self.obj_root.mw_gen, self.cfg)
             # set the meta type to all objects at once
@@ -268,6 +277,7 @@ class MW_gen_OT(_StartRefresh_OT):
 
         # keep the panel updated
         MW_global_selected.recheckSelected()
+
         return super().end_op(msg, skipLog, retPass)
 
 
@@ -443,7 +453,7 @@ class MW_gen_field_r_OT(_StartRefresh_OT):
         self.start_op()
 
         # will generate or update it
-        mw_setup.gen_field_R(MW_global_selected.root, context, MW_global_selected.root.mw_gen.debug_drawR_res)
+        mw_setup.gen_field_R(MW_global_selected.root, context, MW_global_selected.root.mw_gen.debug_fieldR_res)
 
         return self.end_op()
 

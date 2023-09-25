@@ -37,6 +37,10 @@ class MW_dev(types.PropertyGroup):
         default=DEV.DEBUG_UI,
         update=lambda self, context: setattr(DEV, "DEBUG_UI", self.DEBUG_UI),
     )
+    FIX_FIELD_IMAGE : props.BoolProperty(
+        default=DEV.FIX_FIELD_IMAGE,
+        update=lambda self, context: setattr(DEV, "FIX_FIELD_IMAGE", self.FIX_FIELD_IMAGE),
+    )
 
     logs : props.BoolProperty(
         default=DEV.logs,
