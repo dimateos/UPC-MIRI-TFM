@@ -40,7 +40,9 @@ class LINK_STATE_ENUM:
 class Link():
     """ # OPT:: could use separate array of props? pyhton already slow so ok class?"""
 
-    def __init__(self, key_cells: neigh_key_t, key_faces: neighFaces_key_t, pos_world:Vector, dir_world:Vector, dir_from:int, face_area:float, state=LINK_STATE_ENUM.SOLID):
+    def __init__(self, key_cells: neigh_key_t, key_faces: neighFaces_key_t,
+                pos_world:Vector, dir_world:Vector, dir_from:int,
+                face_area:float, resistance:float, state=LINK_STATE_ENUM.SOLID):
         # no directionality but tuple key instead of set
         self.key_cells : neigh_key_t      = key_cells
         self.key_faces : neighFaces_key_t = key_faces
@@ -53,11 +55,13 @@ class Link():
         self.pos = pos_world
         self.dir = dir_world
         self.dir_from = dir_from
-        # properties to later normalize
+        # properties to later normalize or divide by avg
         self.area = face_area
+        self.areaFactor = 1
 
-        # TODO:: resistance atm defined by 2D field
-        self.resistance = MW_field_R.get2D(self.pos.x, self.pos.z)
+        # NOTE:: resistance atm defined by 2D field -> potentially already normalized so no need for factor
+        self.resistance = resistance
+        self.resistanceFactor = 1
 
     def reset(self, life=1.0, picks=0, picks_entry=0):
         """ Reset simulation parameters """
@@ -139,9 +143,8 @@ class MW_Links():
         # OPT:: maybe voro++ face normal/area is faster?
         self.min_pos = Vector([INF_FLOAT]*3)
         self.max_pos = Vector([-INF_FLOAT]*3)
-        self.min_area = INF_FLOAT
-        self.max_area = -INF_FLOAT
-        self.avg_area = 0
+        self.min_area,  self.max_area, self.avg_area = INF_FLOAT, -INF_FLOAT, 1
+        self.min_resistance,  self.max_resistance, self.avg_resistance = INF_FLOAT, -INF_FLOAT, 1
 
 
         # FIRST loop to build the global dictionaries
@@ -179,24 +182,29 @@ class MW_Links():
                 # get world props, some normalized afterwards
                 pos = m_toWorld @ face.center
                 area = face.area
+                resistance = MW_field_R.get2D(pos.x, pos.z)
 
-                # check min/max
+                # check min/max pos
                 if self.min_pos.x > pos.x: self.min_pos.x = pos.x
                 elif self.max_pos.x < pos.x: self.max_pos.x = pos.x
                 if self.min_pos.y > pos.y: self.min_pos.y = pos.y
                 elif self.max_pos.y < pos.y: self.max_pos.y = pos.y
                 if self.min_pos.z > pos.z: self.min_pos.z = pos.z
                 elif self.max_pos.z < pos.z: self.max_pos.z = pos.z
-                # area too
+                # area
                 self.avg_area += area
                 if self.min_area > area: self.min_area = area
                 elif self.max_area < area: self.max_area = area
+                # resist
+                self.avg_resistance += resistance
+                if self.min_resistance > resistance: self.min_resistance = resistance
+                elif self.max_resistance < resistance: self.max_resistance = resistance
 
                 if idx_neighCell < 0:
                     # link to a wall, wont be repeated
                     key = (idx_neighCell, idx_cell)
                     key_faces = (idx_neighCell, idx_face)
-                    l = Link(key, key_faces, pos, normal, idx_cell, area, LINK_STATE_ENUM.WALL)
+                    l = Link(key, key_faces, pos, normal, idx_cell, area, resistance, LINK_STATE_ENUM.WALL)
 
                     # add to graphs and external
                     self.cells_graph.add_edge(*key, l=l)
@@ -231,10 +239,12 @@ class MW_Links():
         self.links_len = self.cells_graph.number_of_edges()
         if self.links_len:
             self.avg_area /= float(self.links_len)
+            self.avg_resistance /= float(self.links_len)
 
         stats.logDt(f"created link map: {self.links_len}")
         DEV.log_msg(f"Pos limits: {utils.vec3_to_string(self.min_pos)}, {utils.vec3_to_string(self.max_pos)}"
-                    f" | Area limits: ({self.min_area:.2f},{self.max_area:.2f}) avg:{self.avg_area:.2f}",
+                    f" | Area limits: ({self.min_area:.2f},{self.max_area:.2f}) avg:{self.avg_area:.2f}"
+                    f" | Reistance limits: ({self.min_resistance:.2f},{self.max_resistance:.2f}) avg:{self.avg_resistance:.2f}",
                     {"CALC", "LINKS", "LIMITS"}, cut=False)
 
 
@@ -260,7 +270,8 @@ class MW_Links():
                 self.links_graph.add_node(key, l=l)
 
                 # calculate area factor relative to avg area (avg wont be zero when there are links_graph.nodes)
-                l.area = l.area / self.avg_area
+                l.areaFactor = l.area / self.avg_area
+                l.resistanceFactor = l.resistance / self.avg_resistance
 
                 # no AIR links
                 if l.state == LINK_STATE_ENUM.WALL:
