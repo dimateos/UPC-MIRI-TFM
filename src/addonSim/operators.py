@@ -255,12 +255,6 @@ class MW_gen_OT(_StartRefresh_OT):
         # create an empty simulation too
         fract.sim = MW_Sim(fract.cont, fract.links)
 
-        # optional field visualiztion
-        if cfg.debug_fieldR:
-            DEV.log_msg("Visual field R", {'SETUP'})
-            mw_setup.gen_field_R(obj_root, self.context, cfg.debug_fieldR_res)
-            #self.FIX_fieldR_obj = obj_root
-
         return self.end_op()
 
     def end_op(self, msg="", skipLog=False, retPass=False):
@@ -277,6 +271,19 @@ class MW_gen_OT(_StartRefresh_OT):
 
         # keep the panel updated
         MW_global_selected.recheckSelected()
+
+        if MW_global_selected.root:
+            cfg = MW_global_selected.root.mw_gen
+
+            # optional links direct generation
+            if cfg.debug_gen_links:
+                mw_setup.gen_linksAll(self.context)
+
+            # optional field visualiztion
+            if cfg.debug_fieldR:
+                DEV.log_msg("Visual field R", {'SETUP'})
+                mw_setup.gen_field_R(MW_global_selected.root, self.context, cfg.debug_fieldR_res)
+                #self.FIX_fieldR_obj = obj_root
 
         return super().end_op(msg, skipLog, retPass)
 

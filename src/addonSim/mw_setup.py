@@ -537,7 +537,7 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
     cfg : MW_vis_cfg = root.mw_vis
     sim : MW_Sim     = MW_global_selected.fract.sim
 
-    numLinks = len(fract.links.internal) # not sized cause some may be skipped
+    numLinks = len(fract.links.internal+fract.links.external) # not sized cause some may be skipped
     verts     : list[tuple[Vector,Vector]] = []
     id_grav   : list[tuple[int,float]]     = []
 
@@ -551,7 +551,7 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
     checked = set()
 
     # iterate the global map and store vert pairs for the tube mesh generation
-    for id, l in enumerate(fract.links.internal):
+    for id, l in enumerate(fract.links.internal+fract.links.external):
         id_normalized = id / float(numLinks)
 
         # allow once from outer loop
@@ -677,8 +677,8 @@ def gen_field_R(root: types.Object, context: types.Context, res = 8):
         resX = mesh["resX"]
         resZ = mesh["resZ"]
         # basic linear gradient material
-        obj_field.active_material = utils_mat.gen_gradientMat("id_resist", name, resX, resZ, colorFn=GRADIENTS.lerp_common(COLORS.orange))
-        obj_field.active_material.diffuse_color = utils_mat.COLORS.orange
+        obj_field.active_material = utils_mat.gen_gradientMat("id_resist", name, resX, resZ, colorFn=GRADIENTS.lerp_common(COLORS.warm))
+        obj_field.active_material.diffuse_color = utils_mat.COLORS.warm
 
     # Encode resistance in world pos as UV and use texture for vis
     numCornerVerts = len(mesh.loops)

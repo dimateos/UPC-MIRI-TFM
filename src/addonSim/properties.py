@@ -118,8 +118,12 @@ class MW_gen_cfg(types.PropertyGroup):
         default=True,
     )
 
+    debug_gen_links: props.BoolProperty(
+        name="Generate links mesh directly", description="Otherwise generated later by the operator buton un the gen panel.",
+        default=False,
+    )
     debug_fieldR: props.BoolProperty(
-        name="Generate R field visuals", description="Atm the resistance field is 2D, you can later modify the plane and regen.",
+        name="Generate R field visuals", description="You can later modify the geometry and update the visualization.",
         default=False,
     )
     debug_fieldR_res: props.IntProperty(
