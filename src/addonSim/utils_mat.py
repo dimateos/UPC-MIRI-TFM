@@ -11,36 +11,14 @@ from .utils_dev import DEV
 
 class COLORS:
     """ Common colors and generators, using vec4 with alpha"""
+    _default_name = "colorMat"
     _default_alpha = 1.0
+    _default_precision = 1
+
+    @staticmethod
     def from_256(c):
         c.xyz *= 1.0 / 256.0
         return c # return in case of used before assigment
-
-    red      = Vector([1.0, 0.0, 0.0, _default_alpha])
-    green    = Vector([0.0, 1.0, 0.0, _default_alpha])
-    blue     = Vector([0.0, 0.0, 1.0, _default_alpha])
-    list_rgb = [red, green, blue]
-
-    yellow    = (red+green) * 0.5
-    orange    = (red+yellow) * 0.5
-    pink      = (red+blue) * 0.5
-    aqua      = (green+blue) * 0.5
-    list_fade = [red, orange, yellow, green, aqua, blue, pink]
-
-    black     = Vector([0.0, 0.0, 0.0, _default_alpha])
-    white     = Vector([1.0, 1.0, 1.0, _default_alpha])
-    gray      = (white+black) * 0.5
-    list_gray = [black, gray, white]
-
-    #cool     = from_256(Vector([97, 130, 234,  _default_alpha])) # Lyon
-    #white_cw = from_256(Vector([221, 221, 221, _default_alpha]))
-    #warm     = from_256(Vector([220, 94, 75,   _default_alpha]))
-    cool     = from_256(Vector([69, 81, 192,  _default_alpha])) # matplot mod
-    white_cw = from_256(Vector([210, 210, 210, _default_alpha]))
-    warm     = from_256(Vector([163, 81, 44,   _default_alpha]))
-
-    _default_name = "colorMat"
-    _default_precision = 1
 
     @staticmethod
     def rounded(c: Vector, precision=_default_precision, alphaToo = False):
@@ -61,6 +39,33 @@ class COLORS:
         cc[2] = utils.clamp(c[2], min, max)
         cc[3] = utils.clamp(c[3], min, max)
         return cc
+
+    red      = Vector([1.0, 0.0, 0.0, _default_alpha])
+    green    = Vector([0.0, 1.0, 0.0, _default_alpha])
+    blue     = Vector([0.0, 0.0, 1.0, _default_alpha])
+    list_rgb = [red, green, blue]
+
+    yellow    = clamp(red+green)
+    pink      = clamp(red+blue)
+    cyan      = clamp(green+blue)
+    orange    = (red+yellow) * 0.5
+    list_fade = [red, orange, yellow, green, cyan, blue, pink]
+
+    black     = Vector([0.0, 0.0, 0.0, _default_alpha])
+    white     = Vector([1.0, 1.0, 1.0, _default_alpha])
+    gray      = (white+black) * 0.5
+    list_gray = [black, gray, white]
+
+    #cool     = from_256(Vector([97, 130, 234,  _default_alpha])) # Lyon
+    #white_cw = from_256(Vector([221, 221, 221, _default_alpha]))
+    #warm     = from_256(Vector([220, 94, 75,   _default_alpha]))
+    cool     = from_256(Vector([69, 81, 192,  _default_alpha])) # matplot mod
+    white_cw = from_256(Vector([210, 210, 210, _default_alpha]))
+    warm     = from_256(Vector([163, 81, 44,   _default_alpha]))
+
+
+
+
 
     @staticmethod
     def get_random(minC=0.0, maxC=1.0, alpha=_default_alpha) -> Vector:

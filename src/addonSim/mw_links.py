@@ -146,7 +146,6 @@ class MW_Links():
         self.min_area,  self.max_area, self.avg_area = INF_FLOAT, -INF_FLOAT, 1
         self.min_resistance,  self.max_resistance, self.avg_resistance = INF_FLOAT, -INF_FLOAT, 1
 
-
         # FIRST loop to build the global dictionaries
         for idx_cell in cont.foundId:
             # skip deleted afterwards
@@ -184,23 +183,9 @@ class MW_Links():
                 area = face.area
                 resistance = MW_field_R.get2D(pos.x, pos.z)
 
-                # check min/max pos
-                if self.min_pos.x > pos.x: self.min_pos.x = pos.x
-                elif self.max_pos.x < pos.x: self.max_pos.x = pos.x
-                if self.min_pos.y > pos.y: self.min_pos.y = pos.y
-                elif self.max_pos.y < pos.y: self.max_pos.y = pos.y
-                if self.min_pos.z > pos.z: self.min_pos.z = pos.z
-                elif self.max_pos.z < pos.z: self.max_pos.z = pos.z
-                # area
-                self.avg_area += area
-                if self.min_area > area: self.min_area = area
-                elif self.max_area < area: self.max_area = area
-                # resist
-                self.avg_resistance += resistance
-                if self.min_resistance > resistance: self.min_resistance = resistance
-                elif self.max_resistance < resistance: self.max_resistance = resistance
-
                 if idx_neighCell < 0:
+                    self.update_limits(pos, area, resistance)
+
                     # link to a wall, wont be repeated
                     key = (idx_neighCell, idx_cell)
                     key_faces = (idx_neighCell, idx_face)
@@ -220,6 +205,9 @@ class MW_Links():
                     if self.cells_graph.has_edge(*key):
                     #if self.links_graph.has_node(key):
                         continue
+
+                    # only taken into account once! otherwise skewed averages
+                    self.update_limits(pos, area, resistance)
 
                     # build the link
                     idx_neighFace = cont.neighs_faces[idx_cell][idx_face]
@@ -316,6 +304,23 @@ class MW_Links():
         for nn in newNeighs:
             if nn[0] not in CELL_ERROR_ENUM.all:
                 self.links_graph.add_edge(key, nn)
+
+    def update_limits(self, pos, area, resistance):
+        # check min/max pos
+        if self.min_pos.x > pos.x: self.min_pos.x = pos.x
+        elif self.max_pos.x < pos.x: self.max_pos.x = pos.x
+        if self.min_pos.y > pos.y: self.min_pos.y = pos.y
+        elif self.max_pos.y < pos.y: self.max_pos.y = pos.y
+        if self.min_pos.z > pos.z: self.min_pos.z = pos.z
+        elif self.max_pos.z < pos.z: self.max_pos.z = pos.z
+        # area
+        self.avg_area += area
+        if self.min_area > area: self.min_area = area
+        elif self.max_area < area: self.max_area = area
+        # resist
+        self.avg_resistance += resistance
+        if self.min_resistance > resistance: self.min_resistance = resistance
+        elif self.max_resistance < resistance: self.max_resistance = resistance
 
     #-------------------------------------------------------------------
 
