@@ -329,11 +329,12 @@ def gen_linksAll(context: types.Context):
     # regenerate the mesh
     gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
     gen_linksMesh_air(MW_global_selected.fract, MW_global_selected.root, context)
-    gen_linksMesh_neighs(MW_global_selected.fract, MW_global_selected.root, context)
+    if DEV.DEBUG_LINKS_NEIGHS:
+        gen_linksMesh_neighs(MW_global_selected.fract, MW_global_selected.root, context)
 
     # additional arrows
-    gen_arrowObject(MW_global_selected.root, MW_global_selected.root.mw_sim.water_entry_dir,
-                                utils_trans.VECTORS.O, context, getPrefs().names.links_waterDir)
+    #gen_arrowObject(MW_global_selected.root, MW_global_selected.root.mw_sim.water_entry_dir,
+    #                            utils_trans.VECTORS.O, context, getPrefs().names.links_waterDir)
 
 def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     prefs = getPrefs()
@@ -344,13 +345,18 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
         sim.reset_links_rnd()
         #sim.reset_links(0.1, 8)
 
+    # NOTE:: some just used to create some vis, so disabled for final implementation
     numLinks = len(fract.links.internal)
     points       : list[Vector]               = [None]*numLinks
     verts        : list[tuple[Vector,Vector]] = [None]*numLinks
     id_life      : list[tuple[int,float]]     = [None]*numLinks
-    id_picks     : list[tuple[int,int]]       = [None]*numLinks
     lifeWidths   : list[float]                = [None]*numLinks
-    # IDEA:: k1 k2 from link + f1 f2
+    #id_picks     : list[tuple[int,int]]       = [None]*numLinks
+    dirX_dirZ    : list[tuple[float,float]]   = [None]*numLinks
+
+    if DEV.DEBUG_LINKS_GEODATA:
+        k1_k2 : list[tuple[int,int]]          = []
+        f1_f2 : list[tuple[int,int]]          = []
 
     # iterate the global map and store vert pairs for the tube mesh generation
     for id, l in enumerate(fract.links.internal):
@@ -381,17 +387,22 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
         p2 += pdir*cfg.links_depth*0.5
         verts[id]= (p1, p2)
 
-        # query props
-        life = l.life_clamped
-        id_life[id]= (id_normalized, life)
-        id_picks[id]= (id_normalized, l.picks)
-
         # lerp the width
+        life = l.life_clamped
         if cfg.links_width__mode == {"UNIFORM"}:
             lifeWidths[id]= cfg.links_width_broken * (1-life) + cfg.links_width_base * life
         elif cfg.links_width__mode == {"BINARY"}:
             lifeWidths[id]= cfg.links_width_broken if life<1 else cfg.links_width_base
-        # DISABLED: no scaling with life, color only
+
+        # query props
+        id_life[id]= (id_normalized, life)
+        #id_picks[id]= (id_normalized, l.picks)
+        dirX_dirZ[id]=(abs(pdir.x), abs(pdir.z))
+
+        # query info keys
+        if DEV.DEBUG_LINKS_GEODATA:
+            k1_k2.append(l.key_cells)
+            f1_f2.append(l.key_faces)
 
     # single mesh with tubes
     name = prefs.names.links
@@ -404,11 +415,17 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
 
     # color encoded attributes for viewing in viewport edit mode
     repMatchCorners=resFaces*4
-    utils_mat.gen_meshUV(mesh, id_life, "id_life", repMatchCorners)
-    utils_mat.gen_meshUV(mesh, id_picks, "id_picks", repMatchCorners)
-    obj_links.active_material = utils_mat.gen_gradientMat("id_life", name, colorFn=GRADIENTS.red)
-    #obj_links.active_material = utils_mat.gen_textureMat("id_life", name, colorFn=GRADIENTS.red_2D_blue)
-    obj_links.active_material.diffuse_color = COLORS.red
+    #utils_mat.gen_meshUV(mesh, id_life, "id_life", repMatchCorners)
+    #obj_links.active_material = utils_mat.gen_gradientMat("id_life", name, colorFn=GRADIENTS.red)
+    #obj_links.active_material.diffuse_color = COLORS.red
+    # NOTE:: additional props -> to visualize seems like setting UV map in texture node is not enough, requires active UV too
+    #utils_mat.gen_meshUV(mesh, id_picks, "id_picks", repMatchCorners)
+    utils_mat.gen_meshUV(mesh, dirX_dirZ, "dirX_dirZ", repMatchCorners)
+    obj_links.active_material = utils_mat.gen_textureMat("dirX_dirZ", name+"dir", colorFn=GRADIENTS.red_2D_green)
+
+    if DEV.DEBUG_LINKS_GEODATA:
+        utils_mat.gen_meshUV(mesh, k1_k2, "k1_k2", repMatchCorners)
+        utils_mat.gen_meshUV(mesh, f1_f2, "f1_f2", repMatchCorners)
 
     # add points object too
     obj_points = gen_pointsObject(root, points, context, prefs.names.links_points, reuse=True)
@@ -422,13 +439,17 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
     cfg : MW_vis_cfg = root.mw_vis
     sim : MW_Sim     = MW_global_selected.fract.sim
 
+    # NOTE:: some just used to create some vis, so disabled for final implementation
     numLinks = len(fract.links.external) # not sized cause some may be skipped
-    verts      : list[tuple[Vector,Vector]] = []
-    id_picks   : list[tuple[int,int]]       = []
-    verts_in   : list[tuple[Vector,Vector]] = []
-    id_prob    : list[tuple[int,float]]     = []
-    id_entries : list[tuple[int,int]]       = []
-    # IDEA:: k1 k2 from link + f1 f2
+    verts      : list[tuple[Vector,Vector]]   = []
+    verts_in  : list[tuple[Vector,Vector]]   = []
+    id_picks   : list[tuple[int,int]]         = []
+    id_prob    : list[tuple[int,float]]       = []
+    id_entries : list[tuple[int,int]]         = []
+
+    if DEV.DEBUG_LINKS_GEODATA:
+        k1_k2 : list[tuple[int,int]]          = []
+        f1_f2 : list[tuple[int,int]]          = []
 
     # max prob for normalizeing probabilty
     probs = [ sim.get_entryWeight(l) for l in fract.links.external ]
@@ -449,13 +470,10 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
         p2 = p1 + l.dir * (cfg.wall_links_depth_base + l.picks * cfg.wall_links_depth_incr)
         verts.append((p1, p2))
 
-        # query props
-        id_picks.append((id_normalized, l.picks))
-
         # check non prob for entry links
         prob = sim.get_entryWeight(l)
-        if not sim.cfg.link_entry_visAll and prob == 0:
-            continue
+        #if not sim.cfg.link_entry_visAll and prob == 0:
+        #    continue
 
         # represent entry picks similarly
         p1 = l.pos + perp * w2
@@ -466,6 +484,14 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
         prob_normalized = prob / probsMax
         id_prob.append((id_normalized, prob_normalized))
         id_entries.append((id_normalized, l.picks_entry))
+
+        # query props
+        id_picks.append((id_normalized, l.picks))
+
+        # query info keys
+        if DEV.DEBUG_LINKS_GEODATA:
+            k1_k2.append(l.key_cells)
+            f1_f2.append(l.key_faces)
 
     # two mesh with tubes
     resFaces = utils_mesh.get_resFaces_fromCurveRes(cfg.walls_links_res)
@@ -480,10 +506,16 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
     MW_id_utils.setMetaChild(obj_linksAir)
     MW_id_utils.setMetaChild(obj_linksAir_in)
 
+    # NOTE:: additional props -> to visualize seems like setting UV map in texture node is not enough, requires active UV too
+
     # color encoded attributes for viewing in viewport edit mode
     repMatchCorners=resFaces*4
     utils_mat.gen_meshUV(mesh, id_picks, "id_picks", repMatchCorners)
     obj_linksAir.active_material = utils_mat.get_colorMat(COLORS.blue, name)
+
+    if DEV.DEBUG_LINKS_GEODATA:
+        utils_mat.gen_meshUV(mesh, k1_k2, "k1_k2", repMatchCorners)
+        utils_mat.gen_meshUV(mesh, f1_f2, "f1_f2", repMatchCorners)
 
     # entries have encoded the probabilty
     utils_mat.gen_meshUV(mesh_in, id_prob, "id_prob", repMatchCorners)
@@ -501,9 +533,12 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
 
     numLinks = len(fract.links.internal) # not sized cause some may be skipped
     verts     : list[tuple[Vector,Vector]] = []
-    l1k1_l1k2 : list[tuple[int,int]]       = []
-    l2k1_l2k2 : list[tuple[int,int]]       = []
     id_grav   : list[tuple[int,float]]     = []
+    if DEV.DEBUG_LINKS_GEODATA:
+        l1k1_l1k2 : list[tuple[int,int]]       = []
+        l1f1_l1f2 : list[tuple[int,int]]       = []
+        l2k1_l2k2 : list[tuple[int,int]]       = []
+        l2f1_l2f2 : list[tuple[int,int]]       = []
 
     # avoid repetitions
     checked = set()
@@ -522,13 +557,16 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
             p2 = ln.pos
             verts.append((p1, p2))
 
-            # query keys
-            l1k1_l1k2.append(l.key_cells)
-            l2k1_l2k2.append(ln.key_cells)
-
             # grav mod
             g = sim.get_nextAlign( (p1-p2).normalized(), bothDir=True)
             id_grav.append((id_normalized, g))
+
+            # query info keys
+            if DEV.DEBUG_LINKS_GEODATA:
+                l1k1_l1k2.append(l.key_cells)
+                l1f1_l1f2.append(l.key_faces)
+                l2k1_l2k2.append(ln.key_cells)
+                l2f1_l2f2.append(ln.key_faces)
 
     # single mesh with tubes
     name = prefs.names.links_neighs
@@ -542,10 +580,14 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
     # color encoded attributes for viewing in viewport edit mode
     repMatchCorners=resFaces*4
     utils_mat.gen_meshUV(mesh, id_grav, "id_grav", repMatchCorners)
-    utils_mat.gen_meshUV(mesh, l1k1_l1k2, "l1k1_l1k2", repMatchCorners)
-    utils_mat.gen_meshUV(mesh, l2k1_l2k2, "l2k1_l2k2", repMatchCorners)
     obj_neighs.active_material = utils_mat.gen_gradientMat("id_grav", name, colorFn=GRADIENTS.blue)
     obj_neighs.active_material.diffuse_color = COLORS.blue
+
+    if DEV.DEBUG_LINKS_GEODATA:
+        utils_mat.gen_meshUV(mesh, l1k1_l1k2, "l1k1_l1k2", repMatchCorners)
+        utils_mat.gen_meshUV(mesh, l1f1_l1f2, "l1f1_l1f2", repMatchCorners)
+        utils_mat.gen_meshUV(mesh, l2k1_l2k2, "l2k1_l2k2", repMatchCorners)
+        utils_mat.gen_meshUV(mesh, l2f1_l2f2, "l2f1_l2f2", repMatchCorners)
 
     getStats().logDt("generated neighs links mesh object")
     return obj_neighs

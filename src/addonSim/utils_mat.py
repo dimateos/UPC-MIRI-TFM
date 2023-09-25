@@ -444,12 +444,12 @@ class GRADIENTS:
             return COLORS.black if not flip else COLORS.white
         else: return COLORS.white if not flip else COLORS.black
 
-    def red_2D_blue(x, y, w, h):
+    def red_2D_green(x, y, w, h):
         c1 = GRADIENTS.lerp_colors(GRADIENTS.lerp_u(x, max_val=w), c2=COLORS.red)
-        c2 =  GRADIENTS.lerp_colors(GRADIENTS.lerp_u(y, max_val=h), c2=COLORS.blue)
-        return GRADIENTS.lerp_colors(0.5, c1, c2)
+        c2 =  GRADIENTS.lerp_colors(GRADIENTS.lerp_u(y, max_val=h), c2=COLORS.green)
+        return c1 + c2
 
-def gen_textureMat(uv_layer:str, name:str, width=GRADIENTS._default_res, height=GRADIENTS._default_res*0.5, colorFn = GRADIENTS.red_2D_blue, forceNew = False):
+def gen_textureMat(uv_layer:str, name:str, width=GRADIENTS._default_res, height=GRADIENTS._default_res*0.5, colorFn = GRADIENTS.red_2D_green, forceNew = False):
     """ generate a 2D image and use colorFn: x, y, w, h to define the color of each pixel
         # NOTE:: tries to shared prev image by matching name (skipped with forceNew)
     """

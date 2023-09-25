@@ -120,7 +120,7 @@ class MW_gen_cfg(types.PropertyGroup):
 
     debug_fieldR: props.BoolProperty(
         name="Generate R field visuals", description="Atm the resistance field is 2D, you can later modify the plane and regen.",
-        default=True,
+        default=False,
     )
     debug_fieldR_res: props.IntProperty(
         name="Generated R field resolution", description="Resolution of the grid used for visualization, could slow substantially generation.",
