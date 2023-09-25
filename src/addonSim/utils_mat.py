@@ -435,7 +435,7 @@ class GRADIENTS:
     blue_red     = lambda p, h: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c1=COLORS.blue, c2=COLORS.red)
     cool_warm    = lambda p, h: GRADIENTS.lerp_colors_trio(1-GRADIENTS.lerp_u(p, max_val=h))
 
-    def lerp_common(c, end = COLORS.black):
+    def lerp_common(c = COLORS.red, end = COLORS.black):
         return lambda p, h: GRADIENTS.lerp_colors(GRADIENTS.lerp_u(p, max_val=h), c2=c, c1=end)
 
     def chess_2D_board(x, y, w, h):
@@ -447,6 +447,10 @@ class GRADIENTS:
     def red_2D_green(x, y, w, h):
         c1 = GRADIENTS.lerp_colors(GRADIENTS.lerp_u(x, max_val=w), c2=COLORS.red)
         c2 =  GRADIENTS.lerp_colors(GRADIENTS.lerp_u(y, max_val=h), c2=COLORS.green)
+        return c1 + c2
+    def red_2D_blue(x, y, w, h):
+        c1 = GRADIENTS.lerp_colors(GRADIENTS.lerp_u(x, max_val=w), c2=COLORS.red)
+        c2 =  GRADIENTS.lerp_colors(GRADIENTS.lerp_u(y, max_val=h), c2=COLORS.blue)
         return c1 + c2
 
 def gen_textureMat(uv_layer:str, name:str, width=GRADIENTS._default_res, height=GRADIENTS._default_res*0.5, colorFn = GRADIENTS.red_2D_green, forceNew = False):

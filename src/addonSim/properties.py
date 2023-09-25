@@ -304,7 +304,7 @@ class MW_vis_cfg(types.PropertyGroup):
 
     neigh_links_width: props.FloatProperty(
         name="Inner links width",
-        default=0.005, min=0.001, max=0.05, step=0.05, precision=4,
+        default=0.01, min=0.0025, max=0.05, step=0.05, precision=4,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "neigh_links_width")
     )
 

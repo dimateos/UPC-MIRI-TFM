@@ -37,6 +37,16 @@ class MW_dev(types.PropertyGroup):
         default=DEV.DEBUG_UI,
         update=lambda self, context: setattr(DEV, "DEBUG_UI", self.DEBUG_UI),
     )
+
+    DEBUG_LINKS_NEIGHS : props.BoolProperty(
+        default=DEV.DEBUG_LINKS_NEIGHS,
+        update=lambda self, context: setattr(DEV, "DEBUG_LINKS_NEIGHS", self.DEBUG_LINKS_NEIGHS),
+    )
+    DEBUG_LINKS_GEODATA : props.BoolProperty(
+        default=DEV.DEBUG_LINKS_GEODATA,
+        update=lambda self, context: setattr(DEV, "DEBUG_LINKS_GEODATA", self.DEBUG_LINKS_GEODATA),
+    )
+
     FIX_FIELD_IMAGE : props.BoolProperty(
         default=DEV.FIX_FIELD_IMAGE,
         update=lambda self, context: setattr(DEV, "FIX_FIELD_IMAGE", self.FIX_FIELD_IMAGE),

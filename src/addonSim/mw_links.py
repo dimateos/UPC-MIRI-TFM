@@ -224,7 +224,7 @@ class MW_Links():
                     # build the link
                     idx_neighFace = cont.neighs_faces[idx_cell][idx_face]
                     key_faces = self.getKey(idx_face, idx_neighFace, swap)
-                    l = Link(key, key_faces, pos, normal, idx_cell, area, LINK_STATE_ENUM.SOLID)
+                    l = Link(key, key_faces, pos, normal, idx_cell, area, resistance, LINK_STATE_ENUM.SOLID)
 
                     # add to graphs and internal
                     self.cells_graph.add_edge(*key, l=l)
