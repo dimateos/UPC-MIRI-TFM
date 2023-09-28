@@ -272,7 +272,7 @@ class MW_vis_cfg(types.PropertyGroup):
 
     links_res: props.IntProperty(
         name="Link mesh resolution", description="Affect the number of faces per tube",
-        default=0, min=-1, max=8,
+        default=1, min=-1, max=8,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links_res")
     )
 
@@ -332,7 +332,7 @@ class MW_vis_cfg(types.PropertyGroup):
 
     walls_links_res: props.IntProperty(
         name="Air link resolution", description="Affect the number of faces per tube",
-        default=-1, min=-1, max=8,
+        default=0, min=-1, max=8,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "walls_links_res")
     )
 

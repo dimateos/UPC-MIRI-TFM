@@ -59,13 +59,11 @@ class COLORS:
     #cool     = from_256(Vector([97, 130, 234,  _default_alpha])) # Lyon
     #white_cw = from_256(Vector([221, 221, 221, _default_alpha]))
     #warm     = from_256(Vector([220, 94, 75,   _default_alpha]))
-    cool     = from_256(Vector([69, 81, 192,  _default_alpha])) # matplot mod
+    cool     = from_256(Vector([69, 81, 192,   _default_alpha])) # matplot mod
     white_cw = from_256(Vector([210, 210, 210, _default_alpha]))
     warm     = from_256(Vector([163, 81, 44,   _default_alpha]))
 
-
-
-
+    sky      = from_256(Vector([118,214,255,  _default_alpha]))
 
     @staticmethod
     def get_random(minC=0.0, maxC=1.0, alpha=_default_alpha) -> Vector:

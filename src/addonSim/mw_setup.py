@@ -529,8 +529,8 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
     # entries have encoded the probabilty
     repMatchCorners=resFaces*4
     utils_mat.gen_meshUV(mesh_entry, id_prob, "id_prob", repMatchCorners)
-    obj_linksAir_entry.active_material = utils_mat.gen_gradientMat("id_prob", name_entry, colorFn=GRADIENTS.lerp_common(COLORS.red, COLORS.white_cw))
-    obj_linksAir_entry.active_material.diffuse_color = COLORS.white_cw
+    obj_linksAir_entry.active_material = utils_mat.gen_gradientMat("id_prob", name_entry, colorFn=GRADIENTS.lerp_common(COLORS.pink))
+    obj_linksAir_entry.active_material.diffuse_color = COLORS.sky
 
     # NOTE:: additional props -> to visualize seems like setting UV map in texture node is not enough, requires active UV too
     #utils_mat.gen_meshUV(mesh, id_picks, "id_picks", repMatchCorners)
@@ -603,8 +603,8 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
     # color encoded attributes for viewing in viewport edit mode
     repMatchCorners=resFaces*4
     utils_mat.gen_meshUV(mesh, id_grav, "id_grav", repMatchCorners)
-    obj_neighs.active_material = utils_mat.gen_gradientMat("id_grav", name, colorFn=GRADIENTS.lerp_common(COLORS.green, COLORS.white))
-    obj_neighs.active_material.diffuse_color = COLORS.green
+    obj_neighs.active_material = utils_mat.gen_gradientMat("id_grav", name, colorFn=GRADIENTS.lerp_common(COLORS.white))
+    obj_neighs.active_material.diffuse_color = COLORS.white
 
     if DEV.DEBUG_LINKS_GEODATA:
         utils_mat.gen_meshUV(mesh, l1k1_l1k2, "l1k1_l1k2", repMatchCorners)
