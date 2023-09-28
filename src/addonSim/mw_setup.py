@@ -266,7 +266,7 @@ def gen_cells_LEGACY(voro_cont: VORO_Container, root: types.Object, context: typ
     stArea = np.std(surface_area)
     getStats().logDt("calculated stats (use breakpoints to see)")
 
-def set_cellsState(cont: MW_Cont, root: types.Object, cells: list[types.Object], state:int):
+def set_cellsState(cont: MW_Cont, root: types.Object, cells: list[types.Object], state:int, apply = True):
     prefs = getPrefs()
     assert(state in CELL_STATE_ENUM.all)
 
@@ -283,15 +283,16 @@ def set_cellsState(cont: MW_Cont, root: types.Object, cells: list[types.Object],
         # some selection could be an outside obj or a cell from other fract!
         if not MW_id_utils.hasCellId(cell): continue
         if not MW_id_utils.sameStorageId(root, cell): continue
+        cells_id.append(cell.mw_id.cell_id)
 
-        # set the state and the parent (also the same mat as the parent)
-        cont.setCell_state(cell.mw_id.cell_id, state)
-        #fract.cont.cells_state[cell.mw_id.cell_id] = state
-        #cell.mw_id.cell_state = state
+        # set the parent and its mat
         cell.active_material = root_cells.active_material
         cell.parent = root_cells
 
-        cells_id.append(cell.mw_id.cell_id)
+        # actually change the internal state (potentially done by links backend to trigger more detachmensts instead)
+        if apply:
+            cont.setCell_state(cell.mw_id.cell_id, state)
+
     return cells_id
 
 def update_cellsState(cont: MW_Cont, root: types.Object):
@@ -548,8 +549,10 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
     prefs = getPrefs()
     cfg : MW_vis_cfg = root.mw_vis
     sim : MW_Sim     = MW_global_selected.fract.sim
+    #linkSet = fract.links.internal+fract.links.external
+    linkSet = fract.links.internal
 
-    numLinks = len(fract.links.internal+fract.links.external) # not sized cause some may be skipped
+    numLinks = len(linkSet) # not sized cause some may be skipped
     verts     : list[tuple[Vector,Vector]] = []
     id_grav   : list[tuple[int,float]]     = []
 
@@ -563,7 +566,7 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
     checked = set()
 
     # iterate the global map and store vert pairs for the tube mesh generation
-    for id, l in enumerate(fract.links.internal+fract.links.external):
+    for id, l in enumerate(linkSet):
         id_normalized = id / float(numLinks)
 
         # allow once from outer loop

@@ -451,14 +451,14 @@ class MW_Links():
         # break links between air cells
         for cell_id in new_air_cells:
             for key in self.get_cell_linksKeys(cell_id):
-                self.air_link_check(key)
+                self.setState_link_check(key)
 
         # OPT:: update all visuals? should be reusing meshes?
         #mw_setup.gen_linksAll(bpy.context)
 
     #-------------------------------------------------------------------
 
-    def air_link_check(self, key, recalc=True):
+    def setState_link_check(self, key, recalc=True):
         """ Check the air link than may divide the comps, recalc frontier when necessary and returns True """
         DEV.log_msg(f"Check link AIR {key}", {"COMPS", "LINK"})
         l = self.get_link(key)
@@ -466,16 +466,15 @@ class MW_Links():
         # only break non broken
         if l.state != LINK_STATE_ENUM.SOLID:
             return
-
         l.set_broken()
-        c1,c2 = l.key_cells
 
-        # remove link edges, alredy removed when coming from an air_cell_check
+        # remove link edges, alredy removed when coming from an setState_cell_check
         self.comps_subgraph.remove_edges_from([l.key_cells])
 
         breaking = False
         if recalc:
             # recalc on link break only when a path between cells ceases to exist
+            c1,c2 = l.key_cells
             breaking = not nx.has_path(self.cells_graph, c1, c2)
             if breaking:
                 self.comps_recalc(False)
@@ -486,21 +485,22 @@ class MW_Links():
 
         return breaking
 
-    def air_cell_check(self, idx, recalc = True):
+    def setState_cell_check(self, idx, recalc = True):
         """ Check the air cell and set all its links to air, returns True when frontier recalc (basically the recalc arg) """
-        DEV.log_msg(f"Check cell AIR {id}", {"COMPS", "CELL"})
+        DEV.log_msg(f"Check cell AIR {idx}", {"COMPS", "CELL"})
         cell_state = self.cont.cells_state[idx]
 
         # only break non broken
         if cell_state != LINK_STATE_ENUM.SOLID:
             return
+        self.cont.setCell_state(idx, LINK_STATE_ENUM.AIR)
 
         # removes attached link edges too from comps
         self.comps_subgraph.remove_nodes_from([idx])
 
         # check air for its links too
         for key in self.get_cell_linksKeys(idx):
-            self.air_link_check(key, False)
+            self.setState_link_check(key, False)
 
         if recalc:
             self.comps_recalc(False)
