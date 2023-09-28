@@ -232,7 +232,7 @@ class MW_gen_OT(_StartRefresh_OT):
         DEV.log_msg("Start calc cont", {'CALC', 'CONT'})
         fract.cont = cont = MW_Cont(obj_root, points, bb, faces4D, precision=cfg.debug_precisionWalls)
         if not cont.initialized:
-            return self.end_op_error("found no cont... recalc different params?")
+            return self.end_op_error("found no cont or cells... recalc different params?")
 
         #test some legacy or statistics cont stuff
         if DEV.LEGACY_CONT:
@@ -336,8 +336,8 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
 
         DEV.log_msg("Calc cont and links (cells not regenerated!)", {'CALC'})
         fract.cont = cont = MW_Cont(obj_root, points, bb, faces4D, precision=gen_cfg.debug_precisionWalls)
-        if not cont:
-            return self.end_op_error("found no cont... but could try recalculate!")
+        if not cont.initialized:
+            return self.end_op_error("found no cont or cells... recalc different params?")
 
         # precalculate/query neighs and other data
         cont.precalculations(obj_cells_root.children)
@@ -345,7 +345,7 @@ class MW_gen_recalc_OT(_StartRefresh_OT):
         # calculate links and store in the external storage
         fract.links = links = MW_Links(cont)
         if not links.initialized:
-            return self.end_op_error("found no links... but could try recalculate!")
+            return self.end_op_error("found no links... recalc different params?")
 
         return self.end_op()
 

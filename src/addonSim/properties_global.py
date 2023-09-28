@@ -257,7 +257,7 @@ class MW_global_storage:
     #-------------------------------------------------------------------
 
     # callback triggers
-    enable_autoPurge_default = False
+    enable_autoPurge_default = True
     enable_autoPurge = enable_autoPurge_default
 
     @classmethod

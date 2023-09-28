@@ -325,6 +325,8 @@ def update_cellsState(cont: MW_Cont, root: types.Object):
 DEV.RELOAD_FLAGS["rnd_links"] = False
 
 def gen_linksAll(context: types.Context):
+    if not MW_global_selected.fract.links or not MW_global_selected.fract.links.initialized:
+        return
 
     # regenerate the mesh
     gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
@@ -333,8 +335,8 @@ def gen_linksAll(context: types.Context):
         gen_linksMesh_neighs(MW_global_selected.fract, MW_global_selected.root, context)
 
     # additional arrows
-    #gen_arrowObject(MW_global_selected.root, MW_global_selected.root.mw_sim.water_entry_dir,
-    #                            utils_trans.VECTORS.O, context, getPrefs().names.links_waterDir)
+    gen_arrowObject(MW_global_selected.root, MW_global_selected.root.mw_sim.water_entry_dir,
+                                utils_trans.VECTORS.O, context, getPrefs().names.links_waterDir)
 
 def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     prefs = getPrefs()

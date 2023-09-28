@@ -87,7 +87,10 @@ class MW_Cont:
 
         # construct voro++ cont
         self.voro_cont = self.build_voro(points, bb, faces4D, precision)
-        if self.voro_cont is not None:
+
+        # initialized when at least found some cells
+        #if self.voro_cont is not None:
+        if self.voro_cont:
             self.initialized = True
 
     def precalculations(self, cells_list : list[types.Object]):

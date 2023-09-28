@@ -271,7 +271,7 @@ class MW_prefs(bpy.types.AddonPreferences):
     )
     util_comps_OT_recalc: props.BoolProperty(
         name="recalc", description="Recalculate links vis",
-        default=False,
+        default=True,
     )
     util_bool_OT_apply: props.BoolProperty(
         name="apply", description="Apply the modifier after adding it",

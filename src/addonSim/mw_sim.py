@@ -277,7 +277,7 @@ class MW_Sim:
 
         # apply degradation -> potential break
         if (self.currentL.degrade(d)):
-            self.links.check_link_break(self.currentL.key_cells)
+            self.links.air_link_check(self.currentL.key_cells)
 
         if self.cfg.debug_trace:
             self.sub_trace.currentL_life = self.currentL.life
