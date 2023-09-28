@@ -267,6 +267,7 @@ def gen_cells_LEGACY(voro_cont: VORO_Container, root: types.Object, context: typ
     getStats().logDt("calculated stats (use breakpoints to see)")
 
 def set_cellsState(cont: MW_Cont, root: types.Object, cells: list[types.Object], state:int, apply = True):
+    """ Iterate selection and filter non cells or cells already as state, optionally apply state """
     prefs = getPrefs()
     assert(state in CELL_STATE_ENUM.all)
 
@@ -283,6 +284,10 @@ def set_cellsState(cont: MW_Cont, root: types.Object, cells: list[types.Object],
         # some selection could be an outside obj or a cell from other fract!
         if not MW_id_utils.hasCellId(cell): continue
         if not MW_id_utils.sameStorageId(root, cell): continue
+        # skip already set
+        if state == cell.mw_id.cell_state: continue
+
+        # list to return
         cells_id.append(cell.mw_id.cell_id)
 
         # set the parent and its mat
@@ -296,6 +301,7 @@ def set_cellsState(cont: MW_Cont, root: types.Object, cells: list[types.Object],
     return cells_id
 
 def update_cellsState(cont: MW_Cont, root: types.Object):
+    """ Iterate all cells and update scene to match the internal state """
     prefs = getPrefs()
 
     # take respective parent object

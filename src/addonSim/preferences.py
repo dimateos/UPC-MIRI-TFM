@@ -46,6 +46,10 @@ class MW_dev(types.PropertyGroup):
         default=DEV.DEBUG_LINKS_GEODATA,
         update=lambda self, context: setattr(DEV, "DEBUG_LINKS_GEODATA", self.DEBUG_LINKS_GEODATA),
     )
+    DEBUG_SANITIZE : props.BoolProperty(
+        default=DEV.DEBUG_SANITIZE,
+        update=lambda self, context: setattr(DEV, "DEBUG_SANITIZE", self.DEBUG_SANITIZE),
+    )
 
     FIX_FIELD_IMAGE : props.BoolProperty(
         default=DEV.FIX_FIELD_IMAGE,

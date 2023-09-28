@@ -10,6 +10,7 @@ class DEV:
     DEBUG_UI              = True    # some additional debug UI
     DEBUG_LINKS_NEIGHS    = True    # add additional mesh connecting links to neighbours
     DEBUG_LINKS_GEODATA   = False   # add additional links info to geometry data to visualize in table
+    DEBUG_SANITIZE        = False   # attempt to keep up with the UNDO/REDO etc system
 
     ASSERT_CELL_POS       = False   # assert some local and global pos match
     LEGACY_CONT           = False   # check some stats of legacy cont
