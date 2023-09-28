@@ -28,10 +28,13 @@ class MW_Fract:
     def sanitize(self, root):
         cleaned = False
 
-        if self.cont:
-            cleaned |= self.cont.sanitize(root)
-        if self.links:
-            cleaned |= self.links.sanitize(root)
+        try:
+            if self.cont:
+                cleaned |= self.cont.sanitize(root)
+            if self.links:
+                cleaned |= self.links.sanitize(root)
+        except:
+            DEV.log_msg(f"EXCEPT while sanitizing!", {"FRACT", "SANITIZE"})
 
         return cleaned
 

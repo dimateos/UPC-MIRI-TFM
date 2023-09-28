@@ -72,9 +72,9 @@ class Link():
 
     def set_broken(self):
         self.state = LINK_STATE_ENUM.AIR
-        # TODO:: count exit, picks_exit?
+        # TODO:: force some props?
         #self.life = 0
-        self.picks = 0
+        #self.picks = 0
 
     def flip_dir(self):
         self.dir = -self.dir

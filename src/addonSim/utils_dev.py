@@ -15,6 +15,7 @@ class DEV:
     LEGACY_CONT           = False   # check some stats of legacy cont
     FORCE_NEW_MATS        = True    # force regeneration of gradient images to avoid debugging confussion
     FIX_FIELD_IMAGE       = False   # workaround blender bug with image just being black after redo without touching it -> reexecutes the op
+    SKIP_PATH_CHECK       = False   # skip checking if a path still exists before recalc all graphs
 
     # tiny util to setup flags in reload time and then execute only once
     RELOAD_FLAGS : dict[str,bool] = dict()

@@ -371,19 +371,12 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
         points[id]= l.pos
 
         # point from face to face
-        k1, k2 = l.key_cells
-        kf1, kf2 = l.key_faces
-        c1 = fract.cont.cells_objs[k1]
-        f1 = fract.cont.getFaces(k1,kf1)
-        c2 = fract.cont.cells_objs[k2]
-        f2 = fract.cont.getFaces(k2,kf2)
-        p1 = c1.matrix_world @ f1.center
-        p2 = c2.matrix_world @ f2.center
+        p1,p2 = fract.cont.getFaces_pos(l.key_cells, l.key_faces)
 
         # pick a valid normal
         pdir : Vector= p2-p1
         if utils_trans.almostNull(pdir):
-            pdir = f1.normal
+            pdir = l.dir
         else:
             pdir.normalize()
 
@@ -549,8 +542,10 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
     prefs = getPrefs()
     cfg : MW_vis_cfg = root.mw_vis
     sim : MW_Sim     = MW_global_selected.fract.sim
-    #linkSet = fract.links.internal+fract.links.external
-    linkSet = fract.links.internal
+
+    # some external links only connect to ohter external
+    linkSet = fract.links.internal+fract.links.external
+    #linkSet = fract.links.internal
 
     numLinks = len(linkSet) # not sized cause some may be skipped
     verts     : list[tuple[Vector,Vector]] = []
@@ -574,7 +569,11 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
         for ln in fract.links.get_link_neighs(l.key_cells):
             if ln.key_cells in checked: continue
 
-            # point from links
+            # skip links with no solid end
+            if not fract.links.solid_link_check(ln):
+                continue
+
+            # point from links pos
             p1 = l.pos
             p2 = ln.pos
             verts.append((p1, p2))

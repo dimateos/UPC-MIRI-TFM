@@ -52,24 +52,24 @@ class CELL_ERROR_ENUM:
 class CELL_STATE_ENUM:
     """ Current cell state, preserves some sequentiality"""
     SOLID = 0
-    CORE = 1
-    AIR = 2
+    AIR = 1
+    CORE = 2
 
-    all = { SOLID, CORE, AIR }
+    all = { SOLID, AIR, CORE }
 
     @classmethod
     def to_str(cls, e:int):
         if e == cls.SOLID:  return "SOLID"
-        if e == cls.CORE:   return "CORE"
         if e == cls.AIR:    return "AIR"
+        if e == cls.CORE:   return "CORE"
         if e in CELL_ERROR_ENUM.all: return "ERROR_ENUM"
         return "none"
         #raise ValueError(f"CELL_STATE_ENUM: {e} is not in {cls.all}")
     @classmethod
     def from_str(cls, s:str):
         if s == "SOLID":    return cls.SOLID
-        if s == "CORE":     return cls.CORE
         if s == "AIR":      return cls.AIR
+        if s == "CORE":     return cls.CORE
         raise ValueError(f"CELL_STATE_ENUM: {s} is not in { set(CELL_STATE_ENUM.to_str(s) for s in cls.all) }")
 
 #-------------------------------------------------------------------
@@ -341,29 +341,36 @@ class MW_Cont:
     #-------------------------------------------------------------------
 
     def getCells(self, idx: list[int]|int) -> list[types.Object]|types.Object:
-        """ return an object or list of objects given idx  """
+        """ returns an object or list of objects given idx  """
         try:
             return self.cells_objs[idx]
         except TypeError:
             return [ self.cells_objs[i] for i in idx]
 
     def getMeshes(self, midx: list[int]|int) -> list[types.Mesh]|types.Mesh:
-        """ return a mesh or list of meshes given idx  """
+        """ retursn a mesh or list of meshes given idx  """
         try:
             return self.cells_meshes[midx]
         except TypeError:
             return [ self.cells_meshes[i] for i in midx ]
 
     def getFaces(self, midx: list[int]|int, fidx: list[int]|int) -> list[types.MeshPolygon]|types.MeshPolygon:
-        """ return a face or list of faces given idx  """
+        """ returns a face or list of faces given idx  """
         try:
             return self.cells_meshes[midx].polygons[fidx]
         except TypeError:
             return [ self.cells_meshes[i].polygons[j] for i,j in zip(midx,fidx) ]
 
     def getCells_Faces(self, idx: list[int]|int, fidx: list[int]|int) -> list[tuple[types.Object,types.MeshPolygon]]|tuple[types.Object,types.MeshPolygon]:
-        """ return a pair or list of pairs  """
+        """ returns a pair or list of pairs  """
         try:
             return (self.cells_objs[idx], self.cells_meshes[idx].polygons[fidx])
         except TypeError:
             return [ (self.cells_objs[i], self.cells_meshes[i].polygons[j]) for i,j in zip(idx,fidx) ]
+
+    def getFaces_pos(self, idx: list[int]|int, fidx: list[int]|int) -> list[types.MeshPolygon]|types.MeshPolygon:
+        """ returns the world position of the face or list of faces given idx  """
+        try:
+            return self.cells_objs[idx].matrix_world @ self.cells_meshes[idx].polygons[fidx].center
+        except TypeError:
+            return [ self.cells_objs[i].matrix_world @ self.cells_meshes[i].polygons[j].center for i,j in zip(idx,fidx) ]

@@ -112,7 +112,8 @@ def delete_orphanData(collectionNames = None, logAmount = True):
 
         if logAmount: DEV.log_msg(f"Deleting {len(toDelete)}/{len(collection)} {colName}", {"DELETE"})
         for data in toDelete:
-            collection.remove(data, unlink=False)
+            unlink = False
+            collection.remove(data, do_unlink=unlink, do_id_user=unlink, do_ui_user=unlink)
 
 #-------------------------------------------------------------------
 
