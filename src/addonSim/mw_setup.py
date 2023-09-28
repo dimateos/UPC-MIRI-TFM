@@ -119,24 +119,24 @@ def copy_convex(obj: types.Object, obj_copy: types.Object, context: types.Contex
 
 #-------------------------------------------------------------------
 
-def gen_pointsObject(obj: types.Object, points: list[Vector], context: types.Context, name:str, reuse=True):
+def gen_pointsObject(obj: types.Object, points: list[Vector], context: types.Context, name:str, reuse=True, keepTrans=False):
     # Create a new mesh data block and add only verts
     mesh = bpy.data.meshes.new(name)
     mesh.from_pydata(points, [], [])
     #mesh.update()
 
-    if reuse:   obj_points = utils_scene.gen_childReuse(obj, name, context, mesh, keepTrans=False)
-    else:       obj_points = utils_scene.gen_child(obj, name, context, mesh, keepTrans=False)
+    if reuse:   obj_points = utils_scene.gen_childReuse(obj, name, context, mesh, keepTrans=keepTrans)
+    else:       obj_points = utils_scene.gen_child(obj, name, context, mesh, keepTrans=keepTrans)
     return obj_points
 
-def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], context: types.Context, name:str, reuse=True):
+def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], context: types.Context, name:str, reuse=True, keepTrans=False):
     # Create a new mesh data block and add only verts
     mesh = bpy.data.meshes.new(name)
     mesh.from_pydata(bb, [], [])
 
     # Generate it taking the transform as it is (points already in local space)
-    if reuse:   obj_bb = utils_scene.gen_childReuse(obj, name, context, mesh, keepTrans=False)
-    else:       obj_bb = utils_scene.gen_child(obj, name, context, mesh, keepTrans=False)
+    if reuse:   obj_bb = utils_scene.gen_childReuse(obj, name, context, mesh, keepTrans=keepTrans)
+    else:       obj_bb = utils_scene.gen_child(obj, name, context, mesh, keepTrans=keepTrans)
 
     obj_bb.show_bounds = True
     return obj_bb
@@ -437,7 +437,7 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
         utils_mat.gen_meshUV(mesh, f1_f2, "f1_f2", repMatchCorners)
 
     # add points object too
-    obj_points = gen_pointsObject(root, points, context, prefs.names.links_points, reuse=True)
+    obj_points = gen_pointsObject(root, points, context, prefs.names.links_points, reuse=True, keepTrans=True)
     MW_id_utils.setMetaChild(obj_points)
 
     getStats().logDt("generated internal links mesh object")
@@ -521,8 +521,8 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
     MW_id_utils.setMetaChild(obj_linksAir_entry)
 
     # color encoded attributes for viewing in viewport edit mode
-    obj_linksAir.active_material = utils_mat.get_colorMat(COLORS.blue, name)
-    obj_linksAir.active_material.diffuse_color = COLORS.blue
+    obj_linksAir.active_material = utils_mat.get_colorMat(COLORS.green, name)
+    obj_linksAir.active_material.diffuse_color = COLORS.green
     # entries have encoded the probabilty
     repMatchCorners=resFaces*4
     utils_mat.gen_meshUV(mesh_entry, id_prob, "id_prob", repMatchCorners)
@@ -577,6 +577,7 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
             # grav mod
             g = sim.get_nextAlign( (p1-p2).normalized(), bothDir=True)
             id_grav.append((id_normalized, g))
+            #id_grav.append((id_normalized, 0))
 
             # query info keys
             if DEV.DEBUG_LINKS_GEODATA:
@@ -597,7 +598,7 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
     # color encoded attributes for viewing in viewport edit mode
     repMatchCorners=resFaces*4
     utils_mat.gen_meshUV(mesh, id_grav, "id_grav", repMatchCorners)
-    obj_neighs.active_material = utils_mat.gen_gradientMat("id_grav", name, colorFn=GRADIENTS.lerp_common(COLORS.green))
+    obj_neighs.active_material = utils_mat.gen_gradientMat("id_grav", name, colorFn=GRADIENTS.lerp_common(COLORS.green, COLORS.white))
     obj_neighs.active_material.diffuse_color = COLORS.green
 
     if DEV.DEBUG_LINKS_GEODATA:
