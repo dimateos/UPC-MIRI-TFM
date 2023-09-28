@@ -406,21 +406,14 @@ class MW_cell_state_OT(_StartRefresh_OT):
         self.start_op()
         state = CELL_STATE_ENUM.from_str(self.set_state.pop())
         recalc = getPrefs().util_comps_OT_recalc
-
-        # set the cells state in the scene
-        apply = state != CELL_STATE_ENUM.AIR or not recalc
-        cells_id = mw_setup.set_cellsState(MW_global_selected.fract.cont, MW_global_selected.root, MW_global_selected.selection, state, apply)
-
-        # break links between air cells or just recalculate everything again
         links : MW_Links = MW_global_selected.fract.links
-        if state == CELL_STATE_ENUM.AIR:
-            for idx in cells_id:
-                links.setState_cell_check(idx)
-        else:
-            links.comps_recalc()
 
-        # potential update cells and links visuals
-        if recalc:
+        # get target cells id + potentially direlcty set the state
+        cells_id = mw_setup.set_cellsState(MW_global_selected.fract.cont, MW_global_selected.root, MW_global_selected.selection, state, not recalc)
+
+        # set the cell state through the links and recalculate changes in graphs
+        if cells_id and recalc:
+            links.setState_cells_check(cells_id, state)
             mw_setup.update_cellsState(MW_global_selected.fract.cont, MW_global_selected.root)
             mw_setup.gen_linksAll(context)
 

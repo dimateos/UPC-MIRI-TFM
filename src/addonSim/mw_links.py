@@ -18,23 +18,23 @@ from .stats import getStats
 class LINK_STATE_ENUM:
     """ Current links state, preserves some sequentiality """
     SOLID = 0
-    WALL = 1
-    AIR = 2
+    AIR = 1
+    WALL = 2
 
-    all = { SOLID, WALL, AIR }
+    all = { SOLID, AIR, WALL }
 
     @classmethod
     def to_str(cls, e:int):
         if e == cls.SOLID:  return "SOLID"
-        if e == cls.WALL:   return "WALL"
         if e == cls.AIR:    return "AIR"
+        if e == cls.WALL:   return "WALL"
         return "none"
         #raise ValueError(f"CELL_STATE_ENUM: {e} is not in {cls.all}")
     @classmethod
     def from_str(cls, s:str):
         if s == "SOLID":    return cls.SOLID
-        if s == "WALL":     return cls.WALL
         if s == "AIR":      return cls.AIR
+        if s == "WALL":     return cls.WALL
         raise ValueError(f"CELL_STATE_ENUM: {s} is not in {set(LINK_STATE_ENUM.to_str(s) for s in cls.all)}")
 
 class Link():
@@ -334,6 +334,7 @@ class MW_Links():
         cleaned = False
         if not self.cont.deletedId or self.cont.deletedId == self.cont.deletedId_prev:
             return cleaned
+        DEV.log_msg(f"Sanitizing links", {"LINKS", "SANITIZE"})
 
         ## detect changes -> not ok cause removing nodes removes past edges
         #curr = set(self.cont.deletedId)
@@ -349,7 +350,7 @@ class MW_Links():
         return cleaned
 
     def comps_recalc(self, recalcGraph = True):
-        """ Recalc cell connected componentes, return true and recalc frontier when changed """
+        """ Recalc cell connected componentes, return true when new split """
         DEV.log_msg(f"Recalc COMPS", {"COMPS"})
         prevLen = self.comps_len
 
@@ -359,17 +360,24 @@ class MW_Links():
         # OPT:: shared statemaps across methods, or keep uptodate
         # OPT:: too much link/id interchange and requery too..
 
+        # recount components
+        self.comps_count()
+        newSplit = prevLen != self.comps_len
+        if newSplit:
+            getStats().logDt(f"calculated COMPS: [new SPLIT] from {prevLen}")
+
+        # potential detach of cells
+        if newSplit and self.comps_len > 1:
+            self.comps_detach_frontier()
+            self.comps_count()
+
         # recalc frontier even for no new splits -> cells turned to AIR changes the front
         self.comps_recalc_frontier()
 
-        # recount components
-        self.comps = list(nx.connected_components(self.comps_subgraph))
-        self.comps_len = len(self.comps)
-        newSplit = prevLen != self.comps_len
-        getStats().logDt(f"calculated COMPS: {self.comps_len} {'[new SPLIT]' if newSplit else ''}")
         return newSplit
 
     def comps_recalc_subgraph(self):
+        """ Recalculate component subgraph """
         DEV.log_msg(f"Recalc COMPS subgraph", {"COMPS"})
 
         # create a subgraph with no air, no missing cells and no additional walls
@@ -383,12 +391,13 @@ class MW_Links():
         removed_links = stateMap_links[LINK_STATE_ENUM.AIR] # + stateMap_links[LINK_STATE_ENUM.WALL] already dropped with stateMap not AIR
         self.comps_subgraph.remove_edges_from(removed_links)
 
+    def comps_count(self):
+        self.comps = list(nx.connected_components(self.comps_subgraph))
+        self.comps_len = len(self.comps)
+        getStats().logDt(f"count COMPS: {self.comps_len}")
+
     def comps_recalc_frontier(self):
         """ Check new internal and external links, also changes cells state to air """
-        # potential detach of cells
-        if self.comps_len > 1:
-            self.comps_detach_frontier()
-
         DEV.log_msg(f"Recalc FRONT", {"COMPS"})
 
         # all solid are internal
@@ -398,113 +407,144 @@ class MW_Links():
         # external pick only the ones with at least a solid at the other side
         self.external.clear()
         for l in stateMap_linksRaw[LINK_STATE_ENUM.WALL] + stateMap_linksRaw[LINK_STATE_ENUM.AIR]:
-            c1,c2 = l.key_cells
-
-            # the second ID is always a cell ID
-            s2 = self.cont.cells_state[c2]
-            if s2 == LINK_STATE_ENUM.SOLID:
+            if self.solid_link_check(l):
                 self.external.append(l)
-                continue
-
-            # walls have negative id and there is no cell associated, so s1 only check for non walls
-            if l.state != LINK_STATE_ENUM.WALL:
-                s1 = self.cont.cells_state[c1]
-                if s1 == LINK_STATE_ENUM.SOLID:
-                    self.external.append(l)
 
     def comps_detach_frontier(self):
-        DEV.log_msg(f"Recalc FRONT detach", {"COMPS"})
-        stateMap = self.cont.getCells_splitID_state()
+        DEV.log_msg(f"Recalc DETACH", {"COMPS"})
 
-        # filter core comps
-        comp_notCore = []
+        # split by core comps
+        cores, nonCores = [],[]
         for i, comp_cells in enumerate(self.comps):
-            notCore = True
-            # OPT:: could just iterate once and check states, no need for state map either
-            for coreId in stateMap[CELL_STATE_ENUM.CORE]:
-                if coreId in comp_cells:
-                    notCore = False
+            # iterate cells and check for any mark as core
+            foundCore = False
+            for cell_id in comp_cells:
+                if self.cont.cells_state[cell_id] == CELL_STATE_ENUM.CORE:
+                    cores.append(i)
+                    foundCore = True
                     break
-            if notCore:
-                comp_notCore.append(i)
+            # no cell was core
+            if not foundCore:
+                nonCores.append(i)
 
         # all core, do nothing
-        if not comp_notCore:
+        if not nonCores:
             return
 
-        comps_canditates = [ self.comps[i] for i in comp_notCore ]
+        # list of candidate comps (not individual cells)
+        candidates = [ self.comps[i] for i in nonCores ]
         new_air_cells = []
 
-        # some core so remove the rest
-        if len(comp_notCore) != len(self.comps):
-            new_air_cells = list(itertools.chain.from_iterable(comps_canditates))
-        # no core so remove all but largest one
+        # if there was at least a single non core one, then flatten the list of candidates and remove all
+        if len(nonCores) != len(self.comps):
+            new_air_cells = list(itertools.chain.from_iterable(candidates))
+
+        # otherwise remove the smaller candidate
         else:
-            comps_canditates = sorted(comps_canditates, key=len)
-            new_air_cells = list(itertools.chain.from_iterable(comps_canditates[:-1]))
+            candidates = sorted(candidates, key=len)
+            new_air_cells = list(itertools.chain.from_iterable(candidates[:-1]))
 
-        # set the state for all and update in the scene
-        self.cont.setCells_state(new_air_cells, CELL_STATE_ENUM.AIR)
-        from . import mw_setup
-        mw_setup.update_cellsState(self.cont, self.cont.root)
-
-        # break links between air cells
-        for cell_id in new_air_cells:
-            for key in self.get_cell_linksKeys(cell_id):
-                self.setState_link_check(key)
-
-        # OPT:: update all visuals? should be reusing meshes?
-        #mw_setup.gen_linksAll(bpy.context)
+        # set links as air which will trigger link removeal etc
+        self.setState_cells_check(new_air_cells, LINK_STATE_ENUM.AIR, False)
 
     #-------------------------------------------------------------------
 
-    def setState_link_check(self, key, recalc=True):
-        """ Check the air link than may divide the comps, recalc frontier when necessary and returns True """
+    def solid_link_check(self, l):
+        """ Check if any of the referenced cells is solid (or core) """
+        c1,c2 = l.key_cells
+
+        # the second ID is always a cell ID
+        s2 = self.cont.cells_state[c2]
+        if s2 != CELL_STATE_ENUM.AIR:
+            return True
+
+        # walls have negative id and there is no cell associated, so s1 only check for non walls
+        if l.state != LINK_STATE_ENUM.WALL:
+            s1 = self.cont.cells_state[c1]
+            if s1 != CELL_STATE_ENUM.AIR:
+                return True
+
+        return False
+
+    def setState_link_check(self, key, state:LINK_STATE_ENUM, recalc=True):
+        """ Set state, modify graph, returns True when recalc """
         DEV.log_msg(f"Check link AIR {key}", {"COMPS", "LINK"})
         l = self.get_link(key)
 
-        # only break non broken
-        if l.state != LINK_STATE_ENUM.SOLID:
-            return
-        l.set_broken()
+        # ignore already set
+        if l.state == state:
+            return False
 
-        # remove link edges, alredy removed when coming from an setState_cell_check
-        self.comps_subgraph.remove_edges_from([l.key_cells])
+        # broke the link? change graph etc
+        if state == LINK_STATE_ENUM.AIR:
+            # ignore walls and break solid links
+            if l.state == LINK_STATE_ENUM.WALL:
+                return False
+            l.set_broken()
+
+            # remove link edges, alredy removed when coming from an setState_cell_check
+            self.comps_subgraph.remove_edges_from([l.key_cells])
+
+            # potentially flip normals so than visualization goes towards outside
+            if self.cont.cells_state[l.dir_from] != CELL_STATE_ENUM.SOLID:
+                l.flip_dir()
+
+        # link back to solid
+        else:
+            # reset even wall links (number of picks), but for those nothing else to do
+            l.reset()
+            if l.state == LINK_STATE_ENUM.WALL:
+                return False
+
+            # readd the link, cells should be added beforehand
+            self.comps_subgraph.add_edges_from([l.key_cells])
 
         breaking = False
         if recalc:
             # recalc on link break only when a path between cells ceases to exist
             c1,c2 = l.key_cells
-            breaking = not nx.has_path(self.cells_graph, c1, c2)
+            breaking = not nx.has_path(self.cells_graph, c1, c2) if DEV.SKIP_PATH_CHECK else True
             if breaking:
                 self.comps_recalc(False)
 
-        # potentially flip normals so than visualization goes towards outside
-        if self.cont.cells_state[l.dir_from] != CELL_STATE_ENUM.SOLID:
-            l.flip_dir()
-
         return breaking
 
-    def setState_cell_check(self, idx, recalc = True):
-        """ Check the air cell and set all its links to air, returns True when frontier recalc (basically the recalc arg) """
+    def setState_cell_check(self, idx, state:CELL_STATE_ENUM, recalc = True):
+        """ Set state, modify graph and also set links, returns True when recalc """
         DEV.log_msg(f"Check cell AIR {idx}", {"COMPS", "CELL"})
         cell_state = self.cont.cells_state[idx]
 
-        # only break non broken
-        if cell_state != LINK_STATE_ENUM.SOLID:
-            return
-        self.cont.setCell_state(idx, LINK_STATE_ENUM.AIR)
+        # ignore already set
+        if cell_state == state:
+            return False
+        self.cont.setCell_state(idx, state)
 
-        # removes attached link edges too from comps
-        self.comps_subgraph.remove_nodes_from([idx])
+        # cell to air? change graph and also set the links
+        if state == CELL_STATE_ENUM.AIR:
+            # remove cell and attached link
+            self.comps_subgraph.remove_nodes_from([idx]) # direcly removes edges tho
+            for key in self.get_cell_linksKeys(idx):
+                self.setState_link_check(key, LINK_STATE_ENUM.AIR, False)
 
-        # check air for its links too
-        for key in self.get_cell_linksKeys(idx):
-            self.setState_link_check(key, False)
+        # cell back to solid
+        else:
+            # add cell back and recover links
+            self.comps_subgraph.add_nodes_from([idx])
+            for key in self.get_cell_linksKeys(idx):
+                self.setState_link_check(key, LINK_STATE_ENUM.SOLID, False)
 
         if recalc:
             self.comps_recalc(False)
         return recalc
+
+    def setState_cells_check(self, idx_list, state:CELL_STATE_ENUM, recalc_afterAll = True):
+        """ Set state, modify graph and also set links, returns True when recalc """
+        for idx in idx_list:
+            self.setState_cell_check(idx, state, False)
+
+        # recalc without building the graph as setState_cell_check already removes/adds missing nodes
+        if recalc_afterAll:
+            self.comps_recalc(False)
 
     #-------------------------------------------------------------------
 
