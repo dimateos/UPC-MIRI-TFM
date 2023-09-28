@@ -276,7 +276,8 @@ class MW_gen_OT(_StartRefresh_OT):
             cfg = MW_global_selected.root.mw_gen
 
             # optional links direct generation
-            if cfg.debug_gen_links:
+            #if cfg.debug_gen_links:
+            if getPrefs().gen_calc_OT_links:
                 mw_setup.gen_linksAll(self.context)
 
             # optional field visualiztion
@@ -409,8 +410,10 @@ class MW_cell_state_OT(_StartRefresh_OT):
         # break links between air cells
         links : MW_Links = MW_global_selected.fract.links
         for idx in cells_id:
-            for key in links.get_cell_linksKeys(idx):
-                links.check_link_air(key)
+            links.air_cell_check(idx)
+
+        if getPrefs().util_comps_OT_recalc:
+            mw_setup.gen_linksAll(context)
 
         return self.end_op()
 
@@ -418,7 +421,7 @@ class MW_cell_state_OT(_StartRefresh_OT):
 
 class MW_gen_links_OT(_StartRefresh_OT):
     bl_idname = "mw.gen_links"
-    bl_label = "Generate links object"
+    bl_label = "Update links vis"
     bl_description = "Generate the visual representation of the links of a fracture object"
 
     # UNDO as part of bl_options will cancel any edit last operation pop up
@@ -604,9 +607,7 @@ class MW_util_comps_OT(_StartRefresh_OT):
         MW_global_selected.fract.sanitize(MW_global_selected.root)
         links.comps_recalc()
 
-        # TODO:: recalc front even if no cell detach -> no outer cell with non solid connection
-
-        if getPrefs().util_comps_OT_apply:
+        if getPrefs().util_comps_OT_recalc:
             mw_setup.gen_linksAll(context)
 
         return self.end_op()

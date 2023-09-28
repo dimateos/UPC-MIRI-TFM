@@ -243,6 +243,14 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=True,
     )
 
+    gen_calc_OT_clearCfg: props.BoolProperty(
+        name="clear", description="Next execution will clear the config",
+        default=True,
+    )
+    gen_calc_OT_links: props.BoolProperty(
+        name="gen", description="Generate links mesh directly alongside cells",
+        default=True,
+    )
     gen_duplicate_OT_hidePrev: props.BoolProperty(
         name="hide", description="Hide the original fractured object after duplication",
         default=False,
@@ -251,11 +259,6 @@ class MW_prefs(bpy.types.AddonPreferences):
     sim_step_OT_genLinks: props.BoolProperty(
         name="WIP: links", description="WIP: Redraw the links (should always)",
         default=False,
-    )
-
-    gen_calc_OT_clearCfg: props.BoolProperty(
-        name="clear", description="Next execution will clear the config",
-        default=True,
     )
     sim_step_OT_clearCfg: props.BoolProperty(
         name="clear", description="Next execution will clear the config",
@@ -266,8 +269,8 @@ class MW_prefs(bpy.types.AddonPreferences):
         name="unhide", description="Unhide the original object after deletion",
         default=True,
     )
-    util_comps_OT_apply: props.BoolProperty(
-        name="apply", description="Change the state to air to removed cells",
+    util_comps_OT_recalc: props.BoolProperty(
+        name="recalc", description="Recalculate links vis",
         default=False,
     )
     util_bool_OT_apply: props.BoolProperty(

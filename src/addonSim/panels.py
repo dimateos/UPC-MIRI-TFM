@@ -73,9 +73,11 @@ class MW_gen_PT(types.Panel):
                 col.label(text="Select a mesh...", icon="ERROR")
                 return
 
-            # Fracture original object
+            # checkbox to gen links vis with cells
             col = layout.column()
-            col.operator(ops.MW_gen_OT.bl_idname, text="GEN Fracture", icon="STICKY_UVS_DISABLE")
+            col_rowSplit = col.row().split(factor=0.66)
+            col_rowSplit.operator(ops.MW_gen_OT.bl_idname, text="GEN Fracture", icon="STICKY_UVS_DISABLE")
+            col_rowSplit.prop(prefs, "gen_calc_OT_links", text="links vis")
 
         # Edit/info of selected
         else:
@@ -116,17 +118,27 @@ class MW_gen_PT(types.Panel):
             col_rowSplit.prop(prefs, "all_PT_meta_show_root", text="Root props:" if prefs.all_PT_meta_show_root else "Child props:")
             col_rowSplit.label(text=root.name if prefs.all_PT_meta_show_root else selected.name)
 
+        # checkbox to gen links with cells
+        col = layout.column()
+        col_rowSplit = col.row().split(factor=0.66)
+        col_rowSplit.operator(ops.MW_gen_links_OT.bl_idname, icon="OUTLINER_DATA_GREASEPENCIL")
+        col_rowSplit.prop(prefs, "gen_calc_OT_links")
+
         # example of how to edit op parameters from the panel before execution (but better done inside invoke, in this case)
-        op = layout.operator(ops.MW_cell_state_OT.bl_idname, icon="PIVOT_CURSOR")
+        #op = layout.operator(ops.MW_cell_state_OT.bl_idname, icon="PIVOT_CURSOR")
         #if MW_global_selected.fract and MW_global_selected.fract.cont:
         #    if MW_id_utils.hasCellId(MW_global_selected.current):
         #        cell_id = MW_global_selected.current.mw_id.cell_id
         #        cell_state = MW_global_selected.fract.cont.cells_state[cell_id]
         #        op.set_state = ops.MW_cell_state_OT.set_state_toEnum[cell_state]
 
-        # more actions
-        layout.operator(ops.MW_gen_links_OT.bl_idname, icon="OUTLINER_DATA_GREASEPENCIL")
+        # checkbox to recalc links
+        col = layout.column()
+        col_rowSplit = col.row().split(factor=0.66)
+        col_rowSplit.operator(ops.MW_cell_state_OT.bl_idname, icon="PIVOT_CURSOR")
+        col_rowSplit.prop(prefs, "util_comps_OT_recalc")
 
+        # slider for res
         col_rowSplit = layout.row().split(factor=0.66)
         col_rowSplit.operator(ops.MW_gen_field_r_OT.bl_idname, icon="NODE_TEXTURE")
         col_rowSplit.prop(gen_cfg, "debug_fieldR_res", text="res")
@@ -168,7 +180,7 @@ class MW_gen_PT(types.Panel):
             col = box.column()
             col_rowSplit = col.row().split(factor=0.66)
             col_rowSplit.operator(ops.MW_util_comps_OT.bl_idname, icon="NODE_COMPOSITING")
-            col_rowSplit.prop(prefs, "util_comps_OT_apply")
+            col_rowSplit.prop(prefs, "util_comps_OT_recalc")
 
             col_rowSplit = col.row().split(factor=0.66)
             col_rowSplit.operator(ops.MW_util_bool_OT.bl_idname, icon="MOD_BOOLEAN")

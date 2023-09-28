@@ -118,10 +118,10 @@ class MW_gen_cfg(types.PropertyGroup):
         default=True,
     )
 
-    debug_gen_links: props.BoolProperty(
-        name="Generate links mesh directly", description="Otherwise generated later by the operator buton un the gen panel.",
-        default=False,
-    )
+    #debug_gen_links: props.BoolProperty(
+    #    name="Generate links mesh directly", description="Otherwise generated later by the operator buton un the gen panel.",
+    #    default=True,
+    #)
     debug_fieldR: props.BoolProperty(
         name="Generate R field visuals", description="You can later modify the geometry and update the visualization.",
         default=False,
