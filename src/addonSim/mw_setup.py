@@ -360,14 +360,15 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     verts        : list[tuple[Vector,Vector]] = [None]*numLinks
     id_life      : list[tuple[int,float]]     = [None]*numLinks
     lifeWidths   : list[float]                = [None]*numLinks
-    #id_picks     : list[tuple[int,int]]       = [None]*numLinks
     #id_resist    : list[tuple[int,float]]     = [None]*numLinks
     #dirX_dirZ    : list[tuple[float,float]]   = [None]*numLinks
     #id_area      : list[tuple[int,float]]     = [None]*numLinks
 
+    if DEV.DEBUG_LINKS_PICKS:
+        id_picks   : list[tuple[int,int]]     = [None]*numLinks
     if DEV.DEBUG_LINKS_GEODATA:
-        k1_k2 : list[tuple[int,int]]          = []
-        f1_f2 : list[tuple[int,int]]          = []
+        k1_k2 : list[tuple[int,int]]          = [None]*numLinks
+        f1_f2 : list[tuple[int,int]]          = [None]*numLinks
 
     # iterate the global map and store vert pairs for the tube mesh generation
     for id, l in enumerate(fract.links.internal):
@@ -400,15 +401,16 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
 
         # query props
         id_life[id]= (id_normalized, life)
-        #id_picks[id]= (id_normalized, l.picks)
         #id_resist[id]= (id_normalized, l.resistance)
         #dirX_dirZ[id]=(abs(pdir.x), abs(pdir.z))
         #id_area[id] = (id_normalized, (l.area-fract.links.min_area) / (fract.links.max_area-fract.links.min_area))
 
+        if DEV.DEBUG_LINKS_PICKS:
+            id_picks[id]= (id_normalized, l.picks)
         # query info keys
         if DEV.DEBUG_LINKS_GEODATA:
-            k1_k2.append(l.key_cells)
-            f1_f2.append(l.key_faces)
+            k1_k2[id] = l.key_cells
+            f1_f2[id] = l.key_faces
 
     # single mesh with tubes
     name = prefs.names.links
@@ -426,7 +428,6 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     obj_links.active_material.diffuse_color = COLORS.red
 
     # NOTE:: additional props -> to visualize seems like setting UV map in texture node is not enough, requires active UV too
-    #utils_mat.gen_meshUV(mesh, id_picks, "id_picks", repMatchCorners)
     #utils_mat.gen_meshUV(mesh, id_resist, "id_resist", repMatchCorners)
     #obj_links.active_material = utils_mat.gen_gradientMat("id_resist", name+"_R", colorFn=GRADIENTS.lerp_common(COLORS.warm))
     #utils_mat.gen_meshUV(mesh, dirX_dirZ, "dirX_dirZ", repMatchCorners)
@@ -434,6 +435,8 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     #utils_mat.gen_meshUV(mesh, id_area, "id_area", repMatchCorners)
     #obj_links.active_material = utils_mat.gen_gradientMat("id_area", name+"_area", colorFn=GRADIENTS.lerp_common(COLORS.red, COLORS.white_cw))
 
+    if DEV.DEBUG_LINKS_PICKS:
+        utils_mat.gen_meshUV(mesh, id_picks, "id_picks", repMatchCorners)
     if DEV.DEBUG_LINKS_GEODATA:
         utils_mat.gen_meshUV(mesh, k1_k2, "k1_k2", repMatchCorners)
         utils_mat.gen_meshUV(mesh, f1_f2, "f1_f2", repMatchCorners)
@@ -455,10 +458,11 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
     verts      : list[tuple[Vector,Vector]]   = []
     verts_entry  : list[tuple[Vector,Vector]] = []
     id_prob    : list[tuple[int,float]]       = []
-    #id_picks   : list[tuple[int,int]]         = []
-    #id_entries : list[tuple[int,int]]         = []
     #dirX_dirZ    : list[tuple[float,float]]   = [None]*numLinks
 
+    if DEV.DEBUG_LINKS_PICKS:
+        id_picks   : list[tuple[int,int]]     = []
+        id_entries : list[tuple[int,int]]     = []
     if DEV.DEBUG_LINKS_GEODATA:
         k1_k2 : list[tuple[int,int]]          = []
         f1_f2 : list[tuple[int,int]]          = []
@@ -484,8 +488,8 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
         verts.append((p1, p2))
 
         # query props
-        #id_picks.append((id_normalized, l.picks))
-
+        if DEV.DEBUG_LINKS_PICKS:
+            id_picks.append((id_normalized, l.picks))
         # query info keys
         if DEV.DEBUG_LINKS_GEODATA:
             k1_k2.append(l.key_cells)
@@ -506,7 +510,8 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
         # also store more props
         prob_normalized = prob / probsMax
         id_prob.append((id_normalized, prob_normalized))
-        #id_entries.append((id_normalized, l.picks_entry))
+        if DEV.DEBUG_LINKS_PICKS:
+            id_entries.append((id_normalized, l.picks_entry))
         #dirX_dirZ[id]=(abs(l.dir.x), abs(l.dir.z))
 
     # two mesh with tubes to represent entry picks / regular traverse picks
@@ -532,11 +537,12 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
     obj_linksAir_entry.active_material.diffuse_color = COLORS.sky
 
     # NOTE:: additional props -> to visualize seems like setting UV map in texture node is not enough, requires active UV too
-    #utils_mat.gen_meshUV(mesh, id_picks, "id_picks", repMatchCorners)
-    #utils_mat.gen_meshUV(mesh_entry, id_entries, "id_entries", repMatchCorners)
     #utils_mat.gen_meshUV(mesh_entry, dirX_dirZ, "dirX_dirZ", repMatchCorners)
     #obj_linksAir_entry.active_material = utils_mat.gen_textureMat("dirX_dirZ", name+"_dir", colorFn=GRADIENTS.red_2D_green) #red_2D_blue
 
+    if DEV.DEBUG_LINKS_GEODATA:
+        utils_mat.gen_meshUV(mesh, id_picks, "id_picks", repMatchCorners)
+        utils_mat.gen_meshUV(mesh_entry, id_entries, "id_entries", repMatchCorners)
     if DEV.DEBUG_LINKS_GEODATA:
         utils_mat.gen_meshUV(mesh, k1_k2, "k1_k2", repMatchCorners)
         utils_mat.gen_meshUV(mesh, f1_f2, "f1_f2", repMatchCorners)

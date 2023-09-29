@@ -264,7 +264,7 @@ class MW_sim_PT(types.Panel):
 
         col_rowSplit = col.row().split(factor=0.70)
         col_rowSplit.operator(ops.MW_sim_step_OT.bl_idname, text="STEP", icon="MOD_FLUIDSIM")
-        col_rowSplit.prop(prefs, "sim_step_OT_genLinks")
+        col_rowSplit.prop(prefs, "sim_step_OT_stopBreak")
 
         col_rowSplit = col.row().split(factor=0.70)
         col_rowSplit.operator(ops.MW_sim_reset_OT.bl_idname, text="RESET", icon="ORPHAN_DATA")

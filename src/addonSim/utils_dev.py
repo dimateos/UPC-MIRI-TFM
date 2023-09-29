@@ -9,12 +9,12 @@ class DEV:
     DEBUG_MODEL           = True    # fake 2D so ignore some directional links (at sim)
     DEBUG_UI              = True    # some additional debug UI
     DEBUG_LINKS_NEIGHS    = True    # add additional mesh connecting links to neighbours
-    DEBUG_LINKS_GEODATA   = False   # add additional links info to geometry data to visualize in table
-    DEBUG_SANITIZE        = False   # attempt to keep up with the UNDO/REDO etc system
-    DEBUG_SANITIZE        = False   # attempt to keep up with the UNDO/REDO etc system
+    DEBUG_LINKS_GEODATA   = True   # add additional links info to geometry data to visualize in table
+    DEBUG_LINKS_PICKS     = True   # add additional links info about number of picks
 
-    SKIP_RESISTANCE       = True    # skip weighting links prob with resistance
-    SKIP_PATH_CHECK       = True    # skip checking if a path still exists before recalc all graphs
+    SKIP_SANITIZE         = False   # skip attempt to keep up with the UNDO/REDO etc system
+    SKIP_RESISTANCE       = False   # skip weighting links prob with resistance
+    SKIP_PATH_CHECK       = False   # skip checking if a path still exists before recalc all graphs
 
     FORCE_NEW_MATS        = False   # force regeneration of gradient images to avoid debugging confussion
     FORCE_FIELD_IMAGE     = False   # workaround blender bug with image just being black after redo without touching it -> reexecutes the op

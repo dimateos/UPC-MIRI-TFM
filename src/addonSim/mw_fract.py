@@ -27,7 +27,7 @@ class MW_Fract:
 
     def sanitize(self, root):
         cleaned = False
-        if not DEV.DEBUG_SANITIZE:
+        if DEV.SKIP_SANITIZE:
             return cleaned
 
         try:

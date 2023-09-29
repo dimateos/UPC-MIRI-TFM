@@ -46,9 +46,13 @@ class MW_dev(types.PropertyGroup):
         default=DEV.DEBUG_LINKS_GEODATA,
         update=lambda self, context: setattr(DEV, "DEBUG_LINKS_GEODATA", self.DEBUG_LINKS_GEODATA),
     )
-    DEBUG_SANITIZE : props.BoolProperty(
-        default=DEV.DEBUG_SANITIZE,
-        update=lambda self, context: setattr(DEV, "DEBUG_SANITIZE", self.DEBUG_SANITIZE),
+    DEBUG_LINKS_PICKS : props.BoolProperty(
+        default=DEV.DEBUG_LINKS_PICKS,
+        update=lambda self, context: setattr(DEV, "DEBUG_LINKS_PICKS", self.DEBUG_LINKS_PICKS),
+    )
+    SKIP_SANITIZE : props.BoolProperty(
+        default=DEV.SKIP_SANITIZE,
+        update=lambda self, context: setattr(DEV, "SKIP_SANITIZE", self.SKIP_SANITIZE),
     )
 
     SKIP_RESISTANCE : props.BoolProperty(
@@ -264,12 +268,12 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=False,
     )
 
-    sim_step_OT_genLinks: props.BoolProperty(
-        name="WIP: links", description="WIP: Redraw the links (should always)",
-        default=False,
+    sim_step_OT_stopBreak: props.BoolProperty(
+        name="stop", description="Forcefully stop on link break",
+        default=True,
     )
     sim_step_OT_clearCfg: props.BoolProperty(
-        name="clear", description="Next execution will clear the config",
+        name="cfg", description="Next execution will clear the config",
         default=True,
     )
 

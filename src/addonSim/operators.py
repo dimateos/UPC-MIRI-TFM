@@ -495,7 +495,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
         # step
         col.prop(cfg, "step_infiltrations")
         col.prop(cfg, "step_maxDepth")
-        col.prop(cfg, "step_deg")
+        col.prop(cfg, "step_linkDeg")
 
         # params and debug
         prefs = getPrefs()
@@ -551,7 +551,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
 
         # steps
         sim_cfg : MW_sim_cfg= self.cfg
-        DEV.log_msg(f"step_infiltrations({sim_cfg.step_infiltrations}) step_maxDepth({sim_cfg.step_maxDepth}) step_deg({sim_cfg.step_deg})", {'SIM'})
+        DEV.log_msg(f"step_infiltrations({sim_cfg.step_infiltrations}) step_maxDepth({sim_cfg.step_maxDepth}) step_linkDeg({sim_cfg.step_linkDeg})", {'SIM'})
         for step in range(sim_cfg.step_infiltrations):
             if sim_cfg.debug_uniformDeg: sim.step_all()
             else: sim.step()

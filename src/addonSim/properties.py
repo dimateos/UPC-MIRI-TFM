@@ -147,20 +147,23 @@ class MW_gen_cfg(types.PropertyGroup):
 
 
 #-------------------------------------------------------------------
-# IDEA:: min -1 for infinite break condition?
 
 class MW_sim_cfg(types.PropertyGroup):
     step_infiltrations: props.IntProperty(
-        name="Number of iters", description="WIP:: atm redo each modification",
+        name="Number of infiltrations", description="Translate to individual paths traced per button press.",
         default=1, min=1, max=1000,
     )
     step_maxDepth: props.IntProperty(
-        name="Number of propagations per iter", description="WIP:: atm redo each modification",
-        default=10, min=0, max=100,
+        name="Max infiltrations depth", description="Limit water depth, set to 0 to let all water to be absorbed.",
+        default=0, min=0, max=100,
     )
 
-    step_deg: props.FloatProperty(
-        name="Degradation", description="WIP:: flat reduction",
+    step_waterIn: props.FloatProperty(
+        name="Water input amount", description="Initial water amount.",
+        default=1.0, min=0.1, max=10,
+    )
+    step_linkDeg: props.FloatProperty(
+        name="Link degradation", description="Control the erosion done to links.",
         default=0.25, min=0.05, max=0.75, step=1, precision=3
     )
 
@@ -172,7 +175,7 @@ class MW_sim_cfg(types.PropertyGroup):
     )
 
     debug_uniformDeg: props.BoolProperty(
-        name="Uniform reduction",
+        name="DEBUG: Uniform erosion to all links",
         default=False,
     )
 

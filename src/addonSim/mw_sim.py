@@ -105,7 +105,7 @@ class MW_Sim:
 
     def step_all(self):
         for l in self.links.internal:
-            l.degrade(self.cfg.step_deg)
+            l.degrade(self.cfg.step_linkDeg)
 
     def step(self):
         self.step_reset()
@@ -273,11 +273,12 @@ class MW_Sim:
 
     def link_degradation(self):
         # calcultate degradation
-        d = self.cfg.step_deg * self.waterLevel
+        d = self.cfg.step_linkDeg * self.waterLevel
 
         # apply degradation -> potential break
         if (self.currentL.degrade(d)):
-            self.links.setState_link_check(self.currentL.key_cells)
+            pass
+            #self.links.setState_link_check(self.currentL.key_cells)
 
         if self.cfg.debug_trace:
             self.sub_trace.currentL_life = self.currentL.life
