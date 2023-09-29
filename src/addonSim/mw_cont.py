@@ -213,7 +213,7 @@ class MW_Cont:
         bb_tuples = [ p.to_tuple() for p in bb ]
 
         #Legacy cont some tests mid operator
-        if DEV.LEGACY_CONT:
+        if DEV.LEGACY_CONT_GEN:
             voro_cont = VORO_Container(points=points, limits=bb_tuples)
             DEV.log_msg(f"Found {len(voro_cont)} cells (NO walls - {len(faces4D)} faces)", {"CALC", "CONT", "LEGACY"})
             return voro_cont

@@ -298,7 +298,7 @@ class MW_addon_PT(types.Panel):
         op = layout.operator(ops.MW_util_resetCFG_OT.bl_idname, icon="SCREEN_BACK")
 
         #ui.draw_propsToggle_full(prefs, prefs.prefs_PT_meta_inspector, layout)
-        ui.draw_propsToggle_custom(prefs.dev_PT_meta_cfg, prefs.dev_PT_meta_cfg, layout, text="DEV", propFilter="")
+        ui.draw_propsToggle_custom(prefs.dev_PT_meta_cfg, prefs.dev_PT_meta_cfg, layout, text="DEV", propFilter="-meta")
 
         if DEV.DEBUG_UI:
             open, box = ui.draw_toggleBox(prefs.prefs_PT_meta_inspector, "meta_show_1", layout, "debug...", scaleBox=0.85)

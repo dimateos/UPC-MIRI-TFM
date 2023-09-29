@@ -11,12 +11,16 @@ class DEV:
     DEBUG_LINKS_NEIGHS    = True    # add additional mesh connecting links to neighbours
     DEBUG_LINKS_GEODATA   = False   # add additional links info to geometry data to visualize in table
     DEBUG_SANITIZE        = False   # attempt to keep up with the UNDO/REDO etc system
+    DEBUG_SANITIZE        = False   # attempt to keep up with the UNDO/REDO etc system
 
-    ASSERT_CELL_POS       = False   # assert some local and global pos match
-    LEGACY_CONT           = False   # check some stats of legacy cont
-    FORCE_NEW_MATS        = True    # force regeneration of gradient images to avoid debugging confussion
-    FIX_FIELD_IMAGE       = False   # workaround blender bug with image just being black after redo without touching it -> reexecutes the op
-    SKIP_PATH_CHECK       = False   # skip checking if a path still exists before recalc all graphs
+    SKIP_RESISTANCE       = True    # skip weighting links prob with resistance
+    SKIP_PATH_CHECK       = True    # skip checking if a path still exists before recalc all graphs
+
+    FORCE_NEW_MATS        = False   # force regeneration of gradient images to avoid debugging confussion
+    FORCE_FIELD_IMAGE     = False   # workaround blender bug with image just being black after redo without touching it -> reexecutes the op
+
+    LEGACY_CONT_ASSERT    = False   # assert some local and global pos match
+    LEGACY_CONT_GEN       = False   # check some stats of legacy cont
 
     # tiny util to setup flags in reload time and then execute only once
     RELOAD_FLAGS : dict[str,bool] = dict()

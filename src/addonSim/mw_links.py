@@ -503,7 +503,8 @@ class MW_Links():
         if recalc:
             # recalc on link break only when a path between cells ceases to exist
             c1,c2 = l.key_cells
-            breaking = not nx.has_path(self.cells_graph, c1, c2) if DEV.SKIP_PATH_CHECK else True
+            if DEV.SKIP_PATH_CHECK: breaking = True
+            else: breaking = not nx.has_path(self.cells_graph, c1, c2)
             if breaking:
                 self.comps_recalc(False)
 

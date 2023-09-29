@@ -51,9 +51,13 @@ class MW_dev(types.PropertyGroup):
         update=lambda self, context: setattr(DEV, "DEBUG_SANITIZE", self.DEBUG_SANITIZE),
     )
 
-    FIX_FIELD_IMAGE : props.BoolProperty(
-        default=DEV.FIX_FIELD_IMAGE,
-        update=lambda self, context: setattr(DEV, "FIX_FIELD_IMAGE", self.FIX_FIELD_IMAGE),
+    SKIP_RESISTANCE : props.BoolProperty(
+        default=DEV.SKIP_RESISTANCE,
+        update=lambda self, context: setattr(DEV, "SKIP_RESISTANCE", self.SKIP_RESISTANCE),
+    )
+    FORCE_FIELD_IMAGE : props.BoolProperty(
+        default=DEV.FORCE_FIELD_IMAGE,
+        update=lambda self, context: setattr(DEV, "FORCE_FIELD_IMAGE", self.FORCE_FIELD_IMAGE),
     )
 
     logs : props.BoolProperty(

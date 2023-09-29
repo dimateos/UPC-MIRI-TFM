@@ -183,7 +183,7 @@ def gen_cellsObjects(fract: MW_Fract, root: types.Object, context: types.Context
         name= f"{prefs.names.cells[0]}{prefs.names.fmt_id(source_id)}"
 
         # assert some voro properties, the more varied test cases the better: center of mass at the center of volume
-        if DEV.ASSERT_CELL_POS:
+        if DEV.LEGACY_CONT_ASSERT:
             posC = cell.centroid()
             posCL = cell.centroid_local()
             vertsCL = cell.vertices_local_centroid()

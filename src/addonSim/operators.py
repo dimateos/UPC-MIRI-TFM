@@ -136,11 +136,11 @@ class MW_gen_OT(_StartRefresh_OT):
         # handle refresh
         if self.checkRefresh_cancel() or prefs.gen_PT_meta_inspector.skip_meta_show_toggled():
             # BUG:: optional field visualiztion here otherwise black state on autorefresh cancel -> did not work
-            #if DEV.FIX_FIELD_IMAGE:
+            #if DEV.FORCE_FIELD_IMAGE:
             #    if self.FIX_fieldR_obj:
             #        DEV.log_msg("BUGFIX: Visual field R", {'SETUP'})
             #        mw_setup.gen_field_R(self.FIX_fieldR_obj, self.context, -1)
-            if not DEV.FIX_FIELD_IMAGE:
+            if not DEV.FORCE_FIELD_IMAGE:
                 return self.end_op_refresh(skipLog=True)
 
         # Potentially free existing storage -> now purged on undo callback dynamically (called by uperator redo)
@@ -235,9 +235,9 @@ class MW_gen_OT(_StartRefresh_OT):
             return self.end_op_error("found no cont or cells... recalc different params?")
 
         #test some legacy or statistics cont stuff
-        if DEV.LEGACY_CONT:
+        if DEV.LEGACY_CONT_GEN:
             mw_setup.gen_cells_LEGACY(cont.voro_cont, obj_root, self.context)
-            return self.end_op("DEV.LEGACY_CONT stop...")
+            return self.end_op("DEV.LEGACY_CONT_GEN stop...")
 
         # precalculate/query neighs and other data with generated cells mesh
         cells = mw_setup.gen_cellsObjects(fract, obj_root, self.context, scale=obj_root.mw_vis.cell_scale, flipN=cfg.debug_flipCellNormals)
