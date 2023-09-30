@@ -17,6 +17,7 @@ class DEV:
     SKIP_RESISTANCE       = False   # skip weighting links prob with resistance
     SKIP_PATH_CHECK       = False   # skip checking if a path still exists before recalc all graphs
 
+    FORCE_NO_RND          = True    # skip random generation in certain places to help debugging
     FORCE_NEW_MATS        = False   # force regeneration of gradient images to avoid debugging confussion
     FIX_IMAGES_REDO       = True    # workaround blender bug with images just being black after redo without touching it -> reexecutes the op
     FIX_IMAGES_QUEUE      = False   # smarter workaround with a queue to reexecute just the images

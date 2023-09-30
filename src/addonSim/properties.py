@@ -3,6 +3,7 @@ import bpy.types as types
 import bpy.props as props
 
 from . import mw_setup_props
+from . import properties_utils
 
 from .utils_dev import DEV
 
@@ -97,14 +98,11 @@ class MW_gen_cfg(types.PropertyGroup):
 
     #-------------------------------------------------------------------
 
-    debug_rnd_seed: props.IntProperty(
-        name="RND seed", description="Seed the random generator, -1 to unseed it",
-        default=64, min=-1,
-    )
+    debug_rnd: props.PointerProperty(type=properties_utils.RND_config)
 
     debug_precisionWalls: props.IntProperty(
         # OPT:: edit more voro configs? even recompile like with test scripts?
-        name="Wall precision", description="Number of decimals used to round and cluster wall planes",
+        name="Limit wall precision", description="Number of decimals used to round and cluster wall planes",
         default=4, min=0, max=10,
     )
 
@@ -169,25 +167,14 @@ class MW_sim_cfg(types.PropertyGroup):
 
     #-------------------------------------------------------------------
 
-    debug_rnd_seed_new: props.BoolProperty(
-        name="RND seed gen new", description="Use a new random seed per step OP",
-        default=True,
-    )
-    debug_rnd_seed_current: props.IntProperty(
-        name="RND seed", description="Seed the random generator, -1 to unseed it",
-        default=64, min=-1,
-    )
-    debug_rnd_seed_mod: props.IntProperty(
-        name="RND seed mod", description="Modify the current random generator",
-        default=0, min=0, max=100,
-    )
+    debug_rnd: props.PointerProperty(type=properties_utils.RND_config)
 
     debug_log: props.BoolProperty(
         description="Output some info during simulation",
         default=True,
     )
-    debug_simTrace: props.BoolProperty(
-        description="SLOW: Keep a complete log of the path",
+    debug_trace: props.BoolProperty(
+        description="SLOW: Keep a complete log of the path along with props",
         default=False,
     )
 

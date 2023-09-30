@@ -8,6 +8,22 @@ from .utils_dev import DEV
 # NOTE:: foldable ui sections should use some kind of id global storage like IMGUI frameworks, using a predefined blender prop is SO cumbersome...
 #-------------------------------------------------------------------
 
+class RND_config(types.PropertyGroup):
+    """ Common config for random number generation """
+
+    seed: props.IntProperty(
+        name="RND seed", description="Seed the random generator, -1 to unseed it",
+        default=64, min=-1,
+    )
+    seed_mod: props.IntProperty(
+        name="RND seed mod", description="Modify the current random generator",
+        default=0, min=0, max=100,
+    )
+    seed_regen: props.BoolProperty(
+        name="RND seed gen new", description="Use a new random seed per OP call",
+        default=not DEV.FORCE_NO_RND,
+    )
+
 class Prop_inspector(types.PropertyGroup):
     """ Meta filters to display/edit a property group in a panel """
 
@@ -215,22 +231,40 @@ def copyProps(src, dest, propFilter:str=None, addDefault=True, exc_nonBlProp=Tru
     for prop_name in props_names:
         setattr(dest, prop_name, getattr(src, prop_name))
 
+def copyProps_groups(src, dest, propFilter:str=None, groupFilter:str=None, addDefault=True, exc_nonBlProp=True):
+    """ Copy filtered properties of filtered inner groups """
+    group_names = getProps_groups(src, groupFilter)
+    for group_name in group_names:
+        copyProps_groups_rec(getattr(src, group_name), getattr(dest, group_name), propFilter, addDefault, exc_nonBlProp)
+
+def copyProps_groups_rec(src, dest, propFilter:str=None, groupFilter:str=None, addDefault=True, exc_nonBlProp=True, recFilter = False):
+    """ Copy all properties recursive, no inner filter """
+    copyProps(src, dest, propFilter, addDefault, exc_nonBlProp)
+    # groups dont show up normally
+    group_names = getProps_groups(src, groupFilter)
+    for group_name in group_names:
+        filter = groupFilter if recFilter else ""
+        copyProps_groups_rec(getattr(src, group_name), getattr(dest, group_name), propFilter, filter, addDefault, exc_nonBlProp, recFilter)
+
+#-------------------------------------------------------------------
+
 def resetProps(src, propFilter:str=None):
     """ Reset filtered properties without touching inner groups """
     prop_names = getProps_namesFiltered(src, propFilter)
     for prop_name in prop_names:
         src.property_unset(prop_name)
 
-def resetProps_groups(src, groupFilter:str=None, propFilter:str=None):
+def resetProps_groups(src, propFilter:str=None, groupFilter:str=None):
     """ Reset filtered properties of filtered inner groups """
     group_names = getProps_groups(src, groupFilter)
     for group_name in group_names:
         resetProps_rec(getattr(src, group_name), propFilter)
 
-def resetProps_rec(src, propFilter:str=None):
-    """ Reset all properties recursive """
+def resetProps_rec(src, propFilter:str=None, groupFilter:str=None, recFilter = False):
+    """ Reset all properties recursive, no inner filter """
     resetProps(src, propFilter)
     # groups dont show up normally
-    group_names = getProps_groups(src)
+    group_names = getProps_groups(src, groupFilter)
     for group_name in group_names:
-        resetProps_rec(getattr(src, group_name), propFilter)
+        filter = groupFilter if recFilter else ""
+        resetProps_rec(getattr(src, group_name), propFilter, filter, recFilter)

@@ -3,7 +3,7 @@ import bpy.types as types
 import bpy.props as props
 
 from . import handlers
-from .properties_utils import Prop_inspector
+from .properties_utils import Prop_inspector, RND_config
 
 from . import utils_scene
 from .utils_dev import DEV
@@ -485,6 +485,7 @@ class MW_global_selected:
 
 classes = [
     Prop_inspector,
+    RND_config,
     MW_id,
 ]
 _name = f"{__name__[14:]}" #\t(...{__file__[-32:]})"

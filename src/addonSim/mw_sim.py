@@ -84,14 +84,13 @@ class MW_Sim:
 
     def rnd_store(self):
         #self.rndState = rnd.getstate()
-        if self.cfg.debug_rnd_seed_new:
-            self.cfg.debug_rnd_seed_current = utils.debug_rnd_seed(-1)
+        if self.cfg.debug_rnd.seed_regen:
+            self.cfg.debug_rnd.seed = utils.rnd_reset_seed()
 
     def rnd_restore(self):
         # NOTE:: just call some amount of randoms to modify seed, could modify state but requires copying a 600 elemnt tuple
         #rnd.setstate(self.rndState)
-        utils.debug_rnd_seed(self.cfg.debug_rnd_seed_current)
-        for i in range(self.cfg.debug_rnd_seed_mod): rnd.random()
+        self.cfg.debug_rnd.seed = utils.rnd_reset_seed(self.cfg.debug_rnd.seed, self.cfg.debug_rnd.seed_mod)
 
     def backup_state(self):
         # delegate backup to the links
@@ -185,10 +184,10 @@ class MW_Sim:
             DEV.log_msg(f" > ({self.step_id}) : starting waterLevel {self.waterLevel}", {"SIM", "STEP"})
 
         # TRACE: writing the full trace slows down the process, even more when print to console!
-        if (self.cfg.debug_simTrace):
+        if (self.cfg.debug_trace):
             self.step_trace = StepData()
             self.trace_data.append(self.step_trace)
-        trace_log = self.cfg.debug_log and self.cfg.debug_simTrace
+        trace_log = self.cfg.debug_log and self.cfg.debug_trace
 
 
         # get entry
@@ -213,7 +212,7 @@ class MW_Sim:
             DEV.log_msg(f" > ({self.step_id}) : {SIM_EXIT_FLAG.to_str(self.exit_flag)} : L ({self.currentL})", {"SIM", "EXIT"})
 
         # TRACE: log step
-        if (self.cfg.debug_simTrace):
+        if (self.cfg.debug_trace):
             self.step_trace.exitL = self.currentL
         if trace_log:
             DEV.log_msg(f" : n{len(self.sub_trace.currentL_candidates)} {self.sub_trace.currentL_candidatesW[:32]}",
@@ -227,7 +226,7 @@ class MW_Sim:
             self.step_depth += 1
 
             # TRACE: build step
-            if (self.cfg.debug_simTrace):
+            if (self.cfg.debug_trace):
                 self.sub_trace = SubStepData()
                 self.step_trace.subs.append(self.sub_trace)
 
@@ -275,7 +274,7 @@ class MW_Sim:
             self.step_path.append( (self.currentL.key_cells, self.waterLevel) )
 
         # TRACE: build entry
-        if self.cfg.debug_simTrace:
+        if self.cfg.debug_trace:
             self.step_trace.entryL = self.entryL
             self.step_trace.entryL_candidates = candidates
             self.step_trace.entryL_candidatesW = weights
@@ -336,7 +335,7 @@ class MW_Sim:
             self.step_path.append( (self.currentL.key_cells, self.waterLevel) )
 
         # TRACE: build next
-        if self.cfg.debug_simTrace:
+        if self.cfg.debug_trace:
             self.sub_trace.currentL = self.currentL
             self.sub_trace.currentL_candidates = candidates
             self.sub_trace.currentL_candidatesW = weights
@@ -377,7 +376,7 @@ class MW_Sim:
             #self.links.setState_link_check(self.currentL.key_cells)
 
         # TRACE: build deg
-        if self.cfg.debug_simTrace:
+        if self.cfg.debug_trace:
             self.sub_trace.currentL_life = self.currentL.life
             self.sub_trace.currentL_deg = d
 
@@ -391,7 +390,7 @@ class MW_Sim:
 
         self.waterLevel -= d
 
-        if self.cfg.debug_simTrace:
+        if self.cfg.debug_trace:
             self.sub_trace.waterLevel = self.waterLevel
             self.sub_trace.waterLevel_deg = d
 
@@ -423,7 +422,7 @@ class MW_Sim:
         # found msg means exit condition was met
         if self.exit_flag != SIM_EXIT_FLAG.STILL_RUNNING:
             # TRACE: keep msg per trace
-            if self.cfg.debug_simTrace:
+            if self.cfg.debug_trace:
                 self.step_trace.break_flag = self.exit_flag
             return False
 

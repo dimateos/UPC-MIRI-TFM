@@ -7,7 +7,7 @@ def get_timestamp() -> int:
     tim = datetime.now()
     return tim.hour*10000+tim.minute*100+tim.second
 
-def debug_rnd_seed(s: int = None) -> int:
+def rnd_reset_seed(s:int = None, mod:int = None) -> int:
     """ Persists across separate module imports, return the seed to store in the config """
     import mathutils.noise as bl_rnd
     import random as rnd
@@ -17,6 +17,13 @@ def debug_rnd_seed(s: int = None) -> int:
 
     rnd.seed(s)
     bl_rnd.seed_set(s)
+
+    # mod generates a few numbers to add change
+    if mod:
+        for i in range(mod):
+            rnd.random()
+            bl_rnd.random()
+
     return s
 
 def rnd_string(length=16):

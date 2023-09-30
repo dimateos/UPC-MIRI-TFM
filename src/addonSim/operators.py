@@ -96,7 +96,8 @@ class MW_gen_OT(_StartRefresh_OT):
         rowsub.prop(cfg, "margin_box_bounds")
 
         # debug settings
-        open, box = ui.draw_propsToggle_custom(cfg, getPrefs().gen_PT_meta_inspector, layout, "meta_show_debug_props", propFilter="debug", scaleBox=0.85)
+        open, box = ui.draw_propsToggle_custom(cfg, getPrefs().gen_PT_meta_inspector, layout, "meta_show_debug_props", propFilter="debug,-rnd", scaleBox=0.85)
+        ui.draw_debug_rnd(box, cfg.debug_rnd)
 
     # NOTE:: no poll because the button is removed from ui in draw instead
     #@classmethod
@@ -123,6 +124,10 @@ class MW_gen_OT(_StartRefresh_OT):
 
         # id of last fract calculated stored (outside the operator)
         self.last_storageID = None
+
+        # rnd seed
+        if self.cfg.debug_rnd.seed_regen:
+            self.cfg.debug_rnd.seed = utils.rnd_reset_seed()
 
         return super().invoke(context, event)
 
@@ -156,7 +161,7 @@ class MW_gen_OT(_StartRefresh_OT):
                 DEV.log_msg("cfg NOT found: new frac", {'SETUP'})
                 obj_root, obj_original = mw_setup.copy_original(MW_global_selected.current, self.cfg, context, prefs.names.original_copy)
                 # Sync prefs panel with the object -> ok callbacks because obj is None
-                properties_utils.copyProps(prefs.mw_vis, obj_root.mw_vis)
+                properties_utils.copyProps_groups_rec(prefs.mw_vis, obj_root.mw_vis)
                 return self.execute_fresh(obj_root, obj_original)
 
             # Fracture the same original object, copy props for a duplicated result to tweak parameters
@@ -166,7 +171,7 @@ class MW_gen_OT(_StartRefresh_OT):
                 if not self.invoked_once:
                     self.invoked_once = True
                     DEV.log_msg("cfg found once: copying props to OP", {'SETUP'})
-                    properties_utils.copyProps(obj.mw_gen, self.cfg)
+                    properties_utils.copyProps_groups_rec(obj.mw_gen, self.cfg)
 
                 # optionally unhide the original fracture object but always unselect
                 obj.select_set(False)
@@ -188,9 +193,10 @@ class MW_gen_OT(_StartRefresh_OT):
 
         # work with the properties stored in the object
         self.obj_root = obj_root
-        properties_utils.copyProps(self.cfg, obj_root.mw_gen)
+        properties_utils.copyProps_groups_rec(self.cfg, obj_root.mw_gen)
         cfg: MW_gen_cfg = obj_root.mw_gen
-        cfg.debug_rnd_seed = utils.debug_rnd_seed(cfg.debug_rnd_seed)
+        # keep consistent seed
+        cfg.debug_rnd.seed = utils.rnd_reset_seed(cfg.debug_rnd.seed, cfg.debug_rnd.seed_mod)
 
         # Add to global storage to generate the fracture id
         fract = MW_Fract()
@@ -264,7 +270,7 @@ class MW_gen_OT(_StartRefresh_OT):
         if self.obj_root:
             DEV.log_msg("end_op: copy props etc", {'SETUP'})
             # copy any cfg that may have changed during execute
-            properties_utils.copyProps(self.obj_root.mw_gen, self.cfg)
+            properties_utils.copyProps_groups_rec(self.obj_root.mw_gen, self.cfg)
             # set the meta type to all objects at once
             MW_id_utils.setMetaType_rec(self.obj_root, {"CHILD"}, skipParent=True)
             utils_scene.select_unhide(self.obj_root, self.context)
@@ -506,7 +512,8 @@ class MW_sim_step_OT(_StartRefresh_OT):
         # params and debug
         prefs = getPrefs()
         open, box = ui.draw_propsToggle_custom(cfg, prefs.sim_PT_meta_inspector, layout, "meta_show_1", text="Parameters", propFilter="-step,-debug")
-        open, box = ui.draw_propsToggle_custom(cfg, prefs.sim_PT_meta_inspector, layout, "meta_show_debug_props", propFilter="debug", scaleBox=0.85)
+        open, box = ui.draw_propsToggle_custom(cfg, prefs.sim_PT_meta_inspector, layout, "meta_show_debug_props", propFilter="debug,-rnd", scaleBox=0.85)
+        ui.draw_debug_rnd(box, cfg.debug_rnd)
 
     @classmethod
     def poll(cls, context):
@@ -539,9 +546,9 @@ class MW_sim_step_OT(_StartRefresh_OT):
         if not self.invoked_once:
             self.invoked_once = True
             DEV.log_msg("cfg found once: copying props to OP", {'SIM'})
-            properties_utils.copyProps(MW_global_selected.root.mw_sim, self.cfg, "-step")
+            properties_utils.copyProps_groups_rec(MW_global_selected.root.mw_sim, self.cfg, "-step")
         else:
-            properties_utils.copyProps(self.cfg, MW_global_selected.root.mw_sim)
+            properties_utils.copyProps_groups_rec(self.cfg, MW_global_selected.root.mw_sim)
             sim.cfg = MW_global_selected.root.mw_sim
 
             # restore state to get constructive results withing the mod last op panel
@@ -773,7 +780,7 @@ class MW_util_resetCFG_OT(_StartRefresh_OT):
 
         # reset ALL props, but cannot access the operators
         #properties_utils.resetProps(prefs)
-        #properties_utils.resetProps_groups(prefs, "dev")
+        #properties_utils.resetProps_groups(prefs, "", "dev")
         properties_utils.resetProps_rec(prefs)
 
         # reset ALL props -> will also set OT_clearCfg that will clear stuff later

@@ -5,7 +5,7 @@ from .preferences import getPrefs
 from .properties import (
     MW_gen_cfg,
 )
-from .properties_utils import Prop_inspector, getProps_namesFiltered, getProps_splitDebug
+from .properties_utils import Prop_inspector, RND_config, getProps_namesFiltered, getProps_splitDebug
 
 from .utils_dev import DEV
 
@@ -107,3 +107,11 @@ def draw_propsToggle_full(data, data_inspector:Prop_inspector, layout:types.UILa
         propFilter=propFilter, showDefault=showDefault, showId=showId, editable=editable, splitDebug=splitDebug,
         scaleBox=scaleBox, scaleOpen=scaleOpen, scaleDebug=scaleDebug, returnCol=returnCol, userCustom=userCustom
         )
+
+def draw_debug_rnd(layout:types.UILayout, rnd:RND_config):
+    # rnd cfg out of debug
+    row = layout.split(factor=0.55)
+    row.prop(rnd, "seed")
+    row = row.split()
+    row.prop(rnd, "seed_mod", text="")
+    row.prop(rnd, "seed_regen", text="regen")
