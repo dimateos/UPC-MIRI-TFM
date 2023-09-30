@@ -13,7 +13,7 @@ from .properties import (
     MW_vis_cfg,
 )
 
-from .mw_cont import MW_Cont, VORO_Container, CELL_STATE_ENUM
+from .mw_cont import MW_Cont, VORO_Container, CELL_STATE_ENUM, CELL_ERROR_ENUM
 from .mw_links import MW_Links
 from .mw_fract import MW_Fract, MW_Sim # could import all from here
 from .mw_resistance import MW_field_R
@@ -344,6 +344,12 @@ def gen_linksAll(context: types.Context):
     if DEV.DEBUG_LINKS_NEIGHS:
         gen_linksMesh_neighs(MW_global_selected.fract, MW_global_selected.root, context)
 
+    # additional last path
+    if MW_global_selected.fract.sim and MW_global_selected.fract.sim.step_path:
+        gen_linksMesh_path(MW_global_selected.fract, MW_global_selected.root, context, MW_global_selected.fract.sim.step_path)
+    else:
+        utils_scene.delete_objectChild(MW_global_selected.root, getPrefs().names.links_path)
+
     # additional arrows
     gen_arrowObject(MW_global_selected.root, MW_global_selected.root.mw_sim.water_entry_dir,
                                 utils_trans.VECTORS.O, context, getPrefs().names.links_waterDir)
@@ -628,6 +634,100 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
 
     getStats().logDt("generated neighs links mesh object")
     return obj_neighs
+
+def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Context, path):
+    cfg : MW_vis_cfg = root.mw_vis
+    sim : MW_Sim     = fract.sim
+
+    maxDepth = len(path)
+    verts : list[tuple[Vector,Vector]]      = [None]*maxDepth
+    waterWidths : list[float]               = [None]*maxDepth
+    depth_water : list[tuple[int,float]]    = [None]*maxDepth
+
+    if DEV.DEBUG_LINKS_GEODATA:
+        l1k1_l1k2 : list[tuple[int,int]]    = [None]*maxDepth
+        l1f1_l1f2 : list[tuple[int,int]]    = [None]*maxDepth
+        l2k1_l2k2 : list[tuple[int,int]]    = [None]*maxDepth
+        l2f1_l2f2 : list[tuple[int,int]]    = [None]*maxDepth
+
+    # path with pairs, but could use the triFAN
+    l_prev = None
+    l_prev_key_NONE = (CELL_ERROR_ENUM.MISSING, CELL_ERROR_ENUM.MISSING)
+
+    # iterate the global map and store vert pairs for the tube mesh generation
+    for depth, step in enumerate(path):
+        depth_normalized = depth / float(maxDepth) if not DEV.DEBUG_LINKS_ID_RAW else depth
+        l = fract.links.get_link(step[0])
+        w = step[1]
+
+        # end point at the link pos
+        p2 = l.pos
+
+        # prev point might be an initial point from outside
+        if l_prev:
+            p1 = l_prev.pos
+        else:
+            p1 = p2 + cfg.path_outside_start * -sim.cfg.water_entry_dir
+
+        verts[depth] = (p1, p2)
+
+        # store props
+        depth_water[depth] = (depth_normalized, w)
+
+        # lerp with with the water
+        w_normalized = w / sim.cfg.step_waterIn
+        waterWidths[depth]= cfg.path_width_start * w_normalized + cfg.path_width_end * (1-w_normalized)
+
+        # query info keys
+        if DEV.DEBUG_LINKS_GEODATA:
+            l1k1_l1k2[depth] = l_prev.key_cells if l_prev else l_prev_key_NONE
+            l1f1_l1f2[depth] = l_prev.key_faces if l_prev else l_prev_key_NONE
+            l2k1_l2k2[depth] = l.key_cells
+            l2f1_l2f2[depth] = l.key_faces
+        l_prev = l
+
+    # additional step to show exit clearly
+    if w > 0 and cfg.path_outside_end:
+        depth += 1
+        depth_normalized = depth / float(maxDepth) if not DEV.DEBUG_LINKS_ID_RAW else depth
+
+        # last point outside
+        p1 = l_prev.pos
+        p2 = p1 + cfg.path_outside_start * sim.cfg.water_next_dir
+        verts.append((p1, p2))
+
+        # store repeated props
+        depth_water.append(depth_water[-1])
+        waterWidths.append(waterWidths[-1])
+        if DEV.DEBUG_LINKS_GEODATA:
+            l1k1_l1k2.append(l1k1_l1k2[-1])
+            l1f1_l1f2.append(l1f1_l1f2[-1])
+            l2k1_l2k2.append(l2k1_l2k2[-1])
+            l2f1_l2f2.append(l2f1_l2f2[-1])
+
+    # single mesh with tubes
+    name = getPrefs().names.links_path
+    resFaces = utils_mesh.get_resFaces_fromCurveRes(cfg.path_res)
+    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, waterWidths, name, 1.0, resFaces, cfg.links_smoothShade)
+
+    # potentially reuse child and clean mesh
+    obj_path = utils_scene.gen_childReuse(root, name, context, mesh, keepTrans=True)
+    MW_id_utils.setMetaChild(obj_path)
+
+    # color encoded attributes for viewing in viewport edit mode
+    repMatchCorners=resFaces*4
+    utils_mat.gen_meshUV(mesh, depth_water, "depth_water", repMatchCorners)
+    obj_path.active_material = utils_mat.get_colorMat(COLORS.withAlpha(COLORS.sky, cfg.path_alpha), name) # just reduce the size
+    #obj_path.active_material = utils_mat.gen_gradientMat("depth_water", name, colorFn=GRADIENTS.lerp_common(COLORS.sky))
+
+    if DEV.DEBUG_LINKS_GEODATA:
+        utils_mat.gen_meshUV(mesh, l1k1_l1k2, "l1k1_l1k2", repMatchCorners)
+        utils_mat.gen_meshUV(mesh, l1f1_l1f2, "l1f1_l1f2", repMatchCorners)
+        utils_mat.gen_meshUV(mesh, l2k1_l2k2, "l2k1_l2k2", repMatchCorners)
+        utils_mat.gen_meshUV(mesh, l2f1_l2f2, "l2f1_l2f2", repMatchCorners)
+
+    getStats().logDt("generated path mesh object")
+    return obj_path
 
 def gen_links_LEGACY(objParent: types.Object, voro_cont: VORO_Container, context: types.Context):
     prefs = getPrefs()

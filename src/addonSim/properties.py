@@ -323,20 +323,31 @@ class MW_vis_cfg(types.PropertyGroup):
     )
 
     neighs_res: props.IntProperty(
-        name="Path mesh resolution", description="Affect the number of faces per tube",
+        name="Inner links resolution", description="Affect the number of faces per tube",
         default=-1, min=-1, max=8,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "neighs_res")
     )
 
     #-------------------------------------------------------------------
 
+    path_outside_start: props.FloatProperty(
+        name="Path outside start tail", description="Initial water from outside starts at an arbitrary pos",
+        default=1, min=0.5, max=2.5,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "path_outside_start")
+    )
+    path_outside_end: props.BoolProperty(
+        name="Path outside end tail", description="Clearly see the water exit path",
+        default=True,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "path_outside_end")
+    )
+
     path_width_start: props.FloatProperty(
-        name="Path width start",
+        name="Path width start", description="Represents full initial water",
         default=0.05, min=0.01, max=0.2, step=0.01, precision=4,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "path_width_start")
     )
     path_width_end: props.FloatProperty(
-        name="Path width end",
+        name="Path width end", description="Represents no more water",
         default=0.005, min=0.001, max=0.001, step=0.05, precision=4,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "path_width_end")
     )
@@ -345,6 +356,11 @@ class MW_vis_cfg(types.PropertyGroup):
         name="Path mesh resolution", description="Affect the number of faces per tube",
         default=0, min=-1, max=8,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "path_res")
+    )
+    path_alpha: props.FloatProperty(
+        name="Path mat alpha", description="Help seeing through",
+        default=0.9, min=0.1, max=1.0,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "path_alpha")
     )
 
     #-------------------------------------------------------------------

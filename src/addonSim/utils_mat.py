@@ -15,6 +15,13 @@ class COLORS:
     _default_precision = 1
 
     @staticmethod
+    def withAlpha(c: Vector, alpha = _default_alpha):
+        """ Limit color precision (alpha too or not), returns a new vector (expects alpha) """
+        cc = c.copy()
+        cc[3] = alpha
+        return cc
+
+    @staticmethod
     def from_256(c):
         c.xyz *= 1.0 / 256.0
         return c # return in case of used before assigment
@@ -62,7 +69,7 @@ class COLORS:
     white_cw = from_256(Vector([210, 210, 210, _default_alpha]))
     warm     = from_256(Vector([163, 81, 44,   _default_alpha]))
 
-    sky      = from_256(Vector([118,214,255,  _default_alpha]))
+    sky      = from_256(Vector([78, 146, 255,  _default_alpha]))
 
     @staticmethod
     def get_random(minC=0.0, maxC=1.0, alpha=_default_alpha) -> Vector:

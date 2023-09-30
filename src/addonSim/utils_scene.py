@@ -62,6 +62,12 @@ def delete_objectRec(obj: types.Object, ignore_data = False, logAmount=False):
     delete_objectChildren(obj, ignore_data, rec=True, logAmount=logAmount)
     delete_object(obj, ignore_data)
 
+def delete_objectChild(ob_father: types.Object, name: str, ignore_data = False):
+    """ Delete a child object """
+    obj_child = get_child(ob_father, name)
+    if obj_child:
+        delete_object(obj_child, ignore_data)
+
 def delete_objectChildren(ob_father: types.Object, ignore_data = False, rec=True, logAmount=False):
     """ Delete the children objects """
 
