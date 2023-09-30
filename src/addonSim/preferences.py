@@ -63,6 +63,11 @@ class MW_dev(types.PropertyGroup):
         default=DEV.SKIP_RESISTANCE,
         update=lambda self, context: setattr(DEV, "SKIP_RESISTANCE", self.SKIP_RESISTANCE),
     )
+
+    FORCE_NEW_MATS : props.BoolProperty(
+        default=DEV.FORCE_NEW_MATS,
+        update=lambda self, context: setattr(DEV, "FORCE_NEW_MATS", self.FORCE_NEW_MATS),
+    )
     FORCE_FIELD_IMAGE : props.BoolProperty(
         default=DEV.FORCE_FIELD_IMAGE,
         update=lambda self, context: setattr(DEV, "FORCE_FIELD_IMAGE", self.FORCE_FIELD_IMAGE),

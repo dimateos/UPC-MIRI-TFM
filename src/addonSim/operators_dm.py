@@ -394,7 +394,7 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
                 child.rotation_mode = "QUATERNION"
                 child.rotation_quaternion = v_rot0.rotation_difference(v_rot1)
 
-        #bpy.ops.dm.util_delete_meshes()
+        #bpy.ops.dm.util_delete_orphan()
         return self.end_op()
 
 class Util_deleteIndices_OT(_StartRefresh_OT):
@@ -426,7 +426,7 @@ class Util_deleteIndices_OT(_StartRefresh_OT):
 #-------------------------------------------------------------------
 
 class Util_deleteOrphanData_OT(_StartRefresh_OT):
-    bl_idname = "dm.util_delete_meshes"
+    bl_idname = "dm.util_delete_orphan"
     bl_label = "Delete unused meshes"
     bl_description = "Misuse of the API may lead to orphan meshes"
     bl_options = {'INTERNAL'}

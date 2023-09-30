@@ -716,6 +716,7 @@ class MW_util_delete_OT(_StartRefresh_OT):
 
         # finally delete the fracture object recusively
         utils_scene.delete_objectRec(obj, logAmount=True)
+        bpy.ops.dm.util_delete_orphan('INVOKE_DEFAULT')
         return self.end_op()
 
 class MW_util_delete_all_OT(_StartRefresh_OT):
@@ -738,6 +739,7 @@ class MW_util_delete_all_OT(_StartRefresh_OT):
 
         #MW_global_selected.resetSelected()
         MW_global_selected.setSelected(context.selected_objects)
+        bpy.ops.dm.util_delete_orphan('INVOKE_DEFAULT')
         return self.end_op()
 
 class MW_util_resetCFG_OT(_StartRefresh_OT):
