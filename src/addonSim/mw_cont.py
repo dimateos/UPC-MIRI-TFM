@@ -340,6 +340,19 @@ class MW_Cont:
 
     #-------------------------------------------------------------------
 
+    # OPT:: reduce stored amoun instead of the whole array
+    def backupState(self):
+        self.backup_cells_state = self.cells_state.copy()
+
+    def backupState_restore(self):
+        self.cells_state = self.backup_cells_state.copy()
+
+    def reset(self):
+        for id in self.foundId:
+            self.cells_state[id] = CELL_STATE_ENUM.SOLID
+
+    #-------------------------------------------------------------------
+
     def getCells(self, idx: list[int]|int) -> list[types.Object]|types.Object:
         """ returns an object or list of objects given idx  """
         try:

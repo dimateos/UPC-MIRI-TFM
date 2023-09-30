@@ -70,6 +70,31 @@ class Link():
         self.picks = picks
         self.picks_entry = picks_entry
 
+    def backupState(self):
+        """ Backup simulation parameters """
+        self.backup_state = self.state
+        self.backup_life = self.life
+        self.backup_picks = self.picks
+        self.backup_picks_entry = self.picks_entry
+
+    def backupState_restore(self):
+        """ Restore simulation parameters with backup """
+        self.state = self.backup_state
+        self.life = self.backup_life
+        self.picks = self.backup_picks
+        self.picks_entry = self.backup_picks_entry
+
+    def __str__(self):
+        #a({self.area:.2f}), p({self.picks},{self.picks_entry}),
+        if self.state == LINK_STATE_ENUM.WALL:
+            return f"W{self.key_cells[0]}: p({self.picks_entry}), dir{self.dir.to_tuple(2)}"
+        elif self.state == LINK_STATE_ENUM.AIR:
+            return f"kA{self.key_cells}: l({self.life:.3f}), dir{self.dir.to_tuple(2)}"
+        else:
+            return f"k{self.key_cells}: l({self.life:.3f}), dir{self.dir.to_tuple(2)}"
+
+    #-------------------------------------------------------------------
+
     def set_broken(self):
         self.state = LINK_STATE_ENUM.AIR
         # TODO:: force some props?
@@ -82,15 +107,6 @@ class Link():
             self.dir_from = self.key_cells[1]
         else:
             self.dir_from = self.key_cells[0]
-
-    def __str__(self):
-        #a({self.area:.2f}), p({self.picks},{self.picks_entry}),
-        if self.state == LINK_STATE_ENUM.WALL:
-            return f"W{self.key_cells[0]}: p({self.picks_entry}), dir{self.dir.to_tuple(2)}"
-        elif self.state == LINK_STATE_ENUM.AIR:
-            return f"kA{self.key_cells}: l({self.life:.3f}), dir{self.dir.to_tuple(2)}"
-        else:
-            return f"k{self.key_cells}: l({self.life:.3f}), dir{self.dir.to_tuple(2)}"
 
     def degrade(self, deg):
         """ Degrade link life, return true when broken """
@@ -108,6 +124,7 @@ class Link():
     def clamp(self):
         """ Clamp link life [0,1] """
         self.life = self.life_clamped
+
 
 #-------------------------------------------------------------------
 

@@ -170,35 +170,29 @@ class MW_sim_cfg(types.PropertyGroup):
     #-------------------------------------------------------------------
 
     debug_addSeed: props.IntProperty(
-        name="Add random seed",
+        name="RND seed", description="Seed the random generator, -1 to unseed it",
         default=0, min=0, max=100,
+    )
+
+    debug_log: props.BoolProperty(
+        description="Output some info during simulation",
+        default=True,
+    )
+    debug_simTrace: props.BoolProperty(
+        description="SLOW: Keep a complete log of the path",
+        default=False,
     )
 
     debug_util_rndState: props.BoolProperty(
         name="DEBUG: Initial random link state (within some limits)",
-        default=True,
+        default=False,
     )
     debug_util_uniformDeg: props.BoolProperty(
         name="DEBUG: Uniform erosion to all links",
         default=False,
     )
 
-    debug_trace: props.BoolProperty(
-        default=False,
-    )
-    debug_traceLog: props.BoolProperty(
-        default=False,
-    )
-
     #-------------------------------------------------------------------
-
-    water_entry_dir: props.FloatVectorProperty(
-        description="Kind of wind direction, normalized after execution",
-        subtype='XYZ',
-        size=3,
-        default=(1, -0.5, -0.5),
-        #default=(0, 1, 0),
-    )
 
     link_entry_areaWeigthed: props.BoolProperty(
         default=True,
@@ -213,6 +207,13 @@ class MW_sim_cfg(types.PropertyGroup):
         default=0.1, precision=3
     )
 
+    water_entry_dir: props.FloatVectorProperty(
+        description="Kind of wind direction, normalized after execution",
+        subtype='XYZ',
+        size=3,
+        default=(1, -0.5, -0.5),
+        #default=(0, 1, 0),
+    )
     water_baseCost: props.FloatProperty(
         default=0.01, precision=4
     )
