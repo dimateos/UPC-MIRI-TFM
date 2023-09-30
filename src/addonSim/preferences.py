@@ -202,11 +202,6 @@ class MW_prefs(bpy.types.AddonPreferences):
         links_group = "L"
 
         @classmethod
-        def fmt_mat(cls, name:str):
-            """ Add common material suffix """
-            return f"{name}_mat"
-
-        @classmethod
         def fmt_id(cls, idx:int):
             """ Pad with a certain amount of zeroes to achieve a correct lexicographic order """
             return f"{{:{cls.child_idFormat}}}".format(idx)

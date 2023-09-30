@@ -280,12 +280,6 @@ class MW_vis_cfg(types.PropertyGroup):
     # debug one are non-dynamic, only affects subsequent runs but get written to root too
     # OPT:: most could be easily dynamic but probably not worth it or jus regen all mesh
 
-    links_res: props.IntProperty(
-        name="Link mesh resolution", description="Affect the number of faces per tube",
-        default=1, min=-1, max=8,
-        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links_res")
-    )
-
     links_depth: props.FloatProperty(
         name="Link depth", description="Minimun depth inside faces",
         default=0.1, min=0.01, max=0.4, step=0.05, precision=4,
@@ -314,12 +308,43 @@ class MW_vis_cfg(types.PropertyGroup):
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links_width__mode")
     )
 
+    links_res: props.IntProperty(
+        name="Link mesh resolution", description="Affect the number of faces per tube",
+        default=1, min=-1, max=8,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links_res")
+    )
+
     #-------------------------------------------------------------------
 
-    neigh_links_width: props.FloatProperty(
+    neighs_width: props.FloatProperty(
         name="Inner links width",
         default=0.01, min=0.0025, max=0.05, step=0.05, precision=4,
-        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "neigh_links_width")
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "neighs_width")
+    )
+
+    neighs_res: props.IntProperty(
+        name="Path mesh resolution", description="Affect the number of faces per tube",
+        default=-1, min=-1, max=8,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "neighs_res")
+    )
+
+    #-------------------------------------------------------------------
+
+    path_width_start: props.FloatProperty(
+        name="Path width start",
+        default=0.05, min=0.01, max=0.2, step=0.01, precision=4,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "path_width_start")
+    )
+    path_width_end: props.FloatProperty(
+        name="Path width end",
+        default=0.005, min=0.001, max=0.001, step=0.05, precision=4,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "path_width_end")
+    )
+
+    path_res: props.IntProperty(
+        name="Path mesh resolution", description="Affect the number of faces per tube",
+        default=0, min=-1, max=8,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "path_res")
     )
 
     #-------------------------------------------------------------------

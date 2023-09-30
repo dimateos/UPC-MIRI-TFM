@@ -11,7 +11,6 @@ from .utils_dev import DEV
 
 class COLORS:
     """ Common colors and generators, using vec4 with alpha"""
-    _default_name = "colorMat"
     _default_alpha = 1.0
     _default_precision = 1
 
@@ -86,9 +85,9 @@ class COLORS:
                     colors.append(c)
         return colors
 
-def get_colorMat(color=COLORS.red, matName: str=None):
-    if not matName: matName = COLORS._default_name
-    mat = bpy.data.materials.new(matName)
+def get_colorMat(color=COLORS.red, name="color"):
+    name_mat = name+"_mat"
+    mat = bpy.data.materials.new(name_mat)
     mat.use_nodes = False
 
     color = COLORS.rounded(color)
@@ -98,10 +97,10 @@ def get_colorMat(color=COLORS.red, matName: str=None):
     mat.diffuse_color[3] = color[3]
     return mat
 
-def get_randomMat(minC=0.0, maxC=1.0, alpha=COLORS._default_alpha, matName: str=None):
-    if not matName: matName = "randomMat"
+def get_randomMat(minC=0.0, maxC=1.0, alpha=COLORS._default_alpha, name="rnd"):
     color = COLORS.get_random(minC, maxC, alpha)
-    mat = get_colorMat(color, matName)
+    name_mat = name+"_mat"
+    mat = get_colorMat(color, name_mat)
     return mat
 
 #-------------------------------------------------------------------
@@ -460,7 +459,8 @@ def gen_textureMat(uv_layer:str, name:str, width=GRADIENTS._default_res, height=
     """ generate a 2D image and use colorFn: x, y, w, h to define the color of each pixel
         # NOTE:: tries to shared prev image by matching name (skipped with forceNew)
     """
-    image = bpy.data.images.get(name+"_img")
+    name_image = name+"_img"
+    image = bpy.data.images.get(name_image)
     if image:
         if forceNew or DEV.FORCE_NEW_MATS:
             image = utils_scene.delete_data(image)
@@ -469,7 +469,7 @@ def gen_textureMat(uv_layer:str, name:str, width=GRADIENTS._default_res, height=
         # create new image
         width=int(width)
         height=int(height)
-        image = bpy.data.images.new(name=name+"_img", width=width, height=height)
+        image = bpy.data.images.new(name=name_image, width=width, height=height)
 
         # Create a NumPy array to store the image data
         pixels = np.empty(width * height * 4, dtype=np.float32)
@@ -493,7 +493,8 @@ def gen_textureMat(uv_layer:str, name:str, width=GRADIENTS._default_res, height=
         image.pixels = pixels.tolist()
 
     # Create a new material and add it
-    mat = bpy.data.materials.new(name=name+"_mat")
+    name_mat = name+"_mat"
+    mat = bpy.data.materials.new(name=name_mat)
 
     # Cfg default nodes
     mat.use_nodes = True

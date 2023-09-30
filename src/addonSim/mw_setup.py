@@ -165,11 +165,11 @@ def gen_cellsObjects(fract: MW_Fract, root: types.Object, context: types.Context
     root_air = utils_scene.gen_child(root, prefs.names.cells_air, context, utils_mesh.getEmpty_curveData("empty-curve-air"), keepTrans=False)
 
     # create shared materials, will only asign one to the cells (initial state is solid)
-    mat_cells = utils_mat.get_colorMat(vis_cfg.cell_color, matName=prefs.names.fmt_mat(prefs.names.cells))
+    mat_cells = utils_mat.get_colorMat(vis_cfg.cell_color, name=prefs.names.cells)
     root_cells.active_material = mat_cells
-    mat_core = utils_mat.get_colorMat(vis_cfg.cell_color_core, matName=prefs.names.fmt_mat(prefs.names.cells_core))
+    mat_core = utils_mat.get_colorMat(vis_cfg.cell_color_core, name=prefs.names.cells_core)
     root_core.active_material = mat_core
-    mat_air = utils_mat.get_colorMat(vis_cfg.cell_color_air, matName=prefs.names.fmt_mat(prefs.names.cells_air))
+    mat_air = utils_mat.get_colorMat(vis_cfg.cell_color_air, name=prefs.names.cells_air)
     root_air.active_material = mat_air
 
     cells = []
@@ -417,7 +417,7 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
 
     # single mesh with tubes
     name = prefs.names.links
-    resFaces = utils_mesh.get_resFaces_fromCurveRes(cfg.links_res)
+    resFaces = utils_mesh.get_resFaces_fromCurveRes(cfg.walls_links_res)
     mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidths, name, 1.0, resFaces, cfg.links_smoothShade)
 
     # potentially reuse child and clean mesh
@@ -607,8 +607,8 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
 
     # single mesh with tubes
     name = prefs.names.links_neighs
-    resFaces = utils_mesh.get_resFaces_fromCurveRes(-1)
-    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, None, name, cfg.neigh_links_width, resFaces, cfg.links_smoothShade)
+    resFaces = utils_mesh.get_resFaces_fromCurveRes(cfg.neighs_res)
+    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, None, name, cfg.neighs_width, resFaces, cfg.links_smoothShade)
 
     # potentially reuse child and clean mesh
     obj_neighs = utils_scene.gen_childReuse(root, name, context, mesh, keepTrans=True)
