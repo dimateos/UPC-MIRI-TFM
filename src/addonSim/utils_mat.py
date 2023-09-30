@@ -93,7 +93,7 @@ class COLORS:
                     colors.append(c)
         return colors
 
-def get_colorMat(color=COLORS.red, name="color"):
+def gen_colorMat(color=COLORS.red, name="color"):
     name_mat = name+"_mat"
     mat = bpy.data.materials.new(name_mat)
     mat.use_nodes = False
@@ -105,10 +105,10 @@ def get_colorMat(color=COLORS.red, name="color"):
     mat.diffuse_color[3] = color[3]
     return mat
 
-def get_randomMat(minC=0.0, maxC=1.0, alpha=COLORS._default_alpha, name="rnd"):
+def gen_randomMat(minC=0.0, maxC=1.0, alpha=COLORS._default_alpha, name="rnd"):
     color = COLORS.get_random(minC, maxC, alpha)
     name_mat = name+"_mat"
-    mat = get_colorMat(color, name_mat)
+    mat = gen_colorMat(color, name_mat)
     return mat
 
 #-------------------------------------------------------------------
@@ -389,7 +389,7 @@ def set_meshAttr_perFace(mesh: types.Mesh, dataAttr, values, val_repeats = 1):
 
 def gen_test_colors(obj, mesh, alpha, matName):
     """ # NOTE:: materials can also by aded to the object instead of the data? """
-    obj.active_material = get_randomMat(alpha=alpha, matName=matName)
+    obj.active_material = gen_randomMat(alpha=alpha, matName=matName)
 
     # test uv and if attr float 2d is mapped to UV too
     uv = gen_meshUV(mesh, [Vector([0.66, 0.66]), Vector([0.33, 0.33])])
@@ -474,10 +474,23 @@ class GRADIENTS:
         c2 =  GRADIENTS.lerp_colors(GRADIENTS.lerp_u(y, max_val=h), c2=COLORS.blue)
         return c1 + c2
 
+def gen_textureMat_DEVfix():
+    DEV.FIX_IMAGES_QUEUE = False # avoid rec
+    global _gen_textureMat_queue
+    for args in _gen_textureMat_queue:
+        gen_textureMat(**args)
+    _gen_textureMat_queue.clear()
+    DEV.FIX_IMAGES_QUEUE = True
+
+_gen_textureMat_queue = []
 def gen_textureMat(uv_layer:str, name:str, width=GRADIENTS._default_res, height=GRADIENTS._default_res*0.5, colorFn = GRADIENTS.red_2D_green, forceNew = False):
     """ generate a 2D image and use colorFn: x, y, w, h to define the color of each pixel
         # NOTE:: tries to shared prev image by matching name (skipped with forceNew)
     """
+    if DEV.FIX_IMAGES_QUEUE:
+        global _gen_textureMat_queue
+        _gen_textureMat_queue.append(utils.get_kwargs())
+
     name_image = name+"_img"
     image = bpy.data.images.get(name_image)
     if image:
@@ -510,6 +523,8 @@ def gen_textureMat(uv_layer:str, name:str, width=GRADIENTS._default_res, height=
 
         # Flatten the NumPy array and assign it to the image
         image.pixels = pixels.tolist()
+        #image.update()
+        image.make_local()
 
     # Create a new material and add it
     name_mat = name+"_mat"

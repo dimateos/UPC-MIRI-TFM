@@ -24,6 +24,7 @@ from .mw_sim import MW_Sim, SIM_EXIT_FLAG
 
 from . import ui
 from . import utils, utils_scene, utils_trans
+from .utils_mat import gen_textureMat_DEVfix
 from .utils_dev import DEV
 from .stats import getStats
 
@@ -135,12 +136,11 @@ class MW_gen_OT(_StartRefresh_OT):
 
         # handle refresh
         if self.checkRefresh_cancel() or prefs.gen_PT_meta_inspector.skip_meta_show_toggled():
-            # BUG:: optional field visualiztion here otherwise black state on autorefresh cancel -> did not work
-            #if DEV.FORCE_FIELD_IMAGE:
-            #    if self.FIX_fieldR_obj:
-            #        DEV.log_msg("BUGFIX: Visual field R", {'SETUP'})
-            #        mw_setup.gen_field_R(self.FIX_fieldR_obj, self.context, -1)
-            if not DEV.FORCE_FIELD_IMAGE:
+            # BUG:: try to fix black images
+            if DEV.FIX_IMAGES_QUEUE:
+                gen_textureMat_DEVfix()
+            # fix by reexec all OP
+            if not DEV.FIX_IMAGES_REDO:
                 return self.end_op_refresh(skipLog=True)
 
         # Potentially free existing storage -> now purged on undo callback dynamically (called by uperator redo)

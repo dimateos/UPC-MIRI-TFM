@@ -291,7 +291,7 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
         gray = utils_mat.COLORS.white * self.color_gray
         gray.w = self.color_alpha
         if self.color_useGray:
-            mat_gray = utils_mat.get_colorMat(gray, "spawnIndices_shared")
+            mat_gray = utils_mat.gen_colorMat(gray, "spawnIndices_shared")
 
         # IDEA:: add more info as suffix + rename after delete so no .001 + also applied to some setup
 
@@ -304,7 +304,7 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
                 else:
                     red = utils_mat.COLORS.red+gray
                     red.w = self.color_alpha
-                    mat = utils_mat.get_colorMat(red, "spawnIndices_VERT")
+                    mat = utils_mat.gen_colorMat(red, "spawnIndices_VERT")
             else:
                 mesh= None
                 mat = None
@@ -337,7 +337,7 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
                 else:
                     green = utils_mat.COLORS.green+gray
                     green.w = self.color_alpha
-                    mat = utils_mat.get_colorMat(green, "spawnIndices_EDGE")
+                    mat = utils_mat.gen_colorMat(green, "spawnIndices_EDGE")
             else:
                 mesh= None
                 mat = None
@@ -370,7 +370,7 @@ class Util_spawnIndices_OT(_StartRefresh_OT):
                 else:
                     blue = utils_mat.COLORS.blue+gray
                     blue.w = self.color_alpha
-                    mat = utils_mat.get_colorMat(blue, "spawnIndices_FACE")
+                    mat = utils_mat.gen_colorMat(blue, "spawnIndices_FACE")
             else:
                 mesh= None
                 mat = None

@@ -18,7 +18,8 @@ class DEV:
     SKIP_PATH_CHECK       = False   # skip checking if a path still exists before recalc all graphs
 
     FORCE_NEW_MATS        = False   # force regeneration of gradient images to avoid debugging confussion
-    FORCE_FIELD_IMAGE     = False   # workaround blender bug with image just being black after redo without touching it -> reexecutes the op
+    FIX_IMAGES_REDO       = True    # workaround blender bug with images just being black after redo without touching it -> reexecutes the op
+    FIX_IMAGES_QUEUE      = False   # smarter workaround with a queue to reexecute just the images
 
     LEGACY_CONT_ASSERT    = False   # assert some local and global pos match
     LEGACY_CONT_GEN       = False   # check some stats of legacy cont

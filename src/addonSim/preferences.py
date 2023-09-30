@@ -68,9 +68,14 @@ class MW_dev(types.PropertyGroup):
         default=DEV.FORCE_NEW_MATS,
         update=lambda self, context: setattr(DEV, "FORCE_NEW_MATS", self.FORCE_NEW_MATS),
     )
-    FORCE_FIELD_IMAGE : props.BoolProperty(
-        default=DEV.FORCE_FIELD_IMAGE,
-        update=lambda self, context: setattr(DEV, "FORCE_FIELD_IMAGE", self.FORCE_FIELD_IMAGE),
+
+    FIX_IMAGES_QUEUE : props.BoolProperty(
+        default=DEV.FIX_IMAGES_QUEUE,
+        update=lambda self, context: setattr(DEV, "FIX_IMAGES_QUEUE", self.FIX_IMAGES_QUEUE),
+    )
+    FIX_IMAGES_REDO : props.BoolProperty(
+        default=DEV.FIX_IMAGES_REDO,
+        update=lambda self, context: setattr(DEV, "FIX_IMAGES_REDO", self.FIX_IMAGES_REDO),
     )
 
     logs : props.BoolProperty(

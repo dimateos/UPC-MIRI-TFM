@@ -166,11 +166,11 @@ def gen_cellsObjects(fract: MW_Fract, root: types.Object, context: types.Context
     root_air = utils_scene.gen_child(root, prefs.names.cells_air, context, utils_mesh.getEmpty_curveData("empty-curve-air"), keepTrans=False)
 
     # create shared materials, will only asign one to the cells (initial state is solid)
-    mat_cells = utils_mat.get_colorMat(vis_cfg.cell_color, name=prefs.names.cells)
+    mat_cells = utils_mat.gen_colorMat(vis_cfg.cell_color, name=prefs.names.cells)
     root_cells.active_material = mat_cells
-    mat_core = utils_mat.get_colorMat(vis_cfg.cell_color_core, name=prefs.names.cells_core)
+    mat_core = utils_mat.gen_colorMat(vis_cfg.cell_color_core, name=prefs.names.cells_core)
     root_core.active_material = mat_core
-    mat_air = utils_mat.get_colorMat(vis_cfg.cell_color_air, name=prefs.names.cells_air)
+    mat_air = utils_mat.gen_colorMat(vis_cfg.cell_color_air, name=prefs.names.cells_air)
     root_air.active_material = mat_air
 
     cells = []
@@ -538,13 +538,13 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
     MW_id_utils.setMetaChild(obj_linksAir_entry)
 
     # color encoded attributes for viewing in viewport edit mode
-    obj_linksAir.active_material = utils_mat.get_colorMat(COLORS.green, name)
+    obj_linksAir.active_material = utils_mat.gen_colorMat(COLORS.green, name)
     obj_linksAir.active_material.diffuse_color = COLORS.green
     # entries have encoded the probabilty
     repMatchCorners=resFaces*4
     utils_mat.gen_meshUV(mesh_entry, id_prob, "id_prob", repMatchCorners)
     obj_linksAir_entry.active_material = utils_mat.gen_gradientMat("id_prob", name_entry, colorFn=GRADIENTS.lerp_common(COLORS.pink))
-    obj_linksAir_entry.active_material.diffuse_color = COLORS.sky
+    obj_linksAir_entry.active_material.diffuse_color = COLORS.pink
 
     # NOTE:: additional props -> to visualize seems like setting UV map in texture node is not enough, requires active UV too
     #utils_mat.gen_meshUV(mesh_entry, dirX_dirZ, "dirX_dirZ", repMatchCorners)
@@ -725,7 +725,7 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
     # color encoded attributes for viewing in viewport edit mode
     repMatchCorners=resFaces*4
     utils_mat.gen_meshUV(mesh, depth_water, "depth_water", repMatchCorners) # just info
-    #obj_path.active_material = utils_mat.get_colorMat(c1, name) # just reduce the size
+    #obj_path.active_material = utils_mat.gen_colorMat(c1, name) # just reduce the size
     #obj_path.active_material = utils_mat.gen_gradientMat("depth_water", name, colorFn=GRADIENTS.lerp_common(c1, c2))
 
     if DEV.DEBUG_LINKS_GEODATA:
