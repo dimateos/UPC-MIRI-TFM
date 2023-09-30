@@ -495,6 +495,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
         # step
         col.prop(cfg, "step_infiltrations")
         col.prop(cfg, "step_maxDepth")
+        col.prop(cfg, "step_waterIn")
         col.prop(cfg, "step_linkDeg")
 
         # params and debug

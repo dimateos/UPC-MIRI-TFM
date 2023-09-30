@@ -74,7 +74,7 @@ class MW_gen_cfg(types.PropertyGroup):
     )
     source_noise: props.FloatProperty(
         name="RND jitter", description="Jitter input point positions",
-        default=0.1, min=0.0, max=1.0, precision=2, step=1
+        default=0.0, min=0.0, max=1.0, precision=2, step=1
     )
 
     # mod faces container shape
@@ -160,7 +160,7 @@ class MW_sim_cfg(types.PropertyGroup):
 
     step_waterIn: props.FloatProperty(
         name="Water input amount", description="Initial water amount.",
-        default=1.0, min=0.1, max=10,
+        default=1.0, min=0.1, max=5,
     )
     step_linkDeg: props.FloatProperty(
         name="Link degradation", description="Control the erosion done to links.",
@@ -169,9 +169,13 @@ class MW_sim_cfg(types.PropertyGroup):
 
     #-------------------------------------------------------------------
 
-    debug_addSeed: props.IntProperty(
-        name="RND seed", description="Seed the random generator, -1 to unseed it",
-        default=0, min=0, max=100,
+    debug_rnd_seedMod: props.BoolProperty(
+        name="RND seed mod", description="Modify the random generator, -1 to unseed it",
+        default=True,
+    )
+    debug_rnd_seedMod: props.IntProperty(
+        name="RND seed mod", description="Modify the random generator, -1 to unseed it",
+        default=0, min=-1, max=100,
     )
 
     debug_log: props.BoolProperty(
@@ -216,6 +220,13 @@ class MW_sim_cfg(types.PropertyGroup):
         default=(1, -0.5, -0.5),
         #default=(0, 1, 0),
     )
+    water_next_dir: props.FloatVectorProperty(
+        description="Kind of gravity direction, normalized after execution",
+        subtype='XYZ',
+        size=3,
+        default=(0, 0, -1),
+    )
+
     water_baseCost: props.FloatProperty(
         default=0.01, precision=4
     )
@@ -361,6 +372,11 @@ class MW_vis_cfg(types.PropertyGroup):
         name="Path mat alpha", description="Help seeing through",
         default=0.9, min=0.1, max=1.0,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "path_alpha")
+    )
+    path_dark_end: props.FloatProperty(
+        name="Path darker end", description="Darken color along the path",
+        default=1.0, min=0.0, max=1.0,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "path_dark_end")
     )
 
     #-------------------------------------------------------------------

@@ -15,7 +15,7 @@ class COLORS:
     _default_precision = 1
 
     @staticmethod
-    def withAlpha(c: Vector, alpha = _default_alpha):
+    def with_alpha(c: Vector, alpha = _default_alpha):
         """ Limit color precision (alpha too or not), returns a new vector (expects alpha) """
         cc = c.copy()
         cc[3] = alpha
@@ -70,6 +70,7 @@ class COLORS:
     warm     = from_256(Vector([163, 81, 44,   _default_alpha]))
 
     sky      = from_256(Vector([78, 146, 255,  _default_alpha]))
+    dark     = with_alpha(white*0.33, _default_alpha)
 
     @staticmethod
     def get_random(minC=0.0, maxC=1.0, alpha=_default_alpha) -> Vector:
@@ -238,6 +239,10 @@ def set_meshUV_rnd(mesh: types.Mesh, uv: types.MeshUVLoopLayer|str, minC=0.0, ma
     if isinstance(uv, str): uv = mesh.uv_layers[uv]
     for i, faceL in enumerate(mesh.loops):
         uv.data[i].uv = ATTRS.get_deferred_inType("FLOAT2", minC, maxC, i)
+
+def set_meshUV_active(mesh: types.Mesh, uv: types.MeshUVLoopLayer|str):
+    if isinstance(uv, str): uv = mesh.uv_layers[uv]
+    uv.active = True
 
 def delete_meshUV(mesh: types.Mesh):
     while mesh.uv_layers:
@@ -427,6 +432,13 @@ class GRADIENTS:
         utils.clamp_inplace(c) # already done by blender?
         c = c.to_4d()
         c.w = c1.w
+        return c
+
+        # NOTE:: alpha is not lerped in regular viewport when coming from textures!
+        cc1 = c1*(1-u)
+        cc2 = c2*u
+        c = cc1+cc2
+        utils.clamp_inplace(c) # already done by blender?
         return c
 
     @staticmethod

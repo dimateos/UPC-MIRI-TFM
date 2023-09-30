@@ -574,8 +574,8 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
 
     if DEV.DEBUG_LINKS_GEODATA:
         l1k1_l1k2 : list[tuple[int,int]]    = []
-        l1f1_l1f2 : list[tuple[int,int]]    = []
         l2k1_l2k2 : list[tuple[int,int]]    = []
+        l1f1_l1f2 : list[tuple[int,int]]    = []
         l2f1_l2f2 : list[tuple[int,int]]    = []
 
     # avoid repetitions
@@ -607,8 +607,8 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
             # query info keys
             if DEV.DEBUG_LINKS_GEODATA:
                 l1k1_l1k2.append(l.key_cells)
-                l1f1_l1f2.append(l.key_faces)
                 l2k1_l2k2.append(ln.key_cells)
+                l1f1_l1f2.append(l.key_faces)
                 l2f1_l2f2.append(ln.key_faces)
 
     # single mesh with tubes
@@ -628,8 +628,8 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
 
     if DEV.DEBUG_LINKS_GEODATA:
         utils_mat.gen_meshUV(mesh, l1k1_l1k2, "l1k1_l1k2", repMatchCorners)
-        utils_mat.gen_meshUV(mesh, l1f1_l1f2, "l1f1_l1f2", repMatchCorners)
         utils_mat.gen_meshUV(mesh, l2k1_l2k2, "l2k1_l2k2", repMatchCorners)
+        utils_mat.gen_meshUV(mesh, l1f1_l1f2, "l1f1_l1f2", repMatchCorners)
         utils_mat.gen_meshUV(mesh, l2f1_l2f2, "l2f1_l2f2", repMatchCorners)
 
     getStats().logDt("generated neighs links mesh object")
@@ -643,11 +643,12 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
     verts : list[tuple[Vector,Vector]]      = [None]*maxDepth
     waterWidths : list[float]               = [None]*maxDepth
     depth_water : list[tuple[int,float]]    = [None]*maxDepth
+    depth_norm : list[tuple[int,float]]     = [None]*maxDepth
 
     if DEV.DEBUG_LINKS_GEODATA:
         l1k1_l1k2 : list[tuple[int,int]]    = [None]*maxDepth
-        l1f1_l1f2 : list[tuple[int,int]]    = [None]*maxDepth
         l2k1_l2k2 : list[tuple[int,int]]    = [None]*maxDepth
+        l1f1_l1f2 : list[tuple[int,int]]    = [None]*maxDepth
         l2f1_l2f2 : list[tuple[int,int]]    = [None]*maxDepth
 
     # path with pairs, but could use the triFAN
@@ -656,7 +657,8 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
 
     # iterate the global map and store vert pairs for the tube mesh generation
     for depth, step in enumerate(path):
-        depth_normalized = depth / float(maxDepth) if not DEV.DEBUG_LINKS_ID_RAW else depth
+        depth_normalized = depth / float(maxDepth)
+        depth_id = depth_normalized if not DEV.DEBUG_LINKS_ID_RAW else depth
         l = fract.links.get_link(step[0])
         w = step[1]
 
@@ -672,37 +674,42 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
         verts[depth] = (p1, p2)
 
         # store props
-        depth_water[depth] = (depth_normalized, w)
+        depth_water[depth] = (depth_id, w)
+        depth_norm[depth] = (depth_id, depth_normalized)
 
-        # lerp with with the water
-        w_normalized = w / sim.cfg.step_waterIn
-        waterWidths[depth]= cfg.path_width_start * w_normalized + cfg.path_width_end * (1-w_normalized)
+        # lerp with with the water -> could go over 1 step_waterIn
+        #w_normalized = w / sim.cfg.step_waterIn
+        waterWidths[depth]= cfg.path_width_start * w + cfg.path_width_end * min(1-w, 0)
 
         # query info keys
         if DEV.DEBUG_LINKS_GEODATA:
             l1k1_l1k2[depth] = l_prev.key_cells if l_prev else l_prev_key_NONE
-            l1f1_l1f2[depth] = l_prev.key_faces if l_prev else l_prev_key_NONE
             l2k1_l2k2[depth] = l.key_cells
+            l1f1_l1f2[depth] = l_prev.key_faces if l_prev else l_prev_key_NONE
             l2f1_l2f2[depth] = l.key_faces
         l_prev = l
 
     # additional step to show exit clearly
     if w > 0 and cfg.path_outside_end:
         depth += 1
-        depth_normalized = depth / float(maxDepth) if not DEV.DEBUG_LINKS_ID_RAW else depth
+        depth_normalized = depth / float(maxDepth)
+        depth_id = depth_normalized if not DEV.DEBUG_LINKS_ID_RAW else depth
 
         # last point outside
         p1 = l_prev.pos
         p2 = p1 + cfg.path_outside_start * sim.cfg.water_next_dir
         verts.append((p1, p2))
 
+        # use new next id
+        depth_water.append((depth_id, w))
+        depth_norm.append((depth_id, depth_normalized))
+
         # store repeated props
-        depth_water.append(depth_water[-1])
         waterWidths.append(waterWidths[-1])
         if DEV.DEBUG_LINKS_GEODATA:
             l1k1_l1k2.append(l1k1_l1k2[-1])
-            l1f1_l1f2.append(l1f1_l1f2[-1])
             l2k1_l2k2.append(l2k1_l2k2[-1])
+            l1f1_l1f2.append(l1f1_l1f2[-1])
             l2f1_l2f2.append(l2f1_l2f2[-1])
 
     # single mesh with tubes
@@ -716,15 +723,23 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
 
     # color encoded attributes for viewing in viewport edit mode
     repMatchCorners=resFaces*4
-    utils_mat.gen_meshUV(mesh, depth_water, "depth_water", repMatchCorners)
-    obj_path.active_material = utils_mat.get_colorMat(COLORS.withAlpha(COLORS.sky, cfg.path_alpha), name) # just reduce the size
-    #obj_path.active_material = utils_mat.gen_gradientMat("depth_water", name, colorFn=GRADIENTS.lerp_common(COLORS.sky))
+    utils_mat.gen_meshUV(mesh, depth_water, "depth_water", repMatchCorners) # just info
+    #obj_path.active_material = utils_mat.get_colorMat(c1, name) # just reduce the size
+    #obj_path.active_material = utils_mat.gen_gradientMat("depth_water", name, colorFn=GRADIENTS.lerp_common(c1, c2))
 
     if DEV.DEBUG_LINKS_GEODATA:
         utils_mat.gen_meshUV(mesh, l1k1_l1k2, "l1k1_l1k2", repMatchCorners)
-        utils_mat.gen_meshUV(mesh, l1f1_l1f2, "l1f1_l1f2", repMatchCorners)
         utils_mat.gen_meshUV(mesh, l2k1_l2k2, "l2k1_l2k2", repMatchCorners)
+        utils_mat.gen_meshUV(mesh, l1f1_l1f2, "l1f1_l1f2", repMatchCorners)
         utils_mat.gen_meshUV(mesh, l2f1_l2f2, "l2f1_l2f2", repMatchCorners)
+
+    # shade along path
+    utils_mat.gen_meshUV(mesh, depth_norm, "depth_norm", repMatchCorners)
+    utils_mat.set_meshUV_active(mesh, "depth_norm")
+    c1 = COLORS.with_alpha(COLORS.sky, cfg.path_alpha)
+    c2 = c1.copy()
+    c2.xyz *= cfg.path_dark_end
+    obj_path.active_material = utils_mat.gen_gradientMat("depth_norm", name, colorFn=GRADIENTS.lerp_common(c2, c1))
 
     getStats().logDt("generated path mesh object")
     return obj_path

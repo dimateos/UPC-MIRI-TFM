@@ -8,7 +8,7 @@ from .properties import (
 )
 
 from .mw_cont import MW_Cont
-from .mw_links import MW_Links, Link, LINK_STATE_ENUM
+from .mw_links import MW_Links, Link, LINK_STATE_ENUM, neigh_key_t
 
 from . import utils, utils_trans
 from .utils_trans import VECTORS
@@ -52,26 +52,18 @@ class MW_Sim:
         self.step_reset()
         self.step_reset_trace()
 
-    def reset(self, rnd = False):
-        # reset links and cells
-        if rnd: self.reset_state_rnd()
-        else: self.reset_state()
+    #-------------------------------------------------------------------
 
-        self.step_reset()
-        self.step_reset_trace()
-
-    def rnd_store(self, genNew = True):
-        """ Store the random state """
-        if genNew: rnd.random()
-        self.rndState = rnd.getstate()
+    def rnd_store(self):
+        pass
+        #if genNew: rnd.random()
+        #self.rndState = rnd.getstate()
 
     def rnd_restore(self, addState=0):
-        """ # NOTE:: just call some amount of randoms to modify seed, could modify state but requires copying a 600 elemnt tuple """
+        # NOTE:: just call some amount of randoms to modify seed, could modify state but requires copying a 600 elemnt tuple
         utils.debug_rnd_seed(addState)
         #rnd.setstate(self.rndState)
         #for i in range(addState): rnd.random()
-
-    #-------------------------------------------------------------------
 
     def backup_state(self):
         # delegate backup to the links
@@ -81,6 +73,8 @@ class MW_Sim:
 
         # store cells state too
         self.cont.backupState()
+
+        #self.rnd_store(rnd_new)
 
     def backup_state_restore(self):
         for key in self.links.links_graph.nodes():
@@ -92,7 +86,17 @@ class MW_Sim:
         # global recalculation including graphs
         self.links.comps_recalc()
 
-    def reset_state(self, life=1.0, picks=0):
+    #-------------------------------------------------------------------
+
+    def reset(self, rnd = False):
+        # reset links and cells
+        if rnd: self.state_reset_rnd()
+        else: self.state_reset()
+
+        self.step_reset()
+        self.step_reset_trace()
+
+    def state_reset(self, life=1.0, picks=0):
         # modify links direclty
         for key in self.links.links_graph.nodes():
             l = self.links.get_link(key)
@@ -104,7 +108,7 @@ class MW_Sim:
         # global recalculation including graphs
         self.links.comps_recalc()
 
-    def reset_state_rnd(self, min_val=0, max_val=1, max_picks = 8, max_entry = 8):
+    def state_reset_rnd(self, min_val=0, max_val=1, max_picks = 8, max_entry = 8):
         # modify links direclty
         for key in self.links.links_graph.nodes():
             l = self.links.get_link(key)
@@ -120,20 +124,21 @@ class MW_Sim:
         # global recalculation including graphs
         self.links.comps_recalc()
 
-    #-------------------------------------------------------------------
-
     def step_reset(self):
         self.entryL     : Link  = None
         self.currentL   : Link  = None
+        self.prevL      : Link  = None
         self.waterLevel : float = self.cfg.step_waterIn
         self.exit_msg   : str = ""
-        self.step_path  : list[Link] = []
+        self.step_path  : list[tuple[neigh_key_t, float]] = []
 
     def step_reset_trace(self):
         self.step_id = self.step_depth = -1
         self.trace_data : list[StepData] = list()
         self.step_trace : StepData       = None
         self.sub_trace  : SubStepData    = None
+
+    #-------------------------------------------------------------------
 
     def step_degradeAll(self):
         for l in self.links.internal:
@@ -234,7 +239,7 @@ class MW_Sim:
         # found an entry
         if self.entryL:
             self.currentL = self.entryL
-            self.step_path.append(self.currentL.key_cells)
+            self.step_path.append( (self.currentL.key_cells, self.waterLevel) )
 
         # TRACE: build entry
         if self.cfg.debug_simTrace:
@@ -271,6 +276,12 @@ class MW_Sim:
         # merge neighs, the water could scape to the outer surface
         candidates = self.links.get_link_neighs(self.currentL.key_cells)
 
+        # TODO:: should be dropped by dir?
+        ## drop prev from candidates
+        #if self.prevL:
+        #    candidates -= [self.prevL]
+        #self.prevL = self.currentL
+
         # candidates not found
         if not candidates:
             self.currentL = None
@@ -289,7 +300,7 @@ class MW_Sim:
 
         # found the next
         if self.entryL:
-            self.step_path.append(self.currentL.key_cells)
+            self.step_path.append( (self.currentL.key_cells, self.waterLevel) )
 
         # TRACE: build next
         if self.cfg.debug_simTrace:
