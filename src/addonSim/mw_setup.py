@@ -313,19 +313,22 @@ def update_cellsState(cont: MW_Cont, root: types.Object):
     ok, broken, error = cont.getCells_splitID_needsSanitize()
     for idx in ok:
         cell = cont.cells_objs[idx]
-        state = cell.mw_id.cell_state
+        state = cont.cells_state[idx]
+        #state = cell.mw_id.cell_state
 
         # shift material and parent
         if state == CELL_STATE_ENUM.SOLID:
             cell.active_material = root_cells.active_material
             cell.parent = root_cells
+            cell.mw_id.cell_state = state
         elif state == CELL_STATE_ENUM.CORE:
             cell.active_material = root_core.active_material
             cell.parent = root_core
+            cell.mw_id.cell_state = state
         elif state == CELL_STATE_ENUM.AIR:
             cell.active_material = root_air.active_material
             cell.parent = root_air
-
+            cell.mw_id.cell_state = state
 
 #-------------------------------------------------------------------
 
@@ -350,9 +353,9 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     cfg : MW_vis_cfg = root.mw_vis
     sim : MW_Sim     = MW_global_selected.fract.sim
 
-    if DEV.RELOAD_FLAGS_check("rnd_links"):
-        sim.reset_links_rnd()
-        #sim.reset_links(0.1, 8)
+    #if DEV.RELOAD_FLAGS_check("rnd_links"):
+    #    sim.reset_state_rnd()
+    #    #sim.reset_links(0.1, 8)
 
     # NOTE:: some just used to create some vis, so disabled for final implementation
     numLinks = len(fract.links.internal)

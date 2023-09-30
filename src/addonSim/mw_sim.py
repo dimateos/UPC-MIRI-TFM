@@ -18,7 +18,6 @@ from .stats import getStats
 
 #-------------------------------------------------------------------
 # IDEA:: bridges neighbours? too aligned wall links, vertically aligned internal -> when broken? cannot go though?
-# IDEA:: run until break not working?
 
 class SubStepData:
     """ Information per sub step """
@@ -49,24 +48,24 @@ class MW_Sim:
         self.cont : MW_Cont = cont
         self.links : MW_Links = links
 
-        #self.links_iniLife     = [ l.life for l in self.links.internal ]
-        #self.links_iniLife_air = [ l.life for l in self.links.external ]
-
+        # empty trace data
         self.step_reset()
         self.step_id = self.sub_id = -1
-
         self.trace_data : list[StepData] = list()
         self.step_trace : StepData       = None
         self.sub_trace  : SubStepData    = None
 
-    def reset(self, debug_addSeed = 0, initialAirToo = True):
+    def reset(self, rnd = False):
         #self.rnd_restore(debug_addSeed)
-        self.reset_links()
+
+        # reset links and cells
+        if rnd: self.reset_state_rnd()
+        else: self.reset_state()
 
         self.step_reset()
         self.step_id = self.sub_id = -1
 
-        # reset log
+        # reset trace
         if self.cfg.debug_trace:
             self.trace_data.clear()
             self.step_trace = None
@@ -82,12 +81,39 @@ class MW_Sim:
 
     #-------------------------------------------------------------------
 
-    def reset_links(self, life=1.0, picks=0):
+    def backup_state(self):
+        # delegate backup to the links
+        for key in self.links.links_graph.nodes():
+            l = self.links.get_link(key)
+            l.backup_state()
+
+        # store cells state
+        self.cont.backupState()
+
+    def backup_state_restore(self):
+        for key in self.links.links_graph.nodes():
+            l = self.links.get_link(key)
+            l.backupState_restore()
+
+        self.cont.backupState_restore()
+
+        # global recalculation including graphs
+        self.links.comps_recalc()
+
+    def reset_state(self, life=1.0, picks=0):
+        # modify links direclty
         for key in self.links.links_graph.nodes():
             l = self.links.get_link(key)
             l.reset(life, picks)
 
-    def reset_links_rnd(self, min_val=0, max_val=1, max_picks = 8, max_entry = 8):
+        # reset cells
+        self.cont.reset()
+
+        # global recalculation including graphs
+        self.links.comps_recalc()
+
+    def reset_state_rnd(self, min_val=0, max_val=1, max_picks = 8, max_entry = 8):
+        # modify links direclty
         for key in self.links.links_graph.nodes():
             l = self.links.get_link(key)
             r = lambda : rnd.random() * (max_val-min_val) + min_val
@@ -96,6 +122,12 @@ class MW_Sim:
             entry = int(r()*self.get_entryWeight(l)*max_entry)
             l.reset(life, picks, entry)
 
+        # reset cells normally
+        self.cont.reset()
+
+        # global recalculation including graphs
+        self.links.comps_recalc()
+
     #-------------------------------------------------------------------
 
     def step_reset(self):
@@ -103,7 +135,7 @@ class MW_Sim:
         self.currentL            : Link  = None
         self.waterLevel          : float = 1.0
 
-    def step_all(self):
+    def step_degradeAll(self):
         for l in self.links.internal:
             l.degrade(self.cfg.step_linkDeg)
 
@@ -113,7 +145,7 @@ class MW_Sim:
 
         # writing the full trace slows down the process, even more when print to console!
         if (self.cfg.debug_trace):
-            inlineLog = self.cfg.debug_log
+            inlineLog = self.cfg.debug_traceLog
             self.step_trace = StepData()
             self.trace_data.append(self.step_trace)
         else:

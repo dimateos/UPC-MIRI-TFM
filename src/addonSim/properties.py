@@ -155,7 +155,7 @@ class MW_sim_cfg(types.PropertyGroup):
     )
     step_maxDepth: props.IntProperty(
         name="Max infiltrations depth", description="Limit water depth, set to 0 to let all water to be absorbed.",
-        default=0, min=0, max=100,
+        default=10, min=0, max=100,
     )
 
     step_waterIn: props.FloatProperty(
@@ -174,7 +174,11 @@ class MW_sim_cfg(types.PropertyGroup):
         default=0, min=0, max=100,
     )
 
-    debug_uniformDeg: props.BoolProperty(
+    debug_util_rndState: props.BoolProperty(
+        name="DEBUG: Initial random link state (within some limits)",
+        default=True,
+    )
+    debug_util_uniformDeg: props.BoolProperty(
         name="DEBUG: Uniform erosion to all links",
         default=False,
     )
@@ -182,7 +186,7 @@ class MW_sim_cfg(types.PropertyGroup):
     debug_trace: props.BoolProperty(
         default=False,
     )
-    debug_log: props.BoolProperty(
+    debug_traceLog: props.BoolProperty(
         default=False,
     )
 

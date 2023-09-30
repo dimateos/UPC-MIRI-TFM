@@ -523,9 +523,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
             self.invoked_once = False
 
         # store current random state
-        #MW_global_selected.fract.sim.rnd_store()
-        # TODO:: preserve rnd inside same OP
-
+        MW_global_selected.fract.sim.rnd_store()
         return super().invoke(context, event)
 
     def execute(self, context: types.Context):
@@ -553,9 +551,11 @@ class MW_sim_step_OT(_StartRefresh_OT):
         sim_cfg : MW_sim_cfg= self.cfg
         DEV.log_msg(f"step_infiltrations({sim_cfg.step_infiltrations}) step_maxDepth({sim_cfg.step_maxDepth}) step_linkDeg({sim_cfg.step_linkDeg})", {'SIM'})
         for step in range(sim_cfg.step_infiltrations):
-            if sim_cfg.debug_uniformDeg: sim.step_all()
+            if sim_cfg.debug_util_uniformDeg: sim.step_degradeAll()
             else: sim.step()
 
+        # redraw links and cells
+        mw_setup.update_cellsState(MW_global_selected.fract.cont, MW_global_selected.root)
         mw_setup.gen_linksAll(context)
         return self.end_op()
 
@@ -576,7 +576,12 @@ class MW_sim_reset_OT(_StartRefresh_OT):
 
     def execute(self, context: types.Context):
         self.start_op()
-        MW_global_selected.fract.sim.reset()
+
+        sim : MW_Sim = MW_global_selected.fract.sim
+        sim.reset(MW_global_selected.root.mw_sim.debug_util_rndState)
+
+        # redraw links and cells
+        mw_setup.update_cellsState(MW_global_selected.fract.cont, MW_global_selected.root)
         mw_setup.gen_linksAll(context)
         return self.end_op()
 
@@ -610,6 +615,7 @@ class MW_util_comps_OT(_StartRefresh_OT):
         links.comps_recalc()
 
         if getPrefs().util_comps_OT_recalc:
+            mw_setup.update_cellsState(MW_global_selected.fract.cont, MW_global_selected.root)
             mw_setup.gen_linksAll(context)
 
         return self.end_op()

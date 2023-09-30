@@ -273,8 +273,8 @@ class MW_sim_PT(types.Panel):
         # inspect root or selected?
         root = MW_global_selected.last_root()
         if root:
-            open, box = ui.draw_propsToggle_custom(root.mw_sim, prefs.sim_PT_meta_inspector, col, text="Parameters", propFilter="-step,-debug")
-            #open, box = ui.draw_propsToggle_custom(root.mw_sim, prefs.sim_PT_meta_inspector, col, text="Parameters", propFilter="-step", splitDebug=True)
+            #open, box = ui.draw_propsToggle_custom(root.mw_sim, prefs.sim_PT_meta_inspector, col, text="Parameters", propFilter="-step,-debug")
+            open, box = ui.draw_propsToggle_custom(root.mw_sim, prefs.sim_PT_meta_inspector, col, text="Parameters", propFilter="-step", splitDebug=True)
 
 
 #-------------------------------------------------------------------
