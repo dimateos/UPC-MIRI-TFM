@@ -354,7 +354,7 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     sim : MW_Sim     = MW_global_selected.fract.sim
 
     #if DEV.RELOAD_FLAGS_check("rnd_links"):
-    #    sim.reset_state_rnd()
+    #    sim.state_reset_rnd()
     #    #sim.reset_links(0.1, 8)
 
     # NOTE:: some just used to create some vis, so disabled for final implementation
@@ -375,7 +375,7 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
 
     # iterate the global map and store vert pairs for the tube mesh generation
     for id, l in enumerate(fract.links.internal):
-        id_normalized = id / float(numLinks)
+        id_normalized = id / float(numLinks) if not DEV.DEBUG_LINKS_ID_RAW else id
 
         # original center
         points[id]= l.pos
@@ -482,7 +482,7 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
     # iterate the global map and store vert pairs for the tube mesh generation
     for id, l in enumerate(fract.links.external):
         #if MW_Links.skip_link_debugModel(l): continue # just not generated
-        id_normalized = id / float(numLinks)
+        id_normalized = id / float(numLinks) if not DEV.DEBUG_LINKS_ID_RAW else id
 
         # represent picks with point from original global pos + normal + offset a bit
         perp = utils_trans.getPerpendicular_stable(l.dir)
@@ -563,21 +563,21 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
     #linkSet = fract.links.internal
 
     numLinks = len(linkSet) # not sized cause some may be skipped
-    verts     : list[tuple[Vector,Vector]] = []
-    id_grav   : list[tuple[int,float]]     = []
+    verts     : list[tuple[Vector,Vector]]  = []
+    id_grav   : list[tuple[int,float]]      = []
 
     if DEV.DEBUG_LINKS_GEODATA:
-        l1k1_l1k2 : list[tuple[int,int]]       = []
-        l1f1_l1f2 : list[tuple[int,int]]       = []
-        l2k1_l2k2 : list[tuple[int,int]]       = []
-        l2f1_l2f2 : list[tuple[int,int]]       = []
+        l1k1_l1k2 : list[tuple[int,int]]    = []
+        l1f1_l1f2 : list[tuple[int,int]]    = []
+        l2k1_l2k2 : list[tuple[int,int]]    = []
+        l2f1_l2f2 : list[tuple[int,int]]    = []
 
     # avoid repetitions
     checked = set()
 
     # iterate the global map and store vert pairs for the tube mesh generation
     for id, l in enumerate(linkSet):
-        id_normalized = id / float(numLinks)
+        id_normalized = id / float(numLinks) if not DEV.DEBUG_LINKS_ID_RAW else id
 
         # allow once from outer loop
         checked.add(l.key_cells)

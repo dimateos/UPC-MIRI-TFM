@@ -46,15 +46,19 @@ class MW_dev(types.PropertyGroup):
         default=DEV.DEBUG_LINKS_GEODATA,
         update=lambda self, context: setattr(DEV, "DEBUG_LINKS_GEODATA", self.DEBUG_LINKS_GEODATA),
     )
+    DEBUG_LINKS_ID_RAW : props.BoolProperty(
+        default=DEV.DEBUG_LINKS_ID_RAW,
+        update=lambda self, context: setattr(DEV, "DEBUG_LINKS_ID_RAW", self.DEBUG_LINKS_ID_RAW),
+    )
     DEBUG_LINKS_PICKS : props.BoolProperty(
         default=DEV.DEBUG_LINKS_PICKS,
         update=lambda self, context: setattr(DEV, "DEBUG_LINKS_PICKS", self.DEBUG_LINKS_PICKS),
     )
+
     SKIP_SANITIZE : props.BoolProperty(
         default=DEV.SKIP_SANITIZE,
         update=lambda self, context: setattr(DEV, "SKIP_SANITIZE", self.SKIP_SANITIZE),
     )
-
     SKIP_RESISTANCE : props.BoolProperty(
         default=DEV.SKIP_RESISTANCE,
         update=lambda self, context: setattr(DEV, "SKIP_RESISTANCE", self.SKIP_RESISTANCE),
@@ -187,6 +191,7 @@ class MW_prefs(bpy.types.AddonPreferences):
         links = "links"
         links_air = links+"_air"
         links_neighs = links+"_neighs"
+        links_path = links+"_path"
         links_points = links+"_points"
         links_waterDir = links+"_waterDir"
 
@@ -272,10 +277,10 @@ class MW_prefs(bpy.types.AddonPreferences):
         name="stop", description="Forcefully stop on link break",
         default=True,
     )
-    sim_step_OT_clearCfg: props.BoolProperty(
-        name="cfg", description="Next execution will clear the config",
-        default=False,
-    )
+    #sim_step_OT_clearCfg: props.BoolProperty(
+    #    name="cfg", description="Next execution will clear the config",
+    #    default=False,
+    #)
 
     util_delete_OT_unhideSelect: props.BoolProperty(
         name="unhide", description="Unhide the original object after deletion",

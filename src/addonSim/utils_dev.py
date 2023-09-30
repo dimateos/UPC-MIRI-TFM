@@ -9,8 +9,9 @@ class DEV:
     DEBUG_MODEL           = True    # fake 2D so ignore some directional links (at sim)
     DEBUG_UI              = True    # some additional debug UI
     DEBUG_LINKS_NEIGHS    = True    # add additional mesh connecting links to neighbours
-    DEBUG_LINKS_GEODATA   = True   # add additional links info to geometry data to visualize in table
-    DEBUG_LINKS_PICKS     = True   # add additional links info about number of picks
+    DEBUG_LINKS_GEODATA   = True    # add additional links info to geometry data to visualize in table
+    DEBUG_LINKS_ID_RAW    = True    # keep IDs raw for better data but no 2D visualization
+    DEBUG_LINKS_PICKS     = True    # include info about number of picks
 
     SKIP_SANITIZE         = False   # skip attempt to keep up with the UNDO/REDO etc system
     SKIP_RESISTANCE       = False   # skip weighting links prob with resistance
