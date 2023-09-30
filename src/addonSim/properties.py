@@ -169,13 +169,17 @@ class MW_sim_cfg(types.PropertyGroup):
 
     #-------------------------------------------------------------------
 
-    debug_rnd_seedMod: props.BoolProperty(
-        name="RND seed mod", description="Modify the random generator, -1 to unseed it",
+    debug_rnd_seed_new: props.BoolProperty(
+        name="RND seed gen new", description="Use a new random seed per step OP",
         default=True,
     )
-    debug_rnd_seedMod: props.IntProperty(
-        name="RND seed mod", description="Modify the random generator, -1 to unseed it",
-        default=0, min=-1, max=100,
+    debug_rnd_seed_current: props.IntProperty(
+        name="RND seed", description="Seed the random generator, -1 to unseed it",
+        default=64, min=-1,
+    )
+    debug_rnd_seed_mod: props.IntProperty(
+        name="RND seed mod", description="Modify the current random generator",
+        default=0, min=0, max=100,
     )
 
     debug_log: props.BoolProperty(

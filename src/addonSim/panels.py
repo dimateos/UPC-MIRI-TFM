@@ -11,6 +11,7 @@ from .properties_global import (
 from .mw_fract import MW_Fract
 from .mw_cont import MW_Cont, CELL_STATE_ENUM
 from .mw_links import MW_Links, LINK_STATE_ENUM
+from .mw_sim import MW_Sim, SIM_EXIT_FLAG
 
 from . import operators as ops
 from . import operators_dm as ops_utils
@@ -261,6 +262,16 @@ class MW_sim_PT(types.Panel):
     def draw(self, context):
         prefs = getPrefs()
         col = self.layout.column()
+
+        # warning no fract
+        if not MW_global_selected.fract:
+            col.label(text="Root without storage! Recalc...", icon="ERROR")
+
+        else:
+            sim : MW_Sim = MW_global_selected.fract.sim
+            if sim and sim.step_path:
+                #row = col.split()
+                col.label(text=f"Path ({len(sim.step_path)}) - {SIM_EXIT_FLAG.to_str(sim.exit_flag)} - w:{sim.waterLevel:.2f}", icon="OUTLINER_OB_GREASEPENCIL")
 
         col_rowSplit = col.row().split(factor=0.70)
         col_rowSplit.operator(ops.MW_sim_step_OT.bl_idname, text="STEP", icon="MOD_FLUIDSIM")

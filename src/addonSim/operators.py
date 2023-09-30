@@ -20,7 +20,7 @@ from . import mw_setup, mw_extraction
 from .mw_links import MW_Links
 from .mw_cont import MW_Cont, CELL_STATE_ENUM
 from .mw_fract import MW_Fract
-from .mw_sim import MW_Sim
+from .mw_sim import MW_Sim, SIM_EXIT_FLAG
 
 from . import ui
 from . import utils, utils_scene, utils_trans
@@ -498,6 +498,11 @@ class MW_sim_step_OT(_StartRefresh_OT):
         col.prop(cfg, "step_waterIn")
         col.prop(cfg, "step_linkDeg")
 
+        sim : MW_Sim = MW_global_selected.fract.sim
+        if sim.step_path:
+            #row = col.split()
+            col.label(text=f"Path ({len(sim.step_path)}) - {SIM_EXIT_FLAG.to_str(sim.exit_flag)} - w:{sim.waterLevel:.2f}", icon="OUTLINER_OB_GREASEPENCIL")
+
         # params and debug
         prefs = getPrefs()
         open, box = ui.draw_propsToggle_custom(cfg, prefs.sim_PT_meta_inspector, layout, "meta_show_1", text="Parameters", propFilter="-step,-debug")
@@ -515,14 +520,16 @@ class MW_sim_step_OT(_StartRefresh_OT):
         # copy props once
         self.invoked_once = False
 
-        # store current random state
+        # store current state
         sim : MW_Sim = MW_global_selected.fract.sim
-        sim.rnd_store()
+        sim.backup_state()
         return super().invoke(context, event)
 
     def execute(self, context: types.Context):
         self.start_op()
         prefs = getPrefs()
+        sim : MW_Sim = MW_global_selected.fract.sim
+
 
         # handle refresh
         if self.checkRefresh_cancel() or prefs.sim_PT_meta_inspector.skip_meta_show_toggled():
@@ -532,14 +539,13 @@ class MW_sim_step_OT(_StartRefresh_OT):
         if not self.invoked_once:
             self.invoked_once = True
             DEV.log_msg("cfg found once: copying props to OP", {'SIM'})
-            properties_utils.copyProps(MW_global_selected.root.mw_sim, self.cfg, "-step,-debug")
+            properties_utils.copyProps(MW_global_selected.root.mw_sim, self.cfg, "-step")
         else:
             properties_utils.copyProps(self.cfg, MW_global_selected.root.mw_sim)
+            sim.cfg = MW_global_selected.root.mw_sim
 
-        # restore state to get constructive results withing the mod last op panel
-        sim : MW_Sim = MW_global_selected.fract.sim
-        sim.rnd_store()
-        # TODO:: read links life from mesh
+            # restore state to get constructive results withing the mod last op panel
+            sim.backup_state_restore()
 
         # steps
         sim_cfg : MW_sim_cfg= self.cfg
@@ -547,6 +553,8 @@ class MW_sim_step_OT(_StartRefresh_OT):
         for step in range(sim_cfg.step_infiltrations):
             if sim_cfg.debug_util_uniformDeg: sim.step_degradeAll()
             else: sim.step()
+
+        getStats().logDt("completed simulation steps")
 
         # redraw links and cells
         mw_setup.update_cellsState(MW_global_selected.fract.cont, MW_global_selected.root)

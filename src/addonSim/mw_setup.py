@@ -15,7 +15,8 @@ from .properties import (
 
 from .mw_cont import MW_Cont, VORO_Container, CELL_STATE_ENUM, CELL_ERROR_ENUM
 from .mw_links import MW_Links
-from .mw_fract import MW_Fract, MW_Sim # could import all from here
+from .mw_sim import MW_Sim, SIM_EXIT_FLAG
+from .mw_fract import MW_Fract # could import all from here
 from .mw_resistance import MW_field_R
 
 from . import utils, utils_scene, utils_trans, utils_mat, utils_mesh
@@ -689,8 +690,8 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
             l2f1_l2f2[depth] = l.key_faces
         l_prev = l
 
-    # additional step to show exit clearly
-    if w > 0 and cfg.path_outside_end:
+    # additional step to show exit clearly at an outer wall
+    if sim.exit_flag == SIM_EXIT_FLAG.NO_NEXT_LINK_WALL and cfg.path_outside_end:
         depth += 1
         depth_normalized = depth / float(maxDepth)
         depth_id = depth_normalized if not DEV.DEBUG_LINKS_ID_RAW else depth

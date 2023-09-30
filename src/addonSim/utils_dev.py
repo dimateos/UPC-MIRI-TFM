@@ -77,6 +77,7 @@ class DEV:
     logs_stats_sep = "    - "
     logs_cutcol  = 40
     logs_cutmsg  = 110
+    logs_cutmsg_disabled = False
     logs_cutpath = 30
 
     #-------------------------------------------------------------------
@@ -111,7 +112,8 @@ class DEV:
         full = f"{left}{sep}{msg}" if msg else left
 
         # limit full size
-        if cut: full = DEV.get_cutMsg(full, DEV.logs_cutmsg)
+        if cut and not DEV.logs_cutmsg_disabled:
+            full = DEV.get_cutMsg(full, DEV.logs_cutmsg)
         print(full)
 
         # keep the last msg?

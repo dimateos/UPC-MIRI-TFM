@@ -19,6 +19,34 @@ from .stats import getStats
 #-------------------------------------------------------------------
 # IDEA:: bridges neighbours? too aligned wall links, vertically aligned internal -> when broken? cannot go though?
 
+class SIM_EXIT_FLAG:
+    STILL_RUNNING     = -1
+    MAX_DEPTH         = 0
+    NO_WATER          = 1
+    NO_WATER_RND      = 2
+    NO_NEXT_LINK      = 3
+    NO_NEXT_LINK_WALL = 4
+
+    all = { MAX_DEPTH, NO_NEXT_LINK, NO_WATER, NO_WATER_RND }
+
+    @classmethod
+    def to_str(cls, e:int):
+        if e == cls.STILL_RUNNING:  return "STILL_RUNNING"
+        if e == cls.MAX_DEPTH:      return "MAX_DEPTH"
+        if e == cls.NO_NEXT_LINK:   return "NO_NEXT_LINK"
+        if e == cls.NO_WATER:       return "NO_WATER"
+        if e == cls.NO_WATER_RND:   return "NO_WATER_RND"
+        return "none"
+        #raise ValueError(f"SIM_EXIT_FLAG: {e} is not in {cls.all}")
+    @classmethod
+    def from_str(cls, s:str):
+        if s == "STILL_RUNNING":    return cls.STILL_RUNNING
+        if s == "MAX_DEPTH":        return cls.MAX_DEPTH
+        if s == "NO_NEXT_LINK":     return cls.NO_NEXT_LINK
+        if s == "NO_WATER":         return cls.NO_WATER
+        if s == "NO_WATER_RND":     return cls.NO_WATER_RND
+        raise ValueError(f"SIM_EXIT_FLAG: {s} is not in {set(SIM_EXIT_FLAG.to_str(s) for s in cls.all)}")
+
 class SubStepData:
     """ Information per sub step """
     def __init__(self):
@@ -38,7 +66,7 @@ class StepData:
         self.entryL_candidates  : list[Link]        = None
         self.entryL_candidatesW : list[float]       = None
         self.exitL              : Link              = None
-        self.break_msg          : str               = "NO_BREAK"
+        self.break_flag         : int               = SIM_EXIT_FLAG.STILL_RUNNING
 
 #-------------------------------------------------------------------
 
@@ -55,33 +83,35 @@ class MW_Sim:
     #-------------------------------------------------------------------
 
     def rnd_store(self):
-        pass
-        #if genNew: rnd.random()
         #self.rndState = rnd.getstate()
+        if self.cfg.debug_rnd_seed_new:
+            self.cfg.debug_rnd_seed_current = utils.debug_rnd_seed(-1)
 
-    def rnd_restore(self, addState=0):
+    def rnd_restore(self):
         # NOTE:: just call some amount of randoms to modify seed, could modify state but requires copying a 600 elemnt tuple
-        utils.debug_rnd_seed(addState)
         #rnd.setstate(self.rndState)
-        #for i in range(addState): rnd.random()
+        utils.debug_rnd_seed(self.cfg.debug_rnd_seed_current)
+        for i in range(self.cfg.debug_rnd_seed_mod): rnd.random()
 
     def backup_state(self):
         # delegate backup to the links
         for key in self.links.links_graph.nodes():
             l = self.links.get_link(key)
-            l.backup_state()
+            l.backupState()
 
         # store cells state too
         self.cont.backupState()
 
-        #self.rnd_store(rnd_new)
+        # store random too
+        self.rnd_store()
 
     def backup_state_restore(self):
+        # restore all
         for key in self.links.links_graph.nodes():
             l = self.links.get_link(key)
             l.backupState_restore()
-
         self.cont.backupState_restore()
+        self.rnd_restore()
 
         # global recalculation including graphs
         self.links.comps_recalc()
@@ -129,7 +159,7 @@ class MW_Sim:
         self.currentL   : Link  = None
         self.prevL      : Link  = None
         self.waterLevel : float = self.cfg.step_waterIn
-        self.exit_msg   : str = ""
+        self.exit_flag  : int   = SIM_EXIT_FLAG.STILL_RUNNING
         self.step_path  : list[tuple[neigh_key_t, float]] = []
 
     def step_reset_trace(self):
@@ -149,8 +179,10 @@ class MW_Sim:
         self.step_id += 1
 
         # LOG: initial water
+        self.logs_cutmsg_disabled_prev = DEV.logs_cutmsg_disabled
+        DEV.logs_cutmsg_disabled = True
         if self.cfg.debug_log:
-            DEV.log_msg(f" > ({self.step_id}) : starting waterLevel {self.waterLevel}", {"SIM", "STEP"}, cut=False)
+            DEV.log_msg(f" > ({self.step_id}) : starting waterLevel {self.waterLevel}", {"SIM", "STEP"})
 
         # TRACE: writing the full trace slows down the process, even more when print to console!
         if (self.cfg.debug_simTrace):
@@ -164,11 +196,11 @@ class MW_Sim:
 
         # LOG: entry
         if self.cfg.debug_log:
-            DEV.log_msg(f" > ({self.step_id}) : L ({self.currentL})", {"SIM", "ENTRY"}, cut=False)
+            DEV.log_msg(f" > ({self.step_id}) : L ({self.currentL})", {"SIM", "ENTRY"})
         # TRACE: log entry
         if trace_log:
             DEV.log_msg(f" : n{len(self.step_trace.entryL_candidates)} {self.step_trace.entryL_candidatesW}",
-                        {"SIM", "ENTRY", "TRACE"}, cut=False)
+                        {"SIM", "ENTRY", "TRACE"})
 
 
         # main loop with a break condition
@@ -177,15 +209,16 @@ class MW_Sim:
 
         # LOG: exit
         if self.cfg.debug_log:
-            DEV.log_msg(f" >>> len({len(self.step_path)}) : {self.step_path}", {"SIM", "PATH"}, cut=False)
-            DEV.log_msg(f" > ({self.step_id}) : {self.exit_msg} : L ({self.currentL})", {"SIM", "EXIT"}, cut=False)
+            DEV.log_msg(f" >>> len({len(self.step_path)}) : { [ f'[{i}] L{k}, w:{w:.2f}' for i,(k,w) in enumerate(self.step_path)] }", {"SIM", "PATH"})
+            DEV.log_msg(f" > ({self.step_id}) : {SIM_EXIT_FLAG.to_str(self.exit_flag)} : L ({self.currentL})", {"SIM", "EXIT"})
 
         # TRACE: log step
         if (self.cfg.debug_simTrace):
             self.step_trace.exitL = self.currentL
         if trace_log:
             DEV.log_msg(f" : n{len(self.sub_trace.currentL_candidates)} {self.sub_trace.currentL_candidatesW[:32]}",
-                        {"SIM", "EXIT", "TRACE"}, cut=False)
+                        {"SIM", "EXIT", "TRACE"})
+        DEV.logs_cutmsg_disabled = self.logs_cutmsg_disabled_prev
 
 
     def infiltration_loop(self, trace_log=False):
@@ -212,7 +245,7 @@ class MW_Sim:
                             f" : dw({self.sub_trace.waterLevel_deg:.3f}) dl({self.sub_trace.currentL_deg:.3f})"
                             f" : {self.sub_trace.currentL}"
                             f" : n{len(self.sub_trace.currentL_candidates)} {self.sub_trace.currentL_candidatesW[:32]}",
-                            {"SIM", "SUB", "TRACE"}, cut=False)
+                            {"SIM", "SUB", "TRACE"})
 
     #-------------------------------------------------------------------
     #  https://docs.python.org/dev/library/random.html#random.choices
@@ -366,7 +399,7 @@ class MW_Sim:
         if self.waterLevel < self.cfg.water_minAbsorb_check and self.waterLevel > 0:
             minAbsorb = self.waterLevel / self.cfg.water_minAbsorb_check
             if minAbsorb * self.cfg.water_minAbsorb_continueProb < rnd.random():
-                self.waterLevel = -1
+                self.exit_flag = SIM_EXIT_FLAG.NO_WATER_RND
 
         # TODO:: degradation before or after cost?
 
@@ -375,22 +408,23 @@ class MW_Sim:
     def check_continue(self):
         # no next link was found
         if not self.currentL:
-            self.exit_msg = "NO_LINK"
+            if self.prevL.state == LINK_STATE_ENUM.WALL: self.exit_flag = SIM_EXIT_FLAG.NO_NEXT_LINK_WALL
+            else: self.exit_flag = SIM_EXIT_FLAG.NO_NEXT_LINK
 
         # no more water
-        if self.waterLevel < 0:
-            if self.waterLevel == -1: self.exit_msg = "NO_WATER_RND"
-            else: self.exit_msg = "NO_WATER"
+        elif self.waterLevel < 0:
+            self.exit_flag = SIM_EXIT_FLAG.NO_WATER
 
         # max iterations when enabled
-        if self.cfg.step_maxDepth and self.step_depth >= self.cfg.step_maxDepth-1:
-            self.exit_msg = "MAX_ITERS"
+        elif self.cfg.step_maxDepth and self.step_depth >= self.cfg.step_maxDepth-1:
+            self.exit_flag = SIM_EXIT_FLAG.MAX_DEPTH
+
 
         # found msg means exit condition was met
-        if self.exit_msg:
+        if self.exit_flag != SIM_EXIT_FLAG.STILL_RUNNING:
             # TRACE: keep msg per trace
             if self.cfg.debug_simTrace:
-                self.step_trace.break_msg = self.exit_msg
+                self.step_trace.break_flag = self.exit_flag
             return False
 
         # continue sim when no exit msg recorded
