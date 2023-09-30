@@ -126,7 +126,8 @@ class MW_Sim:
         self.entryL     : Link  = None
         self.currentL   : Link  = None
         self.waterLevel : float = self.cfg.step_waterIn
-        self.exit_msg    : str = ""
+        self.exit_msg   : str = ""
+        self.step_path  : list[Link] = []
 
     def step_reset_trace(self):
         self.step_id = self.step_depth = -1
@@ -152,10 +153,9 @@ class MW_Sim:
             self.trace_data.append(self.step_trace)
         trace_log = self.cfg.debug_log and self.cfg.debug_simTrace
 
+
         # get entry
         self.get_entryLink()
-        if self.entryL:
-            self.currentL = self.entryL
 
         # LOG: entry
         if self.cfg.debug_log:
@@ -163,7 +163,7 @@ class MW_Sim:
         # TRACE: log entry
         if trace_log:
             DEV.log_msg(f" : n{len(self.step_trace.entryL_candidates)} {self.step_trace.entryL_candidatesW}",
-                        {"SIM", "TRACE", "ENTRY"}, cut=False)
+                        {"SIM", "ENTRY", "TRACE"}, cut=False)
 
 
         # main loop with a break condition
@@ -172,14 +172,15 @@ class MW_Sim:
 
         # LOG: exit
         if self.cfg.debug_log:
-            DEV.log_msg(f" > ({self.step_id}) : {self.step_trace.break_msg} : L ({self.currentL})", {"SIM", "EXIT"}, cut=False)
+            DEV.log_msg(f" >>> len({len(self.step_path)}) : {self.step_path}", {"SIM", "PATH"}, cut=False)
+            DEV.log_msg(f" > ({self.step_id}) : {self.exit_msg} : L ({self.currentL})", {"SIM", "EXIT"}, cut=False)
 
         # TRACE: log step
         if (self.cfg.debug_simTrace):
             self.step_trace.exitL = self.currentL
         if trace_log:
             DEV.log_msg(f" : n{len(self.sub_trace.currentL_candidates)} {self.sub_trace.currentL_candidatesW[:32]}",
-                        {"SIM", "TRACE", "EXIT"}, cut=False)
+                        {"SIM", "EXIT", "TRACE"}, cut=False)
 
 
     def infiltration_loop(self, trace_log=False):
@@ -206,7 +207,7 @@ class MW_Sim:
                             f" : dw({self.sub_trace.waterLevel_deg:.3f}) dl({self.sub_trace.currentL_deg:.3f})"
                             f" : {self.sub_trace.currentL}"
                             f" : n{len(self.sub_trace.currentL_candidates)} {self.sub_trace.currentL_candidatesW[:32]}",
-                            {"SIM", "TRACE", "SUB"}, cut=False)
+                            {"SIM", "SUB", "TRACE"}, cut=False)
 
     #-------------------------------------------------------------------
     #  https://docs.python.org/dev/library/random.html#random.choices
@@ -229,6 +230,11 @@ class MW_Sim:
 
             except ValueError as e:
                 self.entryL = None
+
+        # found an entry
+        if self.entryL:
+            self.currentL = self.entryL
+            self.step_path.append(self.currentL.key_cells)
 
         # TRACE: build entry
         if self.cfg.debug_simTrace:
@@ -280,6 +286,10 @@ class MW_Sim:
 
             except ValueError as e:
                 self.currentL = None
+
+        # found the next
+        if self.entryL:
+            self.step_path.append(self.currentL.key_cells)
 
         # TRACE: build next
         if self.cfg.debug_simTrace:

@@ -274,7 +274,7 @@ class MW_prefs(bpy.types.AddonPreferences):
     )
     sim_step_OT_clearCfg: props.BoolProperty(
         name="cfg", description="Next execution will clear the config",
-        default=True,
+        default=False,
     )
 
     util_delete_OT_unhideSelect: props.BoolProperty(

@@ -184,11 +184,13 @@ class MW_sim_cfg(types.PropertyGroup):
     )
 
     debug_util_rndState: props.BoolProperty(
-        name="DEBUG: Initial random link state (within some limits)",
+        name="DEBUG: rnd init",
+        description="Initial random link state (within some limits)",
         default=False,
     )
     debug_util_uniformDeg: props.BoolProperty(
-        name="DEBUG: Uniform erosion to all links",
+        name="DEBUG: uniform deg",
+        description="Uniform erosion to all links",
         default=False,
     )
 
