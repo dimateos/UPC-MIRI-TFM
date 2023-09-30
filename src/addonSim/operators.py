@@ -474,7 +474,7 @@ class MW_gen_field_r_OT(_StartRefresh_OT):
 class MW_sim_step_OT(_StartRefresh_OT):
     bl_idname = "mw.sim_step"
     bl_label = "sim step"
-    bl_description = "WIP: sim steps"
+    bl_description = "Simulate a series of water infiltrations"
 
     bl_options = {'PRESET', 'REGISTER', 'UNDO'}
     cfg: props.PointerProperty(type=MW_sim_cfg)
@@ -511,19 +511,12 @@ class MW_sim_step_OT(_StartRefresh_OT):
         prefs = getPrefs()
         prefs.gen_PT_meta_inspector.reset_meta_show_toggled()
 
-        # maybe reset the config
-        if prefs.sim_step_OT_clearCfg:
-            prefs.sim_step_OT_clearCfg = False
-            DEV.log_msg("cfg reset once: skip copy props", {'SIM'})
-            properties_utils.resetProps(self.cfg)
-            self.invoked_once = True
-
-        # copy prop from obj once
-        else:
-            self.invoked_once = False
+        # copy props once
+        self.invoked_once = False
 
         # store current random state
-        MW_global_selected.fract.sim.rnd_store()
+        sim : MW_Sim = MW_global_selected.fract.sim
+        sim.rnd_store()
         return super().invoke(context, event)
 
     def execute(self, context: types.Context):
@@ -542,9 +535,9 @@ class MW_sim_step_OT(_StartRefresh_OT):
         else:
             properties_utils.copyProps(self.cfg, MW_global_selected.root.mw_sim)
 
-        # restore state to get constructive results
+        # restore state to get constructive results withing the mod last op panel
         sim : MW_Sim = MW_global_selected.fract.sim
-        #sim.rnd_restore()
+        sim.rnd_store()
         # TODO:: read links life from mesh
 
         # steps
@@ -562,7 +555,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
 class MW_sim_reset_OT(_StartRefresh_OT):
     bl_idname = "mw.sim_reset"
     bl_label = "sim reset"
-    bl_description = "WIP: sim reset"
+    bl_description = "Reset the simulation state, both links and cells"
 
     bl_options = {'INTERNAL', 'UNDO'}
 
@@ -572,7 +565,7 @@ class MW_sim_reset_OT(_StartRefresh_OT):
 
     @classmethod
     def poll(cls, context):
-        return MW_global_selected.fract and MW_global_selected.fract.sim
+        return MW_global_selected.root and MW_global_selected.fract and MW_global_selected.fract.sim
 
     def execute(self, context: types.Context):
         self.start_op()
@@ -585,12 +578,32 @@ class MW_sim_reset_OT(_StartRefresh_OT):
         mw_setup.gen_linksAll(context)
         return self.end_op()
 
+class MW_sim_resetCFG_OT(_StartRefresh_OT):
+    bl_idname = "mw.sim_reset_cfg"
+    bl_label = "sim reset cfg"
+    bl_description = "Reset the simulation config"
+
+    bl_options = {'INTERNAL', 'UNDO'}
+
+    def __init__(self) -> None:
+        super().__init__()
+        # config some base class log flags...
+
+    @classmethod
+    def poll(cls, context):
+        return MW_global_selected.root and MW_global_selected.fract and MW_global_selected.fract.sim
+
+    def execute(self, context: types.Context):
+        self.start_op()
+        properties_utils.resetProps(MW_global_selected.root.mw_sim, "-step,-debug")
+        return self.end_op()
+
 #-------------------------------------------------------------------
 
 class MW_util_comps_OT(_StartRefresh_OT):
     bl_idname = "mw.util_comps"
     bl_label = "check comps"
-    bl_description = "WIP:: check connected components"
+    bl_description = "DEV:: check connected components"
 
     bl_options = {'INTERNAL', 'UNDO'}
 
@@ -623,7 +636,7 @@ class MW_util_comps_OT(_StartRefresh_OT):
 class MW_util_bool_OT(_StartRefresh_OT):
     bl_idname = "mw.util_bool"
     bl_label = "bool mod"
-    bl_description = "WIP:: add bool modifier to original"
+    bl_description = "DEV:: bool modifier to cells to clip inside original model"
 
     bl_options = {'INTERNAL', 'UNDO'}
 
@@ -728,7 +741,7 @@ class MW_util_delete_all_OT(_StartRefresh_OT):
         return self.end_op()
 
 class MW_util_resetCFG_OT(_StartRefresh_OT):
-    bl_idname = "dm.reset_cfg"
+    bl_idname = "mw.reset_cfg"
     bl_label = "Reset all CFG"
     bl_description = "Reset config and preferences"
 
@@ -772,6 +785,7 @@ classes = [
 
     MW_sim_step_OT,
     MW_sim_reset_OT,
+    MW_sim_resetCFG_OT,
 
     MW_util_comps_OT,
     MW_util_bool_OT,

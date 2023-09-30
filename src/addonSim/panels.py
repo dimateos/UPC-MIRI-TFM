@@ -268,7 +268,8 @@ class MW_sim_PT(types.Panel):
 
         col_rowSplit = col.row().split(factor=0.70)
         col_rowSplit.operator(ops.MW_sim_reset_OT.bl_idname, text="RESET", icon="ORPHAN_DATA")
-        col_rowSplit.prop(prefs, "sim_step_OT_clearCfg")
+        #col_rowSplit.prop(prefs, "sim_step_OT_clearCfg")
+        col_rowSplit.operator(ops.MW_sim_resetCFG_OT.bl_idname, text="config")
 
         # inspect root or selected?
         root = MW_global_selected.last_root()
