@@ -61,10 +61,6 @@ class MW_dev(types.PropertyGroup):
         default=DEV.SKIP_SANITIZE,
         update=lambda self, context: setattr(DEV, "SKIP_SANITIZE", self.SKIP_SANITIZE),
     )
-    SKIP_RESISTANCE : props.BoolProperty(
-        default=DEV.SKIP_RESISTANCE,
-        update=lambda self, context: setattr(DEV, "SKIP_RESISTANCE", self.SKIP_RESISTANCE),
-    )
 
     FORCE_NO_RND : props.BoolProperty(
         default=DEV.FORCE_NO_RND,
@@ -73,6 +69,10 @@ class MW_dev(types.PropertyGroup):
     FORCE_NEW_MATS : props.BoolProperty(
         default=DEV.FORCE_NEW_MATS,
         update=lambda self, context: setattr(DEV, "FORCE_NEW_MATS", self.FORCE_NEW_MATS),
+    )
+    FORCE_RESISTANCE_ROUND : props.BoolProperty(
+        default=DEV.FORCE_RESISTANCE_ROUND,
+        update=lambda self, context: setattr(DEV, "FORCE_RESISTANCE_ROUND", self.FORCE_RESISTANCE_ROUND),
     )
 
     FIX_IMAGES_QUEUE : props.BoolProperty(

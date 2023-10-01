@@ -59,12 +59,12 @@ class SubStepData:
     """ Information per sub step """
     def __init__(self):
         self.currentL             : Link        = None
-        self.currentL_life        : float       = None
         self.currentL_deg         : float       = None
+        self.currentL_life        : float       = None
         self.currentL_candidates  : list[Link]  = None
         self.currentL_candidatesW : list[float] = None
-        self.waterLevel           : float       = None
-        self.waterLevel_deg       : float       = None
+        self.water_abs            : float       = None
+        self.water                : float       = None
 
 class StepData:
     """ Information per step """
@@ -156,7 +156,7 @@ class MW_Sim:
             r = lambda : rnd.random() * (max_val-min_val) + min_val
             life = r()
             picks = int(r()*max_picks)
-            entry = int(r()*self.get_entryWeight(l)*max_entry)
+            entry = int(r()*self.get_entryProbability(l)*max_entry)
             l.reset(life, picks, entry)
 
         # reset cells normally
@@ -166,12 +166,16 @@ class MW_Sim:
         self.links.comps_recalc()
 
     def step_reset(self):
-        self.entryL     : Link  = None
         self.currentL   : Link  = None
         self.prevL      : Link  = None
-        self.waterLevel : float = self.cfg.step_waterIn
+        self.water      : float = self.cfg.water__start
+        self.water_abs  : float = 0
+
+        self.entryL     : Link  = None
         self.exit_flag  : int   = SIM_EXIT_FLAG.STILL_RUNNING
         self.step_path  : list[tuple[neigh_key_t, float]] = []
+
+        self.stopOnBreak = getPrefs().sim_step_OT_stopBreak
 
     def step_reset_trace(self):
         self.step_id = self.step_depth = -1
@@ -183,7 +187,7 @@ class MW_Sim:
 
     def step_degradeAll(self):
         for l in self.links.internal:
-            l.degrade(self.cfg.step_linkDeg)
+            l.degrade(self.cfg.link_deg)
 
     def step(self):
         self.step_reset()
@@ -193,7 +197,7 @@ class MW_Sim:
         self.logs_cutmsg_disabled_prev = DEV.logs_cutmsg_disabled
         DEV.logs_cutmsg_disabled = True
         if self.cfg.debug_log:
-            DEV.log_msg(f" > ({self.step_id}) : starting waterLevel {self.waterLevel}", {"SIM", "STEP"})
+            DEV.log_msg(f" > ({self.step_id}) : starting water {self.water}", {"SIM", "STEP"})
 
         # TRACE: writing the full trace slows down the process, even more when print to console!
         if (self.cfg.debug_log_trace):
@@ -236,7 +240,7 @@ class MW_Sim:
 
     def infiltration_buildPath(self):
         if self.currentL:
-            self.step_path.append( (self.currentL.key_cells, self.waterLevel) )
+            self.step_path.append( (self.currentL.key_cells, self.water) )
 
     def infiltration_loop(self, trace_log=False):
         self.step_depth = -1
@@ -260,7 +264,7 @@ class MW_Sim:
                 if trace_log:
                     DEV.log_msg(f" > ({self.step_id},{self.step_depth})"
                                 f" : {self.sub_trace.currentL}, n{len(self.sub_trace.currentL_candidates)}"
-                                f" - w({self.sub_trace.waterLevel:.3f}) : dw({self.sub_trace.waterLevel_deg:.3f}) dl({self.sub_trace.currentL_deg:.3f})"
+                                f" - dw({self.sub_trace.water_abs:.3f}) dl({self.sub_trace.currentL_deg:.3f}) : w({self.sub_trace.water:.3f})"
                                 #f" : n{len(self.sub_trace.currentL_candidates)} {self.sub_trace.currentL_candidatesW[:32]}"
                                 ,{"SIM", "NEXT", "TRACE"})
                     if self.cfg.debug_log_trace_candidates:
@@ -276,13 +280,13 @@ class MW_Sim:
         # candidates not found
         if not candidates:
             self.entryL = None
-            weights = []
+            prob_weights = []
 
-        # rnd.choices may fail due to all weights being null etc
+        # rnd.choices may fail due to all prob_weights being null etc
         else:
-            weights = [ self.get_entryWeight(l) for l in candidates ]
+            prob_weights = [ self.get_entryProbability(l) for l in candidates ]
             try:
-                picks = rnd.choices(candidates, weights)
+                picks = rnd.choices(candidates, prob_weights)
                 self.entryL = picks[0]
                 self.entryL.picks_entry +=1
 
@@ -299,31 +303,32 @@ class MW_Sim:
         if self.cfg.debug_log_trace:
             self.step_trace.entryL = self.entryL
             self.step_trace.entryL_candidates = candidates
-            self.step_trace.entryL_candidatesW = weights
+            self.step_trace.entryL_candidatesW = prob_weights
 
-    def get_entryWeight(self, l:Link):
+    def get_entryProbability(self, l:Link):
         # link dir align (face normal)
-        w = self.get_entryAlign(l.dir)
+        a = self.get_entryAlign(l.dir)
+        p = a
 
         # weight using face area (normalized)
-        if not self.cfg.debug_skip_entryArea:
-            w*= l.areaFactor
+        if not self.cfg.debug_skip_entry_area:
+            p*= l.areaFactor
 
-        return w
+        return p
 
     def get_entryAlign(self, vdir:Vector, bothDir=False):
         # relative position water dir
         water_dir_inv = -self.cfg.dir_entry.normalized()
-        d = vdir.dot(water_dir_inv)
-        if bothDir: d = abs(d)
+        a = vdir.dot(water_dir_inv)
+        if bothDir: a = abs(a)
 
         # cut-off
-        if d < self.cfg.dir_entry_minAlign:
+        if a < self.cfg.dir_entry_minAlign:
             return 0
 
         # normalize including potential negative align
-        d_norm = (d - self.cfg.dir_entry_minAlign) / (1.0 - self.cfg.dir_entry_minAlign)
-        return d_norm
+        a_norm = (a - self.cfg.dir_entry_minAlign) / (1.0 - self.cfg.dir_entry_minAlign)
+        return a_norm
 
     #-------------------------------------------------------------------
 
@@ -338,14 +343,14 @@ class MW_Sim:
         # candidates not found
         if not candidates:
             self.currentL = None
-            weights = []
+            prob_weights = []
 
-        # rnd.choices may fail due to all weights being null etc
+        # rnd.choices may fail due to all prob_weights being null etc
         else:
-            weights = [ self.get_nextWeight(l) for l in candidates ]
+            prob_weights = [ self.get_nextProbability(l) for l in candidates ]
             self.prevL = self.currentL
             try:
-                picks = rnd.choices(candidates, weights)
+                picks = rnd.choices(candidates, prob_weights)
                 self.currentL = picks[0]
                 self.currentL.picks += 1
 
@@ -358,72 +363,104 @@ class MW_Sim:
         if self.cfg.debug_log_trace:
             self.sub_trace.currentL = self.currentL
             self.sub_trace.currentL_candidates = candidates
-            self.sub_trace.currentL_candidatesW = weights
+            self.sub_trace.currentL_candidatesW = prob_weights
 
-    def get_nextWeight(self, l:Link):
+    def get_nextProbability(self, l:Link):
         # relative pos align
         dpos = l.pos - self.currentL.pos
-        w = self.get_nextAlign(dpos.normalized())
+        a = self.get_nextAlign(dpos.normalized())
+        p = a
 
-        ## check link resistance field
-        #r = 1 - l.resistance
-        #w *= r
+        # weight by link resistance field
+        r = self.link_resistance(l)
+        if not self.cfg.debug_skip_next_maxResist:
+            r = min(r, 0.999)
+        p *= 1-r
 
-        #return max(w, 0.0001)
-        return w
+        return p
 
     def get_nextAlign(self, vdir:Vector, bothDir=False):
         # relative pos align
         water_dir_inv = self.cfg.dir_next.normalized()
-        d = vdir.normalized().dot(water_dir_inv)
-        if bothDir: d = abs(d)
+        a = vdir.normalized().dot(water_dir_inv)
+        if bothDir: a = abs(a)
 
         # cut-off
-        if d < self.cfg.dir_next_minAlign:
+        if a < self.cfg.dir_next_minAlign:
             return 0
 
         # normalize including potential negative align
-        d_norm = (d - self.cfg.dir_next_minAlign) / (1.0 - self.cfg.dir_next_minAlign)
-        return d_norm
+        a_norm = (a - self.cfg.dir_next_minAlign) / (1.0 - self.cfg.dir_next_minAlign)
+        return a_norm
 
     #-------------------------------------------------------------------
 
+    def link_resistance(self, l:Link):
+        # dead link opposes no resistance
+        r = l.life
+
+        # mod by the resistance field at its center
+        r *= l.resistance
+
+        ## also consider area factor so area size affects the resistance opposed?
+        #if self.cfg.debug_skip_next_area:
+        #    r *= l.areaFactor
+        return r
+
     def link_degradation(self):
-        # calcultate degradation
-        d = self.cfg.step_linkDeg * self.waterLevel
+        # degradation depends on water abs but distributed over the link surface (cancels out area)
+        d = self.water_abs * self.cfg.link_deg / self.currentL.areaFactor
 
         # apply degradation -> potential break
-        if (self.currentL.degrade(d)):
-            pass
-            self.exit_flag = SIM_EXIT_FLAG.STOP_ON_LINK_BREAK
+        self.currentL.degrade(d)
+
+        #if self.state != LINK_STATE_ENUM.SOLID:
             #self.links.setState_link_check(self.currentL.key_cells)
 
-        # TRACE: build deg
+        if self.stopOnBreak:
+            self.exit_flag = SIM_EXIT_FLAG.STOP_ON_LINK_BREAK
+
+        # TRACE: link deg
         if self.cfg.debug_log_trace:
-            self.sub_trace.currentL_life = self.currentL.life
             self.sub_trace.currentL_deg = d
+            self.sub_trace.currentL_life = self.currentL.life
 
     def water_degradation(self):
-        # minimun degradation that also happens when the water runs through a exterior face
-        d = self.cfg.water_baseCost * self.currentL.area * self.currentL.resistance
+        # check potential full water absorption
+        if not self.water_rnd_abs_event():
 
-        # interior also takes into account current link life
-        if self.currentL.state == LINK_STATE_ENUM.SOLID:
-            d += self.cfg.water_linkCost * self.currentL.area * self.currentL.life_clamped
+            # minimun abs that happens when the water runs through a exterior face or an eroded interior one
+            if self.currentL.state != LINK_STATE_ENUM.SOLID:
+                w = self.cfg.water_abs_air * self.currentL.areaFactor
 
-        self.waterLevel -= d
+            # interior solid abs takes into account resistance too
+            else:
+                w = self.cfg.water_abs_solid * self.currentL.areaFactor * self.link_resistance(self.currentL)
 
+            # abs water
+            self.water -= w
+            if self.water > 0:
+                self.water_abs = w
+            else:
+                self.water_abs = w + self.water
+
+        # TRACE: water abs
         if self.cfg.debug_log_trace:
-            self.sub_trace.waterLevel = self.waterLevel
-            self.sub_trace.waterLevel_deg = d
+            self.sub_trace.water_abs = self.water_abs
+            self.sub_trace.water = self.water
 
-        # check complete water absortion event
-        if self.waterLevel < self.cfg.water_minAbsorb_check and self.waterLevel > 0:
-            minAbsorb = self.waterLevel / self.cfg.water_minAbsorb_check
-            if minAbsorb * self.cfg.water_minAbsorb_continueProb < rnd.random():
+    def water_rnd_abs_event(self):
+        if self.water < self.cfg.water_rnd_abs_minCheck:
+            minAbsorb = self.water / self.cfg.water_rnd_abs_minCheck
+            if minAbsorb * self.cfg.water_rnd_abs_continueProb < rnd.random():
                 self.exit_flag = SIM_EXIT_FLAG.NO_WATER_RND
 
-        # TODO:: degradation before or after cost?
+                # consider how much water was abs
+                self.water_abs = self.cfg.water_rnd_abs_damage * self.water
+                self.water -= self.water_abs
+                return True
+
+        return False
 
     #-------------------------------------------------------------------
 
@@ -441,13 +478,14 @@ class MW_Sim:
             else: self.exit_flag = SIM_EXIT_FLAG.NO_NEXT_LINK
 
         # no more water
-        elif self.waterLevel < 0:
+        elif self.water < 0:
             self.exit_flag = SIM_EXIT_FLAG.NO_WATER
 
         # max iterations when enabled
         elif self.cfg.step_maxDepth and self.step_depth >= self.cfg.step_maxDepth-1:
             self.exit_flag = SIM_EXIT_FLAG.MAX_DEPTH
 
+        # the flag could be potentially set at other steps: link break, water rnd abs...
         return self.check_exit_flag()
 
     def check_exit_flag(self):

@@ -110,12 +110,8 @@ class Link():
             self.dir_from = self.key_cells[0]
 
     def degrade(self, deg):
-        """ Degrade link life, return true when broken """
-        if self.state != LINK_STATE_ENUM.SOLID:
-            return False
-
+        """ Degrade link life, no clamping """
         self.life -= deg
-        return self.life <= 0
 
     @property
     def life_clamped(self):

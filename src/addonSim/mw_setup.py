@@ -478,7 +478,7 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
         f1_f2 : list[tuple[int,int]]          = []
 
     # max prob for normalizeing probabilty
-    probs = [ sim.get_entryWeight(l) for l in fract.links.external ]
+    probs = [ sim.get_entryProbability(l) for l in fract.links.external ]
     probsMax = max(probs) if probs else 1
     if probsMax == 0: probsMax = 1
     #probsMax = fract.links.max_area # visualize area instead
@@ -506,10 +506,10 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
             f1_f2.append(l.key_faces)
 
         # check non prob for entry links visualization
-        prob = sim.get_entryWeight(l)
+        prob = sim.get_entryProbability(l)
         #prob = l.area+fract.links.min_area
         #prob = 1
-        if prob == 0 and sim.cfg.debug_skipVis_entryUnreach:
+        if prob == 0 and sim.cfg.debug_skipVis_entry_unreachProb:
             continue
 
         # represent entry picks similarly
@@ -678,8 +678,8 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
         depth_water[depth] = (depth_id, w)
         depth_norm[depth] = (depth_id, depth_normalized)
 
-        # lerp with with the water -> could go over 1 step_waterIn
-        #w_normalized = w / sim.cfg.step_waterIn
+        # lerp with with the water -> could go over 1 water__start
+        #w_normalized = w / sim.cfg.water__start
         waterWidths[depth]= cfg.path_width_start * w + cfg.path_width_end * min(1-w, 0)
 
         # query info keys

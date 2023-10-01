@@ -147,26 +147,44 @@ class MW_gen_cfg(types.PropertyGroup):
 #-------------------------------------------------------------------
 
 class MW_sim_cfg(types.PropertyGroup):
+    # main params shown with step prefix
     step_infiltrations: props.IntProperty(
-        name="Number of infiltrations", description="Translate to individual paths traced per button press.",
+        name="Number of infiltrations",
+        description="Translate to individual paths traced per button press.",
         default=1, min=1, max=1000,
     )
     step_maxDepth: props.IntProperty(
-        name="Max infiltrations depth", description="Limit water depth, set to 0 to let all water to be absorbed.",
+        name="Max infiltrations depth",
+        description="Limit water depth, set to 0 to let all water to be absorbed.",
         default=10, min=0, max=100,
     )
 
-    step_waterIn: props.FloatProperty(
-        name="Water input amount", description="Initial water amount.",
+    # water start and abs
+    water__start: props.FloatProperty(
+        name="Water input amount",
+        description="Initial water amount.",
         default=1.0, min=0.1, max=5,
     )
-    step_linkDeg: props.FloatProperty(
-        name="Link degradation", description="Control the erosion done to links.",
+    water_abs_air: props.FloatProperty(
+        name="Water air degradation",
+        description="Amount of water absorbed by the average surface area through a non solid link",
+        default=0.01, precision=4
+    )
+    water_abs_solid: props.FloatProperty(
+        name="Water solid degradation",
+        description="Amount of water absorbed by the average surface area through a solid link",
+        default=0.01, precision=4
+    )
+
+    # simple link deg
+    link_deg: props.FloatProperty(
+        name="Link degradation", description="Amount of erosion water does to a link, distributed over its area.",
         default=0.25, min=0.05, max=0.75, step=1, precision=3
     )
 
     #-------------------------------------------------------------------
 
+    # dir aligments
     dir_entry: props.FloatVectorProperty(
         description="Kind of wind direction carrying input water (normalized for execution)",
         subtype='XYZ',
@@ -179,7 +197,6 @@ class MW_sim_cfg(types.PropertyGroup):
         default=0.1, precision=3,
         min=-1.0, max=1.0
     )
-
     dir_next: props.FloatVectorProperty(
         description="Kind of gravity direction followed by the water inside the model , (normalized for execution)",
         subtype='XYZ',
@@ -192,17 +209,18 @@ class MW_sim_cfg(types.PropertyGroup):
         min=-1.0, max=1.0
     )
 
-    water_baseCost: props.FloatProperty(
-        default=0.01, precision=4
+    # water absorption random event
+    water_rnd_abs_minCheck: props.FloatProperty(
+        description="Amount of water min to start checking for rnd full absorption",
+        default=0.3, min=0.05, max=0.5
     )
-    water_linkCost: props.FloatProperty(
-        default=0.2, precision=3
+    water_rnd_abs_continueProb: props.FloatProperty(
+        description="Probability to continue flowing when water is at water_rnd_abs_minCheck",
+        default=0.9, min=0.0, max=1.0
     )
-    water_minAbsorb_check: props.FloatProperty(
-        default=0.3, precision=3
-    )
-    water_minAbsorb_continueProb: props.FloatProperty(
-        default=0.9, precision=3
+    water_rnd_abs_damage: props.FloatProperty(
+        description="Amount of water min to start checking for rnd full absorption",
+        default=0.5, min=0.0, max=1.0
     )
 
     #-------------------------------------------------------------------
@@ -228,21 +246,34 @@ class MW_sim_cfg(types.PropertyGroup):
     )
 
     # custom sim/vis
-    debug_skip_entryArea: props.BoolProperty(
+    debug_skip_entry_area: props.BoolProperty(
+        name="DEBUG: skip entry L area",
+        description="Skip area entry weight to only vis alignment",
         default=False,
     )
-    debug_skipVis_entryUnreach: props.BoolProperty(
+    debug_skipVis_entry_unreachProb: props.BoolProperty(
+        name="DEBUG: no vis null entry L",
+        description="Skip vis of unreachable entry links",
         default=True,
     )
+    debug_skip_next_maxResist: props.BoolProperty(
+        name="DEBUG: skip max resist L",
+        description="Completely skip links with max resist",
+        default=False,
+    )
+    #debug_skip_next_area: props.BoolProperty(
+    #    name="DEBUG: skip next area reistance weight",
+    #    default=False,
+    #)
 
     # test erosion
     debug_util_rndState: props.BoolProperty(
-        name="DEBUG: rnd init",
+        name="TEST: rnd init",
         description="Initial random link state (within some limits)",
         default=False,
     )
     debug_util_uniformDeg: props.BoolProperty(
-        name="DEBUG: uniform deg",
+        name="TEST: uniform deg",
         description="Uniform erosion to all links",
         default=False,
     )

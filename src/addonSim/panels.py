@@ -271,7 +271,7 @@ class MW_sim_PT(types.Panel):
             sim : MW_Sim = MW_global_selected.fract.sim
             if sim and sim.step_path:
                 #row = col.split()
-                col.label(text=f"Path ({len(sim.step_path)}) - {SIM_EXIT_FLAG.to_str(sim.exit_flag)} - w:{sim.waterLevel:.2f}", icon="OUTLINER_OB_GREASEPENCIL")
+                col.label(text=f"Path ({len(sim.step_path)}) - {SIM_EXIT_FLAG.to_str(sim.exit_flag)} - w:{sim.water:.2f}", icon="OUTLINER_OB_GREASEPENCIL")
 
         col_rowSplit = col.row().split(factor=0.70)
         col_rowSplit.operator(ops.MW_sim_step_OT.bl_idname, text="STEP", icon="MOD_FLUIDSIM")
@@ -286,7 +286,8 @@ class MW_sim_PT(types.Panel):
         root = MW_global_selected.last_root()
         if root:
             #open, box = ui.draw_propsToggle_custom(root.mw_sim, prefs.sim_PT_meta_inspector, col, text="Parameters", propFilter="-step,-debug")
-            open, box = ui.draw_propsToggle_custom(root.mw_sim, prefs.sim_PT_meta_inspector, col, text="Parameters", propFilter="-step", splitDebug=True)
+            paramFilter = "-step"
+            open, box = ui.draw_propsToggle_custom(root.mw_sim, prefs.sim_PT_meta_inspector, col, text="Parameters", propFilter=paramFilter, splitDebug=True)
 
 
 #-------------------------------------------------------------------
