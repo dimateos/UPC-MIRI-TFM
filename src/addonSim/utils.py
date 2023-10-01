@@ -13,7 +13,8 @@ def rnd_reset_seed(s:int = None, mod:int = None) -> int:
     import random as rnd
 
     if s is None or s < 0:
-        s = get_timestamp()
+        #s = get_timestamp()
+        s = rnd.randint(0,10000)
 
     rnd.seed(s)
     bl_rnd.seed_set(s)

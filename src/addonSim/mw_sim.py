@@ -92,8 +92,8 @@ class MW_Sim:
 
     def rnd_store(self):
         #self.rndState = rnd.getstate()
-        if self.cfg.debug_rnd.seed_regen:
-            self.cfg.debug_rnd.seed = utils.rnd_reset_seed()
+        s = None if self.cfg.debug_rnd.seed_regen else self.cfg.debug_rnd.seed
+        self.cfg.debug_rnd.seed = utils.rnd_reset_seed(s)
 
     def rnd_restore(self):
         # NOTE:: just call some amount of randoms to modify seed, could modify state but requires copying a 600 elemnt tuple
@@ -200,8 +200,8 @@ class MW_Sim:
 
         # get entry
         self.get_entryLink()
-        if not self.check_start(self):
-            return False
+        if not self.check_start():
+            return
 
         # LOG: entry
         if self.cfg.debug_log:
@@ -381,6 +381,7 @@ class MW_Sim:
         # apply degradation -> potential break
         if (self.currentL.degrade(d)):
             pass
+            self.exit_flag = SIM_EXIT_FLAG.STOP_ON_LINK_BREAK
             #self.links.setState_link_check(self.currentL.key_cells)
 
         # TRACE: build deg
@@ -417,7 +418,7 @@ class MW_Sim:
         if not self.entryL:
             self.exit_flag = SIM_EXIT_FLAG.NO_ENTRY_LINK
 
-        return self.check_exit_flag(self)
+        return self.check_exit_flag()
 
     def check_continue(self):
         # no next link was found
@@ -434,7 +435,7 @@ class MW_Sim:
         elif self.cfg.step_maxDepth and self.step_depth >= self.cfg.step_maxDepth-1:
             self.exit_flag = SIM_EXIT_FLAG.MAX_DEPTH
 
-        return self.check_exit_flag(self)
+        return self.check_exit_flag()
 
     def check_exit_flag(self):
         # found msg means exit condition was met

@@ -126,8 +126,8 @@ class MW_gen_OT(_StartRefresh_OT):
         self.last_storageID = None
 
         # rnd seed
-        if self.cfg.debug_rnd.seed_regen:
-            self.cfg.debug_rnd.seed = utils.rnd_reset_seed()
+        s = None if self.cfg.debug_rnd.seed_regen else self.cfg.debug_rnd.seed
+        self.cfg.debug_rnd.seed = utils.rnd_reset_seed(s)
 
         return super().invoke(context, event)
 
@@ -537,10 +537,14 @@ class MW_sim_step_OT(_StartRefresh_OT):
         prefs = getPrefs()
         sim : MW_Sim = MW_global_selected.fract.sim
 
-
         # handle refresh
         if self.checkRefresh_cancel() or prefs.sim_PT_meta_inspector.skip_meta_show_toggled():
-            return self.end_op_refresh(skipLog=True)
+            # BUG:: try to fix black images
+            if DEV.FIX_IMAGES_QUEUE:
+                gen_textureMat_DEVfix()
+            # fix by reexec all OP
+            if not DEV.FIX_IMAGES_REDO:
+                return self.end_op_refresh(skipLog=True)
 
         # copy the params config from the object once, later copy all cfg to it from op
         if not self.invoked_once:
@@ -557,9 +561,13 @@ class MW_sim_step_OT(_StartRefresh_OT):
         # steps
         sim_cfg : MW_sim_cfg= self.cfg
         DEV.log_msg(f"step_infiltrations({sim_cfg.step_infiltrations}) step_maxDepth({sim_cfg.step_maxDepth}) step_linkDeg({sim_cfg.step_linkDeg})", {'SIM'})
-        for step in range(sim_cfg.step_infiltrations):
-            if sim_cfg.debug_util_uniformDeg: sim.step_degradeAll()
-            else: sim.step()
+        for step_id in range(sim_cfg.step_infiltrations):
+            if not sim_cfg.debug_util_uniformDeg: sim.step()
+            else: sim.step_degradeAll() # alternative see erosion on all
+
+            # no entry link due to direction
+            if sim.exit_flag == SIM_EXIT_FLAG.NO_ENTRY_LINK:
+                return self.end_op_error("No entry link found... (probably due dir_entry)")
 
         getStats().logDt("completed simulation steps")
 
