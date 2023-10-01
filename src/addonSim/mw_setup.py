@@ -352,7 +352,7 @@ def gen_linksAll(context: types.Context):
         utils_scene.delete_objectChild(MW_global_selected.root, getPrefs().names.links_path)
 
     # additional arrows
-    gen_arrowObject(MW_global_selected.root, MW_global_selected.root.mw_sim.water_entry_dir,
+    gen_arrowObject(MW_global_selected.root, MW_global_selected.root.mw_sim.dir_entry,
                                 utils_trans.VECTORS.O, context, getPrefs().names.links_waterDir)
 
 def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
@@ -509,7 +509,7 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
         prob = sim.get_entryWeight(l)
         #prob = l.area+fract.links.min_area
         #prob = 1
-        if not sim.cfg.link_entry_visAll and prob == 0:
+        if prob == 0 and sim.cfg.debug_skipVis_entryUnreach:
             continue
 
         # represent entry picks similarly
@@ -670,7 +670,7 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
         if l_prev:
             p1 = l_prev.pos
         else:
-            p1 = p2 + cfg.path_outside_start * -sim.cfg.water_entry_dir
+            p1 = p2 + cfg.path_outside_start * -sim.cfg.dir_entry
 
         verts[depth] = (p1, p2)
 
@@ -698,7 +698,7 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
 
         # last point outside
         p1 = l_prev.pos
-        p2 = p1 + cfg.path_outside_start * sim.cfg.water_next_dir
+        p2 = p1 + cfg.path_outside_start * sim.cfg.dir_next
         verts.append((p1, p2))
 
         # use new next id

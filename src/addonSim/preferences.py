@@ -24,7 +24,9 @@ def getPrefs() -> "MW_prefs":
 #-------------------------------------------------------------------
 
 class MW_dev(types.PropertyGroup):
-    """ Toggle some DEV flags in runtime """
+    """ Toggle some DEV flags in runtime,
+        # OPT:: too many to manually add, but also many left out to automate...
+    """
     meta_show_props: props.BoolProperty(
         default=True,
     )

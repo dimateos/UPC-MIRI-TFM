@@ -20,31 +20,39 @@ from .stats import getStats
 # IDEA:: bridges neighbours? too aligned wall links, vertically aligned internal -> when broken? cannot go though?
 
 class SIM_EXIT_FLAG:
-    STILL_RUNNING     = -1
-    MAX_DEPTH         = 0
-    NO_WATER          = 1
-    NO_WATER_RND      = 2
-    NO_NEXT_LINK      = 3
-    NO_NEXT_LINK_WALL = 4
+    STILL_RUNNING      = -1
+    MAX_DEPTH          = 0
+    NO_WATER           = 1
+    NO_WATER_RND       = 2
+    NO_NEXT_LINK       = 3
+    NO_NEXT_LINK_WALL  = 4
+    NO_ENTRY_LINK      = 5
+    STOP_ON_LINK_BREAK = 6
 
-    all = { MAX_DEPTH, NO_NEXT_LINK, NO_WATER, NO_WATER_RND }
+    all = { MAX_DEPTH, NO_WATER, NO_WATER_RND, NO_NEXT_LINK, NO_NEXT_LINK_WALL, NO_ENTRY_LINK }
 
     @classmethod
     def to_str(cls, e:int):
-        if e == cls.STILL_RUNNING:  return "STILL_RUNNING"
-        if e == cls.MAX_DEPTH:      return "MAX_DEPTH"
-        if e == cls.NO_NEXT_LINK:   return "NO_NEXT_LINK"
-        if e == cls.NO_WATER:       return "NO_WATER"
-        if e == cls.NO_WATER_RND:   return "NO_WATER_RND"
+        if e == cls.STILL_RUNNING:      return "STILL_RUNNING"
+        if e == cls.MAX_DEPTH:          return "MAX_DEPTH"
+        if e == cls.NO_WATER:           return "NO_WATER"
+        if e == cls.NO_WATER_RND:       return "NO_WATER_RND"
+        if e == cls.NO_NEXT_LINK:       return "NO_NEXT_LINK"
+        if e == cls.NO_NEXT_LINK_WALL:  return "NO_NEXT_LINK_WALL"
+        if e == cls.NO_ENTRY_LINK:      return "NO_ENTRY_LINK"
+        if e == cls.STOP_ON_LINK_BREAK: return "STOP_ON_LINK_BREAK"
         return "none"
         #raise ValueError(f"SIM_EXIT_FLAG: {e} is not in {cls.all}")
     @classmethod
     def from_str(cls, s:str):
-        if s == "STILL_RUNNING":    return cls.STILL_RUNNING
-        if s == "MAX_DEPTH":        return cls.MAX_DEPTH
-        if s == "NO_NEXT_LINK":     return cls.NO_NEXT_LINK
-        if s == "NO_WATER":         return cls.NO_WATER
-        if s == "NO_WATER_RND":     return cls.NO_WATER_RND
+        if s == "STILL_RUNNING":        return cls.STILL_RUNNING
+        if s == "MAX_DEPTH":            return cls.MAX_DEPTH
+        if s == "NO_WATER":             return cls.NO_WATER
+        if s == "NO_WATER_RND":         return cls.NO_WATER_RND
+        if s == "NO_NEXT_LINK":         return cls.NO_NEXT_LINK
+        if s == "NO_NEXT_LINK_WALL":    return cls.NO_NEXT_LINK_WALL
+        if s == "NO_ENTRY_LINK":        return cls.NO_ENTRY_LINK
+        if s == "STOP_ON_LINK_BREAK":   return cls.STOP_ON_LINK_BREAK
         raise ValueError(f"SIM_EXIT_FLAG: {s} is not in {set(SIM_EXIT_FLAG.to_str(s) for s in cls.all)}")
 
 class SubStepData:
@@ -184,14 +192,16 @@ class MW_Sim:
             DEV.log_msg(f" > ({self.step_id}) : starting waterLevel {self.waterLevel}", {"SIM", "STEP"})
 
         # TRACE: writing the full trace slows down the process, even more when print to console!
-        if (self.cfg.debug_trace):
+        if (self.cfg.debug_log_trace):
             self.step_trace = StepData()
             self.trace_data.append(self.step_trace)
-        trace_log = self.cfg.debug_log and self.cfg.debug_trace
+        trace_log = self.cfg.debug_log and self.cfg.debug_log_trace
 
 
         # get entry
         self.get_entryLink()
+        if not self.check_start(self):
+            return False
 
         # LOG: entry
         if self.cfg.debug_log:
@@ -212,7 +222,7 @@ class MW_Sim:
             DEV.log_msg(f" > ({self.step_id}) : {SIM_EXIT_FLAG.to_str(self.exit_flag)} : L ({self.currentL})", {"SIM", "EXIT"})
 
         # TRACE: log step
-        if (self.cfg.debug_trace):
+        if (self.cfg.debug_log_trace):
             self.step_trace.exitL = self.currentL
         if trace_log:
             DEV.log_msg(f" : n{len(self.sub_trace.currentL_candidates)} {self.sub_trace.currentL_candidatesW[:32]}",
@@ -226,7 +236,7 @@ class MW_Sim:
             self.step_depth += 1
 
             # TRACE: build step
-            if (self.cfg.debug_trace):
+            if (self.cfg.debug_log_trace):
                 self.sub_trace = SubStepData()
                 self.step_trace.subs.append(self.sub_trace)
 
@@ -274,31 +284,29 @@ class MW_Sim:
             self.step_path.append( (self.currentL.key_cells, self.waterLevel) )
 
         # TRACE: build entry
-        if self.cfg.debug_trace:
+        if self.cfg.debug_log_trace:
             self.step_trace.entryL = self.entryL
             self.step_trace.entryL_candidates = candidates
             self.step_trace.entryL_candidatesW = weights
 
     def get_entryWeight(self, l:Link):
-        #if MW_Links.skip_link_debugModel(l): return 0 # just not generated
-
         # link dir align (face normal)
         w = self.get_entryAlign(l.dir)
 
         # weight using face area (normalized)
-        if self.cfg.link_entry_areaWeigthed:
+        if not self.cfg.debug_skip_entryArea:
             w*= l.area
 
         return w
 
     def get_entryAlign(self, vdir:Vector, bothDir=False):
         # relative position water dir
-        water_dir_inv = -self.cfg.water_entry_dir.normalized()
+        water_dir_inv = -self.cfg.dir_entry.normalized()
         d = vdir.dot(water_dir_inv)
         if bothDir: d = abs(d)
 
         # cut-off
-        if d < self.cfg.link_entry_minAlign:
+        if d < self.cfg.dir_entry_minAlign:
             return 0
         return d
 
@@ -335,7 +343,7 @@ class MW_Sim:
             self.step_path.append( (self.currentL.key_cells, self.waterLevel) )
 
         # TRACE: build next
-        if self.cfg.debug_trace:
+        if self.cfg.debug_log_trace:
             self.sub_trace.currentL = self.currentL
             self.sub_trace.currentL_candidates = candidates
             self.sub_trace.currentL_candidatesW = weights
@@ -360,7 +368,7 @@ class MW_Sim:
         if bothDir: d = abs(d)
 
         # cut-off
-        if d < self.cfg.link_next_minAlign:
+        if d < self.cfg.dir_next_minAlign:
             return 0
         return d
 
@@ -376,7 +384,7 @@ class MW_Sim:
             #self.links.setState_link_check(self.currentL.key_cells)
 
         # TRACE: build deg
-        if self.cfg.debug_trace:
+        if self.cfg.debug_log_trace:
             self.sub_trace.currentL_life = self.currentL.life
             self.sub_trace.currentL_deg = d
 
@@ -390,7 +398,7 @@ class MW_Sim:
 
         self.waterLevel -= d
 
-        if self.cfg.debug_trace:
+        if self.cfg.debug_log_trace:
             self.sub_trace.waterLevel = self.waterLevel
             self.sub_trace.waterLevel_deg = d
 
@@ -404,10 +412,18 @@ class MW_Sim:
 
     #-------------------------------------------------------------------
 
+    def check_start(self):
+        # no entry link was found
+        if not self.entryL:
+            self.exit_flag = SIM_EXIT_FLAG.NO_ENTRY_LINK
+
+        return self.check_exit_flag(self)
+
     def check_continue(self):
         # no next link was found
         if not self.currentL:
-            if self.prevL.state == LINK_STATE_ENUM.WALL: self.exit_flag = SIM_EXIT_FLAG.NO_NEXT_LINK_WALL
+            if not self.entryL: self.exit_flag = SIM_EXIT_FLAG.NO_ENTRY_LINK
+            elif self.prevL.state == LINK_STATE_ENUM.WALL: self.exit_flag = SIM_EXIT_FLAG.NO_NEXT_LINK_WALL
             else: self.exit_flag = SIM_EXIT_FLAG.NO_NEXT_LINK
 
         # no more water
@@ -418,11 +434,13 @@ class MW_Sim:
         elif self.cfg.step_maxDepth and self.step_depth >= self.cfg.step_maxDepth-1:
             self.exit_flag = SIM_EXIT_FLAG.MAX_DEPTH
 
+        return self.check_exit_flag(self)
 
+    def check_exit_flag(self):
         # found msg means exit condition was met
         if self.exit_flag != SIM_EXIT_FLAG.STILL_RUNNING:
             # TRACE: keep msg per trace
-            if self.cfg.debug_trace:
+            if self.cfg.debug_log_trace:
                 self.step_trace.break_flag = self.exit_flag
             return False
 

@@ -167,55 +167,27 @@ class MW_sim_cfg(types.PropertyGroup):
 
     #-------------------------------------------------------------------
 
-    debug_rnd: props.PointerProperty(type=properties_utils.RND_config)
-
-    debug_log: props.BoolProperty(
-        description="Output some info during simulation",
-        default=True,
-    )
-    debug_trace: props.BoolProperty(
-        description="SLOW: Keep a complete log of the path along with props",
-        default=False,
-    )
-
-    debug_util_rndState: props.BoolProperty(
-        name="DEBUG: rnd init",
-        description="Initial random link state (within some limits)",
-        default=False,
-    )
-    debug_util_uniformDeg: props.BoolProperty(
-        name="DEBUG: uniform deg",
-        description="Uniform erosion to all links",
-        default=False,
-    )
-
-    #-------------------------------------------------------------------
-
-    link_entry_areaWeigthed: props.BoolProperty(
-        default=True,
-    )
-    link_entry_visAll: props.BoolProperty(
-        default=False,
-    )
-    link_entry_minAlign: props.FloatProperty(
-        default=0.1, precision=3
-    )
-    link_next_minAlign: props.FloatProperty(
-        default=0.1, precision=3
-    )
-
-    water_entry_dir: props.FloatVectorProperty(
-        description="Kind of wind direction, normalized after execution",
+    dir_entry: props.FloatVectorProperty(
+        description="Kind of wind direction carrying input water (normalized after execution)",
         subtype='XYZ',
         size=3,
         default=(1, -0.5, -0.5),
         #default=(0, 1, 0),
     )
-    water_next_dir: props.FloatVectorProperty(
-        description="Kind of gravity direction, normalized after execution",
+    dir_entry_minAlign: props.FloatProperty(
+        description="Min aligment required, otherwise unreacheable",
+        default=0.1, precision=3
+    )
+
+    dir_next: props.FloatVectorProperty(
+        description="Kind of gravity direction followed by the water inside the model , (normalized after execution)",
         subtype='XYZ',
         size=3,
         default=(0, 0, -1),
+    )
+    dir_next_minAlign: props.FloatProperty(
+        description="Min aligment required, otherwise unreacheable",
+        default=0.1, precision=3
     )
 
     water_baseCost: props.FloatProperty(
@@ -231,6 +203,39 @@ class MW_sim_cfg(types.PropertyGroup):
         default=0.9, precision=3
     )
 
+    #-------------------------------------------------------------------
+
+    debug_rnd: props.PointerProperty(type=properties_utils.RND_config)
+
+    # cfg logging
+    debug_log: props.BoolProperty(
+        description="Output some info during simulation",
+        default=True,
+    )
+    debug_log_trace: props.BoolProperty(
+        description="SLOW: Keep a complete log of the path along with props",
+        default=False,
+    )
+
+    # custom sim/vis
+    debug_skip_entryArea: props.BoolProperty(
+        default=False,
+    )
+    debug_skipVis_entryUnreach: props.BoolProperty(
+        default=True,
+    )
+
+    # test erosion
+    debug_util_rndState: props.BoolProperty(
+        name="DEBUG: rnd init",
+        description="Initial random link state (within some limits)",
+        default=False,
+    )
+    debug_util_uniformDeg: props.BoolProperty(
+        name="DEBUG: uniform deg",
+        description="Uniform erosion to all links",
+        default=False,
+    )
 
 #-------------------------------------------------------------------
 
