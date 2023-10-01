@@ -125,7 +125,7 @@ class DM_utils(types.PropertyGroup):
     )
     meta_show_debug: props.BoolProperty(
         name="debug...", description="WIP: Show some debug stuff",
-        default=True,
+        default=False,
     )
 
     # filters
@@ -271,14 +271,14 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=True,
     )
 
-    gen_calc_OT_clearCfg: props.BoolProperty(
-        name="clear", description="Next execution will clear the config",
-        default=True,
-    )
     gen_calc_OT_links: props.BoolProperty(
         name="gen", description="Generate links mesh directly alongside cells",
-        default=True,
+        default=False,
     )
+    #gen_calc_OT_clearCfg: props.BoolProperty(
+    #    name="clear", description="Next execution will clear the config",
+    #    default=True,
+    #)
     gen_duplicate_OT_hidePrev: props.BoolProperty(
         name="hide", description="Hide the original fractured object after duplication",
         default=False,

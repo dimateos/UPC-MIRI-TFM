@@ -111,16 +111,8 @@ class MW_gen_OT(_StartRefresh_OT):
         prefs = getPrefs()
         getPrefs().gen_PT_meta_inspector.reset_meta_show_toggled()
 
-        # maybe reset the config
-        if prefs.gen_calc_OT_clearCfg:
-            prefs.gen_calc_OT_clearCfg = False
-            DEV.log_msg("cfg reset once: skip copy props", {'SIM'})
-            properties_utils.resetProps(self.cfg)
-            self.invoked_once = True
-
-        # copy prop from obj once
-        else:
-            self.invoked_once = False
+        # will copy prop from obj once
+        self.invoked_once = False
 
         # id of last fract calculated stored (outside the operator)
         self.last_storageID = None
@@ -605,7 +597,7 @@ class MW_sim_reset_OT(_StartRefresh_OT):
 class MW_sim_resetCFG_OT(_StartRefresh_OT):
     bl_idname = "mw.sim_reset_cfg"
     bl_label = "sim reset cfg"
-    bl_description = "Reset the simulation config"
+    bl_description = "Reset the simulation config (without having to execute it)"
 
     bl_options = {'INTERNAL', 'UNDO'}
 

@@ -168,7 +168,7 @@ class MW_sim_cfg(types.PropertyGroup):
     #-------------------------------------------------------------------
 
     dir_entry: props.FloatVectorProperty(
-        description="Kind of wind direction carrying input water (normalized after execution)",
+        description="Kind of wind direction carrying input water (normalized for execution)",
         subtype='XYZ',
         size=3,
         default=(1, -0.5, -0.5),
@@ -176,18 +176,20 @@ class MW_sim_cfg(types.PropertyGroup):
     )
     dir_entry_minAlign: props.FloatProperty(
         description="Min aligment required, otherwise unreacheable",
-        default=0.1, precision=3
+        default=0.1, precision=3,
+        min=-1.0, max=1.0
     )
 
     dir_next: props.FloatVectorProperty(
-        description="Kind of gravity direction followed by the water inside the model , (normalized after execution)",
+        description="Kind of gravity direction followed by the water inside the model , (normalized for execution)",
         subtype='XYZ',
         size=3,
         default=(0, 0, -1),
     )
     dir_next_minAlign: props.FloatProperty(
         description="Min aligment required, otherwise unreacheable",
-        default=0.1, precision=3
+        default=0.1, precision=3,
+        min=-1.0, max=1.0
     )
 
     water_baseCost: props.FloatProperty(

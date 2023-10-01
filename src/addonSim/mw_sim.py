@@ -229,6 +229,9 @@ class MW_Sim:
                         {"SIM", "EXIT", "TRACE"})
         DEV.logs_cutmsg_disabled = self.logs_cutmsg_disabled_prev
 
+    def infiltration_buildPath(self):
+        if self.currentL:
+            self.step_path.append( (self.currentL.key_cells, self.waterLevel) )
 
     def infiltration_loop(self, trace_log=False):
         self.step_depth = -1
@@ -281,7 +284,8 @@ class MW_Sim:
         # found an entry
         if self.entryL:
             self.currentL = self.entryL
-            self.step_path.append( (self.currentL.key_cells, self.waterLevel) )
+
+        self.infiltration_buildPath()
 
         # TRACE: build entry
         if self.cfg.debug_log_trace:
@@ -295,7 +299,7 @@ class MW_Sim:
 
         # weight using face area (normalized)
         if not self.cfg.debug_skip_entryArea:
-            w*= l.area
+            w*= l.areaFactor
 
         return w
 
@@ -308,7 +312,10 @@ class MW_Sim:
         # cut-off
         if d < self.cfg.dir_entry_minAlign:
             return 0
-        return d
+
+        # normalize including potential negative align
+        d_norm = (d - self.cfg.dir_entry_minAlign) / (1.0 - self.cfg.dir_entry_minAlign)
+        return d_norm
 
     #-------------------------------------------------------------------
 
@@ -316,11 +323,9 @@ class MW_Sim:
         # merge neighs, the water could scape to the outer surface
         candidates = self.links.get_link_neighs(self.currentL.key_cells)
 
-        # TODO:: should be dropped by dir?
-        ## drop prev from candidates
+        ## drop prev from candidates?
         #if self.prevL:
         #    candidates -= [self.prevL]
-        #self.prevL = self.currentL
 
         # candidates not found
         if not candidates:
@@ -332,15 +337,14 @@ class MW_Sim:
             weights = [ self.get_nextWeight(l) for l in candidates ]
             try:
                 picks = rnd.choices(candidates, weights)
+                self.prevL = self.currentL
                 self.currentL = picks[0]
                 self.currentL.picks += 1
 
             except ValueError as e:
                 self.currentL = None
 
-        # found the next
-        if self.entryL:
-            self.step_path.append( (self.currentL.key_cells, self.waterLevel) )
+        self.infiltration_buildPath()
 
         # TRACE: build next
         if self.cfg.debug_log_trace:
@@ -349,8 +353,6 @@ class MW_Sim:
             self.sub_trace.currentL_candidatesW = weights
 
     def get_nextWeight(self, l:Link):
-        #if MW_Links.skip_link_debugModel(l): return 0 # just not generated
-
         # relative pos align
         dpos = l.pos - self.currentL.pos
         w = self.get_nextAlign(dpos.normalized())
@@ -363,14 +365,17 @@ class MW_Sim:
 
     def get_nextAlign(self, vdir:Vector, bothDir=False):
         # relative pos align
-        water_dir_inv = -VECTORS.upZ
+        water_dir_inv = self.cfg.dir_next.normalized()
         d = vdir.normalized().dot(water_dir_inv)
         if bothDir: d = abs(d)
 
         # cut-off
         if d < self.cfg.dir_next_minAlign:
             return 0
-        return d
+
+        # normalize including potential negative align
+        d_norm = (d - self.cfg.dir_entry_minAlign) / (1.0 - self.cfg.dir_entry_minAlign)
+        return d_norm
 
     #-------------------------------------------------------------------
 
