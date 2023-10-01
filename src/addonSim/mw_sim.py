@@ -120,6 +120,10 @@ class MW_Sim:
         self.cont.backupState_restore()
         self.rnd_restore()
 
+        # reset the step
+        self.step_reset()
+        self.step_reset_trace()
+
         # global recalculation including graphs
         self.links.comps_recalc()
 
@@ -205,11 +209,12 @@ class MW_Sim:
 
         # LOG: entry
         if self.cfg.debug_log:
-            DEV.log_msg(f" > ({self.step_id}) : L ({self.currentL})", {"SIM", "ENTRY"})
+            DEV.log_msg(f" > ({self.step_id}) : {self.currentL}", {"SIM", "ENTRY" })
         # TRACE: log entry
         if trace_log:
-            DEV.log_msg(f" : n{len(self.step_trace.entryL_candidates)} {self.step_trace.entryL_candidatesW}",
-                        {"SIM", "ENTRY", "TRACE"})
+            DEV.log_msg(f" >>> ENTRY CANDIDATES len({len(self.step_trace.entryL_candidates)})", {"SIM", "ENTRY"})
+            for (l,w) in zip(self.step_trace.entryL_candidates, self.step_trace.entryL_candidatesW):
+                DEV.log_msg(f"      [{w:.2f}] {l}", {"SIM", "ENTRY", "TRACE"})
 
 
         # main loop with a break condition
@@ -218,15 +223,15 @@ class MW_Sim:
 
         # LOG: exit
         if self.cfg.debug_log:
-            DEV.log_msg(f" >>> len({len(self.step_path)}) : { [ f'[{i}] L{k}, w:{w:.2f}' for i,(k,w) in enumerate(self.step_path)] }", {"SIM", "PATH"})
-            DEV.log_msg(f" > ({self.step_id}) : {SIM_EXIT_FLAG.to_str(self.exit_flag)} : L ({self.currentL})", {"SIM", "EXIT"})
+            DEV.log_msg(f" >>> ({self.step_id}) : exit {SIM_EXIT_FLAG.to_str(self.exit_flag)} : L ({self.currentL})", {"SIM", "EXIT"})
+            DEV.log_msg(f" >>> PATH len({len(self.step_path)})", {"SIM", "PATH"})
+            if self.cfg.debug_log_path:
+                for i,(k,w) in enumerate(self.step_path):
+                    DEV.log_msg(f"      [{i}] L{k} - w:{w:.2f}", {"SIM", "PATH"})
 
-        # TRACE: log step
+        # TRACE: exitL
         if (self.cfg.debug_log_trace):
             self.step_trace.exitL = self.currentL
-        if trace_log:
-            DEV.log_msg(f" : n{len(self.sub_trace.currentL_candidates)} {self.sub_trace.currentL_candidatesW[:32]}",
-                        {"SIM", "EXIT", "TRACE"})
         DEV.logs_cutmsg_disabled = self.logs_cutmsg_disabled_prev
 
     def infiltration_buildPath(self):
@@ -253,11 +258,14 @@ class MW_Sim:
 
                 # TRACE: log step
                 if trace_log:
-                    DEV.log_msg(f" > ({self.step_id},{self.step_depth}) : w({self.sub_trace.waterLevel:.3f})"
-                            f" : dw({self.sub_trace.waterLevel_deg:.3f}) dl({self.sub_trace.currentL_deg:.3f})"
-                            f" : {self.sub_trace.currentL}"
-                            f" : n{len(self.sub_trace.currentL_candidates)} {self.sub_trace.currentL_candidatesW[:32]}",
-                            {"SIM", "SUB", "TRACE"})
+                    DEV.log_msg(f" > ({self.step_id},{self.step_depth})"
+                                f" : {self.sub_trace.currentL}, n{len(self.sub_trace.currentL_candidates)}"
+                                f" - w({self.sub_trace.waterLevel:.3f}) : dw({self.sub_trace.waterLevel_deg:.3f}) dl({self.sub_trace.currentL_deg:.3f})"
+                                #f" : n{len(self.sub_trace.currentL_candidates)} {self.sub_trace.currentL_candidatesW[:32]}"
+                                ,{"SIM", "NEXT", "TRACE"})
+                    if self.cfg.debug_log_trace_candidates:
+                        for (l,w) in zip(self.sub_trace.currentL_candidates, self.sub_trace.currentL_candidatesW):
+                            DEV.log_msg(f"      [{w:.2f}] {l}", {"SIM", "NEXT", "TRACE"})
 
     #-------------------------------------------------------------------
     #  https://docs.python.org/dev/library/random.html#random.choices
@@ -335,9 +343,9 @@ class MW_Sim:
         # rnd.choices may fail due to all weights being null etc
         else:
             weights = [ self.get_nextWeight(l) for l in candidates ]
+            self.prevL = self.currentL
             try:
                 picks = rnd.choices(candidates, weights)
-                self.prevL = self.currentL
                 self.currentL = picks[0]
                 self.currentL.picks += 1
 
@@ -357,11 +365,12 @@ class MW_Sim:
         dpos = l.pos - self.currentL.pos
         w = self.get_nextAlign(dpos.normalized())
 
-        # check link resistance field
-        r = 1 - l.resistance
-        w *= r
+        ## check link resistance field
+        #r = 1 - l.resistance
+        #w *= r
 
-        return max(w, 0.0001)
+        #return max(w, 0.0001)
+        return w
 
     def get_nextAlign(self, vdir:Vector, bothDir=False):
         # relative pos align
@@ -374,7 +383,7 @@ class MW_Sim:
             return 0
 
         # normalize including potential negative align
-        d_norm = (d - self.cfg.dir_entry_minAlign) / (1.0 - self.cfg.dir_entry_minAlign)
+        d_norm = (d - self.cfg.dir_next_minAlign) / (1.0 - self.cfg.dir_next_minAlign)
         return d_norm
 
     #-------------------------------------------------------------------
@@ -428,8 +437,7 @@ class MW_Sim:
     def check_continue(self):
         # no next link was found
         if not self.currentL:
-            if not self.entryL: self.exit_flag = SIM_EXIT_FLAG.NO_ENTRY_LINK
-            elif self.prevL.state == LINK_STATE_ENUM.WALL: self.exit_flag = SIM_EXIT_FLAG.NO_NEXT_LINK_WALL
+            if self.prevL.state == LINK_STATE_ENUM.WALL: self.exit_flag = SIM_EXIT_FLAG.NO_NEXT_LINK_WALL
             else: self.exit_flag = SIM_EXIT_FLAG.NO_NEXT_LINK
 
         # no more water

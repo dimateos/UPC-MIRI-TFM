@@ -214,8 +214,16 @@ class MW_sim_cfg(types.PropertyGroup):
         description="Output some info during simulation",
         default=True,
     )
+    debug_log_path: props.BoolProperty(
+        description="Write the full final path",
+        default=True,
+    )
     debug_log_trace: props.BoolProperty(
         description="SLOW: Keep a complete log of the path along with props",
+        default=False,
+    )
+    debug_log_trace_candidates: props.BoolProperty(
+        description="SLOWER: Show all candidates and their probabilty per substep",
         default=False,
     )
 

@@ -87,11 +87,12 @@ class Link():
     def __str__(self):
         #a({self.area:.2f}), p({self.picks},{self.picks_entry}),
         if self.state == LINK_STATE_ENUM.WALL:
-            return f"W{self.key_cells[0]}: p({self.picks_entry}), dir{self.dir.to_tuple(2)}"
+            return f"W{self.key_cells[0]} picks({self.picks_entry}), dir{self.dir.to_tuple(2)}"
         elif self.state == LINK_STATE_ENUM.AIR:
-            return f"kA{self.key_cells}: l({self.life:.3f}), dir{self.dir.to_tuple(2)}"
+            return f"A{self.key_cells} picks({self.picks_entry}), dir{self.dir.to_tuple(2)}"
         else:
-            return f"k{self.key_cells}: l({self.life:.3f}), dir{self.dir.to_tuple(2)}"
+            #return f"K{self.key_cells}: life({self.life:.3f}), dir{self.dir.to_tuple(2)}"
+            return f"k{self.key_cells} life({self.life:.3f})"
 
     #-------------------------------------------------------------------
 
