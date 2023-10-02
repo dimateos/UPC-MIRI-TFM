@@ -15,6 +15,7 @@ class DEV:
 
     SKIP_SANITIZE         = False   # skip attempt to keep up with the UNDO/REDO etc system
     SKIP_PATH_CHECK       = False   # skip checking if a path still exists before recalc all graphs
+    SKIP_BUBBLE_CHECK     = False   # skip checking for air bubbles -> air cells inside model can get entry water!
 
     FORCE_NO_RND_START    = True    # skip random generation in certain places to help debugging
     FORCE_NEW_MATS        = False   # force regeneration of gradient images to avoid debugging confussion

@@ -286,7 +286,7 @@ class MW_sim_cfg(types.PropertyGroup):
     debug_skipVis_entry_unreachProb: props.BoolProperty(
         name="DEBUG: no vis null entry L",
         description="Skip vis of unreachable entry links",
-        default=True,
+        default=False,
     )
     debug_skip_next_maxResist: props.BoolProperty(
         name="DEBUG: skip max resist L",

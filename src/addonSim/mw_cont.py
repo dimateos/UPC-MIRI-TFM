@@ -99,6 +99,8 @@ class MW_Cont:
 
         # init wall dict with just empty lists (some will remain empty)
         self.wallsId : list[int] = self.voro_cont.get_conainerId_limitWalls()+self.voro_cont.walls_cont_idx
+        numWalls = len(self.wallsId)
+        self.wallsId_edges = [ (self.wallsId[i], self.wallsId[(i+1)%numWalls] ) for i in range(numWalls) ]
         self.keys_perWall: dict[int, list[neigh_key_t]] = {
             id: list() for id in self.wallsId
         }

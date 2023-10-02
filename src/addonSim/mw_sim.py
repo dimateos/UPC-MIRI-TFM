@@ -373,9 +373,9 @@ class MW_Sim:
             self.sub_trace.currentL_candidatesW = prob_weights
 
     def get_nextProbability(self, l:Link):
-        # links hanging in the air are not valid
-        #if self.links.solid_link_check(l):
-        #    return 0
+        # links hanging in the air are not valid (rare case)
+        if not self.links.solid_link_check(l):
+            return 0
 
         # relative pos align
         dpos = l.pos - self.currentL.pos

@@ -61,6 +61,14 @@ class MW_dev(types.PropertyGroup):
         default=DEV.SKIP_SANITIZE,
         update=lambda self, context: setattr(DEV, "SKIP_SANITIZE", self.SKIP_SANITIZE),
     )
+    SKIP_PATH_CHECK : props.BoolProperty(
+        default=DEV.SKIP_PATH_CHECK,
+        update=lambda self, context: setattr(DEV, "SKIP_PATH_CHECK", self.SKIP_PATH_CHECK),
+    )
+    SKIP_BUBBLE_CHECK : props.BoolProperty(
+        default=DEV.SKIP_BUBBLE_CHECK,
+        update=lambda self, context: setattr(DEV, "SKIP_BUBBLE_CHECK", self.SKIP_BUBBLE_CHECK),
+    )
 
     FORCE_NO_RND_START : props.BoolProperty(
         default=DEV.FORCE_NO_RND_START,

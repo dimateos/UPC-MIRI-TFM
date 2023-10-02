@@ -98,7 +98,7 @@ class Link():
 
     def set_broken(self):
         self.state = LINK_STATE_ENUM.AIR
-        #self.life = 0
+        self.life = 0
         #self.picks = 0
 
     def flip_dir(self):
@@ -124,6 +124,17 @@ class Link():
         """ Clamp link life [0,1] """
         self.life = self.life_clamped
 
+    def key_cells_other(self, cell_id):
+        if self.key_cells[0] == cell_id:
+            return self.key_cells[1]
+        assert(self.key_cells[1] == cell_id)
+        return self.key_cells[0]
+
+    def key_faces_other(self, face_id):
+        if self.key_faces[0] == face_id:
+            return self.key_faces[1]
+        assert(self.key_faces[1] == face_id)
+        return self.key_faces[0]
 
 #-------------------------------------------------------------------
 
@@ -149,8 +160,13 @@ class MW_Links():
 
         self.comps = []
         """ List of sets with connected components cells id """
-        self.comps_subgraph = nx.Graph() # used to leave cells_graph untouched (edges get removed along nodes)
-        self.comps_len = 1               # initial expected
+        self.comps_subgraph = nx.Graph()    # used to leave cells_graph untouched (edges get removed along nodes)
+        self.comps_len = 1                  # initial expected
+
+        self.air_graph = nx.Graph()
+        """ Used to determine air bubbles inside the model """
+        self.air_comps = []
+        self.air_comps_len = 1
 
         self.links_graph = nx.Graph()
         """ Graph connecting links! Links connect with other links from adjacent faces from both cells """
@@ -410,6 +426,14 @@ class MW_Links():
         removed_links = stateMap_links[LINK_STATE_ENUM.AIR] # + stateMap_links[LINK_STATE_ENUM.WALL] already dropped with stateMap not AIR
         self.comps_subgraph.remove_edges_from(removed_links)
 
+        ## TEST:: subgraphs
+        #stateMap = self.cont.getCells_splitID_state()
+        #air_graph : nx.Graph = self.cells_graph.subgraph(stateMap[CELL_STATE_ENUM.AIR]+self.cont.wallsId)
+        #comps = list(nx.connected_components(air_graph))
+        #stateMap_links = self.get_link_splitID_state()
+        #airlinks_subgraph_view : nx.Graph = self.links_graph.subgraph(stateMap_links[LINK_STATE_ENUM.WALL] + stateMap_links[LINK_STATE_ENUM.AIR])
+        #comps_links = list(nx.connected_components(airlinks_subgraph_view))
+
     def comps_count(self):
         self.comps = list(nx.connected_components(self.comps_subgraph))
         self.comps_len = len(self.comps)
@@ -419,15 +443,64 @@ class MW_Links():
         """ Check new internal and external links, also changes cells state to air """
         if self.log: DEV.log_msg(f"Recalc FRONT", {"COMPS"})
 
-        # all solid are internal
-        stateMap_linksRaw = self.get_link_split_state()
-        self.internal = stateMap_linksRaw[LINK_STATE_ENUM.SOLID]
-
-        # external pick only the ones with at least a solid at the other side
+        self.internal.clear()
         self.external.clear()
-        for l in stateMap_linksRaw[LINK_STATE_ENUM.WALL] + stateMap_linksRaw[LINK_STATE_ENUM.AIR]:
-            if self.solid_link_check(l):
-                self.external.append(l)
+
+        if DEV.SKIP_BUBBLE_CHECK:
+            # all solid are internal
+            stateMap_links = self.get_link_split_state()
+            self.internal = stateMap_links[LINK_STATE_ENUM.SOLID]
+            # external pick only the ones with at least a solid at the other side
+            for l in stateMap_links[LINK_STATE_ENUM.WALL] + stateMap_links[LINK_STATE_ENUM.AIR]:
+                if self.solid_link_check(l):
+                    self.external.append(l)
+
+        else:
+            # build air graph connecting all external walls -> detecting air bubbles
+            stateMap = self.cont.getCells_splitID_state()
+            self.air_recalc_graph(stateMap)
+            self.air_comps_count()
+
+            # iterate solid cells split their link by state (contain the frontier)
+            for cell_id in stateMap[CELL_STATE_ENUM.SOLID]:
+                links = self.get_cell_links(cell_id)
+                for l in links:
+                    if l.state == LINK_STATE_ENUM.SOLID:
+                        self.internal.append(l)
+                    else:
+                        # check that the component of the air link is the same as wall comp id
+                        cell_id_other = l.key_cells_other(cell_id)
+                        if cell_id_other in self.air_comps[self.air_comps_wall_id]:
+                            self.external.append(l)
+                        else:
+                            self.internal.append(l) # internal broken link in a bubble!
+
+    def air_recalc_graph(self, stateMap):
+        self.air_graph = nx.Graph()
+        self.air_graph.add_edges_from( self.cont.wallsId_edges )
+
+        # now add air links and connect only the valid edges
+        self.air_graph.add_nodes_from( stateMap[CELL_STATE_ENUM.AIR] )
+        for cell_id in stateMap[CELL_STATE_ENUM.AIR]:
+            links = self.get_cell_linksKeys(cell_id)
+            for lk in links:
+                if self.air_graph.has_node(lk[0]) and self.air_graph.has_node(lk[1]):
+                    self.air_graph.add_edge(*lk)
+
+    def air_comps_count(self):
+        self.air_comps = list(nx.connected_components(self.air_graph))
+        self.air_comps_len = len(self.air_comps)
+
+        # find wall comp
+        self.air_comps_wall_id = -1
+        sampleWall = self.cont.wallsId[0]
+        for i,comp in enumerate(self.air_comps):
+            if sampleWall in comp:
+                self.air_comps_wall_id = i
+                break
+        assert(self.air_comps_wall_id != -1)
+
+        getStats().logDt(f"count AIR COMPS: {self.air_comps_len}")
 
     def comps_detach_frontier(self):
         if self.log: DEV.log_msg(f"Recalc DETACH", {"COMPS"})
