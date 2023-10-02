@@ -465,6 +465,12 @@ class MW_gen_field_r_OT(_StartRefresh_OT):
         # will generate or update it
         mw_setup.gen_field_R(MW_global_selected.root, context, MW_global_selected.root.mw_gen.debug_fieldR_res)
 
+        # update links R
+        links :MW_Links = MW_global_selected.fract.links
+        for key in links.links_graph.nodes():
+            l = links.get_link(key)
+            l.update_resistance()
+
         return self.end_op()
 
 #-------------------------------------------------------------------
@@ -494,10 +500,12 @@ class MW_sim_step_OT(_StartRefresh_OT):
         col.prop(cfg, "step_infiltrations")
         col.prop(cfg, "step_maxDepth")
         col.prop(cfg, "water__start")
+        col.prop(cfg, "water_deg")
         row = col.split()
         row.prop(cfg, "water_abs_solid")
         row.prop(cfg, "water_abs_air")
         col.prop(cfg, "link_deg")
+        col.prop(cfg, "link_resist_weight")
 
         sim : MW_Sim = MW_global_selected.fract.sim
         if sim.step_path:
@@ -564,6 +572,10 @@ class MW_sim_step_OT(_StartRefresh_OT):
             # no entry link due to direction
             if sim.exit_flag == SIM_EXIT_FLAG.NO_ENTRY_LINK:
                 return self.end_op_error("No entry link found... (probably due dir_entry)")
+
+            # skip the rest of steps
+            if sim.exit_flag == SIM_EXIT_FLAG.STOP_ON_LINK_BREAK:
+                break
 
         getStats().logDt("completed simulation steps")
 

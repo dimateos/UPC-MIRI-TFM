@@ -742,6 +742,10 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
     c2.xyz *= cfg.path_dark_end
     obj_path.active_material = utils_mat.gen_gradientMat("depth_norm", name, colorFn=GRADIENTS.lerp_common(c2, c1))
 
+    # see through and name
+    obj_path.show_in_front = True
+    obj_path.show_name = True
+
     getStats().logDt("generated path mesh object")
     return obj_path
 

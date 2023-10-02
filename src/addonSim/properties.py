@@ -122,7 +122,7 @@ class MW_gen_cfg(types.PropertyGroup):
     #)
     debug_fieldR: props.BoolProperty(
         name="Generate R field visuals", description="You can later modify the geometry and update the visualization.",
-        default=False,
+        default=True,
     )
     debug_fieldR_res: props.IntProperty(
         name="Generated R field resolution", description="Resolution of the grid used for visualization, could slow substantially generation.",
@@ -155,31 +155,44 @@ class MW_sim_cfg(types.PropertyGroup):
     )
     step_maxDepth: props.IntProperty(
         name="Max infiltrations depth",
-        description="Limit water depth, set to 0 to let all water to be absorbed.",
-        default=10, min=0, max=100,
+        description="Limit water depth, set to -1 to let all water to be absorbed.",
+        default=10, min=-1, max=100,
     )
 
     # water start and abs
     water__start: props.FloatProperty(
         name="Water input amount",
         description="Initial water amount.",
-        default=1.0, min=0.1, max=5,
+        default=1.0, min=0.1, max=2.5,
+    )
+    water_deg: props.FloatProperty(
+        name="Water degradation", description="Amount of water absorbed when eroding a link, affected by link resistance.",
+        default=0.25,
+        min=0.05, max=1.0,
     )
     water_abs_air: props.FloatProperty(
-        name="Water air degradation",
+        name="Water air abs",
         description="Amount of water absorbed by the average surface area through a non solid link",
-        default=0.01, precision=4
+        default=0.05,
+        min=0.005, max=0.5, precision=3
     )
     water_abs_solid: props.FloatProperty(
-        name="Water solid degradation",
+        name="Water solid abs",
         description="Amount of water absorbed by the average surface area through a solid link",
-        default=0.01, precision=4
+        default=0.10,
+        min=0.005, max=0.5, precision=3
     )
 
     # simple link deg
     link_deg: props.FloatProperty(
         name="Link degradation", description="Amount of erosion water does to a link, distributed over its area.",
-        default=0.25, min=0.05, max=0.75, step=1, precision=3
+        default=0.5,
+        min=0.05, max=1.0,
+    )
+    link_resist_weight: props.FloatProperty(
+        name="Link resistance", description="Control over the effecto of the resistance field",
+        default=0.75,
+        min=0.05, max=1.0,
     )
 
     #-------------------------------------------------------------------
@@ -212,7 +225,7 @@ class MW_sim_cfg(types.PropertyGroup):
     # water absorption random event
     water_rnd_abs_minCheck: props.FloatProperty(
         description="Amount of water min to start checking for rnd full absorption",
-        default=0.3, min=0.05, max=0.5
+        default=0.25, min=0.05, max=0.5
     )
     water_rnd_abs_continueProb: props.FloatProperty(
         description="Probability to continue flowing when water is at water_rnd_abs_minCheck",
@@ -220,7 +233,17 @@ class MW_sim_cfg(types.PropertyGroup):
     )
     water_rnd_abs_damage: props.FloatProperty(
         description="Amount of water min to start checking for rnd full absorption",
-        default=0.5, min=0.0, max=1.0
+        default=0.75, min=0.0, max=1.0
+    )
+
+    # link break random event
+    link_rnd_break_minCheck: props.FloatProperty(
+        description="Amount of link life min to start checking for rnd break event",
+        default=0.4, min=0.05, max=0.5
+    )
+    link_rnd_break_resistProb: props.FloatProperty(
+        description="Probability to withstand the break when the link life is at water_rnd_abs_minCheck",
+        default=0.9, min=0.0, max=1.0
     )
 
     #-------------------------------------------------------------------

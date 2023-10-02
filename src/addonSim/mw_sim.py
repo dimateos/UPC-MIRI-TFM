@@ -120,10 +120,6 @@ class MW_Sim:
         self.cont.backupState_restore()
         self.rnd_restore()
 
-        # reset the step
-        self.step_reset()
-        self.step_reset_trace()
-
         # global recalculation including graphs
         self.links.comps_recalc()
 
@@ -231,7 +227,7 @@ class MW_Sim:
             DEV.log_msg(f" >>> PATH len({len(self.step_path)})", {"SIM", "PATH"})
             if self.cfg.debug_log_path:
                 for i,(k,w) in enumerate(self.step_path):
-                    DEV.log_msg(f"      [{i}] L{k} - w:{w:.2f}", {"SIM", "PATH"})
+                    DEV.log_msg(f"      [{i}] {self.links.get_link(k)} - w:{w:.2f}", {"SIM", "PATH"})
 
         # TRACE: exitL
         if (self.cfg.debug_log_trace):
@@ -372,10 +368,11 @@ class MW_Sim:
         p = a
 
         # weight by link resistance field
-        r = self.link_resistance(l)
-        if not self.cfg.debug_skip_next_maxResist:
-            r = min(r, 0.999)
-        p *= 1-r
+        if l.state == LINK_STATE_ENUM.SOLID:
+            r = self.link_resistance(l)
+            if not self.cfg.debug_skip_next_maxResist:
+                r = min(r, 0.999)
+            p *= 1-r
 
         return p
 
@@ -400,7 +397,7 @@ class MW_Sim:
         r = l.life
 
         # mod by the resistance field at its center
-        r *= l.resistance
+        r *= l.resistance * self.cfg.link_resist_weight
 
         ## also consider area factor so area size affects the resistance opposed?
         #if self.cfg.debug_skip_next_area:
@@ -408,22 +405,38 @@ class MW_Sim:
         return r
 
     def link_degradation(self):
-        # degradation depends on water abs but distributed over the link surface (cancels out area)
-        d = self.water_abs * self.cfg.link_deg / self.currentL.areaFactor
+        d = -1
+        if self.currentL.state == LINK_STATE_ENUM.SOLID:
 
-        # apply degradation -> potential break
-        self.currentL.degrade(d)
+            # degradation depends on water abs but distributed over the link surface (cancels out area)
+            d = self.water_abs * self.cfg.link_deg / self.currentL.areaFactor
 
-        #if self.state != LINK_STATE_ENUM.SOLID:
-            #self.links.setState_link_check(self.currentL.key_cells)
+            # apply degradation -> potential break
+            self.currentL.degrade(d)
 
-        if self.stopOnBreak:
-            self.exit_flag = SIM_EXIT_FLAG.STOP_ON_LINK_BREAK
+            if self.link_rnd_break_event():
+                self.currentL.life = -1
+
+            if self.currentL.life <= 0:
+                DEV.log_msg(f" *** ({self.step_id}) : link_break_event {self.currentL}", {"SIM", "EVENT"})
+                self.links.setState_link_check(self.currentL.key_cells, LINK_STATE_ENUM.AIR)
+
+                # stop simulation
+                if self.stopOnBreak:
+                    self.exit_flag = SIM_EXIT_FLAG.STOP_ON_LINK_BREAK
 
         # TRACE: link deg
         if self.cfg.debug_log_trace:
             self.sub_trace.currentL_deg = d
             self.sub_trace.currentL_life = self.currentL.life
+
+    def link_rnd_break_event(self):
+        if self.currentL.life < self.cfg.link_rnd_break_minCheck:
+            minLife = self.currentL.life / self.cfg.link_rnd_break_minCheck
+            if minLife * self.cfg.link_rnd_break_resistProb < rnd.random():
+                DEV.log_msg(f" *** ({self.step_id}) : link_rnd_break_event L{self.currentL}", {"SIM", "EVENT"})
+                return True
+        return False
 
     def water_degradation(self):
         # check potential full water absorption
@@ -431,11 +444,14 @@ class MW_Sim:
 
             # minimun abs that happens when the water runs through a exterior face or an eroded interior one
             if self.currentL.state != LINK_STATE_ENUM.SOLID:
-                w = self.cfg.water_abs_air * self.currentL.areaFactor
+                wa = self.cfg.water_abs_air * self.currentL.areaFactor
+                w = wa
 
             # interior solid abs takes into account resistance too
             else:
-                w = self.cfg.water_abs_solid * self.currentL.areaFactor * self.link_resistance(self.currentL)
+                wr = self.link_resistance(self.currentL) * self.cfg.water_deg
+                wa = self.cfg.water_abs_solid * self.currentL.areaFactor
+                w = wa + wr
 
             # abs water
             self.water -= w
@@ -454,6 +470,7 @@ class MW_Sim:
             minAbsorb = self.water / self.cfg.water_rnd_abs_minCheck
             if minAbsorb * self.cfg.water_rnd_abs_continueProb < rnd.random():
                 self.exit_flag = SIM_EXIT_FLAG.NO_WATER_RND
+                DEV.log_msg(f" *** ({self.step_id}) : water_rnd_abs_event w:{self.water}", {"SIM", "EVENT"})
 
                 # consider how much water was abs
                 self.water_abs = self.cfg.water_rnd_abs_damage * self.water
@@ -482,7 +499,7 @@ class MW_Sim:
             self.exit_flag = SIM_EXIT_FLAG.NO_WATER
 
         # max iterations when enabled
-        elif self.cfg.step_maxDepth and self.step_depth >= self.cfg.step_maxDepth-1:
+        elif self.cfg.step_maxDepth != -1 and self.step_depth >= self.cfg.step_maxDepth-1:
             self.exit_flag = SIM_EXIT_FLAG.MAX_DEPTH
 
         # the flag could be potentially set at other steps: link break, water rnd abs...

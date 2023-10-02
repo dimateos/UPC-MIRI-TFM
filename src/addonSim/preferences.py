@@ -74,6 +74,11 @@ class MW_dev(types.PropertyGroup):
         default=DEV.FORCE_RESISTANCE_ROUND,
         update=lambda self, context: setattr(DEV, "FORCE_RESISTANCE_ROUND", self.FORCE_RESISTANCE_ROUND),
     )
+    FORCE_RESISTANCE_FLIP : props.BoolProperty(
+        default=DEV.FORCE_RESISTANCE_FLIP,
+        update=lambda self, context: setattr(DEV, "FORCE_RESISTANCE_FLIP", self.FORCE_RESISTANCE_FLIP),
+    )
+
 
     FIX_IMAGES_QUEUE : props.BoolProperty(
         default=DEV.FIX_IMAGES_QUEUE,

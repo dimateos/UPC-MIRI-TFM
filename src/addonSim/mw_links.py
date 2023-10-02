@@ -61,7 +61,7 @@ class Link():
 
         # NOTE:: resistance atm defined by 2D field -> potentially already normalized so no need for factor
         self.resistance = resistance
-        self.resistanceFactor = 1
+        #self.resistanceFactor = 1 # resistance already normalized
 
     def reset(self, life=1.0, picks=0, picks_entry=0):
         """ Reset simulation parameters """
@@ -87,18 +87,17 @@ class Link():
     def __str__(self):
         #a({self.area:.2f}), p({self.picks},{self.picks_entry}),
         if self.state == LINK_STATE_ENUM.WALL:
-            return f"W{self.key_cells[0]} picks({self.picks_entry}), dir{self.dir.to_tuple(2)}"
+            return f"W{self.key_cells[0]} entries({self.picks_entry}), dir{self.dir.to_tuple(2)}"
         elif self.state == LINK_STATE_ENUM.AIR:
-            return f"A{self.key_cells} picks({self.picks_entry}), dir{self.dir.to_tuple(2)}"
+            return f"A{self.key_cells} entries({self.picks_entry}), picks({self.picks}), dir{self.dir.to_tuple(2)}"
         else:
             #return f"K{self.key_cells}: life({self.life:.3f}), dir{self.dir.to_tuple(2)}"
-            return f"k{self.key_cells} life({self.life:.3f})"
+            return f"k{self.key_cells} life({self.life:.3f}), picks({self.picks})"
 
     #-------------------------------------------------------------------
 
     def set_broken(self):
         self.state = LINK_STATE_ENUM.AIR
-        # TODO:: force some props?
         #self.life = 0
         #self.picks = 0
 
@@ -108,6 +107,9 @@ class Link():
             self.dir_from = self.key_cells[1]
         else:
             self.dir_from = self.key_cells[0]
+
+    def update_resistance(self):
+        self.resistance = MW_field_R.get2D(self.pos.x, self.pos.z)
 
     def degrade(self, deg):
         """ Degrade link life, no clamping """
@@ -273,7 +275,7 @@ class MW_Links():
 
                 # calculate area factor relative to avg area (avg wont be zero when there are links_graph.nodes)
                 l.areaFactor = l.area / self.avg_area
-                l.resistanceFactor = l.resistance / self.avg_resistance
+                #l.resistanceFactor = l.resistance / self.avg_resistance
 
                 # no AIR links
                 if l.state == LINK_STATE_ENUM.WALL:
@@ -518,7 +520,7 @@ class MW_Links():
             # recalc on link break only when a path between cells ceases to exist
             c1,c2 = l.key_cells
             if DEV.SKIP_PATH_CHECK: breaking = True
-            else: breaking = not nx.has_path(self.cells_graph, c1, c2)
+            else: breaking = not nx.has_path(self.comps_subgraph, c1, c2)
             if breaking:
                 self.comps_recalc(False)
 
