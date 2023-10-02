@@ -446,6 +446,9 @@ class MW_gen_links_OT(_StartRefresh_OT):
         # for this OP, delete all meshes before regen
         mw_setup.gen_linksDelete()
 
+        # update cells too
+        mw_setup.update_cellsState(MW_global_selected.fract.cont, MW_global_selected.root)
+
         mw_setup.gen_linksAll(context)
         return self.end_op()
 
@@ -516,8 +519,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
 
         sim : MW_Sim = MW_global_selected.fract.sim
         if sim.step_path:
-            #row = col.split()
-            col.label(text=f"Path ({len(sim.step_path)}) - {SIM_EXIT_FLAG.to_str(sim.exit_flag)} - w:{sim.water:.2f}", icon="OUTLINER_OB_GREASEPENCIL")
+            col.label(text=sim.step_log_ui(), icon="OUTLINER_OB_GREASEPENCIL")
 
         # params and debug
         prefs = getPrefs()
@@ -571,7 +573,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
 
         # steps
         sim_cfg : MW_sim_cfg= self.cfg
-        DEV.log_msg(f"step_infiltrations({sim_cfg.step_infiltrations}) step_maxDepth({sim_cfg.step_maxDepth}) link_deg({sim_cfg.link_deg})", {'SIM'})
+        DEV.log_msg(f"step_infiltrations({sim_cfg.step_infiltrations}), step_maxDepth({sim_cfg.step_maxDepth}), step_stopBreak({sim_cfg.step_stopBreak})", {'SIM'})
         for step_id in range(sim_cfg.step_infiltrations):
             log_step = sim_cfg.debug_log and step_id+1 > sim_cfg.step_infiltrations-sim_cfg.debug_log_lastIters
             if not sim_cfg.debug_util_uniformDeg: sim.step(log_step)
@@ -589,7 +591,8 @@ class MW_sim_step_OT(_StartRefresh_OT):
 
         # redraw links and cells
         mw_setup.update_cellsState(MW_global_selected.fract.cont, MW_global_selected.root)
-        mw_setup.gen_linksAll(context)
+        if prefs.sim_calc_OT_links:
+            mw_setup.gen_linksAll(context)
         return self.end_op()
 
 class MW_sim_reset_OT(_StartRefresh_OT):

@@ -39,22 +39,22 @@ class MW_dev(types.PropertyGroup):
         default=DEV.DEBUG_UI,
         update=lambda self, context: setattr(DEV, "DEBUG_UI", self.DEBUG_UI),
     )
+    DEBUG_UNREACH_ENTRY : props.BoolProperty(
+        default=DEV.DEBUG_UNREACH_ENTRY,
+        update=lambda self, context: setattr(DEV, "DEBUG_UNREACH_ENTRY", self.DEBUG_UNREACH_ENTRY),
+    )
 
-    DEBUG_LINKS_NEIGHS : props.BoolProperty(
-        default=DEV.DEBUG_LINKS_NEIGHS,
-        update=lambda self, context: setattr(DEV, "DEBUG_LINKS_NEIGHS", self.DEBUG_LINKS_NEIGHS),
+    DEBUG_GEODATA : props.BoolProperty(
+        default=DEV.DEBUG_GEODATA,
+        update=lambda self, context: setattr(DEV, "DEBUG_GEODATA", self.DEBUG_GEODATA),
     )
-    DEBUG_LINKS_GEODATA : props.BoolProperty(
-        default=DEV.DEBUG_LINKS_GEODATA,
-        update=lambda self, context: setattr(DEV, "DEBUG_LINKS_GEODATA", self.DEBUG_LINKS_GEODATA),
+    DEBUG_GEODATA_ID_RAW : props.BoolProperty(
+        default=DEV.DEBUG_GEODATA_ID_RAW,
+        update=lambda self, context: setattr(DEV, "DEBUG_GEODATA_ID_RAW", self.DEBUG_GEODATA_ID_RAW),
     )
-    DEBUG_LINKS_ID_RAW : props.BoolProperty(
-        default=DEV.DEBUG_LINKS_ID_RAW,
-        update=lambda self, context: setattr(DEV, "DEBUG_LINKS_ID_RAW", self.DEBUG_LINKS_ID_RAW),
-    )
-    DEBUG_LINKS_PICKS : props.BoolProperty(
-        default=DEV.DEBUG_LINKS_PICKS,
-        update=lambda self, context: setattr(DEV, "DEBUG_LINKS_PICKS", self.DEBUG_LINKS_PICKS),
+    DEBUG_GEODATA_PICKS : props.BoolProperty(
+        default=DEV.DEBUG_GEODATA_PICKS,
+        update=lambda self, context: setattr(DEV, "DEBUG_GEODATA_PICKS", self.DEBUG_GEODATA_PICKS),
     )
 
     SKIP_SANITIZE : props.BoolProperty(
@@ -295,6 +295,11 @@ class MW_prefs(bpy.types.AddonPreferences):
         name="gen", description="Generate links mesh directly alongside cells",
         default=False,
     )
+    sim_calc_OT_links: props.BoolProperty(
+        name="sim", description="Generate links mesh after every simulation",
+        default=True,
+    )
+
     gen_duplicate_OT_hidePrev: props.BoolProperty(
         name="hide", description="Hide the original fractured object after duplication",
         default=False,

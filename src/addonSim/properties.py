@@ -137,12 +137,12 @@ class MW_sim_cfg(types.PropertyGroup):
     step_infiltrations: props.IntProperty(
         name="Number of infiltrations",
         description="Translate to individual paths traced per button press.",
-        default=1, min=1, max=1000,
+        default=100, min=1, max=10000,
     )
     step_maxDepth: props.IntProperty(
         name="Max infiltrations depth",
         description="Limit water depth, set to -1 to let all water to be absorbed.",
-        default=10, min=-1, max=100,
+        default=-1, min=-1, max=100,
     )
 
     step_stopBreak: props.BoolProperty(
@@ -283,11 +283,6 @@ class MW_sim_cfg(types.PropertyGroup):
         description="Skip area entry weight to only vis alignment",
         default=False,
     )
-    debug_skipVis_entry_unreachProb: props.BoolProperty(
-        name="DEBUG: no vis null entry L",
-        description="Skip vis of unreachable entry links",
-        default=False,
-    )
     debug_skip_next_maxResist: props.BoolProperty(
         name="DEBUG: skip max resist L",
         description="Completely skip links with max resist",
@@ -329,14 +324,14 @@ class MW_vis_cfg(types.PropertyGroup):
 
     cell_color: bpy.props.FloatVectorProperty(
         name="Cell SOLID color",
-        default=(0.514, 0.396, 0.224, 0.75),
+        default=(0.514, 0.396, 0.224, 0.8),
         size=4, min=0, max=1,
         subtype='COLOR',
         update= lambda self, context: mw_setup_props.cell_color_update(self, "cell_color", MW_vis_cfg.getPrefs().names.cells)
     )
     cell_color_air: bpy.props.FloatVectorProperty(
         name="Cell AIR color",
-        default=(0, 0.7, 1, 0.05),
+        default=(0, 0.7, 1, 0.6),
         size=4, min=0, max=1,
         subtype='COLOR',
         update= lambda self, context: mw_setup_props.cell_color_update(self, "cell_color_air", MW_vis_cfg.getPrefs().names.cells_air)

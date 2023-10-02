@@ -180,6 +180,10 @@ class MW_Sim:
         self.step_trace : StepData       = None
         self.sub_trace  : SubStepData    = None
 
+    def step_log_ui(self):
+        s = f"({self.step_id},{self.step_depth}) : {SIM_EXIT_FLAG.to_str(self.exit_flag)} - w:{self.water:.2f}"
+        return s
+
     #-------------------------------------------------------------------
 
     def step_degradeAll(self):
@@ -230,7 +234,7 @@ class MW_Sim:
 
         # LOG: exit
         if self.log:
-            DEV.log_msg(f" >>> ({self.step_id}) : exit {SIM_EXIT_FLAG.to_str(self.exit_flag)} : L ({self.currentL})", {"SIM", "EXIT"})
+            DEV.log_msg(f" >>> ({self.step_id}) : exit {SIM_EXIT_FLAG.to_str(self.exit_flag)} : {self.currentL}", {"SIM", "EXIT"})
             DEV.log_msg(f" >>> PATH len({len(self.step_path)})", {"SIM", "PATH"})
             if self.cfg.debug_log_path:
                 for i,(k,w) in enumerate(self.step_path):
@@ -433,7 +437,7 @@ class MW_Sim:
                 self.currentL.life = -1
 
             if self.currentL.life <= 0:
-                DEV.log_msg(f" *** ({self.step_id}) : link_break_event {self.currentL}", {"SIM", "EVENT"})
+                if self.log: DEV.log_msg(f" *** ({self.step_id}) : link_break_event {self.currentL}", {"SIM", "EVENT"})
                 breaking = self.links.setState_link_check(self.currentL.key_cells, LINK_STATE_ENUM.AIR)
 
                 # stop simulation on break
@@ -453,7 +457,7 @@ class MW_Sim:
         if self.currentL.life < self.cfg.link_rnd_break_minCheck:
             minLife = self.currentL.life / self.cfg.link_rnd_break_minCheck
             if minLife * self.cfg.link_rnd_break_resistProb < rnd.random():
-                DEV.log_msg(f" *** ({self.step_id}) : link_rnd_break_event L{self.currentL}", {"SIM", "EVENT"})
+                if self.log: DEV.log_msg(f" *** ({self.step_id}) : link_rnd_break_event L{self.currentL}", {"SIM", "EVENT"})
                 return True
         return False
 
@@ -489,7 +493,7 @@ class MW_Sim:
             minAbsorb = self.water / self.cfg.water_rnd_abs_minCheck
             if minAbsorb * self.cfg.water_rnd_abs_continueProb < rnd.random():
                 self.exit_flag = SIM_EXIT_FLAG.NO_WATER_RND
-                DEV.log_msg(f" *** ({self.step_id}) : water_rnd_abs_event w:{self.water}", {"SIM", "EVENT"})
+                if self.log: DEV.log_msg(f" *** ({self.step_id}) : water_rnd_abs_event w:{self.water}", {"SIM", "EVENT"})
 
                 # consider how much water was abs
                 self.water_abs = self.cfg.water_rnd_abs_damage * self.water
@@ -532,6 +536,12 @@ class MW_Sim:
             # TRACE: keep msg per trace
             if self.cfg.debug_log_trace:
                 self.step_trace.break_flag = self.exit_flag
+
+            # set the log for at least the last iter
+            if self.exit_flag >= SIM_EXIT_FLAG.STOP_ON_LINK_BREAK:
+                self.log = True
+                self.log_trace = self.cfg.debug_log_trace
+
             return False
 
         # continue sim when no exit msg recorded

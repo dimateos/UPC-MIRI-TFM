@@ -21,6 +21,7 @@ from . import ui
 from . import utils_scene
 from .utils_dev import DEV
 
+col_split = 0.6
 
 #-------------------------------------------------------------------
 
@@ -76,7 +77,7 @@ class MW_gen_PT(types.Panel):
 
             # checkbox to gen links vis with cells
             col = layout.column()
-            col_rowSplit = col.row().split(factor=0.66)
+            col_rowSplit = col.row().split(factor=col_split)
             col_rowSplit.operator(ops.MW_gen_OT.bl_idname, text="GEN Fracture", icon="STICKY_UVS_DISABLE")
             col_rowSplit.prop(prefs, "gen_calc_OT_links", text="links vis")
 
@@ -95,13 +96,13 @@ class MW_gen_PT(types.Panel):
             col_rowSplit.operator(ops.MW_util_bake_OT.bl_idname, text="", icon="UNLINKED")
 
             # delete
-            col_rowSplit = layout.row().split(factor=0.70)
+            col_rowSplit = layout.row().split(factor=col_split)
             col_rowSplit.operator(ops.MW_util_delete_OT.bl_idname, text="DELETE rec", icon="CANCEL")
             prefs = getPrefs()
             col_rowSplit.prop(prefs, "util_delete_OT_unhideSelect")
 
             # dupe
-            col_rowSplit = layout.row().split(factor=0.70)
+            col_rowSplit = layout.row().split(factor=col_split)
             col_rowSplit.operator(ops.MW_gen_OT.bl_idname, text="DUPLICATE", icon="DUPLICATE")
             col_rowSplit.prop(prefs, "gen_duplicate_OT_hidePrev")
 
@@ -121,9 +122,11 @@ class MW_gen_PT(types.Panel):
 
         # checkbox to gen links with cells
         col = layout.column()
-        col_rowSplit = col.row().split(factor=0.66)
+        col_rowSplit = col.row().split(factor=col_split)
         col_rowSplit.operator(ops.MW_gen_links_OT.bl_idname, icon="OUTLINER_DATA_GREASEPENCIL")
-        col_rowSplit.prop(prefs, "gen_calc_OT_links")
+        row = col_rowSplit.row().split()
+        row.prop(prefs, "gen_calc_OT_links", icon="STICKY_UVS_DISABLE", text="")
+        row.prop(prefs, "sim_calc_OT_links", icon="MOD_FLUIDSIM", text="")
 
         # example of how to edit op parameters from the panel before execution (but better done inside invoke, in this case)
         #op = layout.operator(ops.MW_cell_state_OT.bl_idname, icon="PIVOT_CURSOR")
@@ -135,12 +138,12 @@ class MW_gen_PT(types.Panel):
 
         # checkbox to recalc links
         col = layout.column()
-        col_rowSplit = col.row().split(factor=0.66)
+        col_rowSplit = col.row().split(factor=col_split)
         col_rowSplit.operator(ops.MW_cell_state_OT.bl_idname, icon="PIVOT_CURSOR")
         col_rowSplit.prop(prefs, "util_comps_OT_recalc")
 
         # slider for res
-        col_rowSplit = layout.row().split(factor=0.66)
+        col_rowSplit = layout.row().split(factor=col_split)
         col_rowSplit.operator(ops.MW_gen_field_r_OT.bl_idname, icon="NODE_TEXTURE")
         col_rowSplit.prop(prefs.resist_cfg, "vis_res", text="res")
 
@@ -166,12 +169,12 @@ class MW_gen_PT(types.Panel):
 
             # delete all fractures
             boxLinks = box.box()
-            col_rowSplit = boxLinks.row().split(factor=0.66)
+            col_rowSplit = boxLinks.row().split(factor=col_split)
             col_rowSplit.operator(ops.MW_util_delete_all_OT.bl_idname, text="DELETE all", icon="CANCEL")
             col_rowSplit.prop(prefs, "util_delete_OT_unhideSelect")
 
             # global storage
-            col_rowSplit = boxLinks.row().split(factor=0.66)
+            col_rowSplit = boxLinks.row().split(factor=col_split)
             col_rowSplit.label(text=f"Storage: {len(MW_global_storage.id_fracts)}", icon="FORCE_CURVE")
             col_rowSplit.prop(prefs, "prefs_autoPurge")
 
@@ -183,11 +186,11 @@ class MW_gen_PT(types.Panel):
 
             # more stuff
             col = box.column()
-            col_rowSplit = col.row().split(factor=0.66)
+            col_rowSplit = col.row().split(factor=col_split)
             col_rowSplit.operator(ops.MW_util_comps_OT.bl_idname, icon="NODE_COMPOSITING")
             col_rowSplit.prop(prefs, "util_comps_OT_recalc")
 
-            col_rowSplit = col.row().split(factor=0.66)
+            col_rowSplit = col.row().split(factor=col_split)
             col_rowSplit.operator(ops.MW_util_bool_OT.bl_idname, icon="MOD_BOOLEAN")
             col_rowSplit.prop(prefs, "util_bool_OT_apply")
 
@@ -205,13 +208,13 @@ class MW_gen_PT(types.Panel):
 
             # global selected
             boxSelected = box.box().column()
-            col_rowSplit = boxSelected.row().split(factor=0.6)
+            col_rowSplit = boxSelected.row().split(factor=col_split)
             col_rowSplit.label(text=f"Root:  {MW_global_selected.root.name if MW_global_selected.root else '~'}", icon="RESTRICT_SELECT_ON")
             col_rowSplit.label(text=f"{MW_global_selected.prevalid_root.name if MW_global_selected.prevalid_root else '~'}", icon="FRAME_PREV")
-            col_rowSplit = boxSelected.row().split(factor=0.6)
+            col_rowSplit = boxSelected.row().split(factor=col_split)
             col_rowSplit.label(text=f"Current: {curr.name if curr else '~'}", icon="RESTRICT_SELECT_OFF")
             col_rowSplit.label(text=f"{MW_global_selected.prevalid_current.name if MW_global_selected.prevalid_current else '~'}", icon="FRAME_PREV")
-            col_rowSplit = boxSelected.row().split(factor=0.6)
+            col_rowSplit = boxSelected.row().split(factor=col_split)
             col_rowSplit.label(text=f"Active: {context.active_object.name if context.active_object else '~'}", icon="SELECT_INTERSECT")
             col_rowSplit.label(text=f"{len(MW_global_selected.selection) if MW_global_selected.selection else '~'}", icon="SELECT_SET")
 
@@ -275,23 +278,22 @@ class MW_sim_PT(types.Panel):
         else:
             sim : MW_Sim = MW_global_selected.fract.sim
             if sim and sim.step_path:
-                #row = col.split()
-                col.label(text=f"Path ({len(sim.step_path)}) - {SIM_EXIT_FLAG.to_str(sim.exit_flag)} - w:{sim.water:.2f}", icon="OUTLINER_OB_GREASEPENCIL")
+                col.label(text=sim.step_log_ui(), icon="OUTLINER_OB_GREASEPENCIL")
 
         # run sim
-        col_rowSplit = col.row().split(factor=0.70)
+        col_rowSplit = col.row().split(factor=col_split)
         col_rowSplit.operator(ops.MW_sim_step_OT.bl_idname, text="STEP", icon="MOD_FLUIDSIM")
 
         # additional running sim props
         if root:
             col_rowSplit.prop(root.mw_sim, "step_infiltrations", text="n")
-            col_rowSplit = col.row().split(factor=0.7)
+            col_rowSplit = col.row().split(factor=col_split)
             row = col_rowSplit.row()
             row.prop(root.mw_sim, "step_stopBreak_event")
-            col_rowSplit.prop(root.mw_sim, "step_stopBreak", text="Stop")
+            col_rowSplit.prop(root.mw_sim, "step_stopBreak", text="stop")
 
         # reset
-        col_rowSplit = col.row().split(factor=0.70)
+        col_rowSplit = col.row().split(factor=col_split)
         col_rowSplit.operator(ops.MW_sim_reset_OT.bl_idname, text="RESET", icon="ORPHAN_DATA")
         col_rowSplit.operator(ops.MW_sim_resetCFG_OT.bl_idname, text="config")
 

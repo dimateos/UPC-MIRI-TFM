@@ -397,15 +397,15 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     #dirX_dirZ    : list[tuple[float,float]]   = [None]*numLinks
     #id_area      : list[tuple[int,float]]     = [None]*numLinks
 
-    if DEV.DEBUG_LINKS_PICKS:
+    if DEV.DEBUG_GEODATA_PICKS:
         id_picks   : list[tuple[int,int]]     = [None]*numLinks
-    if DEV.DEBUG_LINKS_GEODATA:
+    if DEV.DEBUG_GEODATA:
         k1_k2 : list[tuple[int,int]]          = [None]*numLinks
         f1_f2 : list[tuple[int,int]]          = [None]*numLinks
 
     # iterate the global map and store vert pairs for the tube mesh generation
     for id, l in enumerate(fract.links.internal):
-        id_normalized = id / float(numLinks) if not DEV.DEBUG_LINKS_ID_RAW else id
+        id_normalized = id / float(numLinks) if not DEV.DEBUG_GEODATA_ID_RAW else id
 
         # original center
         points[id]= l.pos
@@ -438,10 +438,10 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
         #dirX_dirZ[id]=(abs(pdir.x), abs(pdir.z))
         #id_area[id] = (id_normalized, (l.area-fract.links.min_area) / (fract.links.max_area-fract.links.min_area))
 
-        if DEV.DEBUG_LINKS_PICKS:
+        if DEV.DEBUG_GEODATA_PICKS:
             id_picks[id]= (id_normalized, l.picks)
         # query info keys
-        if DEV.DEBUG_LINKS_GEODATA:
+        if DEV.DEBUG_GEODATA:
             k1_k2[id] = l.key_cells
             f1_f2[id] = l.key_faces
 
@@ -468,9 +468,9 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     #utils_mat.gen_meshUV(mesh, id_area, "id_area", repMatchCorners)
     #obj_links.active_material = utils_mat.gen_gradientMat("id_area", name+"_area", colorFn=GRADIENTS.lerp_common(COLORS.red, COLORS.white_cw))
 
-    if DEV.DEBUG_LINKS_PICKS:
+    if DEV.DEBUG_GEODATA_PICKS:
         utils_mat.gen_meshUV(mesh, id_picks, "id_picks", repMatchCorners)
-    if DEV.DEBUG_LINKS_GEODATA:
+    if DEV.DEBUG_GEODATA:
         utils_mat.gen_meshUV(mesh, k1_k2, "k1_k2", repMatchCorners)
         utils_mat.gen_meshUV(mesh, f1_f2, "f1_f2", repMatchCorners)
 
@@ -494,10 +494,10 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
     id_prob    : list[tuple[int,float]]       = []
     #dirX_dirZ    : list[tuple[float,float]]   = [None]*numLinks
 
-    if DEV.DEBUG_LINKS_PICKS:
+    if DEV.DEBUG_GEODATA_PICKS:
         id_picks   : list[tuple[int,int]]     = []
         id_entries : list[tuple[int,int]]     = []
-    if DEV.DEBUG_LINKS_GEODATA:
+    if DEV.DEBUG_GEODATA:
         k1_k2 : list[tuple[int,int]]          = []
         f1_f2 : list[tuple[int,int]]          = []
 
@@ -513,7 +513,7 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
     # iterate the global map and store vert pairs for the tube mesh generation
     for id, l in enumerate(fract.links.external):
         #if MW_Links.skip_link_debugModel(l): continue # just not generated
-        id_normalized = id / float(numLinks) if not DEV.DEBUG_LINKS_ID_RAW else id
+        id_normalized = id / float(numLinks) if not DEV.DEBUG_GEODATA_ID_RAW else id
 
         # represent picks with point from original global pos + normal + offset a bit
         perp = utils_trans.getPerpendicular_stable(l.dir)
@@ -522,10 +522,10 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
         verts.append((p1, p2))
 
         # query props
-        if DEV.DEBUG_LINKS_PICKS:
+        if DEV.DEBUG_GEODATA_PICKS:
             id_picks.append((id_normalized, l.picks))
         # query info keys
-        if DEV.DEBUG_LINKS_GEODATA:
+        if DEV.DEBUG_GEODATA:
             k1_k2.append(l.key_cells)
             f1_f2.append(l.key_faces)
 
@@ -533,7 +533,7 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
         prob = sim.get_entryProbability(l)
         #prob = l.area+fract.links.min_area
         #prob = 1
-        if prob == 0 and sim.cfg.debug_skipVis_entry_unreachProb:
+        if prob == 0 and not DEV.DEBUG_UNREACH_ENTRY:
             continue
 
         # represent entry picks similarly
@@ -544,7 +544,7 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
         # also store more props
         prob_normalized = prob / probsMax
         id_prob.append((id_normalized, prob_normalized))
-        if DEV.DEBUG_LINKS_PICKS:
+        if DEV.DEBUG_GEODATA_PICKS:
             id_entries.append((id_normalized, l.picks_entry))
         #dirX_dirZ[id]=(abs(l.dir.x), abs(l.dir.z))
 
@@ -568,7 +568,7 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
     #utils_mat.gen_meshUV(mesh_entry, dirX_dirZ, "dirX_dirZ", repMatchCorners)
     #obj_linksAir_entry.active_material = utils_mat.gen_textureMat("dirX_dirZ", name_entry+"_dir", colorFn=GRADIENTS.red_2D_green) #red_2D_blue
 
-    if DEV.DEBUG_LINKS_GEODATA:
+    if DEV.DEBUG_GEODATA:
         utils_mat.gen_meshUV(mesh_entry, k1_k2, "k1_k2", repMatchCorners)
         utils_mat.gen_meshUV(mesh_entry, f1_f2, "f1_f2", repMatchCorners)
 
@@ -600,7 +600,7 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
     verts     : list[tuple[Vector,Vector]]  = []
     id_grav   : list[tuple[int,float]]      = []
 
-    if DEV.DEBUG_LINKS_GEODATA:
+    if DEV.DEBUG_GEODATA:
         l1k1_l1k2 : list[tuple[int,int]]    = []
         l2k1_l2k2 : list[tuple[int,int]]    = []
         l1f1_l1f2 : list[tuple[int,int]]    = []
@@ -611,7 +611,7 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
 
     # iterate the global map and store vert pairs for the tube mesh generation
     for id, l in enumerate(linkSet):
-        id_normalized = id / float(numLinks) if not DEV.DEBUG_LINKS_ID_RAW else id
+        id_normalized = id / float(numLinks) if not DEV.DEBUG_GEODATA_ID_RAW else id
 
         # allow once from outer loop
         checked.add(l.key_cells)
@@ -633,7 +633,7 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
             #id_grav.append((id_normalized, 0))
 
             # query info keys
-            if DEV.DEBUG_LINKS_GEODATA:
+            if DEV.DEBUG_GEODATA:
                 l1k1_l1k2.append(l.key_cells)
                 l2k1_l2k2.append(ln.key_cells)
                 l1f1_l1f2.append(l.key_faces)
@@ -654,7 +654,7 @@ def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Con
     obj_neighs.active_material = utils_mat.gen_gradientMat("id_grav", name, colorFn=GRADIENTS.lerp_common(COLORS.white))
     obj_neighs.active_material.diffuse_color = COLORS.white
 
-    if DEV.DEBUG_LINKS_GEODATA:
+    if DEV.DEBUG_GEODATA:
         utils_mat.gen_meshUV(mesh, l1k1_l1k2, "l1k1_l1k2", repMatchCorners)
         utils_mat.gen_meshUV(mesh, l2k1_l2k2, "l2k1_l2k2", repMatchCorners)
         utils_mat.gen_meshUV(mesh, l1f1_l1f2, "l1f1_l1f2", repMatchCorners)
@@ -673,7 +673,7 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
     depth_water : list[tuple[int,float]]    = [None]*maxDepth
     depth_norm : list[tuple[int,float]]     = [None]*maxDepth
 
-    if DEV.DEBUG_LINKS_GEODATA:
+    if DEV.DEBUG_GEODATA:
         l1k1_l1k2 : list[tuple[int,int]]    = [None]*maxDepth
         l2k1_l2k2 : list[tuple[int,int]]    = [None]*maxDepth
         l1f1_l1f2 : list[tuple[int,int]]    = [None]*maxDepth
@@ -686,7 +686,7 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
     # iterate the global map and store vert pairs for the tube mesh generation
     for depth, step in enumerate(path):
         depth_normalized = depth / float(maxDepth)
-        depth_id = depth_normalized if not DEV.DEBUG_LINKS_ID_RAW else depth
+        depth_id = depth_normalized if not DEV.DEBUG_GEODATA_ID_RAW else depth
         l = fract.links.get_link(step[0])
         w = step[1]
 
@@ -710,7 +710,7 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
         waterWidths[depth]= cfg.path_width_start * w + cfg.path_width_end * min(1-w, 0)
 
         # query info keys
-        if DEV.DEBUG_LINKS_GEODATA:
+        if DEV.DEBUG_GEODATA:
             l1k1_l1k2[depth] = l_prev.key_cells if l_prev else l_prev_key_NONE
             l2k1_l2k2[depth] = l.key_cells
             l1f1_l1f2[depth] = l_prev.key_faces if l_prev else l_prev_key_NONE
@@ -721,7 +721,7 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
     if sim.exit_flag == SIM_EXIT_FLAG.NO_NEXT_LINK_WALL and cfg.path_outside_end:
         depth += 1
         depth_normalized = depth / float(maxDepth)
-        depth_id = depth_normalized if not DEV.DEBUG_LINKS_ID_RAW else depth
+        depth_id = depth_normalized if not DEV.DEBUG_GEODATA_ID_RAW else depth
 
         # last point outside
         p1 = l_prev.pos
@@ -734,7 +734,7 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
 
         # store repeated props
         waterWidths.append(waterWidths[-1])
-        if DEV.DEBUG_LINKS_GEODATA:
+        if DEV.DEBUG_GEODATA:
             l1k1_l1k2.append(l1k1_l1k2[-1])
             l2k1_l2k2.append(l2k1_l2k2[-1])
             l1f1_l1f2.append(l1f1_l1f2[-1])
@@ -765,7 +765,7 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
     #obj_path.active_material = utils_mat.gen_colorMat(c1, name) # just reduce the size
     #obj_path.active_material = utils_mat.gen_gradientMat("depth_water", name, colorFn=GRADIENTS.lerp_common(c1, c2))
 
-    if DEV.DEBUG_LINKS_GEODATA:
+    if DEV.DEBUG_GEODATA:
         utils_mat.gen_meshUV(mesh, l1k1_l1k2, "l1k1_l1k2", repMatchCorners)
         utils_mat.gen_meshUV(mesh, l2k1_l2k2, "l2k1_l2k2", repMatchCorners)
         utils_mat.gen_meshUV(mesh, l1f1_l1f2, "l1f1_l1f2", repMatchCorners)
