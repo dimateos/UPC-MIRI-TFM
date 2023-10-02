@@ -133,7 +133,7 @@ class MW_gen_cfg(types.PropertyGroup):
 #-------------------------------------------------------------------
 
 class MW_sim_cfg(types.PropertyGroup):
-    # main params shown with step prefix
+    # step params maybe should be in prefs
     step_infiltrations: props.IntProperty(
         name="Number of infiltrations",
         description="Translate to individual paths traced per button press.",
@@ -144,6 +144,25 @@ class MW_sim_cfg(types.PropertyGroup):
         description="Limit water depth, set to -1 to let all water to be absorbed.",
         default=10, min=-1, max=100,
     )
+
+    step_stopBreak: props.BoolProperty(
+        name="Stop on break",
+        description="Forcefully stop on a break event",
+        default=True,
+    )
+
+    step_stopBreak_event: props.EnumProperty(
+        name="Break event",
+        description="Select where to stop the simulation",
+        items=(
+            ('LINK', "LINK", "Stop on links breakage"),
+            ('CELL', "CELL", "Stop on cells breakage"),
+        ),
+        default={'LINK'},
+        options={'ENUM_FLAG'},
+    )
+
+    #-------------------------------------------------------------------
 
     # water start and abs
     water__start: props.FloatProperty(
@@ -233,23 +252,6 @@ class MW_sim_cfg(types.PropertyGroup):
     )
 
     #-------------------------------------------------------------------
-
-    #debug_stopBreak_event: props.EnumProperty(
-    #    name="Select where to stop the ",
-    #    items=(
-    #        ('LINK', "Disabled", "No effect on width"),
-    #        ('CELL', "Uniform effect", "Uniform effect on width"),
-    #    ),
-    #    default={'LINK'},
-    #    options={'ENUM_FLAG'},
-    #    update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links_width__mode")
-    #)
-
-    #debug_stopBreak_onLink: props.BoolProperty(
-    #    name="Stop on link break",
-    #    description="Stop on link or cell break",
-    #    default=True,
-    #)
 
     debug_rnd: props.PointerProperty(type=properties_utils.RND_config)
 
@@ -542,7 +544,7 @@ class MW_resistance_cfg(types.PropertyGroup):
         ),
         default={'LAYERS_SIDE'},
         options={'ENUM_FLAG'},
-        update= lambda self, context: MW_resistance_cfg.switchField(self.field)
+        update= lambda self, context: MW_resistance_cfg.switchField()
     )
 
     out_inv: props.BoolProperty(

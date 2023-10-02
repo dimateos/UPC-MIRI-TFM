@@ -30,7 +30,7 @@ class LAYERS_SIDE:
 class LAYERS_STACK:
     def get2D(x, y):
         x,y = user_in_cfg(x,y)
-        r = sin(1 * y + -0.3 * x)
+        r = sin(1 * y + -0.15 * x)
         r = (0.5 * r + 0.5) # normalize
         return user_out_cfg(r)
 
@@ -49,9 +49,10 @@ _fields_map = {
 }
 _field_R_current = LAYERS_SIDE
 
-def field_R_current_switch(field_cfg):
+def field_R_current_switch():
     global _field_R_current, _fields_map
-    names = field_cfg.copy()
+    cfg = getPrefs().resist_cfg
+    names = cfg.field.copy()
     field_name = names.pop()
     _field_R_current = _fields_map[field_name]
 

@@ -266,6 +266,7 @@ class MW_sim_PT(types.Panel):
     def draw(self, context):
         prefs = getPrefs()
         col = self.layout.column()
+        root = MW_global_selected.last_root()
 
         # warning no fract
         if not MW_global_selected.fract:
@@ -277,16 +278,24 @@ class MW_sim_PT(types.Panel):
                 #row = col.split()
                 col.label(text=f"Path ({len(sim.step_path)}) - {SIM_EXIT_FLAG.to_str(sim.exit_flag)} - w:{sim.water:.2f}", icon="OUTLINER_OB_GREASEPENCIL")
 
+        # run sim
         col_rowSplit = col.row().split(factor=0.70)
         col_rowSplit.operator(ops.MW_sim_step_OT.bl_idname, text="STEP", icon="MOD_FLUIDSIM")
-        col_rowSplit.prop(prefs, "sim_step_OT_stopBreak")
 
+        # additional running sim props
+        if root:
+            col_rowSplit.prop(root.mw_sim, "step_infiltrations", text="n")
+            col_rowSplit = col.row().split(factor=0.7)
+            row = col_rowSplit.row()
+            row.prop(root.mw_sim, "step_stopBreak_event")
+            col_rowSplit.prop(root.mw_sim, "step_stopBreak", text="Stop")
+
+        # reset
         col_rowSplit = col.row().split(factor=0.70)
         col_rowSplit.operator(ops.MW_sim_reset_OT.bl_idname, text="RESET", icon="ORPHAN_DATA")
         col_rowSplit.operator(ops.MW_sim_resetCFG_OT.bl_idname, text="config")
 
         # inspect root or selected?
-        root = MW_global_selected.last_root()
         if root:
             #open, box = ui.draw_propsToggle_custom(root.mw_sim, prefs.sim_PT_meta_inspector, col, text="Parameters", propFilter="-step,-debug")
             paramFilter = "-step"

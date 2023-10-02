@@ -561,7 +561,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
         if not self.invoked_once:
             self.invoked_once = True
             DEV.log_msg("cfg found once: copying props to OP", {'SIM'})
-            properties_utils.copyProps_groups_rec(MW_global_selected.root.mw_sim, self.cfg, "-step")
+            properties_utils.copyProps_groups_rec(MW_global_selected.root.mw_sim, self.cfg)
         else:
             properties_utils.copyProps_groups_rec(self.cfg, MW_global_selected.root.mw_sim)
             sim.cfg = MW_global_selected.root.mw_sim

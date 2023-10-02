@@ -28,6 +28,7 @@ class SIM_EXIT_FLAG:
     NO_NEXT_LINK_WALL  = 4
     NO_ENTRY_LINK      = 5
     STOP_ON_LINK_BREAK = 6
+    STOP_ON_CELL_BREAK = 7
 
     all = { MAX_DEPTH, NO_WATER, NO_WATER_RND, NO_NEXT_LINK, NO_NEXT_LINK_WALL, NO_ENTRY_LINK }
 
@@ -41,6 +42,7 @@ class SIM_EXIT_FLAG:
         if e == cls.NO_NEXT_LINK_WALL:  return "NO_NEXT_LINK_WALL"
         if e == cls.NO_ENTRY_LINK:      return "NO_ENTRY_LINK"
         if e == cls.STOP_ON_LINK_BREAK: return "STOP_ON_LINK_BREAK"
+        if e == cls.STOP_ON_CELL_BREAK: return "STOP_ON_CELL_BREAK"
         return "none"
         #raise ValueError(f"SIM_EXIT_FLAG: {e} is not in {cls.all}")
     @classmethod
@@ -53,6 +55,7 @@ class SIM_EXIT_FLAG:
         if s == "NO_NEXT_LINK_WALL":    return cls.NO_NEXT_LINK_WALL
         if s == "NO_ENTRY_LINK":        return cls.NO_ENTRY_LINK
         if s == "STOP_ON_LINK_BREAK":   return cls.STOP_ON_LINK_BREAK
+        if s == "STOP_ON_CELL_BREAK":   return cls.STOP_ON_CELL_BREAK
         raise ValueError(f"SIM_EXIT_FLAG: {s} is not in {set(SIM_EXIT_FLAG.to_str(s) for s in cls.all)}")
 
 class SubStepData:
@@ -170,8 +173,6 @@ class MW_Sim:
         self.entryL     : Link  = None
         self.exit_flag  : int   = SIM_EXIT_FLAG.STILL_RUNNING
         self.step_path  : list[tuple[neigh_key_t, float]] = []
-
-        self.stopOnBreak = getPrefs().sim_step_OT_stopBreak
 
     def step_reset_trace(self):
         self.step_id = self.step_depth = -1
@@ -419,11 +420,15 @@ class MW_Sim:
 
             if self.currentL.life <= 0:
                 DEV.log_msg(f" *** ({self.step_id}) : link_break_event {self.currentL}", {"SIM", "EVENT"})
-                self.links.setState_link_check(self.currentL.key_cells, LINK_STATE_ENUM.AIR)
+                breaking = self.links.setState_link_check(self.currentL.key_cells, LINK_STATE_ENUM.AIR)
 
-                # stop simulation
-                if self.stopOnBreak:
-                    self.exit_flag = SIM_EXIT_FLAG.STOP_ON_LINK_BREAK
+                # stop simulation on break
+                if self.cfg.step_stopBreak:
+                    if "LINK" in self.cfg.step_stopBreak_event:
+                        self.exit_flag = SIM_EXIT_FLAG.STOP_ON_LINK_BREAK
+                    elif "CELL" in self.cfg.step_stopBreak_event:
+                        if breaking:
+                            self.exit_flag = SIM_EXIT_FLAG.STOP_ON_CELL_BREAK
 
         # TRACE: link deg
         if self.cfg.debug_log_trace:
@@ -489,18 +494,20 @@ class MW_Sim:
         return self.check_exit_flag()
 
     def check_continue(self):
-        # no next link was found
-        if not self.currentL:
-            if self.prevL.state == LINK_STATE_ENUM.WALL: self.exit_flag = SIM_EXIT_FLAG.NO_NEXT_LINK_WALL
-            else: self.exit_flag = SIM_EXIT_FLAG.NO_NEXT_LINK
+        if self.exit_flag == SIM_EXIT_FLAG.STILL_RUNNING:
 
-        # no more water
-        elif self.water < 0:
-            self.exit_flag = SIM_EXIT_FLAG.NO_WATER
+            # no next link was found
+            if not self.currentL:
+                if self.prevL.state == LINK_STATE_ENUM.WALL: self.exit_flag = SIM_EXIT_FLAG.NO_NEXT_LINK_WALL
+                else: self.exit_flag = SIM_EXIT_FLAG.NO_NEXT_LINK
 
-        # max iterations when enabled
-        elif self.cfg.step_maxDepth != -1 and self.step_depth >= self.cfg.step_maxDepth-1:
-            self.exit_flag = SIM_EXIT_FLAG.MAX_DEPTH
+            # no more water
+            elif self.water < 0:
+                self.exit_flag = SIM_EXIT_FLAG.NO_WATER
+
+            # max iterations when enabled
+            elif self.cfg.step_maxDepth != -1 and self.step_depth >= self.cfg.step_maxDepth-1:
+                self.exit_flag = SIM_EXIT_FLAG.MAX_DEPTH
 
         # the flag could be potentially set at other steps: link break, water rnd abs...
         return self.check_exit_flag()

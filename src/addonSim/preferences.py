@@ -292,11 +292,6 @@ class MW_prefs(bpy.types.AddonPreferences):
         default=False,
     )
 
-    sim_step_OT_stopBreak: props.BoolProperty(
-        name="stop", description="Forcefully stop on either link break or cell detach (config in debug params)",
-        default=True,
-    )
-
     util_delete_OT_unhideSelect: props.BoolProperty(
         name="unhide", description="Unhide the original object after deletion",
         default=True,
@@ -342,6 +337,10 @@ def register():
 
     # toggle some defautls per inspector
     #prefs.prefs_PT_meta_inspector.meta_show_1 = True
+
+    # sync field
+    from .mw_resistance import field_R_current_switch
+    field_R_current_switch()
 
 def unregister():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})
