@@ -186,21 +186,27 @@ class MW_Sim:
         for l in self.links.internal:
             l.degrade(self.cfg.link_deg)
 
-    def step(self):
+    def step(self, log_step):
         self.step_reset()
         self.step_id += 1
 
-        # LOG: initial water
+        # LOG: config/limit logs
         self.logs_cutmsg_disabled_prev = DEV.logs_cutmsg_disabled
+        self.log = log_step
+        self.log_trace = self.log and self.cfg.debug_log_trace
+        log_links_prev = self.links.log
+        self.links.log = self.log
         DEV.logs_cutmsg_disabled = True
-        if self.cfg.debug_log:
+
+        # LOG: initial water
+        if self.log:
+            DEV.log_msg_sep(DEV.logs_cutmsg * 0.75)
             DEV.log_msg(f" > ({self.step_id}) : starting water {self.water}", {"SIM", "STEP"})
 
         # TRACE: writing the full trace slows down the process, even more when print to console!
-        if (self.cfg.debug_log_trace):
+        if (self.log_trace):
             self.step_trace = StepData()
             self.trace_data.append(self.step_trace)
-        trace_log = self.cfg.debug_log and self.cfg.debug_log_trace
 
 
         # get entry
@@ -209,21 +215,21 @@ class MW_Sim:
             return
 
         # LOG: entry
-        if self.cfg.debug_log:
+        if self.log:
             DEV.log_msg(f" > ({self.step_id}) : {self.currentL}", {"SIM", "ENTRY" })
         # TRACE: log entry
-        if trace_log:
+        if self.log_trace:
             DEV.log_msg(f" >>> ENTRY CANDIDATES len({len(self.step_trace.entryL_candidates)})", {"SIM", "ENTRY"})
             for (l,w) in zip(self.step_trace.entryL_candidates, self.step_trace.entryL_candidatesW):
                 DEV.log_msg(f"      [{w:.2f}] {l}", {"SIM", "ENTRY", "TRACE"})
 
 
         # main loop with a break condition
-        self.infiltration_loop(trace_log)
+        self.infiltration_loop()
 
 
         # LOG: exit
-        if self.cfg.debug_log:
+        if self.log:
             DEV.log_msg(f" >>> ({self.step_id}) : exit {SIM_EXIT_FLAG.to_str(self.exit_flag)} : L ({self.currentL})", {"SIM", "EXIT"})
             DEV.log_msg(f" >>> PATH len({len(self.step_path)})", {"SIM", "PATH"})
             if self.cfg.debug_log_path:
@@ -231,15 +237,20 @@ class MW_Sim:
                     DEV.log_msg(f"      [{i}] {self.links.get_link(k)} - w:{w:.2f}", {"SIM", "PATH"})
 
         # TRACE: exitL
-        if (self.cfg.debug_log_trace):
+        if self.cfg.debug_log_trace:
             self.step_trace.exitL = self.currentL
+
+        # LOG: exit cfg
+        if self.log:
+            DEV.log_msg_sep(DEV.logs_cutmsg * 0.75)
+        self.links.log = log_links_prev
         DEV.logs_cutmsg_disabled = self.logs_cutmsg_disabled_prev
 
     def infiltration_buildPath(self):
         if self.currentL:
             self.step_path.append( (self.currentL.key_cells, self.water) )
 
-    def infiltration_loop(self, trace_log=False):
+    def infiltration_loop(self):
         self.step_depth = -1
         while self.check_continue():
             self.step_depth += 1
@@ -258,7 +269,7 @@ class MW_Sim:
                 self.link_degradation()
 
                 # TRACE: log step
-                if trace_log:
+                if self.log_trace:
                     DEV.log_msg(f" > ({self.step_id},{self.step_depth})"
                                 f" : {self.sub_trace.currentL}, n{len(self.sub_trace.currentL_candidates)}"
                                 f" - dw({self.sub_trace.water_abs:.3f}) dl({self.sub_trace.currentL_deg:.3f}) : w({self.sub_trace.water:.3f})"
@@ -333,9 +344,8 @@ class MW_Sim:
         # merge neighs, the water could scape to the outer surface
         candidates = self.links.get_link_neighs(self.currentL.key_cells)
 
-        ## drop prev from candidates?
-        #if self.prevL:
-        #    candidates -= [self.prevL]
+        ## drop prev from candidates? implicit by gravity direction
+        #if self.prevL: candidates -= [self.prevL]
 
         # candidates not found
         if not candidates:
@@ -363,6 +373,10 @@ class MW_Sim:
             self.sub_trace.currentL_candidatesW = prob_weights
 
     def get_nextProbability(self, l:Link):
+        # links hanging in the air are not valid
+        #if self.links.solid_link_check(l):
+        #    return 0
+
         # relative pos align
         dpos = l.pos - self.currentL.pos
         a = self.get_nextAlign(dpos.normalized())

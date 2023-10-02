@@ -260,6 +260,10 @@ class MW_sim_cfg(types.PropertyGroup):
         description="Output some info during simulation",
         default=True,
     )
+    debug_log_lastIters: props.IntProperty(
+        description="Limit the amount of paths printed etc",
+        default=10, min=1,
+    )
     debug_log_path: props.BoolProperty(
         description="Write the full final path",
         default=True,

@@ -134,6 +134,9 @@ class MW_Links():
         self.initialized = False
         """ Set to true after succesfully computed the link map """
 
+        self.log = True
+        """ Affects some logs, not all"""
+
         self.cont = cont
         """ Shortcut to container """
 
@@ -367,7 +370,7 @@ class MW_Links():
 
     def comps_recalc(self, recalcGraph = True):
         """ Recalc cell connected componentes, return true when new split """
-        DEV.log_msg(f"Recalc COMPS", {"COMPS"})
+        if self.log: DEV.log_msg(f"Recalc COMPS", {"COMPS"})
         prevLen = self.comps_len
 
         # recalc subgraph
@@ -394,7 +397,7 @@ class MW_Links():
 
     def comps_recalc_subgraph(self):
         """ Recalculate component subgraph """
-        DEV.log_msg(f"Recalc COMPS subgraph", {"COMPS"})
+        if self.log: DEV.log_msg(f"Recalc COMPS subgraph", {"COMPS"})
 
         # create a subgraph with no air, no missing cells and no additional walls
         stateMap = self.cont.getCells_splitID_state()
@@ -414,7 +417,7 @@ class MW_Links():
 
     def comps_recalc_frontier(self):
         """ Check new internal and external links, also changes cells state to air """
-        DEV.log_msg(f"Recalc FRONT", {"COMPS"})
+        if self.log: DEV.log_msg(f"Recalc FRONT", {"COMPS"})
 
         # all solid are internal
         stateMap_linksRaw = self.get_link_split_state()
@@ -427,7 +430,7 @@ class MW_Links():
                 self.external.append(l)
 
     def comps_detach_frontier(self):
-        DEV.log_msg(f"Recalc DETACH", {"COMPS"})
+        if self.log: DEV.log_msg(f"Recalc DETACH", {"COMPS"})
 
         # split by core comps
         cores, nonCores = [],[]
@@ -484,7 +487,7 @@ class MW_Links():
 
     def setState_link_check(self, key, state:LINK_STATE_ENUM, recalc=True):
         """ Set state, modify graph, returns True when recalc """
-        DEV.log_msg(f"Check link AIR {key}", {"COMPS", "LINK"})
+        if self.log: DEV.log_msg(f"Check link AIR {key}", {"COMPS", "LINK"})
         l = self.get_link(key)
 
         # ignore already set
@@ -528,7 +531,7 @@ class MW_Links():
 
     def setState_cell_check(self, idx, state:CELL_STATE_ENUM, recalc = True):
         """ Set state, modify graph and also set links, returns True when recalc """
-        DEV.log_msg(f"Check cell AIR {idx}", {"COMPS", "CELL"})
+        if self.log: DEV.log_msg(f"Check cell AIR {idx}", {"COMPS", "CELL"})
         cell_state = self.cont.cells_state[idx]
 
         # ignore already set

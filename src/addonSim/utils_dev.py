@@ -125,7 +125,7 @@ class DEV:
 
     @staticmethod
     def log_msg_sep(sep=logs_cutmsg):
-        print("-"*sep)
+        print("-"* int(sep))
 
     @staticmethod
     def draw_val(ui, msg, value):

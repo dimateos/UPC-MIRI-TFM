@@ -573,7 +573,8 @@ class MW_sim_step_OT(_StartRefresh_OT):
         sim_cfg : MW_sim_cfg= self.cfg
         DEV.log_msg(f"step_infiltrations({sim_cfg.step_infiltrations}) step_maxDepth({sim_cfg.step_maxDepth}) link_deg({sim_cfg.link_deg})", {'SIM'})
         for step_id in range(sim_cfg.step_infiltrations):
-            if not sim_cfg.debug_util_uniformDeg: sim.step()
+            log_step = sim_cfg.debug_log and step_id+1 > sim_cfg.step_infiltrations-sim_cfg.debug_log_lastIters
+            if not sim_cfg.debug_util_uniformDeg: sim.step(log_step)
             else: sim.step_degradeAll() # alternative see erosion on all
 
             # no entry link due to direction
@@ -581,7 +582,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
                 return self.end_op_error("No entry link found... (probably due dir_entry)")
 
             # skip the rest of steps
-            if sim.exit_flag == SIM_EXIT_FLAG.STOP_ON_LINK_BREAK:
+            if sim.exit_flag >= SIM_EXIT_FLAG.STOP_ON_LINK_BREAK:
                 break
 
         getStats().logDt("completed simulation steps")
