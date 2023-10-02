@@ -142,7 +142,7 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], context: types.Cont
     obj_bb.show_bounds = True
     return obj_bb
 
-def gen_arrowObject(obj: types.Object, vdir:Vector, pos:Vector, context: types.Context, name:str, reuse=True):
+def gen_arrowObject(obj: types.Object, vdir:Vector, pos:Vector, context: types.Context, name:str, scale=1.0, reuse=True):
     if reuse:
         find = utils_scene.get_object_fromScene(context.scene, name)
         if find:
@@ -150,6 +150,7 @@ def gen_arrowObject(obj: types.Object, vdir:Vector, pos:Vector, context: types.C
 
     obj_arrow = utils_scene.getEmpty_arrowDir(context, vdir, pos, scale=2.0, name=name)
     utils_scene.set_child(obj_arrow, obj)
+    obj_arrow.scale = [scale]*3
     return obj_arrow
 
 #-------------------------------------------------------------------
@@ -339,21 +340,41 @@ def gen_linksAll(context: types.Context):
     if not MW_global_selected.fract.links or not MW_global_selected.fract.links.initialized:
         return
 
+    #vis_cfg : MW_vis_cfg = MW_global_selected.root.mw_vis
+    vis_cfg : MW_vis_cfg = getPrefs().mw_vis
+
     # regenerate the mesh
-    gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
-    gen_linksMesh_air(MW_global_selected.fract, MW_global_selected.root, context)
-    if DEV.DEBUG_LINKS_NEIGHS:
+    if vis_cfg.links__show:
+        gen_linksMesh(MW_global_selected.fract, MW_global_selected.root, context)
+
+    if vis_cfg.wall_links__show:
+        gen_linksMesh_air(MW_global_selected.fract, MW_global_selected.root, context, vis_cfg.wall_links_show_picks)
+
+    # inner links
+    if vis_cfg.neighs__show:
         gen_linksMesh_neighs(MW_global_selected.fract, MW_global_selected.root, context)
 
     # additional last path
-    if MW_global_selected.fract.sim and MW_global_selected.fract.sim.step_path:
-        gen_linksMesh_path(MW_global_selected.fract, MW_global_selected.root, context, MW_global_selected.fract.sim.step_path)
-    else:
-        utils_scene.delete_objectChild(MW_global_selected.root, getPrefs().names.links_path)
+    if vis_cfg.path__show:
+        if MW_global_selected.fract.sim and MW_global_selected.fract.sim.step_path:
+            gen_linksMesh_path(MW_global_selected.fract, MW_global_selected.root, context, MW_global_selected.fract.sim.step_path)
+        else:
+            utils_scene.delete_objectChild(MW_global_selected.root, getPrefs().names.water_path)
 
     # additional arrows
-    gen_arrowObject(MW_global_selected.root, MW_global_selected.root.mw_sim.dir_entry,
-                                utils_trans.VECTORS.O, context, getPrefs().names.links_waterDir)
+    if vis_cfg.water_dir__show:
+        arrow = gen_arrowObject(MW_global_selected.root, MW_global_selected.root.mw_sim.dir_entry,
+                                    utils_trans.VECTORS.O, context, getPrefs().names.water_dir, vis_cfg.water_dir_scale)
+        arrow.show_in_front = True
+        #arrow.show_name = True
+
+def gen_linksDelete():
+    prefs = getPrefs()
+    links_ALL = utils_scene.get_children(MW_global_selected.root, prefs.names.links_ALL+prefs.names.water_ALL)
+    for obj in links_ALL:
+        if obj:
+            utils_scene.delete_object(obj)
+    getStats().logDt("deleted all links mesh")
 
 def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     prefs = getPrefs()
@@ -424,7 +445,7 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
 
     # single mesh with tubes
     name = prefs.names.links
-    resFaces = utils_mesh.get_resFaces_fromCurveRes(cfg.walls_links_res)
+    resFaces = utils_mesh.get_resFaces_fromCurveRes(cfg.wall_links_res)
     mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, lifeWidths, name, 1.0, resFaces, cfg.links_smoothShade)
 
     # potentially reuse child and clean mesh
@@ -458,7 +479,7 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
     getStats().logDt("generated internal links mesh object")
     return obj_links
 
-def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Context):
+def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Context, picksToo = False):
     prefs = getPrefs()
     cfg : MW_vis_cfg = root.mw_vis
     sim : MW_Sim     = MW_global_selected.fract.sim
@@ -525,40 +546,43 @@ def gen_linksMesh_air(fract: MW_Fract, root: types.Object, context: types.Contex
         #dirX_dirZ[id]=(abs(l.dir.x), abs(l.dir.z))
 
     # two mesh with tubes to represent entry picks / regular traverse picks
-    resFaces = utils_mesh.get_resFaces_fromCurveRes(cfg.walls_links_res)
-    name = prefs.names.links_air
-    name_entry = prefs.names.links_air + "_entry"
-    mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, None, name, w2, resFaces, cfg.links_smoothShade)
+    resFaces = utils_mesh.get_resFaces_fromCurveRes(cfg.wall_links_res)
+    name_entry = prefs.names.links_air_entry
     mesh_entry = utils_mesh.get_tubeMesh_pairsQuad(verts_entry, None, name_entry, w2, resFaces, cfg.links_smoothShade)
 
     # potentially reuse child and clean mesh
-    obj_linksAir = utils_scene.gen_childReuse(root, name, context, mesh, keepTrans=True)
     obj_linksAir_entry = utils_scene.gen_childReuse(root, name_entry, context, mesh_entry, keepTrans=True)
-    MW_id_utils.setMetaChild(obj_linksAir)
     MW_id_utils.setMetaChild(obj_linksAir_entry)
 
     # color encoded attributes for viewing in viewport edit mode
-    obj_linksAir.active_material = utils_mat.gen_colorMat(COLORS.green, name)
-    obj_linksAir.active_material.diffuse_color = COLORS.green
-    # entries have encoded the probabilty
     repMatchCorners=resFaces*4
     utils_mat.gen_meshUV(mesh_entry, id_prob, "id_prob", repMatchCorners)
+    utils_mat.gen_meshUV(mesh_entry, id_entries, "id_entries", repMatchCorners)
     obj_linksAir_entry.active_material = utils_mat.gen_gradientMat("id_prob", name_entry, colorFn=GRADIENTS.lerp_common(COLORS.pink))
     obj_linksAir_entry.active_material.diffuse_color = COLORS.pink
 
     # NOTE:: additional props -> to visualize seems like setting UV map in texture node is not enough, requires active UV too
     #utils_mat.gen_meshUV(mesh_entry, dirX_dirZ, "dirX_dirZ", repMatchCorners)
-    #obj_linksAir_entry.active_material = utils_mat.gen_textureMat("dirX_dirZ", name+"_dir", colorFn=GRADIENTS.red_2D_green) #red_2D_blue
+    #obj_linksAir_entry.active_material = utils_mat.gen_textureMat("dirX_dirZ", name_entry+"_dir", colorFn=GRADIENTS.red_2D_green) #red_2D_blue
 
     if DEV.DEBUG_LINKS_GEODATA:
-        utils_mat.gen_meshUV(mesh, id_picks, "id_picks", repMatchCorners)
-        utils_mat.gen_meshUV(mesh_entry, id_entries, "id_entries", repMatchCorners)
-    if DEV.DEBUG_LINKS_GEODATA:
-        utils_mat.gen_meshUV(mesh, k1_k2, "k1_k2", repMatchCorners)
-        utils_mat.gen_meshUV(mesh, f1_f2, "f1_f2", repMatchCorners)
+        utils_mat.gen_meshUV(mesh_entry, k1_k2, "k1_k2", repMatchCorners)
+        utils_mat.gen_meshUV(mesh_entry, f1_f2, "f1_f2", repMatchCorners)
+
+    obj_linksAir_picks = None
+    if picksToo:
+        # regen obj and mesh
+        name_picks = prefs.names.links_air
+        mesh_picks = utils_mesh.get_tubeMesh_pairsQuad(verts, None, name_picks, w2, resFaces, cfg.links_smoothShade)
+        obj_linksAir_picks = utils_scene.gen_childReuse(root, name_picks, context, mesh_picks, keepTrans=True)
+        MW_id_utils.setMetaChild(obj_linksAir_picks)
+        # attrs
+        obj_linksAir_picks.active_material = utils_mat.gen_colorMat(COLORS.green, name_picks)
+        obj_linksAir_picks.active_material.diffuse_color = COLORS.green
+        utils_mat.gen_meshUV(mesh_picks, id_picks, "id_picks", repMatchCorners)
 
     getStats().logDt("generated external links mesh object")
-    return obj_linksAir, obj_linksAir_entry
+    return obj_linksAir_picks, obj_linksAir_entry
 
 def gen_linksMesh_neighs(fract: MW_Fract, root: types.Object, context: types.Context):
     prefs = getPrefs()
@@ -714,7 +738,7 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
             l2f1_l2f2.append(l2f1_l2f2[-1])
 
     # single mesh with tubes
-    name = getPrefs().names.links_path
+    name = getPrefs().names.water_path
     resFaces = utils_mesh.get_resFaces_fromCurveRes(cfg.path_res)
     mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, waterWidths, name, 1.0, resFaces, cfg.links_smoothShade)
 
@@ -744,12 +768,12 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
 
     # see through and name
     obj_path.show_in_front = True
-    obj_path.show_name = True
+    #obj_path.show_name = True
 
     getStats().logDt("generated path mesh object")
     return obj_path
 
-def gen_links_LEGACY(objParent: types.Object, voro_cont: VORO_Container, context: types.Context):
+def gen_LEGACY_links(objParent: types.Object, voro_cont: VORO_Container, context: types.Context):
     prefs = getPrefs()
     prefs.names.fmt_setAmount(len(voro_cont))
 
@@ -760,7 +784,7 @@ def gen_links_LEGACY(objParent: types.Object, voro_cont: VORO_Container, context
         if cell is None: continue
 
         # group the links by cell using a parent
-        nameGroup= f"{getPrefs().names.links_group}_{prefs.names.fmt_id(cell.id)}"
+        nameGroup= f"{getPrefs().names.LEGACY_links_group}_{prefs.names.fmt_id(cell.id)}"
         obj_group = utils_scene.gen_child(objParent, nameGroup, context, None, keepTrans=False, hide=False)
         #obj_group.matrix_world = Matrix.Identity(4)
         #obj_group.location = cell.centroid()
@@ -802,7 +826,7 @@ def gen_links_LEGACY(objParent: types.Object, voro_cont: VORO_Container, context
 
 def gen_field_R(root: types.Object, context: types.Context, res = 8):
     """ Generate or reuse a grid mesh and texture to vis the field. res ==-1 reuse whatever available """
-    name = getPrefs().names.fielt_resist
+    name = getPrefs().names.field_resist
     regen = False
 
     # check reuse and update existing obj + mesh
@@ -842,7 +866,7 @@ def gen_field_R(root: types.Object, context: types.Context, res = 8):
     # reset instead of creating!
     utils_mat.set_meshUV(mesh, mesh.uv_layers.get("id_resist"), id_resist)
 
-def gen_field_mesh(res = 8, name="grid"):
+def gen_field_mesh(res = 8, name="grid", smooth=False):
     """ Generate a grid plane mesh, stores res, resX, resZ used as custom props """
     sizeX = 20 # Aprox size for DEBUG_MODEL
     sizeZ = 10
@@ -864,4 +888,7 @@ def gen_field_mesh(res = 8, name="grid"):
     mesh["res"] = res
     mesh["resX"] = resX
     mesh["resZ"] = resZ
+
+    # smoothing commonly disabled, does not seem to affect lighting tho
+    utils_mesh.set_smoothShading(mesh, smooth)
     return mesh

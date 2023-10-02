@@ -441,6 +441,10 @@ class MW_gen_links_OT(_StartRefresh_OT):
 
         # check potentially deleted cells etc
         MW_global_selected.fract.sanitize(MW_global_selected.root)
+
+        # for this OP, delete all meshes before regen
+        mw_setup.gen_linksDelete()
+
         mw_setup.gen_linksAll(context)
         return self.end_op()
 
@@ -466,10 +470,11 @@ class MW_gen_field_r_OT(_StartRefresh_OT):
         mw_setup.gen_field_R(MW_global_selected.root, context, MW_global_selected.root.mw_gen.debug_fieldR_res)
 
         # update links R
-        links :MW_Links = MW_global_selected.fract.links
-        for key in links.links_graph.nodes():
-            l = links.get_link(key)
-            l.update_resistance()
+        if  MW_global_selected.fract and MW_global_selected.fract.links:
+            links :MW_Links = MW_global_selected.fract.links
+            for key in links.links_graph.nodes():
+                l = links.get_link(key)
+                l.update_resistance()
 
         return self.end_op()
 

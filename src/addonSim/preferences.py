@@ -62,9 +62,9 @@ class MW_dev(types.PropertyGroup):
         update=lambda self, context: setattr(DEV, "SKIP_SANITIZE", self.SKIP_SANITIZE),
     )
 
-    FORCE_NO_RND : props.BoolProperty(
-        default=DEV.FORCE_NO_RND,
-        update=lambda self, context: setattr(DEV, "FORCE_NO_RND", self.FORCE_NO_RND),
+    FORCE_NO_RND_START : props.BoolProperty(
+        default=DEV.FORCE_NO_RND_START,
+        update=lambda self, context: setattr(DEV, "FORCE_NO_RND_START", self.FORCE_NO_RND_START),
     )
     FORCE_NEW_MATS : props.BoolProperty(
         default=DEV.FORCE_NEW_MATS,
@@ -194,33 +194,44 @@ class MW_prefs(bpy.types.AddonPreferences):
         draw_propsToggle_full(self, getPrefs().prefs_PT_meta_inspector, self.layout)
 
     #-------------------------------------------------------------------
+    # TODO:: use more multi queries over _ALL instead of individuals
 
     class names:
         original = "original"
         original_copy = original+"_0_"
         original_convex = original+"_1_convex"
         original_dissolve = original+"_2_dissolve"
+        original_ALL = [original_copy, original_convex, original_dissolve]
 
         source = "source"
         source_points = source+"_points"
         source_wallsBB = source+"_wallsBB"
+        source_ALL = [source_points, source_wallsBB]
 
         cells = "cells"
         cells_air = cells+"_air"
         cells_core = cells+"_core"
+        cells_ALL = [cells, cells_air, cells_core]
 
         links = "links"
         links_air = links+"_air"
+        links_air_entry = links_air+"_entry"
         links_neighs = links+"_neighs"
-        links_path = links+"_path"
         links_points = links+"_points"
-        links_waterDir = links+"_waterDir"
+        links_ALL = [links, links_air, links_air_entry, links_neighs, links_points]
 
-        fielt_resist = "field_resist"
+        water = "water"
+        water_path = water+"_path"
+        water_dir = water+"_dir"
+        water_ALL = [water_path, water_dir]
+
+        field = "field"
+        field_resist = field+"_resist"
+        field_ALL = [field_resist]
 
         # TODO:: no more legacy support
-        links_legacy = links+"_legacy"
-        links_group = "L"
+        LEGACY_links = links+"_legacy"
+        LEGACY_links_group = "L"
 
         @classmethod
         def fmt_id(cls, idx:int):
@@ -290,7 +301,7 @@ class MW_prefs(bpy.types.AddonPreferences):
     )
 
     sim_step_OT_stopBreak: props.BoolProperty(
-        name="stop", description="Forcefully stop on link break",
+        name="stop", description="Forcefully stop on either link break or cell detach (config in debug params)",
         default=True,
     )
     #sim_step_OT_clearCfg: props.BoolProperty(

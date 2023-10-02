@@ -16,10 +16,11 @@ class DEV:
     SKIP_SANITIZE         = False   # skip attempt to keep up with the UNDO/REDO etc system
     SKIP_PATH_CHECK       = False   # skip checking if a path still exists before recalc all graphs
 
-    FORCE_NO_RND          = True    # skip random generation in certain places to help debugging
+    FORCE_NO_RND_START    = True    # skip random generation in certain places to help debugging
     FORCE_NEW_MATS        = False   # force regeneration of gradient images to avoid debugging confussion
     FORCE_RESISTANCE_ROUND= False   # split linear values to both xtremes
     FORCE_RESISTANCE_FLIP = False   # flip resistance values to showcase its effect
+
     FIX_IMAGES_REDO       = True    # workaround blender bug with images just being black after redo without touching it -> reexecutes the op
     FIX_IMAGES_QUEUE      = False   # smarter workaround with a queue to reexecute just the images
 

@@ -62,6 +62,7 @@ def links_smoothShade_update(cfg):
     root, smooth = getRoot_checkProxy(cfg, "mw_vis", "links_smoothShade")
     if root is None: return
 
-    links = utils_scene.get_child(root, getPrefs().names.links)
-    if links and links.data:
-        utils_mesh.set_smoothShading(links.data, smooth)
+    links_ALL = utils_scene.get_children(root, getPrefs().names.links_ALL)
+    for links in links_ALL:
+        if links and links.data:
+            utils_mesh.set_smoothShading(links.data, smooth)

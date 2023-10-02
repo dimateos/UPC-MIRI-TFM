@@ -248,6 +248,23 @@ class MW_sim_cfg(types.PropertyGroup):
 
     #-------------------------------------------------------------------
 
+    #debug_stopBreak_event: props.EnumProperty(
+    #    name="Select where to stop the ",
+    #    items=(
+    #        ('LINK', "Disabled", "No effect on width"),
+    #        ('CELL', "Uniform effect", "Uniform effect on width"),
+    #    ),
+    #    default={'LINK'},
+    #    options={'ENUM_FLAG'},
+    #    update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links_width__mode")
+    #)
+
+    #debug_stopBreak_onLink: props.BoolProperty(
+    #    name="Stop on link break",
+    #    description="Stop on link or cell break",
+    #    default=True,
+    #)
+
     debug_rnd: props.PointerProperty(type=properties_utils.RND_config)
 
     # cfg logging
@@ -318,7 +335,7 @@ class MW_vis_cfg(types.PropertyGroup):
     )
 
     cell_color: bpy.props.FloatVectorProperty(
-        name="Cell color",
+        name="Cell SOLID color",
         default=(0.514, 0.396, 0.224, 0.75),
         size=4, min=0, max=1,
         subtype='COLOR',
@@ -343,13 +360,19 @@ class MW_vis_cfg(types.PropertyGroup):
 
     links_smoothShade: props.BoolProperty(
         name="Link smooth shade",
-        default=True,
+        default=False,
         update= lambda self, context: mw_setup_props.links_smoothShade_update(self)
     )
 
     #-------------------------------------------------------------------
     # debug one are non-dynamic, only affects subsequent runs but get written to root too
     # OPT:: most could be easily dynamic but probably not worth it or jus regen all mesh
+
+    links__show: props.BoolProperty(
+        name="Links",
+        default=True,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links__show")
+    )
 
     links_depth: props.FloatProperty(
         name="Link depth", description="Minimun depth inside faces",
@@ -387,19 +410,31 @@ class MW_vis_cfg(types.PropertyGroup):
 
     #-------------------------------------------------------------------
 
+    neighs__show: props.BoolProperty(
+        name="Inner neigh links",
+        default=False,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "neighs__show")
+    )
+
     neighs_width: props.FloatProperty(
-        name="Inner links width",
+        name="Inner neigh links width",
         default=0.01, min=0.0025, max=0.05, step=0.05, precision=4,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "neighs_width")
     )
 
     neighs_res: props.IntProperty(
-        name="Inner links resolution", description="Affect the number of faces per tube",
+        name="Inner neigh links res", description="Affect the number of faces per tube",
         default=-1, min=-1, max=8,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "neighs_res")
     )
 
     #-------------------------------------------------------------------
+
+    path__show: props.BoolProperty(
+        name="Path",
+        default=True,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "path__show")
+    )
 
     path_outside_start: props.FloatProperty(
         name="Path outside start tail", description="Initial water from outside starts at an arbitrary pos",
@@ -441,6 +476,17 @@ class MW_vis_cfg(types.PropertyGroup):
 
     #-------------------------------------------------------------------
 
+    wall_links__show: props.BoolProperty(
+        name="Air links entry",
+        default=True,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "wall_links__show")
+    )
+    wall_links_show_picks: props.BoolProperty(
+        name="Air links water picks",
+        default=False,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "wall_links__show")
+    )
+
     wall_links_depth_base: props.FloatProperty(
         name="Air link depth base",
         default=0.1, min=0.05, max=0.5, step=0.05, precision=4,
@@ -457,12 +503,24 @@ class MW_vis_cfg(types.PropertyGroup):
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "wall_links_width_base")
     )
 
-    walls_links_res: props.IntProperty(
+    wall_links_res: props.IntProperty(
         name="Air link resolution", description="Affect the number of faces per tube",
         default=0, min=-1, max=8,
-        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "walls_links_res")
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "wall_links_res")
     )
 
+    #-------------------------------------------------------------------
+
+    water_dir__show: props.BoolProperty(
+        name="Water dir arrow",
+        default=True,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "water_dir__show")
+    )
+    water_dir_scale: props.FloatProperty(
+        name="Water dir arrow scale",
+        default=1.5,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "water_dir_scale")
+    )
 
 #-------------------------------------------------------------------
 # Blender events

@@ -21,7 +21,7 @@ class RND_config(types.PropertyGroup):
     )
     seed_regen: props.BoolProperty(
         name="RND seed gen new", description="Use a new random seed per OP call",
-        default=not DEV.FORCE_NO_RND,
+        default=not DEV.FORCE_NO_RND_START,
     )
 
 class Prop_inspector(types.PropertyGroup):
