@@ -6,7 +6,7 @@ import networkx as nx
 import itertools
 
 from .mw_cont import MW_Cont, CELL_ERROR_ENUM, CELL_STATE_ENUM, neigh_key_t, neighFaces_key_t
-from .mw_resistance import MW_field_R
+from .mw_resistance import field_R_current
 
 from . import utils, utils_trans
 from .utils_trans import VECTORS
@@ -109,7 +109,7 @@ class Link():
             self.dir_from = self.key_cells[0]
 
     def update_resistance(self):
-        self.resistance = MW_field_R.get2D(self.pos.x, self.pos.z)
+        self.resistance = field_R_current().get2D(self.pos.x, self.pos.z)
 
     def degrade(self, deg):
         """ Degrade link life, no clamping """
@@ -197,7 +197,7 @@ class MW_Links():
                 # get world props, some normalized afterwards
                 pos = m_toWorld @ face.center
                 area = face.area
-                resistance = MW_field_R.get2D(pos.x, pos.z)
+                resistance = field_R_current().get2D(pos.x, pos.z)
 
                 if idx_neighCell < 0:
                     self.update_limits(pos, area, resistance)

@@ -17,7 +17,7 @@ from .mw_cont import MW_Cont, VORO_Container, CELL_STATE_ENUM, CELL_ERROR_ENUM
 from .mw_links import MW_Links
 from .mw_sim import MW_Sim, SIM_EXIT_FLAG
 from .mw_fract import MW_Fract # could import all from here
-from .mw_resistance import MW_field_R
+from .mw_resistance import field_R_current
 
 from . import utils, utils_scene, utils_trans, utils_mat, utils_mesh
 from . import sv_geom_primitives
@@ -863,12 +863,12 @@ def gen_field_R(root: types.Object, context: types.Context, res = 8, smooth = Fa
 
     # Encode resistance in world pos as UV and use texture for vis
     numCornerVerts = len(mesh.loops)
-    id_resist : list[tuple[int,float]]     = [None]*numCornerVerts
+    id_resist : list[tuple[int,float]] = [None]*numCornerVerts
     mToWorld = obj_field.matrix_world
     for id, l in enumerate(mesh.loops):
         id_normalized = id / float(numCornerVerts)
         v = mToWorld @ mesh.vertices[l.vertex_index].co
-        id_resist[id]= (id_normalized, MW_field_R.get2D(v.x, v.z))
+        id_resist[id]= (id_normalized, field_R_current().get2D(v.x, v.z))
 
     # reset instead of creating!
     utils_mat.set_meshUV(mesh, mesh.uv_layers.get("id_resist"), id_resist)

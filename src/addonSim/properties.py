@@ -531,20 +531,19 @@ class MW_vis_cfg(types.PropertyGroup):
 
 # OPT:: text box with formula
 class MW_resistance_cfg(types.PropertyGroup):
+    from .mw_resistance import field_R_current_switch as switchField
 
-    #FORCE_RESISTANCE_ROUND= False   # split linear values to both xtremes
-    #FORCE_RESISTANCE_FLIP = False   # flip resistance values to showcase its effect
-
-    #links_width__mode: props.EnumProperty(
-    #    name="Link dynamic width",
-    #    items=(
-    #        ('LAYERS_SIDE', "Disabled", "No effect on width"),
-    #        ('POCKETS', "Binary", "Any differece from full life affects drastically"),
-    #    ),
-    #    default={'UNIFORM'},
-    #    options={'ENUM_FLAG'},
-    #    update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links_width__mode")
-    #)
+    field: props.EnumProperty(
+        name="Link dynamic width",
+        items=(
+            ('LAYERS_SIDE',  "SIDE",    "Sideways resistance layers, with a bit of inclination"),
+            ('LAYERS_STACK', "STACK",   "Stacked resistance layers, with a bit of inclination"),
+            ('POCKETS',      "POCKETS", "Repeating pockets of resistance"),
+        ),
+        default={'LAYERS_SIDE'},
+        options={'ENUM_FLAG'},
+        update= lambda self, context: MW_resistance_cfg.switchField(self.field)
+    )
 
     out_inv: props.BoolProperty(
         name="Inverse final val",
