@@ -443,6 +443,12 @@ class MW_vis_cfg(types.PropertyGroup):
         default=True,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "path__show")
     )
+    path_lastOnly: props.BoolProperty(
+        name="Path last only",
+        description="Show only the last path or more",
+        default=True,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "path_lastOnly")
+    )
 
     path_outside_start: props.FloatProperty(
         name="Path outside start tail", description="Initial water from outside starts at an arbitrary pos",

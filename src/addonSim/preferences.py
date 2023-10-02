@@ -212,9 +212,9 @@ class MW_prefs(bpy.types.AddonPreferences):
         links_ALL = [links, links_air, links_air_entry, links_neighs, links_points]
 
         water = "water"
-        water_path = water+"_path"
+        water_paths = water+"_paths"
         water_dir = water+"_dir"
-        water_ALL = [water_path, water_dir]
+        water_ALL = [water_paths, water_dir]
 
         field = "field"
         field_resist = field+"_resist"

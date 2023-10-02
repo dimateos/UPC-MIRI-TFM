@@ -359,7 +359,9 @@ def gen_linksAll(context: types.Context):
         if MW_global_selected.fract.sim and MW_global_selected.fract.sim.step_path:
             gen_linksMesh_path(MW_global_selected.fract, MW_global_selected.root, context, MW_global_selected.fract.sim.step_path)
         else:
-            utils_scene.delete_objectChild(MW_global_selected.root, getPrefs().names.water_path)
+            # delete all paths
+            paths = utils_scene.get_child(MW_global_selected.root, getPrefs().names.water_paths)
+            if paths: utils_scene.delete_objectRec(paths)
 
     # additional arrows
     if vis_cfg.water_dir__show:
@@ -739,12 +741,22 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
             l2f1_l2f2.append(l2f1_l2f2[-1])
 
     # single mesh with tubes
-    name = getPrefs().names.water_path
+    name = getPrefs().names.water_paths
     resFaces = utils_mesh.get_resFaces_fromCurveRes(cfg.path_res)
     mesh = utils_mesh.get_tubeMesh_pairsQuad(verts, waterWidths, name, 1.0, resFaces, cfg.links_smoothShade)
 
     # potentially reuse child and clean mesh
-    obj_path = utils_scene.gen_childReuse(root, name, context, mesh, keepTrans=True)
+    if cfg.path_lastOnly:
+        obj_path = utils_scene.gen_childClean(root, name, context, mesh, keepTrans=True)
+    else:
+        # keep multiple paths for vis -> delete when found with no mesh
+        obj_path_parent = utils_scene.get_child(root, name)
+        if obj_path_parent and obj_path_parent.data:
+            utils_scene.delete_object(obj_path_parent)
+            obj_path_parent = None
+        if not obj_path_parent:
+            obj_path_parent = utils_scene.gen_child(root, name, context, None, keepTrans=True)
+        obj_path = utils_scene.gen_childReuse(obj_path_parent, f"path_{sim.step_id}", context, mesh, keepTrans=True)
     MW_id_utils.setMetaChild(obj_path)
 
     # color encoded attributes for viewing in viewport edit mode
