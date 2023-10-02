@@ -305,10 +305,10 @@ class MW_sim_cfg(types.PropertyGroup):
     )
 
 #-------------------------------------------------------------------
+prefix_show = "------ SHOW: "
 
 class MW_vis_cfg(types.PropertyGroup):
     from .preferences import getPrefs
-    prefix_show = "------ SHOW: "
 
     # use prefs editor in the panel but edit the selected root
     nbl_prefsProxy: props.BoolProperty(default=False)
@@ -478,31 +478,6 @@ class MW_vis_cfg(types.PropertyGroup):
 
     #-------------------------------------------------------------------
 
-    resist_field__show: props.BoolProperty(
-        name=prefix_show+"R field",
-        description="Show R field on fracture generation. You can later modify the geometry and update the visualization.",
-        default=False,
-        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "resist_field__show")
-    )
-
-    resist_field_res: props.IntProperty(
-        name="R field resolution", description="Resolution of the grid used for visualization, could slow substantially generation.",
-        default=2, min=1, max=16,
-        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "resist_field_res")
-    )
-    resist_field_smooth: props.BoolProperty(
-        name="R field smooth shade", description="Due to back face culling the single plane could be invisible.",
-        default=False,
-        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "resist_field_smooth")
-    )
-    resist_field_flipN: props.BoolProperty(
-        name="R field flip normals", description="Due to back face culling the single plane could be invisible.",
-        default=False,
-        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "resist_field_flipN")
-    )
-
-    #-------------------------------------------------------------------
-
     wall_links__show: props.BoolProperty(
         name=prefix_show+"Air links entry",
         description="Show air links on visualization update",
@@ -551,6 +526,65 @@ class MW_vis_cfg(types.PropertyGroup):
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "water_dir_scale")
     )
 
+
+#-------------------------------------------------------------------
+
+# OPT:: text box with formula
+class MW_resistance_cfg(types.PropertyGroup):
+
+    #FORCE_RESISTANCE_ROUND= False   # split linear values to both xtremes
+    #FORCE_RESISTANCE_FLIP = False   # flip resistance values to showcase its effect
+
+    #links_width__mode: props.EnumProperty(
+    #    name="Link dynamic width",
+    #    items=(
+    #        ('LAYERS_SIDE', "Disabled", "No effect on width"),
+    #        ('POCKETS', "Binary", "Any differece from full life affects drastically"),
+    #    ),
+    #    default={'UNIFORM'},
+    #    options={'ENUM_FLAG'},
+    #    update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links_width__mode")
+    #)
+
+    out_inv: props.BoolProperty(
+        name="Inverse final val",
+        default=False,
+    )
+    out_round: props.BoolProperty(
+        name="Round final value",
+        description="Help testing by splitting linear values to both xtremes",
+        default=False,
+    )
+    in_flipX: props.BoolProperty(
+        name="Flip input X",
+        default=False,
+    )
+    in_flipY: props.BoolProperty(
+        name="Flip input Y",
+        default=False,
+    )
+
+    # visuals
+    vis__show: props.BoolProperty(
+        name=prefix_show+"R field",
+        description="Show R field on fracture generation. You can later modify the geometry and update the visualization.",
+        default=False,
+    )
+
+    vis_res: props.IntProperty(
+        name="R field resolution", description="Resolution of the grid used for visualization, could slow substantially generation.",
+        default=2, min=1, max=16,
+    )
+    vis_smoothShade: props.BoolProperty(
+        name="R field smooth shading", description="Due to back face culling the single plane could be invisible.",
+        default=False,
+    )
+    vis_flipN: props.BoolProperty(
+        name="R field flip normals", description="Due to back face culling the single plane could be invisible.",
+        default=False,
+    )
+
+
 #-------------------------------------------------------------------
 # Blender events
 
@@ -558,6 +592,7 @@ classes = [
     MW_gen_cfg,
     MW_sim_cfg,
     MW_vis_cfg,
+    MW_resistance_cfg,
 ]
 _name = f"{__name__[14:]}" #\t(...{__file__[-32:]})"
 

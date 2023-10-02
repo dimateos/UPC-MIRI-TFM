@@ -70,15 +70,6 @@ class MW_dev(types.PropertyGroup):
         default=DEV.FORCE_NEW_MATS,
         update=lambda self, context: setattr(DEV, "FORCE_NEW_MATS", self.FORCE_NEW_MATS),
     )
-    FORCE_RESISTANCE_ROUND : props.BoolProperty(
-        default=DEV.FORCE_RESISTANCE_ROUND,
-        update=lambda self, context: setattr(DEV, "FORCE_RESISTANCE_ROUND", self.FORCE_RESISTANCE_ROUND),
-    )
-    FORCE_RESISTANCE_FLIP : props.BoolProperty(
-        default=DEV.FORCE_RESISTANCE_FLIP,
-        update=lambda self, context: setattr(DEV, "FORCE_RESISTANCE_FLIP", self.FORCE_RESISTANCE_FLIP),
-    )
-
 
     FIX_IMAGES_QUEUE : props.BoolProperty(
         default=DEV.FIX_IMAGES_QUEUE,
@@ -229,7 +220,7 @@ class MW_prefs(bpy.types.AddonPreferences):
         field_resist = field+"_resist"
         field_ALL = [field_resist]
 
-        # TODO:: no more legacy support
+        # OPT:: remove legacy support
         LEGACY_links = links+"_legacy"
         LEGACY_links_group = "L"
 
@@ -279,6 +270,11 @@ class MW_prefs(bpy.types.AddonPreferences):
         """ Copy the new config to the prefs to show up in the panel """
         copyProps(newRoot.mw_vis, getPrefs().mw_vis)
 
+    # resistance field is global, no storage per fract
+    from .properties import MW_resistance_cfg
+    resist_PT_meta_inspector: props.PointerProperty(type=Prop_inspector)
+    resist_cfg: props.PointerProperty(type=MW_resistance_cfg)
+
     #-------------------------------------------------------------------
     # settings that affect OP and are set from panels
 
@@ -291,10 +287,6 @@ class MW_prefs(bpy.types.AddonPreferences):
         name="gen", description="Generate links mesh directly alongside cells",
         default=False,
     )
-    #gen_calc_OT_clearCfg: props.BoolProperty(
-    #    name="clear", description="Next execution will clear the config",
-    #    default=True,
-    #)
     gen_duplicate_OT_hidePrev: props.BoolProperty(
         name="hide", description="Hide the original fractured object after duplication",
         default=False,
@@ -304,10 +296,6 @@ class MW_prefs(bpy.types.AddonPreferences):
         name="stop", description="Forcefully stop on either link break or cell detach (config in debug params)",
         default=True,
     )
-    #sim_step_OT_clearCfg: props.BoolProperty(
-    #    name="cfg", description="Next execution will clear the config",
-    #    default=False,
-    #)
 
     util_delete_OT_unhideSelect: props.BoolProperty(
         name="unhide", description="Unhide the original object after deletion",

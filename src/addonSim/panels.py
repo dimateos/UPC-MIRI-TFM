@@ -142,16 +142,20 @@ class MW_gen_PT(types.Panel):
         # slider for res
         col_rowSplit = layout.row().split(factor=0.66)
         col_rowSplit.operator(ops.MW_gen_field_r_OT.bl_idname, icon="NODE_TEXTURE")
-        col_rowSplit.prop(prefs.mw_vis, "resist_field_res", text="res")
+        col_rowSplit.prop(prefs.resist_cfg, "vis_res", text="res")
 
         # warning no fract
         if not MW_global_selected.fract:
             layout.label(text="Root without storage! Recalc...", icon="ERROR")
 
-        # visuals inspect
+        # visuals edit
         #vis_cfg = context.scene.mw_vis -> scene data is affected by operator undo
         vis_cfg = prefs.mw_vis
         open, box = ui.draw_propsToggle_custom(vis_cfg, prefs.vis_PT_meta_inspector, layout, text="Visuals...")
+
+        # resistance edit
+        res_cfg = prefs.resist_cfg
+        open, box = ui.draw_propsToggle_custom(res_cfg, prefs.resist_PT_meta_inspector, layout, text="Resistance...")
 
     def draw_debug(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
@@ -279,7 +283,6 @@ class MW_sim_PT(types.Panel):
 
         col_rowSplit = col.row().split(factor=0.70)
         col_rowSplit.operator(ops.MW_sim_reset_OT.bl_idname, text="RESET", icon="ORPHAN_DATA")
-        #col_rowSplit.prop(prefs, "sim_step_OT_clearCfg")
         col_rowSplit.operator(ops.MW_sim_resetCFG_OT.bl_idname, text="config")
 
         # inspect root or selected?

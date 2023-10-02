@@ -13,6 +13,7 @@ from .properties import (
     MW_gen_cfg,
     MW_sim_cfg,
     MW_vis_cfg,
+    MW_resistance_cfg,
 )
 from . import properties_utils
 from .operators_dm import _StartRefresh_OT, op_utils_classes
@@ -278,10 +279,10 @@ class MW_gen_OT(_StartRefresh_OT):
                 mw_setup.gen_linksAll(self.context)
 
             # optional field visualiztion
-            vis_cfg : MW_vis_cfg = getPrefs().mw_vis
-            if vis_cfg.resist_field__show:
+            cfg : MW_resistance_cfg = getPrefs().resist_cfg
+            if cfg.vis__show:
                 DEV.log_msg("Visual field R", {'SETUP'})
-                mw_setup.gen_field_R(MW_global_selected.root, self.context, vis_cfg.resist_field_res, vis_cfg.resist_field_smooth, vis_cfg.resist_field_flipN)
+                mw_setup.gen_field_R(MW_global_selected.root, self.context, cfg.vis_res, cfg.vis_smoothShade, cfg.vis_flipN)
                 #self.FIX_fieldR_obj = obj_root
 
         return super().end_op(msg, skipLog, retPass)
@@ -421,7 +422,7 @@ class MW_cell_state_OT(_StartRefresh_OT):
 
 class MW_gen_links_OT(_StartRefresh_OT):
     bl_idname = "mw.gen_links"
-    bl_label = "Update links vis"
+    bl_label = "Update links"
     bl_description = "Generate the visual representation of the links of a fracture object"
 
     # UNDO as part of bl_options will cancel any edit last operation pop up
@@ -450,7 +451,7 @@ class MW_gen_links_OT(_StartRefresh_OT):
 
 class MW_gen_field_r_OT(_StartRefresh_OT):
     bl_idname = "mw.gen_field_r"
-    bl_label = "Update field vis"
+    bl_label = "Update field"
     bl_description = "Generate or update the visual representation of the resistance field"
 
     bl_options = {'INTERNAL', 'UNDO'}
@@ -467,8 +468,8 @@ class MW_gen_field_r_OT(_StartRefresh_OT):
         self.start_op()
 
         # will generate or update it
-        vis_cfg : MW_vis_cfg = getPrefs().mw_vis
-        mw_setup.gen_field_R(MW_global_selected.root, context, vis_cfg.resist_field_res, vis_cfg.resist_field_smooth, vis_cfg.resist_field_flipN)
+        cfg : MW_resistance_cfg = getPrefs().resist_cfg
+        mw_setup.gen_field_R(MW_global_selected.root, context, cfg.vis_res, cfg.vis_smoothShade, cfg.vis_flipN)
 
         # update links R
         if  MW_global_selected.fract and MW_global_selected.fract.links:
