@@ -12,6 +12,7 @@ from .properties_global import (
 from .properties import (
     MW_gen_cfg,
     MW_sim_cfg,
+    MW_vis_cfg,
 )
 from . import properties_utils
 from .operators_dm import _StartRefresh_OT, op_utils_classes
@@ -222,7 +223,8 @@ class MW_gen_OT(_StartRefresh_OT):
         mw_extraction.points_transformCfg(points, cfg, bb_radius)
 
         # Add some reference of the points to the scene
-        mw_setup.gen_pointsObject(obj_root, points, self.context, prefs.names.source_points)
+        obj_points = mw_setup.gen_pointsObject(obj_root, points, self.context, prefs.names.source_points)
+        utils_scene.hide_objectRec(obj_points, prefs.mw_vis.cell_hide_points)
         mw_setup.gen_boundsObject(obj_root, bb, self.context, prefs.names.source_wallsBB)
         getStats().logDt("generated point and bound objects")
 
@@ -271,17 +273,15 @@ class MW_gen_OT(_StartRefresh_OT):
         MW_global_selected.recheckSelected()
 
         if MW_global_selected.root:
-            cfg = MW_global_selected.root.mw_gen
-
             # optional links direct generation
-            #if cfg.debug_gen_links:
             if getPrefs().gen_calc_OT_links:
                 mw_setup.gen_linksAll(self.context)
 
             # optional field visualiztion
-            if cfg.debug_fieldR:
+            vis_cfg : MW_vis_cfg = getPrefs().mw_vis
+            if vis_cfg.resist_field__show:
                 DEV.log_msg("Visual field R", {'SETUP'})
-                mw_setup.gen_field_R(MW_global_selected.root, self.context, cfg.debug_fieldR_res)
+                mw_setup.gen_field_R(MW_global_selected.root, self.context, vis_cfg.resist_field_res, vis_cfg.resist_field_smooth, vis_cfg.resist_field_flipN)
                 #self.FIX_fieldR_obj = obj_root
 
         return super().end_op(msg, skipLog, retPass)
@@ -467,7 +467,8 @@ class MW_gen_field_r_OT(_StartRefresh_OT):
         self.start_op()
 
         # will generate or update it
-        mw_setup.gen_field_R(MW_global_selected.root, context, MW_global_selected.root.mw_gen.debug_fieldR_res)
+        vis_cfg : MW_vis_cfg = getPrefs().mw_vis
+        mw_setup.gen_field_R(MW_global_selected.root, context, vis_cfg.resist_field_res, vis_cfg.resist_field_smooth, vis_cfg.resist_field_flipN)
 
         # update links R
         if  MW_global_selected.fract and MW_global_selected.fract.links:

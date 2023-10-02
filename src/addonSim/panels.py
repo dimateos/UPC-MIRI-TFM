@@ -142,7 +142,7 @@ class MW_gen_PT(types.Panel):
         # slider for res
         col_rowSplit = layout.row().split(factor=0.66)
         col_rowSplit.operator(ops.MW_gen_field_r_OT.bl_idname, icon="NODE_TEXTURE")
-        col_rowSplit.prop(gen_cfg, "debug_fieldR_res", text="res")
+        col_rowSplit.prop(prefs.mw_vis, "resist_field_res", text="res")
 
         # warning no fract
         if not MW_global_selected.fract:

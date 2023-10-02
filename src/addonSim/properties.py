@@ -116,20 +116,6 @@ class MW_gen_cfg(types.PropertyGroup):
         default=True,
     )
 
-    #debug_gen_links: props.BoolProperty(
-    #    name="Generate links mesh directly", description="Otherwise generated later by the operator buton un the gen panel.",
-    #    default=True,
-    #)
-    debug_fieldR: props.BoolProperty(
-        name="Generate R field visuals", description="You can later modify the geometry and update the visualization.",
-        default=True,
-    )
-    debug_fieldR_res: props.IntProperty(
-        name="Generated R field resolution", description="Resolution of the grid used for visualization, could slow substantially generation.",
-        default=2,
-        min=1, max=16
-    )
-
     #-------------------------------------------------------------------
 
     # mod final fract object name
@@ -322,6 +308,7 @@ class MW_sim_cfg(types.PropertyGroup):
 
 class MW_vis_cfg(types.PropertyGroup):
     from .preferences import getPrefs
+    prefix_show = "------ SHOW: "
 
     # use prefs editor in the panel but edit the selected root
     nbl_prefsProxy: props.BoolProperty(default=False)
@@ -356,6 +343,12 @@ class MW_vis_cfg(types.PropertyGroup):
         update= lambda self, context: mw_setup_props.cell_color_update(self, "cell_color_core", MW_vis_cfg.getPrefs().names.cells_core)
     )
 
+    cell_hide_points: props.BoolProperty(
+        name="Cell points hidden",
+        default=True,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "cell_hide_points")
+    )
+
     #-------------------------------------------------------------------
 
     links_smoothShade: props.BoolProperty(
@@ -369,7 +362,8 @@ class MW_vis_cfg(types.PropertyGroup):
     # OPT:: most could be easily dynamic but probably not worth it or jus regen all mesh
 
     links__show: props.BoolProperty(
-        name="Links",
+        name=prefix_show+"Links",
+        description="Show regular links on visualization update",
         default=True,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links__show")
     )
@@ -408,10 +402,17 @@ class MW_vis_cfg(types.PropertyGroup):
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "links_res")
     )
 
+    links_hide_points: props.BoolProperty(
+        name="Links points hidden",
+        default=True,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "cell_hide_points")
+    )
+
     #-------------------------------------------------------------------
 
     neighs__show: props.BoolProperty(
-        name="Inner neigh links",
+        name=prefix_show+"Inner neigh links",
+        description="Show inner neigh links links on visualization update",
         default=False,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "neighs__show")
     )
@@ -431,7 +432,8 @@ class MW_vis_cfg(types.PropertyGroup):
     #-------------------------------------------------------------------
 
     path__show: props.BoolProperty(
-        name="Path",
+        name=prefix_show+"Path",
+        description="Show water path on visualization update",
         default=True,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "path__show")
     )
@@ -476,8 +478,34 @@ class MW_vis_cfg(types.PropertyGroup):
 
     #-------------------------------------------------------------------
 
+    resist_field__show: props.BoolProperty(
+        name=prefix_show+"R field",
+        description="Show R field on fracture generation. You can later modify the geometry and update the visualization.",
+        default=False,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "resist_field__show")
+    )
+
+    resist_field_res: props.IntProperty(
+        name="R field resolution", description="Resolution of the grid used for visualization, could slow substantially generation.",
+        default=2, min=1, max=16,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "resist_field_res")
+    )
+    resist_field_smooth: props.BoolProperty(
+        name="R field smooth shade", description="Due to back face culling the single plane could be invisible.",
+        default=False,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "resist_field_smooth")
+    )
+    resist_field_flipN: props.BoolProperty(
+        name="R field flip normals", description="Due to back face culling the single plane could be invisible.",
+        default=False,
+        update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "resist_field_flipN")
+    )
+
+    #-------------------------------------------------------------------
+
     wall_links__show: props.BoolProperty(
-        name="Air links entry",
+        name=prefix_show+"Air links entry",
+        description="Show air links on visualization update",
         default=True,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "wall_links__show")
     )
@@ -512,7 +540,8 @@ class MW_vis_cfg(types.PropertyGroup):
     #-------------------------------------------------------------------
 
     water_dir__show: props.BoolProperty(
-        name="Water dir arrow",
+        name=prefix_show+"Water dir arrow",
+        description="Show water dir on visualization update",
         default=True,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "water_dir__show")
     )

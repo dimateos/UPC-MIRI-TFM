@@ -474,6 +474,7 @@ def gen_linksMesh(fract: MW_Fract, root: types.Object, context: types.Context):
 
     # add points object too
     obj_points = gen_pointsObject(root, points, context, prefs.names.links_points, reuse=True, keepTrans=True)
+    utils_scene.hide_objectRec(obj_points, prefs.mw_vis.links_hide_points)
     MW_id_utils.setMetaChild(obj_points)
 
     getStats().logDt("generated internal links mesh object")
@@ -824,7 +825,7 @@ def gen_LEGACY_links(objParent: types.Object, voro_cont: VORO_Container, context
 
 #-------------------------------------------------------------------
 
-def gen_field_R(root: types.Object, context: types.Context, res = 8):
+def gen_field_R(root: types.Object, context: types.Context, res = 8, smooth = False, flipN = False):
     """ Generate or reuse a grid mesh and texture to vis the field. res ==-1 reuse whatever available """
     name = getPrefs().names.field_resist
     regen = False
@@ -836,13 +837,19 @@ def gen_field_R(root: types.Object, context: types.Context, res = 8):
         prev_res = mesh["res"]
         if res != prev_res and res != -1:
             regen = True
+
+        # also check other props
+        else:
+            if smooth != bool(mesh["smooth"]) or flipN != bool(mesh["flipN"]):
+                regen = True
+
     else:
         regen = True
         assert(res != -1)
 
     # potential regen including the object (deletes mat, mesh, etc)
     if regen:
-        mesh = gen_field_mesh(res, name)
+        mesh = gen_field_mesh(res, name, smooth, flipN)
         utils_mat.gen_meshUV(mesh, name="id_resist")
         obj_field = utils_scene.gen_childReuse(root, name, context, mesh, keepTrans=True)
         MW_id_utils.setMetaChild(obj_field)
@@ -866,7 +873,7 @@ def gen_field_R(root: types.Object, context: types.Context, res = 8):
     # reset instead of creating!
     utils_mat.set_meshUV(mesh, mesh.uv_layers.get("id_resist"), id_resist)
 
-def gen_field_mesh(res = 8, name="grid", smooth=False):
+def gen_field_mesh(res = 8, name="grid", smooth=False, flipN = False):
     """ Generate a grid plane mesh, stores res, resX, resZ used as custom props """
     sizeX = 20 # Aprox size for DEBUG_MODEL
     sizeZ = 10
@@ -880,6 +887,11 @@ def gen_field_mesh(res = 8, name="grid", smooth=False):
     mesh = bpy.data.meshes.new(name)
     verts, edges, faces = sv_geom_primitives.grid(sizeX,sizeZ, resX,resZ)
 
+    # flip normals reverse the faces in place
+    if flipN:
+        for fid,f in enumerate(faces):
+            faces[fid].reverse()
+
     # points direclty in world space
     utils_trans.transform_points(verts, trans)
     mesh.from_pydata(verts, edges, faces)
@@ -888,6 +900,9 @@ def gen_field_mesh(res = 8, name="grid", smooth=False):
     mesh["res"] = res
     mesh["resX"] = resX
     mesh["resZ"] = resZ
+    mesh["smooth"] = smooth
+    mesh["flipN"] = flipN
+    mesh["flipN"] = flipN
 
     # smoothing commonly disabled, does not seem to affect lighting tho
     utils_mesh.set_smoothShading(mesh, smooth)
