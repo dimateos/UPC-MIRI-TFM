@@ -462,7 +462,8 @@ class MW_Links():
             self.air_comps_count()
 
             # iterate solid cells split their link by state (contain the frontier)
-            for cell_id in stateMap[CELL_STATE_ENUM.SOLID]:
+            solids = stateMap[CELL_STATE_ENUM.SOLID] + stateMap[CELL_STATE_ENUM.CORE]
+            for cell_id in solids:
                 links = self.get_cell_links(cell_id)
                 for l in links:
                     if l.state == LINK_STATE_ENUM.SOLID:
