@@ -523,8 +523,9 @@ def gen_textureMat(uv_layer:str, name:str, width=GRADIENTS._default_res, height=
 
         # Flatten the NumPy array and assign it to the image
         image.pixels = pixels.tolist()
-        #image.update()
-        image.make_local()
+        image.update()
+        image.pack()
+        #image.make_local()
 
     # Create a new material and add it
     name_mat = name+"_mat"

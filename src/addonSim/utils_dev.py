@@ -20,9 +20,9 @@ class DEV:
     FORCE_NO_RND_START    = True    # skip random generation in certain places to help debugging
     FORCE_NEW_MATS        = False   # force regeneration of gradient images to avoid debugging confussion
 
-    FIX_IMAGES_REDO       = True    # workaround blender bug with images just being black after redo without touching it -> reexecutes the op
+    FIX_IMAGES_REDO       = False   # workaround blender bug with images just being black after redo without touching it -> reexecutes the op
     FIX_IMAGES_QUEUE      = False   # smarter workaround with a queue to reexecute just the images
-
+#
     LEGACY_CONT_ASSERT    = False   # assert some local and global pos match
     LEGACY_CONT_GEN       = False   # check some stats of legacy cont
 

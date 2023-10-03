@@ -79,14 +79,15 @@ class MW_dev(types.PropertyGroup):
         update=lambda self, context: setattr(DEV, "FORCE_NEW_MATS", self.FORCE_NEW_MATS),
     )
 
-    FIX_IMAGES_QUEUE : props.BoolProperty(
-        default=DEV.FIX_IMAGES_QUEUE,
-        update=lambda self, context: setattr(DEV, "FIX_IMAGES_QUEUE", self.FIX_IMAGES_QUEUE),
-    )
-    FIX_IMAGES_REDO : props.BoolProperty(
-        default=DEV.FIX_IMAGES_REDO,
-        update=lambda self, context: setattr(DEV, "FIX_IMAGES_REDO", self.FIX_IMAGES_REDO),
-    )
+    # NOTE:: fixed with image.pack()...
+    #FIX_IMAGES_QUEUE : props.BoolProperty(
+    #    default=DEV.FIX_IMAGES_QUEUE,
+    #    update=lambda self, context: setattr(DEV, "FIX_IMAGES_QUEUE", self.FIX_IMAGES_QUEUE),
+    #)
+    #FIX_IMAGES_REDO : props.BoolProperty(
+    #    default=DEV.FIX_IMAGES_REDO,
+    #    update=lambda self, context: setattr(DEV, "FIX_IMAGES_REDO", self.FIX_IMAGES_REDO),
+    #)
 
     logs : props.BoolProperty(
         default=DEV.logs,
@@ -354,6 +355,10 @@ def register():
     # sync field
     from .mw_resistance import field_R_current_switch
     field_R_current_switch()
+
+    # sync debug props (reset all)
+    from . import properties_utils
+    properties_utils.resetProps(prefs.dev_PT_meta_cfg)
 
 def unregister():
     DEV.log_msg(f"{_name}", {"ADDON", "INIT", "UN-REG"})
