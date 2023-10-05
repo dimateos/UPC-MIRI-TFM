@@ -194,6 +194,8 @@ class MW_gen_PT(types.Panel):
             col_rowSplit.operator(ops.MW_util_bool_OT.bl_idname, icon="MOD_BOOLEAN")
             col_rowSplit.prop(prefs, "util_bool_OT_apply")
 
+            col.operator(ops.MW_sim_undoLast_OT.bl_idname, icon="LOOP_BACK")
+
     def draw_debugInspect(self, context: types.Context, layout: types.UILayout):
         prefs = getPrefs()
         curr = MW_global_selected.current

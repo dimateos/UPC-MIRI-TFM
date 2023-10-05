@@ -645,6 +645,33 @@ class MW_sim_resetCFG_OT(_StartRefresh_OT):
         properties_utils.resetProps(MW_global_selected.root.mw_sim, "-step,-debug")
         return self.end_op()
 
+class MW_sim_undoLast_OT(_StartRefresh_OT):
+    bl_idname = "mw.sim_undo_last"
+    bl_label = "undo last sim step"
+    bl_description = "DEV:: undo last simulation path"
+
+    bl_options = {'INTERNAL', 'UNDO'}
+
+    def __init__(self) -> None:
+        super().__init__()
+        # config some base class log flags...
+
+    @classmethod
+    def poll(cls, context):
+        return MW_global_selected.root and MW_global_selected.fract and MW_global_selected.fract.sim
+
+    def execute(self, context: types.Context):
+        self.start_op()
+
+        sim : MW_Sim = MW_global_selected.fract.sim
+        sim.backup_state_restore()
+        sim.step_reset()
+
+        # redraw links and cells
+        mw_setup.update_cellsState(MW_global_selected.fract.cont, MW_global_selected.root)
+        mw_setup.gen_linksAll(context)
+        return self.end_op()
+
 #-------------------------------------------------------------------
 
 class MW_util_comps_OT(_StartRefresh_OT):
@@ -835,6 +862,7 @@ classes = [
     MW_sim_step_OT,
     MW_sim_reset_OT,
     MW_sim_resetCFG_OT,
+    MW_sim_undoLast_OT,
 
     MW_util_comps_OT,
     MW_util_bool_OT,

@@ -703,7 +703,7 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
 
         # lerp with with the water -> could go over 1 water__start
         #w_normalized = w / sim.cfg.water__start
-        waterWidths[depth]= cfg.path_width_start * w + cfg.path_width_end * min(1-w, 0)
+        waterWidths[depth]= cfg.path_width_start * max(w, 0) + cfg.path_width_end * max(1-w, 0)
 
         # query info keys
         if DEV.DEBUG_GEODATA:
@@ -773,7 +773,7 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
     c1 = COLORS.with_alpha(COLORS.sky, cfg.path_alpha)
     c2 = c1.copy()
     c2.xyz *= cfg.path_dark_end
-    obj_path.active_material = utils_mat.gen_gradientMat("depth_norm", name, colorFn=GRADIENTS.lerp_common(c2, c1))
+    obj_path.active_material = utils_mat.gen_gradientMat("depth_norm", name, colorFn=GRADIENTS.lerp_common(c2, c1), forceNew=True)
 
     # see through and name
     obj_path.show_in_front = True

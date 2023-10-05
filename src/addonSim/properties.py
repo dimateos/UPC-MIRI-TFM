@@ -462,12 +462,12 @@ class MW_vis_cfg(types.PropertyGroup):
 
     path_width_start: props.FloatProperty(
         name="Path width start", description="Represents full initial water",
-        default=0.05, min=0.01, max=0.2, step=0.01, precision=4,
+        default=0.05, min=0.01, max=0.2, step=0.05, precision=4,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "path_width_start")
     )
     path_width_end: props.FloatProperty(
         name="Path width end", description="Represents no more water",
-        default=0.005, min=0.001, max=0.001, step=0.05, precision=4,
+        default=0.005, min=0.001, max=0.05, step=0.05, precision=4,
         update= lambda self, context: mw_setup_props.getRoot_checkProxy_None(self, "mw_vis", "path_width_end")
     )
 

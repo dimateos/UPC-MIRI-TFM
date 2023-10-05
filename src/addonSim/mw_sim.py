@@ -115,6 +115,9 @@ class MW_Sim:
         # store random too
         self.rnd_store()
 
+        # store some sim props
+        self.back_step_id = self.step_id
+
     def backup_state_restore(self):
         # restore all
         for key in self.links.links_graph.nodes():
@@ -125,6 +128,9 @@ class MW_Sim:
 
         # global recalculation including graphs
         self.links.comps_recalc()
+
+        # restore some sim props
+        self.step_id = self.back_step_id
 
     #-------------------------------------------------------------------
 

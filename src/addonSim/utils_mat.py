@@ -501,7 +501,7 @@ def gen_textureMat(uv_layer:str, name:str, width=GRADIENTS._default_res, height=
         # create new image
         width=int(width)
         height=int(height)
-        image = bpy.data.images.new(name=name_image, width=width, height=height)
+        image = bpy.data.images.new(name=name_image, width=width, height=height, alpha=True)
 
         # Create a NumPy array to store the image data
         pixels = np.empty(width * height * 4, dtype=np.float32)
