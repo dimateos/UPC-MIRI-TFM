@@ -443,6 +443,10 @@ class MW_gen_links_OT(_StartRefresh_OT):
         # check potentially deleted cells etc
         MW_global_selected.fract.sanitize(MW_global_selected.root)
 
+        # update dir from scene arrow
+        if MW_global_selected.root.mw_sim.dir_entry_fromArrow:
+            mw_setup.update_arrow_dir(MW_global_selected.root)
+
         # for this OP, delete all meshes before regen
         mw_setup.gen_linksDelete()
 

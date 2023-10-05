@@ -10,6 +10,7 @@ from .properties_global import (
 )
 from .properties import (
     MW_gen_cfg,
+    MW_sim_cfg,
     MW_vis_cfg,
 )
 
@@ -143,10 +144,8 @@ def gen_boundsObject(obj: types.Object, bb: list[Vector, 2], context: types.Cont
     return obj_bb
 
 def gen_arrowObject(obj: types.Object, vdir:Vector, pos:Vector, context: types.Context, name:str, scale=1.0, reuse=True):
-    if reuse:
-        find = utils_scene.get_object_fromScene(context.scene, name)
-        if find:
-            utils_scene.delete_object(find)
+    # in this case just delete the child object
+    if reuse: utils_scene.delete_objectChild(obj, name)
 
     obj_arrow = utils_scene.getEmpty_arrowDir(context, vdir, pos, scale=2.0, name=name)
     utils_scene.set_child(obj_arrow, obj)
@@ -363,12 +362,9 @@ def gen_linksAll(context: types.Context):
             paths = utils_scene.get_child(MW_global_selected.root, getPrefs().names.water_paths)
             if paths: utils_scene.delete_objectRec(paths)
 
-    # additional arrows
+    # water dir
     if vis_cfg.water_dir__show:
-        arrow = gen_arrowObject(MW_global_selected.root, MW_global_selected.root.mw_sim.dir_entry,
-                                    utils_trans.VECTORS.O, context, getPrefs().names.water_dir, vis_cfg.water_dir_scale)
-        arrow.show_in_front = True
-        #arrow.show_name = True
+        gen_arrow_dir(MW_global_selected.root, context)
 
 def gen_linksDelete():
     prefs = getPrefs()
@@ -834,6 +830,37 @@ def gen_LEGACY_links(objParent: types.Object, voro_cont: VORO_Container, context
 
     MW_id_utils.setMetaType_rec(objParent, {"CHILD"}, skipParent=False)
     getStats().logDt("generated legacy links per cell objects")
+
+#-------------------------------------------------------------------
+
+def update_arrow_dir(root: types.Object):
+    sim_cfg : MW_sim_cfg = root.mw_sim
+    name = getPrefs().names.water_dir
+
+    # water dir from arrow
+    obj_arrow = utils_scene.get_child(root, name)
+    if obj_arrow:
+        newDir = (obj_arrow.matrix_world @ utils_trans.VECTORS.upZ).to_3d().normalized()
+        prevDir = Vector(obj_arrow["dir_entry"]).to_3d()
+        diff = newDir-prevDir
+        # compare with pre dir
+        if not utils_trans.almostNull(diff):
+            DEV.log_msg(f"Updating water dir with {newDir}", {"SETUP", "DIR"})
+            sim_cfg.dir_entry = newDir
+
+def gen_arrow_dir(root: types.Object, context: types.Context):
+    vis_cfg : MW_vis_cfg = getPrefs().mw_vis
+    sim_cfg : MW_sim_cfg = root.mw_sim
+    name = getPrefs().names.water_dir
+
+    # generate the visual arrow
+    obj_arrow = gen_arrowObject(root, sim_cfg.dir_entry, utils_trans.VECTORS.O,
+                            context, name, vis_cfg.water_dir_scale)
+    obj_arrow["dir_entry"] = sim_cfg.dir_entry.normalized()
+    obj_arrow.show_in_front = True
+    #arrow.show_name = True
+
+    MW_id_utils.setMetaChild(obj_arrow)
 
 #-------------------------------------------------------------------
 

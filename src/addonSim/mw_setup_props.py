@@ -49,14 +49,16 @@ def cell_scale_update(cfg):
     if root is None: return
 
     cells_root = utils_scene.get_child(root, getPrefs().names.cells)
-    utils_trans.scale_objectChildren(cells_root, scale)
+    if cells_root:
+        utils_trans.scale_objectChildren(cells_root, scale)
 
 def cell_color_update(cfg, prop_name:str, cells_name:str):
     root, color = getRoot_checkProxy(cfg, "mw_vis", prop_name)
     if root is None: return
 
     cells_root = utils_scene.get_child(root, cells_name)
-    cells_root.active_material.diffuse_color = color
+    if cells_root and cells_root.active_material:
+        cells_root.active_material.diffuse_color = color
 
 def links_smoothShade_update(cfg):
     root, smooth = getRoot_checkProxy(cfg, "mw_vis", "links_smoothShade")

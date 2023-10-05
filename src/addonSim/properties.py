@@ -215,6 +215,10 @@ class MW_sim_cfg(types.PropertyGroup):
         default=0.1, precision=3,
         min=-1.0, max=1.0
     )
+    dir_entry_fromArrow: props.BoolProperty(
+        description="Read the direction from the scene arrow when updated.",
+        default=True,
+    )
     dir_next: props.FloatVectorProperty(
         description="Kind of gravity direction followed by the water inside the model , (normalized for execution)",
         subtype='XYZ',

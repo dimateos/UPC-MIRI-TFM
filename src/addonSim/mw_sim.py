@@ -412,8 +412,8 @@ class MW_Sim:
     #-------------------------------------------------------------------
 
     def link_resistance(self, l:Link):
-        # dead link opposes no resistance
-        r = l.life
+        # dead link opposes no resistance (but never negative)
+        r = max(l.life, 0.0)
 
         # mod by the resistance field at its center
         r *= l.resistance * self.cfg.link_resist_weight

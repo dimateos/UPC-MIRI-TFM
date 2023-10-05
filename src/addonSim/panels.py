@@ -182,7 +182,7 @@ class MW_gen_PT(types.Panel):
             for id, fract in MW_global_storage.id_fracts.items():
                 obj = MW_global_storage.id_fracts_obj[id]
                 icon = "X" if utils_scene.needsSanitize(obj) else "CHECKMARK"
-                col.label(text=f"{id}: {len(fract.cont.voro_cont)} cells + {fract.links.links_len} links", icon=icon)
+                col.label(text=f"{id}: {len(fract.cont.voro_cont if fract.cont else -1)} cells + {fract.links.links_len if fract.links else -1} links", icon=icon)
 
             # more stuff
             col = box.column()
