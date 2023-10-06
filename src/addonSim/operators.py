@@ -179,7 +179,7 @@ class MW_gen_OT(_StartRefresh_OT):
         # catch exceptions to at least mark as child and copy props
         except Exception as e:
             if not DEV.HANDLE_GLOBAL_EXCEPT: raise e
-            return self.end_op_error("unhandled exception...")
+            return self.end_op_error(f"unhandled exception... {e}")
 
 
     def execute_fresh(self, obj_root:types.Object, obj_original:types.Object ):
@@ -598,6 +598,11 @@ class MW_sim_step_OT(_StartRefresh_OT):
         if prefs.sim_calc_OT_links:
             mw_setup.gen_linksAll(context)
         return self.end_op()
+
+    def end_op(self, msg="", skipLog=False, retPass=False):
+        MW_global_selected.sanitize()
+        MW_global_selected.prevalid_sanitize()
+        return super().end_op(msg, skipLog, retPass)
 
 class MW_sim_reset_OT(_StartRefresh_OT):
     bl_idname = "mw.sim_reset"

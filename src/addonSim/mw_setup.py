@@ -752,6 +752,7 @@ def gen_linksMesh_path(fract: MW_Fract, root: types.Object, context: types.Conte
             obj_path_parent = None
         if not obj_path_parent:
             obj_path_parent = utils_scene.gen_child(root, name, context, None, keepTrans=True)
+            MW_id_utils.setMetaChild(obj_path_parent)
         obj_path = utils_scene.gen_childReuse(obj_path_parent, f"path_{sim.step_id}", context, mesh, keepTrans=True)
     MW_id_utils.setMetaChild(obj_path)
 

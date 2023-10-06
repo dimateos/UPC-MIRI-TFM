@@ -3,6 +3,7 @@
 
 class DEV:
     HANDLE_GLOBAL_EXCEPT  = False   # more robust extension global error but harder to debug
+    HANDLE_OP_EXCEPT      = False   # some blender broken references are too hard to maange
     CALLBACK_REGISTER_ALL = False   # inspect when all available callbacks are triggered
     SELECT_ROOT_LOAD      = True    # try to select any root after reloading
 

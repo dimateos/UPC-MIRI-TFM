@@ -488,6 +488,7 @@ class MW_Sim:
                 self.water_abs = w
             else:
                 self.water_abs = w + self.water
+                self.water = 0
 
         # TRACE: water abs
         if self.cfg.debug_log_trace:
@@ -526,7 +527,7 @@ class MW_Sim:
                 else: self.exit_flag = SIM_EXIT_FLAG.NO_NEXT_LINK
 
             # no more water
-            elif self.water < 0:
+            elif self.water <= 0:
                 self.exit_flag = SIM_EXIT_FLAG.NO_WATER
 
             # max iterations when enabled

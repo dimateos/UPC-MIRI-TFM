@@ -89,6 +89,15 @@ class MW_dev(types.PropertyGroup):
     #    update=lambda self, context: setattr(DEV, "FIX_IMAGES_REDO", self.FIX_IMAGES_REDO),
     #)
 
+    HANDLE_GLOBAL_EXCEPT : props.BoolProperty(
+        default=DEV.HANDLE_GLOBAL_EXCEPT,
+        update=lambda self, context: setattr(DEV, "HANDLE_GLOBAL_EXCEPT", self.HANDLE_GLOBAL_EXCEPT),
+    )
+    HANDLE_OP_EXCEPT : props.BoolProperty(
+        default=DEV.HANDLE_OP_EXCEPT,
+        update=lambda self, context: setattr(DEV, "HANDLE_OP_EXCEPT", self.HANDLE_OP_EXCEPT),
+    )
+
     logs : props.BoolProperty(
         default=DEV.logs,
         update=lambda self, context: setattr(DEV, "logs", self.logs),

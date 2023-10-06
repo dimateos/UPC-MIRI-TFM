@@ -58,8 +58,13 @@ class _StartRefresh_OT(types.Operator):
 
         # refresh at least once
         self.meta_refresh = True
-        return self.execute(context)
-        #return super().invoke(context, event)
+
+        try:
+            return self.execute(context)
+            #return super().invoke(context, event)
+        except Exception as e:
+            if not DEV.HANDLE_OP_EXCEPT: raise e
+            return self.end_op_error(f"unhandled exception... {e}")
 
     def execute(self, context: types.Context):
         """ Runs once and then after every property edit in the edit last action panel """
