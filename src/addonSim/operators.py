@@ -569,7 +569,12 @@ class MW_sim_step_OT(_StartRefresh_OT):
             DEV.log_msg("cfg found once: copying props to OP", {'SIM'})
             properties_utils.copyProps_groups_rec(MW_global_selected.root.mw_sim, self.cfg)
         else:
-            properties_utils.copyProps_groups_rec(self.cfg, MW_global_selected.root.mw_sim)
+            try:
+                properties_utils.copyProps_groups_rec(self.cfg, MW_global_selected.root.mw_sim)
+            except:
+                DEV.log_msg("INVALID ROOT: skipped run", {'SIM'})
+                return self.end_op_refresh(skipLog=True)
+
             sim.cfg = MW_global_selected.root.mw_sim
 
             # restore state to get constructive results withing the mod last op panel
@@ -600,8 +605,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
         return self.end_op()
 
     def end_op(self, msg="", skipLog=False, retPass=False):
-        MW_global_selected.sanitize()
-        MW_global_selected.prevalid_sanitize()
+        MW_global_selected.recheckSelected()
         return super().end_op(msg, skipLog, retPass)
 
 class MW_sim_reset_OT(_StartRefresh_OT):

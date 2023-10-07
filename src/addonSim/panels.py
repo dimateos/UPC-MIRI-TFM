@@ -84,6 +84,8 @@ class MW_gen_PT(types.Panel):
         # Edit/info of selected
         else:
             root = MW_global_selected.root
+            if utils_scene.needsSanitize(root):
+                MW_global_selected.recheckSelected()
 
             # show info of root + selected
             msg = f"Fract: {root.name}"

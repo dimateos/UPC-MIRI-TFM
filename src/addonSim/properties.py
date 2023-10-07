@@ -212,7 +212,7 @@ class MW_sim_cfg(types.PropertyGroup):
     )
     dir_entry_minAlign: props.FloatProperty(
         description="Min aligment required, otherwise unreacheable",
-        default=0.1, precision=3,
+        default=0.05, precision=3,
         min=-1.0, max=1.0
     )
     dir_entry_fromArrow: props.BoolProperty(
@@ -227,7 +227,7 @@ class MW_sim_cfg(types.PropertyGroup):
     )
     dir_next_minAlign: props.FloatProperty(
         description="Min aligment required, otherwise unreacheable",
-        default=0.1, precision=3,
+        default=0.05, precision=3,
         min=-1.0, max=1.0
     )
 

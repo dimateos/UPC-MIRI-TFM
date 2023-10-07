@@ -414,6 +414,7 @@ class MW_global_selected:
 
     @classmethod
     def recheckSelected(cls):
+        cls.sanitize()
         cls.justReloaded = False
         cls.setSelected(bpy.context.selected_objects)
 
@@ -462,6 +463,12 @@ class MW_global_selected:
         cls.prevalid_root = utils_scene.returnSanitized(cls.prevalid_root)
         if cls.prevalid_root is None:
             cls.prevalid_fract = None
+            cleaned |= True
+
+        # sometimes root alone fails?
+        cls.root = utils_scene.returnSanitized(cls.root)
+        if cls.root is None:
+            cls.fract = None
             cleaned |= True
 
         return cleaned
