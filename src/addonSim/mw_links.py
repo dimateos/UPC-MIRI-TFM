@@ -265,11 +265,9 @@ class MW_Links():
             self.avg_resistance /= float(self.links_len)
 
         stats.logDt(f"created link map: {self.links_len}")
-        DEV.log_msg(f"Pos limits: {utils.vec3_to_string(self.min_pos)}, {utils.vec3_to_string(self.max_pos)}"
-                    f" | Area limits: ({self.min_area:.2f},{self.max_area:.2f}) avg:{self.avg_area:.2f}"
-                    f" | Reistance limits: ({self.min_resistance:.2f},{self.max_resistance:.2f}) avg:{self.avg_resistance:.2f}",
-                    {"CALC", "LINKS", "LIMITS"}, cut=False)
-
+        DEV.log_msg(f"Pos limits: {utils.vec3_to_string(self.min_pos)}, {utils.vec3_to_string(self.max_pos)}", {"CALC", "LINKS", "LIMITS"}, cut=False)
+        DEV.log_msg(f"Area limits: ({self.min_area:.2f},{self.max_area:.2f}) avg:{self.avg_area:.2f}", {"CALC", "LINKS", "LIMITS"}, cut=False)
+        DEV.log_msg(f"Reistance limits: ({self.min_resistance:.2f},{self.max_resistance:.2f}) avg:{self.avg_resistance:.2f}", {"CALC", "LINKS", "LIMITS"}, cut=False)
 
         # SECOND loop to aggregate the links neighbours, only need to iterate cont_foundId
         for idx_cell in cont.foundId:

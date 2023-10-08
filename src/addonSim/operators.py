@@ -491,7 +491,7 @@ class MW_gen_field_r_OT(_StartRefresh_OT):
 
 class MW_sim_step_OT(_StartRefresh_OT):
     bl_idname = "mw.sim_step"
-    bl_label = "sim step"
+    bl_label = "Simulation step"
     bl_description = "Simulate a series of water infiltrations"
 
     bl_options = {'PRESET', 'REGISTER', 'UNDO'}
@@ -610,7 +610,7 @@ class MW_sim_step_OT(_StartRefresh_OT):
 
 class MW_sim_reset_OT(_StartRefresh_OT):
     bl_idname = "mw.sim_reset"
-    bl_label = "sim reset"
+    bl_label = "Simulation reset"
     bl_description = "Reset the simulation state, both links and cells"
 
     bl_options = {'INTERNAL', 'UNDO'}
@@ -636,7 +636,7 @@ class MW_sim_reset_OT(_StartRefresh_OT):
 
 class MW_sim_resetCFG_OT(_StartRefresh_OT):
     bl_idname = "mw.sim_reset_cfg"
-    bl_label = "sim reset cfg"
+    bl_label = "Simulation reset CFG"
     bl_description = "Reset the simulation config (without having to execute it)"
 
     bl_options = {'INTERNAL', 'UNDO'}
@@ -656,7 +656,7 @@ class MW_sim_resetCFG_OT(_StartRefresh_OT):
 
 class MW_sim_undoLast_OT(_StartRefresh_OT):
     bl_idname = "mw.sim_undo_last"
-    bl_label = "undo last sim step"
+    bl_label = "Simulation UNDO last step"
     bl_description = "DEV:: undo last simulation path"
 
     bl_options = {'INTERNAL', 'UNDO'}
@@ -685,7 +685,7 @@ class MW_sim_undoLast_OT(_StartRefresh_OT):
 
 class MW_util_comps_OT(_StartRefresh_OT):
     bl_idname = "mw.util_comps"
-    bl_label = "check comps"
+    bl_label = "Util: check comps"
     bl_description = "DEV:: check connected components"
 
     bl_options = {'INTERNAL', 'UNDO'}
@@ -718,7 +718,7 @@ class MW_util_comps_OT(_StartRefresh_OT):
 
 class MW_util_bool_OT(_StartRefresh_OT):
     bl_idname = "mw.util_bool"
-    bl_label = "bool mod"
+    bl_label = "Utils: bool mod"
     bl_description = "DEV:: bool modifier to cells to clip inside original model"
 
     bl_options = {'INTERNAL', 'UNDO'}
@@ -745,7 +745,7 @@ class MW_util_bool_OT(_StartRefresh_OT):
 
 class MW_util_bake_OT(_StartRefresh_OT):
     bl_idname = "mw.util_bake"
-    bl_label = "Bake"
+    bl_label = "Bake cell"
     bl_description = "Copy and unlink the cell from the fracture, e.g. to recursive fracture it"
 
     # UNDO as part of bl_options will cancel any edit last operation pop up
