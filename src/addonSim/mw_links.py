@@ -332,7 +332,7 @@ class MW_Links():
         self.initialized = bool(self.links_len)
         if not self.initialized:
             logType |= {"ERROR"}
-        DEV.log_msg(f"Found {self.links_len} links: {len(self.external)} external | {len(self.internal)} internal", logType)
+        DEV.log_msg(f"Found {self.links_len} links: {int(len(self.internal)/2)} internal | {len(self.external)} external", logType)
 
     def add_links_neigs(self, key, newNeighs):
         #self.links_graph.add_edges_from(newNeighs)

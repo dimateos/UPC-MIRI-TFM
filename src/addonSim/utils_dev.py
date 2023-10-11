@@ -7,10 +7,10 @@ class DEV:
     CALLBACK_REGISTER_ALL = False   # inspect when all available callbacks are triggered
     SELECT_ROOT_LOAD      = True    # try to select any root after reloading
 
-    DEBUG_MODEL           = True    # fake 2D so ignore some directional links (at sim)
+    DEBUG_MODEL           = False    # fake 2D so ignore some directional links (at sim)
     DEBUG_UI              = True    # some additional debug UI
     DEBUG_UNREACH_ENTRY   = False   # show unreachable entry links
-    DEBUG_GEODATA         = True    # add additional links info to geometry data to visualize in table
+    DEBUG_GEODATA         = False   # add additional links info to geometry data to visualize in table
     DEBUG_GEODATA_ID_RAW  = True    # keep IDs raw for better data but no 2D visualization
     DEBUG_GEODATA_PICKS   = True    # include info about number of picks
 
@@ -18,7 +18,7 @@ class DEV:
     SKIP_PATH_CHECK       = False   # skip checking if a path still exists before recalc all graphs
     SKIP_BUBBLE_CHECK     = False   # skip checking for air bubbles -> air cells inside model can get entry water!
 
-    FORCE_NO_RND_START    = True    # skip random generation in certain places to help debugging
+    FORCE_NO_RND_START    = False    # skip random generation in certain places to help debugging
     FORCE_NEW_MATS        = False   # force regeneration of gradient images to avoid debugging confussion
 
     FIX_IMAGES_REDO       = False   # workaround blender bug with images just being black after redo without touching it -> reexecutes the op

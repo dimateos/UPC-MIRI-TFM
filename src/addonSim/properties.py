@@ -192,12 +192,12 @@ class MW_sim_cfg(types.PropertyGroup):
     link_deg: props.FloatProperty(
         name="Link degradation", description="Amount of erosion water does to a link, distributed over its area.",
         default=0.5,
-        min=0.05, max=1.0,
+        min=0.01, max=10.0,
     )
     link_resist_weight: props.FloatProperty(
-        name="Link resistance", description="Control over the effecto of the resistance field",
+        name="Link resistance", description="Control over the effect of the resistance field",
         default=0.75,
-        min=0.05, max=1.0,
+        min=0.01, max=10.0,
     )
 
     #-------------------------------------------------------------------
@@ -267,6 +267,10 @@ class MW_sim_cfg(types.PropertyGroup):
     debug_log_lastIters: props.IntProperty(
         description="Limit the amount of paths printed etc",
         default=10, min=1,
+    )
+    debug_log_everyIters: props.IntProperty(
+        description="Log a msg every N iters to validate the simulation is running correctly",
+        default=100, min=0,
     )
     debug_log_path: props.BoolProperty(
         description="Write the full final path",

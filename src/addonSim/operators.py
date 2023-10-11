@@ -527,7 +527,8 @@ class MW_sim_step_OT(_StartRefresh_OT):
 
         # params and debug
         prefs = getPrefs()
-        paramFilter = "-step,-debug,-water__start,-water_abs,-link,"
+        #paramFilter = "-step,-debug, water_rnd, link_rnd, link_next"
+        paramFilter = "water_rnd, link_rnd, link_next, dir_"
         open, box = ui.draw_propsToggle_custom(cfg, prefs.sim_PT_meta_inspector, layout, "meta_show_1", text="Parameters", propFilter=paramFilter)
         open, box = ui.draw_propsToggle_custom(cfg, prefs.sim_PT_meta_inspector, layout, "meta_show_debug_props", propFilter="debug,-rnd", scaleBox=0.85)
         ui.draw_debug_rnd(box, cfg.debug_rnd)
@@ -584,6 +585,10 @@ class MW_sim_step_OT(_StartRefresh_OT):
         sim_cfg : MW_sim_cfg= self.cfg
         DEV.log_msg(f"step_infiltrations({sim_cfg.step_infiltrations}), step_maxDepth({sim_cfg.step_maxDepth}), step_stopBreak({sim_cfg.step_stopBreak})", {'SIM'})
         for step_id in range(sim_cfg.step_infiltrations):
+            # still alive msg
+            if sim_cfg.debug_log_everyIters and step_id%sim_cfg.debug_log_everyIters == 0:
+                DEV.log_msg(f"// ({step_id}) running...", {'SIM'})
+
             log_step = sim_cfg.debug_log and step_id+1 > sim_cfg.step_infiltrations-sim_cfg.debug_log_lastIters
             if not sim_cfg.debug_util_uniformDeg: sim.step(log_step)
             else: sim.step_degradeAll() # alternative see erosion on all
