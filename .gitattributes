@@ -1,0 +1,2 @@
+# remove notebooks and their large LoC from repo statistics
+*.ipynb linguist-vendored
