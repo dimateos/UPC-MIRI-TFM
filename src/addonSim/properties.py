@@ -255,6 +255,17 @@ class MW_sim_cfg(types.PropertyGroup):
         default=0.9, min=0.0, max=1.0
     )
 
+    link_next_dir_weight: props.FloatProperty(
+        description="Control over the effect of the relative link direction",
+        default=0.75,
+        min=0.01, max=1.0,
+    )
+    link_next_exit_avoidance: props.FloatProperty(
+        description="Less probability for water to scape the model",
+        default=0.75,
+        min=0.01, max=1.0,
+    )
+
     #-------------------------------------------------------------------
 
     debug_rnd: props.PointerProperty(type=properties_utils.RND_config)

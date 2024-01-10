@@ -390,7 +390,7 @@ class MW_Sim:
         # relative pos align
         dpos = l.pos - self.currentL.pos
         a = self.get_nextAlign(dpos.normalized())
-        p = a
+        p = a * self.cfg.link_next_dir_weight
 
         # weight by link resistance field
         if l.state == LINK_STATE_ENUM.SOLID:
@@ -398,6 +398,10 @@ class MW_Sim:
             if not self.cfg.debug_skip_next_maxResist:
                 r = min(r, 0.999)
             p *= 1-r
+
+        # weight the probability of air links
+        if l.state != LINK_STATE_ENUM.SOLID:
+            p *= self.cfg.link_next_exit_avoidance
 
         return p
 
