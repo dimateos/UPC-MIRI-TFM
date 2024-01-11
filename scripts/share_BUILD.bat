@@ -14,8 +14,6 @@ pushd %cd%
 
     cd %dBLENDER%
     set "zip_file=%nBUILD%-%ts%.zip"
-    set "dest=%dSHARED_DATA%\%nBLENDER%"
-    set "zip_dest=%dest%\%zip_file%"
 
     REM maybe also ignore _vendor and _distools?
     REM NOTE: I could also overwrite only the addon folder inside the zip instead of a whole version, or just update changed files
@@ -26,7 +24,9 @@ pushd %cd%
     ::zip -r %zip_file% ./%nBUILD%/3.4/scripts/addons/_addon_vscode -x "*/__pycache__/*"
 
 :_move
+    set "dest=%dSHARED_DATA%"
+    set "zip_dest=%dest%\%zip_file%"
     if not exist "%dest%" mkdir "%dest%"
-    ::move "%zip_file%" "%zip_dest%"
+    move "%zip_file%" "%zip_dest%"
 
 popd

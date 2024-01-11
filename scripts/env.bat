@@ -37,7 +37,7 @@ REM shared paths
 :_share
     REM path to shared stuff
     set "dSHARED=C:\Users\Diego\Desktop\__stream-DRIVE\UPC\.shortcut-targets-by-id\1y_ROJTEoZxvMw6SsSFvZTUuMaTztJfSi\TFM Diego Mateos"
-    set "dSHARED_DATA=%dSHARED%\DATA"
+    set "dSHARED_DATA=%dSHARED%\Blender"
 
 
 ::========== FUNCTIONS ==========
