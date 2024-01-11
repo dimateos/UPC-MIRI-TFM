@@ -31,3 +31,24 @@ Additionally, we developed an artist-friendly tool integrated as add-on into Ble
 
 > Feel free to contact me through email...
 
+# Pictures
+
+Detailed explanations available in the report...
+
+> PDF documents available in the release page: https://github.com/dimateos/UPC-MIRI-TFM-erosion/releases
+
+### Background
+<img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/2_back/erosion-ft.png">
+
+### Method
+<img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/6_results/sim-chunk-anim.png">
+
+### Implementation
+<img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:90%;" src="report/img/5_blender/bl-overview.png">
+<img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/5_blender/utils.png">
+
+### Results
+<img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/6_results/sim-chunk-anim.png">
+<img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/6_results/sim-hill-20000.png">
+
+
