@@ -1,0 +1,56 @@
+\chapter{Introduction}\label{chapter:introduction}
+
+% ---------------------------------------------------------------------------------------------------------------
+% ---------------------------------------------------------------------------------------------------------------
+\section{Motivation}
+
+Synthetically generated or enhanced terrains are a fundamental part of virtual scenes, which are widely used across industries like entertainment, training or simulation. Researchers have made progress in creating synthetic terrains using three primary methods: fractal modeling, physical erosion simulation, and synthesis from image samples. However these methods have limitations, the main one stems from a focus on the generation of large-scale terrain features like mountains and valleys. To capture these landforms they rely in 2D elevations maps, which is a representation that lacks vertical resolution and therefore cannot represent features like overhangs, arches or caves. Simultaneously, these maps usually cover large portions of terrain with limited precision, consequently producing a poor representation of some detail features commonly found in rocky terrains such as sharp ridges, loose blocks or steep cliffs.
+
+\vspace{0.5\baselineskip}
+Representing truly 3D features like those found in the surface of rocky terrains high detail remains a challenge. These complex rocky structures emerge from a variety of physical processes, including weathering from percolation and freeze-thaw cycles. Furthermore, this formations are influenced by the specific material involved, such as limestone, granite or dolomite. Recent physically inspired techniques have been proposed, but most of them are tailored for low altitude fluvial or coastal terrains were erosion tends to be smoother. In contrast, many of the rock formations found in alpine environments present straight cuts and polyhedral shapes.
+
+\vspace{0.5\baselineskip}
+Furthermore, most solutions do not offer artists a tool to integrate into their workflows, instead the authoring process is done in an unfamiliar external application. Once a final export is generated, artists may find it challenging to edit the model in alignment with the appropriate generation process. This disconnection between simulation and editing can limit the creative flexibility and efficiency of artists when working with terrain models.
+
+% ---------------------------------------------------------------------------------------------------------------
+% ---------------------------------------------------------------------------------------------------------------
+\section{Objectives}
+
+The primary objective of this project is to generate plausible rocky geometry on top of existing 3D models, which could come from 2D elevation maps or any already enhanced technique. We base our method specifically in a simplified simulation of mechanical erosion processes common in high altitude terrains such as percolation and freeze-thaw weathering.
+
+\vspace{0.5\baselineskip}
+We also seek to develop an intuitive tool to tune the parameters and interact with the simulation inside a popular 3D modelling software, in this case Blender, which is an open source alternative. This environment will let the artists leverage on their past experience with such kind of software, and so speed up the process of learning how to use the integrated interface. On top of that, having a streamlined workflow inside a single application empowers the artist with a cohesive simplified experience, compared to going back and forth between programs and import/export steps.
+
+% ---------------------------------------------------------------------------------------------------------------
+% ---------------------------------------------------------------------------------------------------------------
+\section{Contribution}
+
+Our research contributes to the field of terrain generation and 3D modeling by addressing some challenges associated with the creation of realistic rocky features. We propose a method to enhance models with a physically inspired erosion simulation. We also produced a user-friendly tool which is totally integrated inside a popular 3D modelling software (Blender). Overall, this tool allows artists to apply the erosion simulation to a model interactively. All of the parameters can be intuitively tuned to tailor the erosion and achieve satisfying results. This eroded models could potentially improve the quality and authenticity of virtual scenes which, as mentioned, are used in diverse applications across different industries. The key contributions of this work are summarized in the following subsections.
+
+% ---------------------------------------------------------------------------------------------------------------
+\subsection{Erosion simulation}
+
+Conceptually, our method can be divided into generation and simulation. The former involves computing the geometry of some initial shards of material and their properties. The latter uses all this information to perform an iterative erosion simulation inspired by percolation and freeze-thaw weathering, which changes the shape of the original model by detaching shards over time. The user has a certain degree of control over both processes through a series of parameters, and also decides when to proceed to the erosion simulation and when to end it.
+
+\vspace{0.5\baselineskip}
+For the generation process we used Voronoi shaped shards but any convex decomposition would work, a benefit of Voronoi tessellation is the fact that cells have a more natural rocky appearance than, for example, regular tetrahedra. These shards represent chunks of a continuous material kept together through virtual bonds yet to be fractured by the simulation. Based in the freeze-thaw cycle, we simulate how trapped water between the shards pushes their faces in opposite directions causing internal fractures between them. 
+
+\vspace{0.5\baselineskip}
+The state of this internal separation is modeled with virtual \textit{links}, which technically model the bonding \textit{connection} between shards instead of the physical gap. This means that the gap between two shards is inversely proportional to the sanity of their bonding \textit{link}. Therefore when a \textit{link} is broken, it means that the separation has reached certain threshold and we consider the shards no longer attached.
+
+\vspace{0.5\baselineskip}
+The simulation process works iteratively. Every iteration starts with water percolation entering the model through an external shard, then continues to propagate through its interior running through the spaces between the shards. We call \textit{path} the route the body of water follows throughout an infiltration. We model paths follow a stochastic flow method, in other words, there is a single path at a time with no water flow division. The internal propagation depends only on its current state, which in essence, can be interpreted as a Markov random walk. 
+
+\vspace{0.5\baselineskip}
+Inevitably, part of the water is trapped along the path which will produce weathering due to ice expansion as in a freeze-thaw cycle. In our model, we translate this erosion to a reduction in the sanity of the bonding \textit{links} between cells. After a series of simulated water infiltrations, the sanity of certain \textit{links} decrease enough to be considered broken. We continuously analyse the remaining structure of shards and remove totally disconnected groups from the model.
+
+% ---------------------------------------------------------------------------------------------------------------
+\subsection{Blender extension}
+
+We developed a tool integrated into Blender in the form of a full fledged add-on. This environment lets the artists leverage on their past experience with such kind of software, and so speeds up the process of learning how to use the integrated interface. This integration streamlines their workflow, eliminating the need for external applications and facilitating direct interaction with the model geometry before and after the simulated erosion.
+
+\vspace{0.5\baselineskip}
+The artist interaction is also divided into two parts, first generating a fracture structure out of an object, and then simulating water infiltrations to erode it. The simulation process is iterative, thus the artist is expected to apply it multiple times until a sufficient erosion state is achieved. All parameters can be edited intuitively through UI panels that also provide relevant information of the simulation state.
+
+\vspace{0.5\baselineskip}
+Additionally, over the development process we created a range of utilities to aid ourselves and potentially an advanced end-user. We believe these tools could assist greatly in further research of potential future work. 

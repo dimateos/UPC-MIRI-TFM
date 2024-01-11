@@ -1,0 +1,26 @@
+\chapter{Conclusion}\label{chapter:Conclusion}
+
+In conclusion, this project has addressed challenges found in rocky terrain generation and introduced an innovative approach to generate rocky features directly onto 3D models. The method, inspired by mechanical erosion processes like percolation and freeze-thaw weathering, provides an iterative simulation that can add increasing erosion on demand. On top of that, as demonstrated in the results chapter, a wide range of intuitive parameters can be tuned to tailor the simulation behavior. Overall, this solution could potentially improve the quality and authenticity of virtual scenes which, as mentioned, are used in diverse applications across different industries
+
+\vspace{0.5\baselineskip}
+Additionally, we developed an artist-friendly tool integrated as add-on into Blender. This rich integration streamlines their workflow, eliminating the need for external applications and facilitating direct interaction with the model geometry before and after the simulated erosion. All parameters can be edited intuitively through UI panels that also provide relevant information of the simulation state. Moreover, we believe the extensive utilities created could assist greatly in further research and development. 
+
+\vspace{0.5\baselineskip}
+Finally, we comprehensively analyzed the limitations found in both the method and implementation. This leaves us with a clear view of the potential future work.
+
+
+% ---------------------------------------------------------------------------------------------------------------
+% ---------------------------------------------------------------------------------------------------------------
+\clearpage
+\section{Future Work}
+
+Future work could address several limitations depicted in \ref{limitations}. We believe that the missing physics integration is the most damming one. It seems to produce overhanging cells with insufficient support that look unrealistic. Future work should explore the inclusion of the mentioned physics-based interactions.
+
+\vspace{0.5\baselineskip}
+Additionally, we also believe artists could get a lot more value out of the tool if we could lift some of the limitations currently present on input models. For example, expanding the current implementation to support non-convex shapes would enhance a lot its versatility. We could also explore an automatic multi-scale recursive approach, which should handle appropriately large pieces of terrain without requiring intensive manual interaction from the user.
+
+\vspace{0.5\baselineskip}
+Another avenue for future work would be exploring other kinds of user interactions. For example, we could add a brush tool to control better the entry zone of water and thus force erosion in specific parts of the model. On pair with this brush tool, we could have another one to help artists in the distribution of input points non-uniformly. This would allow them to increase the number of cells produced in specific parts of the model, which will produce a more granular detailed erosion there.
+
+\vspace{0.5\baselineskip}
+Finally, the technical issues regarding the implementation could be taken as another direction of future work. This would include the Voronoi precision, Blender serialization and overall performance. All would help by improving the experience for the final user.

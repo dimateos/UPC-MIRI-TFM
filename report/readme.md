@@ -1,1 +1,1 @@
-> PDF documents available in the release page: https://github.com/dimateos/UPC-MIRI-TFM-erosion/releases
+> PDF documents available in the [releases page](https://github.com/dimateos/UPC-MIRI-TFM-erosion/releases)

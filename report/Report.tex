@@ -1,0 +1,134 @@
+% http://www.idsc.ethz.ch/education/theses-semester-projects.html
+% IDSC LaTeX Thesis Template
+% 
+% Author(s):	Eric Müller
+% 				Institute for Dynamic Systems and Control
+% 				Swiss Federal Institute of Technology (ETH) Zurich
+% 
+% Created:		2004/04/02  (Eric Mueller)
+% 
+% Notes: Has been tested on Windows 7 + MikTeX + TeXnicCenter
+%
+% Revisions: 	2009/05/29  (Soren Ebbesen)
+% 				    2011/03/22	(Soren Ebbesen)
+%             2013/03/08	(Soren Ebbesen)
+%             2014/03/13	(Soren Ebbesen)
+% ______________________________________________________________________________
+\documentclass[12pt,twoside,a4paper]{report}
+\usepackage{siunitx}
+\usepackage[onehalfspacing]{setspace}
+%\usepackage{lineno}\linenumbers
+\usepackage{pdfpages}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{amsmath,mathtools}
+
+% CHANGE HERE FOR GERMAN (german) OR MASTER THESIS (mt)!!!!!
+\usepackage[english,mt]{ethidsc} % Special IDSC styles and commands      	
+								 % {german}/english: language of headings, etc.
+								 % {st}/bt/mt: {semester}/bachelor/master thesis
+
+% Page header (don't change)____________________________________________________
+\setlength{\parindent}{0em}                 % Disable parindent
+\rhead[\nouppercase{\rightmark}]{\thepage}  % Special headings
+\lhead[\thepage]{\nouppercase{\leftmark}}   % Special headings
+\cfoot{}                                    % Special headings
+
+
+% ---------------------------------------------------------------------------------------------------------------
+% ---------------------------------------------------------------------------------------------------------------
+
+% https://tex.stackexchange.com/questions/67908/customizing-the-algorithmic-package-break-and-loop-labels
+\makeatletter
+\newcommand{\ALOOP}[1]{\ALC@it\algorithmicloop\ #1%
+  \begin{ALC@loop}}
+\newcommand{\ENDALOOP}{\end{ALC@loop}\ALC@it\algorithmicendloop}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\newcommand{\algorithmicbreak}{\textbf{break}}
+\newcommand{\BREAK}{\STATE \algorithmicbreak}
+\makeatother
+
+% https://tex.stackexchange.com/questions/208119/how-to-make-whiletrue-do-loop
+\newcommand{\sfunction}[1]{\textsf{\textsc{#1}}}
+\algrenewcommand\algorithmicforall{\textbf{foreach}}
+\algrenewcommand\algorithmicindent{.8em}
+
+
+% ---------------------------------------------------------------------------------------------------------------
+% ---------------------------------------------------------------------------------------------------------------
+
+% Title page (please fill in)___________________________________________________
+\title{Simulation of mechanical weathering for modeling rocky terrains}
+
+\studentA{Diego Mateos}
+\ethidA{20-000-00}
+\semesterA{6}
+\emailA{diego.mateos@estudiantat.upc.edu}
+
+\supervision{Prof. Dr. Oscar Argudo Medrano}
+% \supervision{Prof. Dr. Antonio Susin Sanchez}
+\date{October 12, 2023}
+
+%\identification{IDSC-XX-YY-ZZ} 		% Project identifier
+
+
+% ---------------------------------------------------------------------------------------------------------------
+% Begin document________________________________________________________________
+\begin{document}
+
+% appears shifted! added later with an external tool
+% \includepdf[pages={1}]{portada.pdf}
+
+% Preamble______________________________________________________________________
+\pagenumbering{roman} 				% Begin roman page numbering (i,ii,...)
+
+\input{chapters/preamble}
+
+
+% ---------------------------------------------------------------------------------------------------------------
+% Chapters______________________________________________________________________
+
+\pagestyle{fancy}               	% Fancy headings
+\pagenumbering{arabic}				% Begin arabic page numbering (1,2,...)
+\setlength{\parindent}{20pt}
+% \cleardoublepage
+
+\clearpage
+\input{chapters/1_Introduction}
+\clearpage
+\input{chapters/2_Background}
+\clearpage
+\input{chapters/3_Previous}
+
+\clearpage
+\input{chapters/4_Method}
+\clearpage
+\input{chapters/5_Implementation}
+
+\clearpage
+\input{chapters/6_Results}
+\clearpage
+\input{chapters/7_Conclusion}
+
+
+% ---------------------------------------------------------------------------------------------------------------
+% Appendix______________________________________________________________________
+\clearpage
+\appendix
+
+% deliver as separated pdf
+% \input{chapters/appendix}
+% \input{chapters/test}
+
+% Bibliography__________________________________________________________________
+% Literature (Additional references can be added to the .bib-file manually, or by using, for example, the free application JabRef). Compile in the following order: latex -bibtex -latex -latex
+% \bibliographystyle{plain} % numbered
+\bibliographystyle{apalike} % name and year
+
+\clearpage
+% \begin{footnotesize} % smaller size
+\bibliography{references}
+% \end{footnotesize}
+
+\end{document}
