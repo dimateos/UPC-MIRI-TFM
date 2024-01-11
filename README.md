@@ -41,10 +41,13 @@ Detailed explanations available in the report...
 <img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/2_back/erosion-ft.png">
 
 ### Method
-<img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/6_results/sim-chunk-anim.png">
+<img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/4_method/sim-exit.png">
+<img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/4_method/sim-exit-large.png">
+<img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/4_method/sim-split-core.png">
 
 ### Implementation
-<img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:90%;" src="report/img/5_blender/bl-overview.png">
+<img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/5_blender/bl-overview.png">
+<img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/5_blender/bl-sim.png">
 <img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/5_blender/utils.png">
 
 ### Results
