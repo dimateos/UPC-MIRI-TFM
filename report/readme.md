@@ -1,1 +1,1 @@
-> PDF documents available in the [releases page](https://github.com/dimateos/UPC-MIRI-TFM-erosion/releases)
+> Full **report** and **presentation** PDFs available in the [releases page](https://github.com/dimateos/UPC-MIRI-TFM-erosion/releases), along with a portable Blender version with the addon ready to test.

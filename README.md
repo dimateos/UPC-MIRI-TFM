@@ -1,12 +1,21 @@
 # UPC-MIRI-TFM
 
-* DIEGO MATEOS ARLANZÓN diego.mateos@estudiantat.upc.edu
+* **DIEGO MATEOS ARLANZÓN** diego.mateos@estudiantat.upc.edu
 
 Thesis supervisors:
 * OSCAR ARGUDO MEDRANO
 * ANTONIO SUSIN SANCHEZ
 
-> *Oral defence day*: **October 19, 2023** -> *Qualification*: **10**
+
+| Oral defence     | Thursday, October 19, 2023                                |
+|------------------|-----------------------------------------------------------|
+| Degree           | Master's Degree in Innovation and Research in Informatics |
+| Specialization   | Computer Graphics and Virtual Reality                     |
+| Spoken language  | English                                                   |
+| Written language | English                                                   |
+| Qualification    | 10                                                        |
+
+> :star: Full **report** and **presentation** PDFs available in the [releases page](https://github.com/dimateos/UPC-MIRI-TFM-erosion/releases), along with a portable Blender version with the addon ready to test.
 
 # Simulation of mechanical weathering for modeling rocky terrains
 
@@ -22,35 +31,36 @@ Additionally, we developed an artist-friendly tool integrated as add-on into Ble
 ## References
 * Not yet available in [UPCommons](https://upcommons.upc.edu/handle/2099.1/20414) library (*seems like they upload them only in June*)
 * Complete bibliography accessible in [``references.bib``](https://github.com/dimateos/UPC-MIRI-TFM-erosion/blob/main/report/references.bib) (*the report section contains only cited ones*)
-
-## *TODO*
-* Report made public?
-* Presentation too?
-* Pictures contextualized in readme?
-* More details on development?
+* Full **report** and **presentation** PDFs available in the [releases page](https://github.com/dimateos/UPC-MIRI-TFM-erosion/releases), along with a portable Blender version with the addon ready to test.
 
 > Feel free to contact me through email...
 
+## Known issues / Future work
+* **Method**: The simulation does not include stability computations to remove excessively overhanging blocks.
+* **Implementation**: The addon is quite stable but not all scene serialization was implemented: state might break with UNDO/REDO on some operations, it is also not stored statically in the .blend file.
+
+> More details in the report...
+
 # Pictures
 
-Detailed explanations available in the report...
-
-> PDF documents available in the release page: https://github.com/dimateos/UPC-MIRI-TFM-erosion/releases
-
 ### Background
+We propose a physically inspired method based on the freeze-thaw cycle, which is the main erosion process that takes place in mountainous landscapes.
 <img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/2_back/erosion-ft.png">
 
 ### Method
+After a fracture structure is generated, we simulate the following erosion process: water infiltration, propagation, absorption, link erosion and cell detachment computation.
 <img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/4_method/sim-exit.png">
 <img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/4_method/sim-exit-large.png">
 <img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/4_method/sim-split-core.png">
 
 ### Implementation
+We developed a rich Blender add-on that includes tons of utils to ease development.
 <img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/5_blender/bl-overview.png">
 <img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/5_blender/bl-sim.png">
 <img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/5_blender/utils.png">
 
 ### Results
+Samples of 3D results after a large amount of infiltrations.
 <img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/6_results/sim-chunk-anim.png">
 <img style="display: block; float: none; margin-left: auto; margin-right: auto; margin-top: 15px; margin-bottom: 15px; width:80%;" src="report/img/6_results/sim-hill-20000.png">
 
