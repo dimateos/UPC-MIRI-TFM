@@ -4,7 +4,7 @@ bl_info = {
     "version": (0, 1, 0),
     "blender": (2, 90, 0),
     "location": "View3D > Sidebar > Dev",
-    "description": "Mechanical Withering Simulation",
+    "description": "Mechanical Weathering Simulation",
     "warning": "_WIP_",
     "wiki_url": "https://github.com/dimateos/UPC-MIRI-TFM",
     "tracker_url": "",
