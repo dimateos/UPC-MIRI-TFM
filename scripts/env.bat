@@ -27,11 +27,14 @@ REM shared paths
     set bpackages=%RETVAL%
 
 :_voro
+    REM local voro repo
     set "dBUILD_tfm=%dDATA%\UPC-MIRI-TFM-tess"
     set "fBUILD_cfg=%dBUILD_tfm%\src\config.hh"
     set "fBUILD_dbins=%dBUILD_tfm%\build"
     set "fBUILD_pybin=%dBUILD_tfm%\tess\_voro.*.pyd"
-
+    REM remote updated repo
+    set "dBUILD_remote=https://github.com/dimateos/UPC-MIRI-TFM-tess"
+    REM local original repo (could just install from remote tho)
     set "dBUILD_tess=%dDATA%\py_tess"
 
 :_share

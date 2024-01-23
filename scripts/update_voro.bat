@@ -1,6 +1,7 @@
 @echo off
-REM install/update voro + "none" uninstalls
+REM install/update voro in local development mode
 
+REM arg to switch build: tfm(mine), tess(original), none(uninstall)
 set "build=tfm"
 if not [%1]==[] set "build=%1"
 ::echo %build%
