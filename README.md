@@ -32,14 +32,16 @@ Additionally, we developed an artist-friendly tool integrated as add-on into Ble
 * Not yet available in [UPCommons](https://upcommons.upc.edu/handle/2099.1/20414) library (*seems like they upload them only in June*)
 * Complete bibliography accessible in [``references.bib``](https://github.com/dimateos/UPC-MIRI-TFM-erosion/blob/main/report/references.bib) (*the report section contains only cited ones*)
 * Full **report** and **presentation** PDFs available in the [releases page](https://github.com/dimateos/UPC-MIRI-TFM-erosion/releases), along with a portable Blender version with the addon ready to test.
+* Sources and development information available in [src/](https://github.com/dimateos/UPC-MIRI-TFM-erosion/tree/main/src)
+* Voro++ (python): My fork with updated features can be found [here](https://github.com/dimateos/UPC-MIRI-TFM-tess)
 
-> Feel free to contact me through email...
+> :email: Feel free to contact me through email...
 
 ## Known issues / Future work
 * **Method**: The simulation does not include stability computations to remove excessively overhanging blocks.
 * **Implementation**: The addon is quite stable but not all scene serialization was implemented: state might break with UNDO/REDO on some operations, it is also not stored statically in the .blend file.
 
-> More details in the report...
+> :mag: More details in the report...
 
 # Pictures
 
