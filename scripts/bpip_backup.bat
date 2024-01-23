@@ -6,7 +6,7 @@ if not [%1]==[] set "openWith=%1"
 ::echo %openWith%
 
 CALL ./env
-CALL ./_scripts/getTS.bat
+CALL %getTS%
 
 set "folder=_bpip_backs"
 if not exist %folder% mkdir %folder%

@@ -29,4 +29,4 @@ REM the bad thing is that this forces a reinstall instead of a skip when is alre
 
 REM update install the last version of the local tess package
 :_update
-    CALL ./update
+    CALL ./update_voro

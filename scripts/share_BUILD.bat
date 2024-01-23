@@ -9,7 +9,7 @@ CALL ./env
 
 pushd %cd%
 :_zip
-    CALL ./_scripts/getTS.bat
+    CALL %getTS%
     REM zip locally before moving to drive (move is slash sensitive)
 
     cd %dBLENDER%

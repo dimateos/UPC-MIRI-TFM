@@ -39,6 +39,9 @@ REM shared paths
     set "dSHARED=C:\Users\Diego\Desktop\__stream-DRIVE\UPC\.shortcut-targets-by-id\1y_ROJTEoZxvMw6SsSFvZTUuMaTztJfSi\TFM Diego Mateos"
     set "dSHARED_DATA=%dSHARED%\Blender"
 
+:_scripts
+    ::set "getTS=.\_scripts\getTS.bat"
+    set "getTS=.\getTS.bat"
 
 ::========== FUNCTIONS ==========
 EXIT /b
