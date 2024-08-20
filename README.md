@@ -29,9 +29,9 @@ Additionally, we developed an artist-friendly tool integrated as add-on into Ble
 * *Computer Graphics, 3D Modelling, Computer Simulation, Rocky Terrains, Mechanical Weathering.*
 
 ## References
-* Not yet available in [UPCommons](https://upcommons.upc.edu/handle/2099.1/20414) library (*seems like they upload them only in June*)
+* Available in [UPCommons library](https://upcommons.upc.edu/handle/2117/403778) (*but the download from github is faster and more stable*)
 * Complete bibliography accessible in [``references.bib``](https://github.com/dimateos/UPC-MIRI-TFM-erosion/blob/main/report/references.bib) (*the report section contains only cited ones*)
-* Full **report** and **presentation** PDFs available in the [releases page](https://github.com/dimateos/UPC-MIRI-TFM-erosion/releases), along with a portable Blender version with the addon ready to test.
+* Full **report** and **presentation** PDFs available in the [releases page](https://github.com/dimateos/UPC-MIRI-TFM-erosion/releases), along with a portable Blender version with the addon ready to test
 * Sources and development information available in [src/](https://github.com/dimateos/UPC-MIRI-TFM-erosion/tree/main/src)
 * Voro++ (python): My fork with updated features can be found [here](https://github.com/dimateos/UPC-MIRI-TFM-tess)
 
